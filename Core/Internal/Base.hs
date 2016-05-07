@@ -1,0 +1,62 @@
+-- |
+-- Module      : Core.Internal.Base
+-- License     : BSD-style
+-- Maintainer  : Vincent Hanquez <vincent@snarc.org>
+-- Stability   : experimental
+-- Portability : portable
+--
+-- internal re-export of all the good base bits
+module Core.Internal.Base
+    ( (Prelude.$)
+    , (Prelude.$!)
+    , (Prelude.&&)
+    , (Prelude.||)
+    , (Control.Category..)
+    , Prelude.not
+    , Prelude.otherwise
+    , Prelude.fst
+    , Prelude.snd
+    , Control.Category.id
+    , Prelude.maybe
+    , Prelude.either
+    , Prelude.flip
+    , Prelude.const
+    , Prelude.error
+    , Prelude.undefined
+    , Prelude.seq
+    , Prelude.Show (..)
+    , Prelude.Ord (..)
+    , Prelude.Eq (..)
+    , Prelude.Bounded (..)
+    , Prelude.Enum (..)
+    , Prelude.Functor (..)
+    , Prelude.Monad (..)
+    , Prelude.Maybe (..)
+    , Prelude.Ordering (..)
+    , Prelude.Bool (..)
+    , Prelude.Int
+    , Prelude.Integer
+    , Prelude.Char
+    , Data.Int.Int8, Data.Int.Int16, Data.Int.Int32, Data.Int.Int64
+    , Data.Word.Word8, Data.Word.Word16, Data.Word.Word32, Data.Word.Word64, Data.Word.Word
+    , Prelude.IO
+    , Core.Internal.IsList.IsList (..)
+    , GHC.Exts.IsString (..)
+    , Prelude.Either (..)
+    , Data.Typeable.Typeable
+    , Data.Monoid.Monoid (..)
+    , (Data.Monoid.<>)
+    , Control.Exception.Exception
+    , Control.Exception.throw
+    , Control.Exception.throwIO
+    ) where
+
+import qualified Prelude
+import qualified Control.Category
+import qualified Control.Exception
+import qualified Data.Monoid
+import qualified Data.Typeable
+import qualified Data.Word
+import qualified Data.Int
+import qualified Core.Internal.IsList
+import qualified GHC.Exts

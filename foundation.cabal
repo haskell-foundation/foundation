@@ -1,0 +1,92 @@
+Name:                foundation
+Version:             0.0
+Synopsis:            foundational things (prelude, better default classes, better default types like array and strings)
+Description:
+    A custom prelude with no dependencies apart from base.
+    .
+    This package has 5 goals:
+    .
+    * provide a base like sets of modules that provide a consistent set of features and bugfixes across multiple versions of GHC (unlike base).
+    .
+    * provide a better and more efficient prelude than base's prelude.
+    .
+    * be self-sufficient: no external dependencies apart from base.
+    .
+    * provide better data-types: packed unicode string by default, arrays.
+    .
+    * Better numerical classes that better represent mathematical thing (No more all-in-one Num).
+    .
+License:             BSD3
+License-file:        LICENSE
+Copyright:           Vincent Hanquez <vincent@snarc.org>
+Author:              Vincent Hanquez <vincent@snarc.org>
+Maintainer:          vincent@snarc.org
+Category:            foundation
+Stability:           experimental
+Build-Type:          Simple
+Homepage:            https://github.com/vincenthz/hs-foundation
+Bug-Reports:         https://github.com/vincenthz/hs-foundation/issues
+Cabal-Version:       >=1.10
+tested-with:         GHC == 7.6.3, GHC == 7.8.4, GHC == 7.10.3, GHC == 8.0.1
+extra-source-files:  README.md
+
+source-repository head
+  type: git
+  location: https://github.com/vincenthz/hs-foundation
+
+Library
+  Exposed-modules:   Overture
+                     Core.Number
+                     Core.String
+                     Core.String.IO
+                     Core.Vector
+                     Core.Proxy
+                     Core.Collection
+                     Core.Chunks
+                     Core.Primitive
+                     -- Core.View
+  Other-modules:     Core.String.Internal
+                     Core.String.UTF8
+                     Core.String.UTF8Table
+                     Core.Collection.List
+                     Core.Collection.Element
+                     Core.Collection.Keyed
+                     Core.Collection.Indexed
+                     Core.Collection.Mutable
+                     Core.Internal.Base
+                     Core.Internal.Primitive
+                     Core.Internal.IsList
+                     Core.Primitive.Types
+                     Core.Primitive.Monad
+                     Core.Primitive.Utils
+                     Core.Vector.Common
+                     Core.Vector.Unboxed
+                     Core.Vector.Boxed
+  Default-Extensions: NoImplicitPrelude
+                      TypeFamilies
+                      BangPatterns
+  Build-depends:     base >= 4 && < 5
+                   , ghc-prim
+  ghc-options:       -Wall -fwarn-tabs
+  default-language:  Haskell2010
+
+
+--Executable           foundation
+--  Main-Is:           foundation.hs
+--  ghc-options:       -Wall -fno-warn-missing-signatures
+--  Hs-Source-Dirs:    .
+--  Build-depends:     base >= 4 && < 5
+--  default-language:  Haskell2010
+
+Test-Suite test-foundation
+  type:              exitcode-stdio-1.0
+  hs-source-dirs:    tests
+  Main-is:           Tests.hs
+  Build-Depends:     base >= 3 && < 5
+                   , mtl
+                   , tasty
+                   , tasty-quickcheck
+                   , tasty-hunit
+                   , foundation
+  ghc-options:       -Wall -fno-warn-orphans -fno-warn-missing-signatures
+  default-language:  Haskell2010

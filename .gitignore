@@ -1,0 +1,6 @@
+*.o
+*.hi
+*.tix
+*.mix
+.stack-work
+dist
