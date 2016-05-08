@@ -73,7 +73,9 @@ class Additive a where
     scale 0 _ = azero
     scale 1 a = a
     scale 2 a = a + a
-    scale n a = a + scale (pred n) a -- TODO optimise. define by group of 2.
+    scale n a
+        | n < 0     = error "cannot scale by negative number"
+        | otherwise = a + scale (pred n) a -- TODO optimise. define by group of 2.
 
 -- | Represent class of things that can be multiplied together
 --
