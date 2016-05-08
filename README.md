@@ -1,5 +1,5 @@
-foundation
-=======
+Foundation
+==========
 
 [![Build Status](https://travis-ci.org/vincenthz/hs-foundation.png?branch=master)](https://travis-ci.org/vincenthz/hs-foundation)
 [![BSD](http://b.repl.ca/v1/license-BSD-blue.png)](http://en.wikipedia.org/wiki/BSD_licenses)
@@ -15,3 +15,25 @@ Goals
 * be self-sufficient: no external dependencies apart from base (or ghc packages).
 * provide better data-types: packed unicode string by default, arrays.
 * Better numerical classes that better represent mathematical thing (No more all-in-one Num).
+
+How to use
+==========
+
+Disable the built-in prelude at the top of your file:
+
+```haskell
+{-# LANGUAGE NoImplicitPrelude #-}
+```
+
+Or directly in your project cabal file:
+
+```haskell
+Default-Extensions: NoImplicitPrelude
+```
+
+Then in your modules:
+
+```haskell
+import Overture
+```
+
