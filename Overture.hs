@@ -48,6 +48,7 @@ module Overture
     , Prelude.Bounded (..)
     , Prelude.Enum (..)
     , Prelude.Functor (..)
+    , Control.Applicative.Applicative (..)
     , Prelude.Monad (..)
     , (Control.Monad.=<<)
     --, Core.String.IsString (..)
@@ -106,7 +107,6 @@ module Overture
     , Data.Function.on
     , Data.Ord.comparing
       -- ** Applicative
-    , Control.Applicative.Applicative (..)
     , (Control.Applicative.<$>)
     , (Control.Applicative.<|>)
       -- ** Monad
