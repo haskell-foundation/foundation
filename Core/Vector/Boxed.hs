@@ -12,6 +12,7 @@
 {-# LANGUAGE UnboxedTuples #-}
 module Core.Vector.Boxed
     ( Vector
+    , MVector
     ) where
 
 import           GHC.Prim
@@ -27,6 +28,7 @@ import           Prelude ((-), (+))
 -- | Vector of a
 data Vector a = Vector (Array# a)
 
+-- | Mutable Vector of a
 data MVector a st = MVector (MutableArray# st a)
 
 instance Functor Vector where

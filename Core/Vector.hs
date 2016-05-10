@@ -13,7 +13,9 @@
 {-# LANGUAGE UnboxedTuples #-}
 module Core.Vector
     ( Vector
+    , MVector
     , UVector
+    , MUVector
     -- exceptions
     , OutOfBound
     ) where
