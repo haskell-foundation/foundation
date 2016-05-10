@@ -38,13 +38,13 @@ import           GHC.ST
 import qualified Prelude
 import           Core.Internal.Base
 import           Core.Internal.Primitive
+import           Core.Internal.Proxy
 import           Core.Primitive.Monad
 import           Core.Primitive.Types
 import           Core.Primitive.Utils
 import qualified Core.Collection as C
 import           Core.Vector.Common
 import           Core.Number
-import           Core.Proxy
 import qualified Data.List
 
 -- | An array of type built on top of GHC primitive.

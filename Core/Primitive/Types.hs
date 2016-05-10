@@ -15,7 +15,7 @@ import           GHC.Prim
 import           GHC.Int
 import           GHC.Types
 import           GHC.Word
-import           Core.Proxy
+import           Core.Internal.Proxy
 import           Core.Internal.Primitive
 import           Core.Internal.Base
 import           Core.Primitive.Monad

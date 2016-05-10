@@ -1,12 +1,12 @@
 -- |
--- Module      : Core.Proxy
+-- Module      : Core.Internal.Proxy
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
 -- Portability : portable
 --
 {-# LANGUAGE CPP #-}
-module Core.Proxy
+module Core.Internal.Proxy
     ( Proxy(..)
     , asProxyTypeOf
     ) where

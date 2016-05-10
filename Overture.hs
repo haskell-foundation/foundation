@@ -117,6 +117,9 @@ module Overture
     , Control.Exception.SomeException
     , Control.Exception.IOException
     , module System.IO.Error
+      -- ** Proxy
+    , Core.Internal.Proxy.Proxy(..)
+    , Core.Internal.Proxy.asProxyTypeOf
       -- ** Old Prelude Strings as [Char] with bridge back and forth
     , LString
     ) where
@@ -143,6 +146,7 @@ import qualified Core.String.IO
 
 import           GHC.Exts (IsString(..))
 import           Core.Internal.IsList
+import qualified Core.Internal.Proxy
 
 import qualified Core.Number
 

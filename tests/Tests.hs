@@ -11,7 +11,6 @@ import           Control.Monad
 
 import           Core.String
 import           Core.Vector
-import           Core.Proxy
 import           Core.Collection
 import           Overture
 import qualified Data.List as L

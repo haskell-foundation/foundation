@@ -40,7 +40,6 @@ Library
                      Core.String
                      Core.String.IO
                      Core.Vector
-                     Core.Proxy
                      Core.Collection
                      Core.Chunks
                      Core.Primitive
@@ -56,6 +55,7 @@ Library
                      Core.Internal.Base
                      Core.Internal.Primitive
                      Core.Internal.IsList
+                     Core.Internal.Proxy
                      Core.Primitive.Types
                      Core.Primitive.Monad
                      Core.Primitive.Utils
