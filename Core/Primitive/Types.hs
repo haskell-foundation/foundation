@@ -54,7 +54,7 @@ class PrimType ty where
 -- return the index and mask to a bit in a bitmap
 bitmapAddr :: Int# -> (# Int# , Word# #)
 bitmapAddr !i = (# idx, mask #)
-  where (# !idx, !bit #) = quotRemInt# i 4#
+  where (# !idx, !bit #) = compatQuotRemInt# i 4#
         !mask = case bit of
                     0#  -> 0x1##
                     1#  -> 0x2##

@@ -10,11 +10,14 @@
 {-# LANGUAGE CPP #-}
 module Core.Internal.Primitive
     ( bool#
-    , andI#
+    , compatAndI#
+    , compatQuotRemInt#
+    , Word(..)
     ) where
 
 import qualified Prelude
 import           GHC.Prim
+import           GHC.Word
 
 -- | turn an Int# into a Bool
 --
@@ -27,7 +30,18 @@ bool# :: Prelude.Bool -> Prelude.Bool
 bool# v = v
 #endif
 
+compatAndI# :: Int# -> Int# -> Int#
 #if !MIN_VERSION_base(4,7,0)
-andI# :: Int# -> Int# -> Int#
-andI# a b = word2Int# (and# (int2Word# a) (int2Word# b))
+compatAndI# a b = word2Int# (and# (int2Word# a) (int2Word# b))
+#else
+compatAndI# = andI#
 #endif
+{-# INLINE compatAndI# #-}
+
+compatQuotRemInt# :: Int# -> Int# -> (# Int#, Int# #)
+#if !MIN_VERSION_base(4,6,0)
+compatQuotRemInt# a b = (# quotInt# a b, remInt# a b #)
+#else
+compatQuotRemInt# = quotRemInt#
+#endif
+{-# INLINE compatQuotRemInt# #-}

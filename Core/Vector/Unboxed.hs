@@ -32,12 +32,12 @@ module Core.Vector.Unboxed
     , mapIndex
     ) where
 
-import           GHC.Prim hiding (andI#)
+import           GHC.Prim
 import           GHC.Types
 import           GHC.ST
 import qualified Prelude
 import           Core.Internal.Base
-import           Core.Internal.Primitive (andI#)
+import           Core.Internal.Primitive
 import           Core.Primitive.Monad
 import           Core.Primitive.Types
 import           Core.Primitive.Utils
@@ -234,7 +234,7 @@ new (I# n) = newFake Proxy
                 -- !(I# bytes)   = trace ("new: " ++ show (I# szBits) ++ "bits/elem " ++ show (I# n) ++ " elems " ++ show (I# bytes_) ++ " bytes") (I# bytes_)
 
                 roundUp :: Int# -> Int# -> Int#
-                roundUp i d = negateInt# (andI# (negateInt# i)  (negateInt# d))
+                roundUp i d = negateInt# (compatAndI# (negateInt# i)  (negateInt# d))
                 {-# INLINE roundUp #-}
         {-# INLINE newFake #-}
 {-# INLINE new #-}
