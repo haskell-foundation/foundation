@@ -30,6 +30,7 @@ module Core.Internal.Base
     , Prelude.Bounded (..)
     , Prelude.Enum (..)
     , Prelude.Functor (..)
+    , Control.Applicative.Applicative (..)
     , Prelude.Monad (..)
     , Prelude.Maybe (..)
     , Prelude.Ordering (..)
@@ -53,6 +54,7 @@ module Core.Internal.Base
 
 import qualified Prelude
 import qualified Control.Category
+import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Data.Monoid
 import qualified Data.Typeable
