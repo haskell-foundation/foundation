@@ -62,6 +62,7 @@ Library
                      Core.Vector.Common
                      Core.Vector.Unboxed
                      Core.Vector.Boxed
+                     Core.Partial
   Default-Extensions: NoImplicitPrelude
                       TypeFamilies
                       BangPatterns

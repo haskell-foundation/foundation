@@ -120,6 +120,10 @@ module Overture
       -- ** Proxy
     , Core.Internal.Proxy.Proxy(..)
     , Core.Internal.Proxy.asProxyTypeOf
+      -- ** Partial
+    , Core.Partial.Partial
+    , Core.Partial.partial
+    , Core.Partial.fromPartial
       -- ** Old Prelude Strings as [Char] with bridge back and forth
     , LString
     ) where
@@ -149,6 +153,7 @@ import           Core.Internal.IsList
 import qualified Core.Internal.Proxy
 
 import qualified Core.Number
+import qualified Core.Partial
 
 import qualified Data.Maybe
 import qualified Data.Either
