@@ -1,5 +1,5 @@
 -- |
--- Module      : Core.Vector.Unboxed
+-- Module      : Core.Number
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
