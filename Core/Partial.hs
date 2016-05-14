@@ -20,7 +20,7 @@ module Core.Partial
     ) where
 
 import Core.Internal.Base
-import Data.Functor.Identity
+import Core.Internal.Identity
 
 -- | Partialiality wrapper.
 newtype Partial a = Partial (Identity a)
