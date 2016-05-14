@@ -17,7 +17,7 @@ module Core.Chunks
 import           Core.Internal.Base
 import qualified Core.Collection as C
 import           Control.Monad (mplus)
-import           Overture
+import           Core.Number
 
 -- | Chunks of data structure
 --

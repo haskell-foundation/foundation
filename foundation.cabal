@@ -35,7 +35,7 @@ source-repository head
   location: https://github.com/vincenthz/hs-foundation
 
 Library
-  Exposed-modules:   Overture
+  Exposed-modules:   Core
                      Core.Number
                      Core.String
                      Core.String.IO

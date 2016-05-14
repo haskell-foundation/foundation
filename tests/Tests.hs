@@ -12,7 +12,7 @@ import           Control.Monad
 import           Core.String
 import           Core.Vector
 import           Core.Collection
-import           Overture
+import           Core
 import qualified Data.List as L
 import qualified Prelude
 

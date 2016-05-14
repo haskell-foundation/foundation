@@ -1,5 +1,5 @@
 -- |
--- Module      : Overture
+-- Module      : Core
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
@@ -11,7 +11,7 @@
 --
 -- Alternative Prelude
 {-# LANGUAGE CPP #-}
-module Overture
+module Core
     ( -- * Standard
       -- ** Operators
       (Prelude.$)
