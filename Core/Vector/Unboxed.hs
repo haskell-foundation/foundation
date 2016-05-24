@@ -21,6 +21,8 @@ module Core.Vector.Unboxed
     -- * methods
     , mutableLength
     , copy
+    -- * internal methods
+    , copyAddr
     -- * Creation
     , new
     , create
@@ -35,6 +37,7 @@ module Core.Vector.Unboxed
 import           GHC.Prim
 import           GHC.Types
 import           GHC.ST
+import           GHC.Ptr
 import qualified Prelude
 import           Core.Internal.Base
 import           Core.Internal.Primitive
@@ -264,6 +267,16 @@ copyAtRO dst od src os n = loop od os
         loop d i
             | i == endIndex = return ()
             | otherwise     = unsafeWrite dst d (unsafeIndex src i) >> loop (d+1) (i+1)
+
+copyAddr :: (PrimMonad prim, PrimType ty)
+         => MUVector ty (PrimState prim) -- ^ destination array
+         -> Int                -- ^ offset at destination
+         -> Ptr Word8          -- ^ source ptr
+         -> Int                -- ^ offset at source
+         -> Int                -- ^ number of elements to copy
+         -> prim ()
+copyAddr (MA dst) (I# od) (Ptr src) (I# os) (I# sz) = primitive $ \s ->
+    (# copyAddrToByteArray# (plusAddr# src os) dst od sz s, () #)
 
 -- | return the number of elements of the array.
 length :: UVector ty -> Int
