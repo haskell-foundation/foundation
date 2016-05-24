@@ -52,12 +52,12 @@ import qualified Data.List
 -- The elements need to have fixed sized and the representation is a
 -- packed contiguous array in memory that can easily be passed
 -- to foreign interface
-data UVector ty = A !Int# ByteArray#
+data UVector ty = A ByteArray#
 
 -- | A Mutable array of types built on top of GHC primitive.
 --
 -- Element in this array can be modified in place.
-data MUVector ty st = MA Int# (MutableByteArray# st)
+data MUVector ty st = MA (MutableByteArray# st)
 
 instance (PrimType ty, Show ty) => Show (UVector ty) where
     show v = show (toList v)
@@ -157,8 +157,8 @@ copy array = runST (thaw array >>= unsafeFreeze)
 -- the array is not modified, instead a new mutable array is created
 -- and every values is copied, before returning the mutable array.
 thaw :: (PrimMonad prim, PrimType ty) => UVector ty -> prim (MUVector ty (PrimState prim))
-thaw array@(A _ ba) = do
-    ma@(MA _ mba) <- new (length array)
+thaw array@(A ba) = do
+    ma@(MA mba) <- new (length array)
     primCopyFreezedBytes mba ba
     return ma
 {-# INLINE thaw #-}
@@ -178,7 +178,7 @@ index array n
 -- Reading from invalid memory can return unpredictable and invalid values.
 -- use 'index' if unsure.
 unsafeIndex :: PrimType ty => UVector ty -> Int -> ty
-unsafeIndex (A _ ba) = primBaIndex ba
+unsafeIndex (A ba) = primBaIndex ba
 {-# INLINE unsafeIndex #-}
 
 -- | read a cell in a mutable array.
@@ -196,7 +196,7 @@ read array n
 -- Reading from invalid memory can return unpredictable and invalid values.
 -- use 'read' if unsure.
 unsafeRead :: (PrimMonad prim, PrimType ty) => MUVector ty (PrimState prim) -> Int -> prim ty
-unsafeRead (MA _ mba) i = primMbaRead mba i
+unsafeRead (MA mba) i = primMbaRead mba i
 {-# INLINE unsafeRead #-}
 
 -- | Write to a cell in a mutable array.
@@ -214,7 +214,7 @@ write array n val
 -- Writing with invalid bounds will corrupt memory and your program will
 -- become unreliable. use 'write' if unsure.
 unsafeWrite :: (PrimMonad prim, PrimType ty) => MUVector ty (PrimState prim) -> Int -> ty -> prim ()
-unsafeWrite (MA _ mba) i = primMbaWrite mba i
+unsafeWrite (MA mba) i = primMbaWrite mba i
 {-# INLINE unsafeWrite #-}
 
 -- | Create a new mutable array of size @n.
@@ -222,15 +222,14 @@ unsafeWrite (MA _ mba) i = primMbaWrite mba i
 -- all the cells are uninitialized and could contains invalid values.
 --
 -- All mutable arrays are allocated on a 64 bits aligned addresses
--- and always contains a number of bytes multiples of 64 bits.
 new :: (PrimMonad prim, PrimType ty) => Int -> prim (MUVector ty (PrimState prim))
 new (I# n) = newFake Proxy
   where newFake :: (PrimMonad prim, PrimType ty) => Proxy ty -> prim (MUVector ty (PrimState prim))
         newFake ty = primitive $ \s1 ->
             case newAlignedPinnedByteArray# bytes 8# s1 of
-                (# s2, mba #) -> (# s2, MA n mba #)
+                (# s2, mba #) -> (# s2, MA mba #)
           where !(I# szBits) = sizeInBits ty
-                !bytes = quotInt# (roundUp (n *# szBits) 64#) 8#
+                !bytes = quotInt# (roundUp (n *# szBits) 8#) 8#
                 -- !(I# bytes)   = trace ("new: " ++ show (I# szBits) ++ "bits/elem " ++ show (I# n) ++ " elems " ++ show (I# bytes_) ++ " bytes") (I# bytes_)
 
                 roundUp :: Int# -> Int# -> Int#
@@ -268,21 +267,21 @@ copyAtRO dst od src os n = loop od os
 
 -- | return the number of elements of the array.
 length :: UVector ty -> Int
-length (A l _) = I# l
+length (A a) = I# (sizeofByteArray# a)
 {-# INLINE length #-}
 
 -- | return the numbers of elements in a mutable array
 mutableLength :: MUVector ty st -> Int
-mutableLength (MA l _) = I# l
+mutableLength (MA ma) = I# (sizeofMutableByteArray# ma)
 {-# INLINE mutableLength #-}
 
 -- | Freeze a mutable array into an array.
 --
 -- the MUVector must not be changed after freezing.
 unsafeFreeze :: PrimMonad prim => MUVector ty (PrimState prim) -> prim (UVector ty)
-unsafeFreeze (MA n mba) = primitive $ \s1 ->
+unsafeFreeze (MA mba) = primitive $ \s1 ->
     case unsafeFreezeByteArray# mba s1 of
-        (# s2, ba #) -> (# s2, A n ba #)
+        (# s2, ba #) -> (# s2, A ba #)
 {-# INLINE unsafeFreeze #-}
 
 freeze :: (PrimType ty, PrimMonad prim) => MUVector ty (PrimState prim) -> prim (UVector ty)
@@ -295,7 +294,7 @@ freeze ma = do
 --
 -- The UVector must not be used after thawing.
 unsafeThaw :: PrimMonad prim => UVector ty -> prim (MUVector ty (PrimState prim))
-unsafeThaw (A n ba) = primitive $ \st -> (# st, MA n (unsafeCoerce# ba) #)
+unsafeThaw (A ba) = primitive $ \st -> (# st, MA (unsafeCoerce# ba) #)
 {-# INLINE unsafeThaw #-}
 
 -- | Create a new array of size @n by settings each cells through the
@@ -475,19 +474,19 @@ splitOn predicate vec
                     else loop prevIdx idx'
 
 sub :: (PrimType ty, PrimMonad prim) => UVector ty -> Int -> Int -> prim (UVector ty)
-sub vec@(A len ba) startIdx expectedEndIdx
-    | startIdx == endIdx   = return empty
-    | startIdx >= (I# len) = return empty
-    | leftBits /= 0        = error "cannot sub on vector with non-byte aligned data yet"
-    | otherwise            = do
-        muv@(MA _ mba) <- new (endIdx - startIdx)
+sub vec@(A ba) startIdx expectedEndIdx
+    | startIdx == endIdx     = return empty
+    | startIdx >= length vec = return empty
+    | leftBits /= 0          = error "cannot sub on vector with non-byte aligned data yet"
+    | otherwise              = do
+        muv@(MA mba) <- new (endIdx - startIdx)
         primitive $ \st ->
             let sz  = end -# start
                 st2 = copyByteArray# ba start mba 0# sz st
              in (# st2, () #)
         unsafeFreeze muv
   where
-    endIdx = min expectedEndIdx (I# len)
+    endIdx = min expectedEndIdx (length vec)
     !(I# end) = endIdx * bytes
     !(I# start) = startIdx * bytes
     bits = sizeInBitsOfContent vec
@@ -513,10 +512,10 @@ mapIndex :: (PrimType a, PrimType b) => (Int -> a -> b) -> UVector a -> UVector 
 mapIndex f a = create (length a) (\i -> f i $ unsafeIndex a i)
 
 cons :: PrimType ty => ty -> UVector ty -> UVector ty
-cons e vec@(A _ ba)
+cons e vec@(A ba)
     | leftBits /= 0 = error "cannot cons on bit vectors"
     | otherwise     = runST $ do
-        muv@(MA _ mba) <- new (len + 1)
+        muv@(MA mba) <- new (len + 1)
         -- bench with "copyAtRO muv 1 vec 0 len"
         primCopyFreezedBytesOffset mba bytes ba (len# *# bytes)
         unsafeWrite muv 0 e
@@ -527,8 +526,8 @@ cons e vec@(A _ ba)
     !len@(I# len#) = length vec
 
 snoc :: PrimType ty => UVector ty -> ty -> UVector ty
-snoc vec@(A _ ba) e = runST $ do
-    muv@(MA _ mba) <- new (len + 1)
+snoc vec@(A ba) e = runST $ do
+    muv@(MA mba) <- new (len + 1)
     primCopyFreezedBytes mba ba
     unsafeWrite muv len e
     unsafeFreeze muv
