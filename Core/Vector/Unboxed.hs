@@ -145,11 +145,11 @@ fmapUVec mapper a = runST (new nbElems >>= copyMap (unsafeIndex a) mapper)
 -}
 
 -- rename to sizeInBitsOfCell
-sizeInBitsOfContent :: PrimType ty => UVector ty -> Int
-sizeInBitsOfContent = getSize Proxy
+sizeInBytesOfContent :: PrimType ty => UVector ty -> Int
+sizeInBytesOfContent = getSize Proxy
   where getSize :: PrimType ty => Proxy ty -> UVector ty -> Int
-        getSize ty _ = sizeInBits ty
-{-# INLINE sizeInBitsOfContent #-}
+        getSize ty _ = sizeInBytes ty
+{-# INLINE sizeInBytesOfContent #-}
 
 -- | Copy every cells of an existing array to a new array
 copy :: PrimType ty => UVector ty -> UVector ty
@@ -226,18 +226,19 @@ unsafeWrite (MA mba) i = primMbaWrite mba i
 --
 -- All mutable arrays are allocated on a 64 bits aligned addresses
 new :: (PrimMonad prim, PrimType ty) => Int -> prim (MUVector ty (PrimState prim))
-new (I# n) = newFake Proxy
+new n = newFake Proxy
   where newFake :: (PrimMonad prim, PrimType ty) => Proxy ty -> prim (MUVector ty (PrimState prim))
         newFake ty = primitive $ \s1 ->
             case newAlignedPinnedByteArray# bytes 8# s1 of
                 (# s2, mba #) -> (# s2, MA mba #)
-          where !(I# szBits) = sizeInBits ty
-                !bytes = quotInt# (roundUp (n *# szBits) 8#) 8#
+          where
+                -- !bytes = quotInt# (roundUp (n *# szBits) 8#) 8#
+                !(I# bytes) = n * sizeInBytes ty
                 -- !(I# bytes)   = trace ("new: " ++ show (I# szBits) ++ "bits/elem " ++ show (I# n) ++ " elems " ++ show (I# bytes_) ++ " bytes") (I# bytes_)
 
-                roundUp :: Int# -> Int# -> Int#
-                roundUp i d = negateInt# (compatAndI# (negateInt# i)  (negateInt# d))
-                {-# INLINE roundUp #-}
+                --roundUp :: Int# -> Int# -> Int#
+                --roundUp i d = negateInt# (compatAndI# (negateInt# i)  (negateInt# d))
+                --{-# INLINE roundUp #-}
         {-# INLINE newFake #-}
 {-# INLINE new #-}
 
@@ -279,13 +280,25 @@ copyAddr (MA dst) (I# od) (Ptr src) (I# os) (I# sz) = primitive $ \s ->
     (# compatCopyAddrToByteArray# (plusAddr# src os) dst od sz s, () #)
 
 -- | return the number of elements of the array.
-length :: UVector ty -> Int
-length (A a) = I# (sizeofByteArray# a)
+length :: PrimType ty => UVector ty -> Int
+length = divBits Proxy
+  where
+    divBits :: PrimType ty => Proxy ty -> UVector ty -> Int
+    divBits proxy (A a) =
+        let !(I# szBits) = sizeInBytes proxy
+            !elems       = quotInt# (sizeofByteArray# a) szBits
+         in I# elems
 {-# INLINE length #-}
 
 -- | return the numbers of elements in a mutable array
-mutableLength :: MUVector ty st -> Int
-mutableLength (MA ma) = I# (sizeofMutableByteArray# ma)
+mutableLength :: PrimType ty => MUVector ty st -> Int
+mutableLength = divBits Proxy
+  where
+    divBits :: PrimType ty => Proxy ty -> MUVector ty st -> Int
+    divBits proxy (MA a) =
+        let !(I# szBits) = sizeInBytes proxy
+            !elems       = quotInt# (sizeofMutableByteArray# a) szBits
+         in I# elems
 {-# INLINE mutableLength #-}
 
 -- | Freeze a mutable array into an array.
@@ -445,7 +458,7 @@ withMutablePtr ma f =
 -}
 
 null :: UVector ty -> Bool
-null = (==) 0 . length
+null (A a) = bool# (sizeofByteArray# a ==# 0#)
 
 take :: PrimType ty => Int -> UVector ty -> UVector ty
 take nbElems v
@@ -490,7 +503,6 @@ sub :: (PrimType ty, PrimMonad prim) => UVector ty -> Int -> Int -> prim (UVecto
 sub vec@(A ba) startIdx expectedEndIdx
     | startIdx == endIdx     = return empty
     | startIdx >= length vec = return empty
-    | leftBits /= 0          = error "cannot sub on vector with non-byte aligned data yet"
     | otherwise              = do
         muv@(MA mba) <- new (endIdx - startIdx)
         primitive $ \st ->
@@ -502,8 +514,7 @@ sub vec@(A ba) startIdx expectedEndIdx
     endIdx = min expectedEndIdx (length vec)
     !(I# end) = endIdx * bytes
     !(I# start) = startIdx * bytes
-    bits = sizeInBitsOfContent vec
-    (bytes, leftBits) = bits `Prelude.divMod` 8
+    bytes = sizeInBytesOfContent vec
 
 break :: PrimType ty => (ty -> Bool) -> UVector ty -> (UVector ty, UVector ty)
 break predicate v = findBreak 0
@@ -525,17 +536,14 @@ mapIndex :: (PrimType a, PrimType b) => (Int -> a -> b) -> UVector a -> UVector 
 mapIndex f a = create (length a) (\i -> f i $ unsafeIndex a i)
 
 cons :: PrimType ty => ty -> UVector ty -> UVector ty
-cons e vec@(A ba)
-    | leftBits /= 0 = error "cannot cons on bit vectors"
-    | otherwise     = runST $ do
-        muv@(MA mba) <- new (len + 1)
-        -- bench with "copyAtRO muv 1 vec 0 len"
-        primCopyFreezedBytesOffset mba bytes ba (len# *# bytes)
-        unsafeWrite muv 0 e
-        unsafeFreeze muv
+cons e vec@(A ba) = runST $ do
+    muv@(MA mba) <- new (len + 1)
+    -- bench with "copyAtRO muv 1 vec 0 len"
+    primCopyFreezedBytesOffset mba bytes ba (len# *# bytes)
+    unsafeWrite muv 0 e
+    unsafeFreeze muv
   where
-    bits = sizeInBitsOfContent vec
-    !(I# bytes, leftBits) = bits `Prelude.divMod` 8
+    !(I# bytes) = sizeInBytesOfContent vec
     !len@(I# len#) = length vec
 
 snoc :: PrimType ty => UVector ty -> ty -> UVector ty
