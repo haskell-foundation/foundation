@@ -41,7 +41,7 @@ class InnerFunctor c where
 -- note: Ordered does not mean sorted, it means the
 -- elements have a given order that is retained by
 -- the data structure.
-class InnerFunctor c => SemiOrderedCollection c where
+class SemiOrderedCollection c where
     {-# MINIMAL snoc, cons, find, sortBy, length, singleton #-}
     -- | Prepend an element to an ordered collection
     snoc :: c -> Element c -> c
