@@ -49,7 +49,9 @@ compatQuotRemInt# = quotRemInt#
 
 -- only available from GHC 7.8
 compatCopyAddrToByteArray# :: Addr# -> MutableByteArray# s -> Int# -> Int# -> State# s -> State# s
-#if !MIN_VERSION_base(4,6,0)
+#if MIN_VERSION_base(4,7,0)
+compatCopyAddrToByteArray# = copyAddrToByteArray#
+#else
 compatCopyAddrToByteArray# addr ba ofs sz stini =
     loop ofs 0# stini
   where
@@ -58,7 +60,5 @@ compatCopyAddrToByteArray# addr ba ofs sz stini =
         | Prelude.otherwise =
             case readWord8OffAddr# addr i st of
                 (# st2, w #) -> loop (o +# 1#) (i +# 1#) (writeWord8Array# ba o w st2)
-#else
-compatCopyAddrToByteArray# = copyAddrToByteArray#
 #endif
 {-# INLINE compatCopyAddrToByteArray# #-}
