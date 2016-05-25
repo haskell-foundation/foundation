@@ -51,6 +51,7 @@ Library
                      Core.Collection.Element
                      Core.Collection.Keyed
                      Core.Collection.Indexed
+                     Core.Collection.Foldable
                      Core.Collection.Mutable
                      Core.Internal.Base
                      Core.Internal.Primitive
