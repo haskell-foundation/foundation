@@ -20,6 +20,12 @@ import qualified Prelude
 import           GHC.Prim
 import           GHC.Word
 
+--  GHC 8.0  | Base 4.9
+--  GHC 7.10 | Base 4.8
+--  GHC 7.8  | Base 4.7
+--  GHC 7.6  | Base 4.6
+--  GHC 7.4  | Base 4.5
+
 -- | turn an Int# into a Bool
 --
 -- Since GHC 7.8, boolean primitive don't return Bool but Int#.
