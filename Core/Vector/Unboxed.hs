@@ -84,6 +84,11 @@ instance PrimType ty => IsList (UVector ty) where
 instance PrimType ty => C.InnerFunctor (UVector ty) where
     imap = map
 
+instance PrimType ty => C.Foldable (UVector ty) where
+    foldl = foldl
+    foldr = foldr
+    foldl' = foldl'
+
 instance PrimType ty => C.SemiOrderedCollection (UVector ty) where
     snoc = snoc
     cons = cons
@@ -608,3 +613,27 @@ reverse a = create len toEnd
   where
     len = length a
     toEnd i = unsafeIndex a (len - i - 1)
+
+foldl :: PrimType ty => (a -> ty -> a) -> a -> UVector ty -> a
+foldl f initialAcc vec = loop 0 initialAcc
+  where
+    len = length vec
+    loop i acc
+        | i == len  = acc
+        | otherwise = loop (i+1) (f acc (unsafeIndex vec i))
+
+foldr :: PrimType ty => (ty -> a -> a) -> a -> UVector ty -> a
+foldr f initialAcc vec = loop 0
+  where
+    len = length vec
+    loop i
+        | i == len  = initialAcc
+        | otherwise = unsafeIndex vec i `f` loop (i+1)
+
+foldl' :: PrimType ty => (a -> ty -> a) -> a -> UVector ty -> a
+foldl' f initialAcc vec = loop 0 initialAcc
+  where
+    len = length vec
+    loop i !acc
+        | i == len  = acc
+        | otherwise = loop (i+1) (f acc (unsafeIndex vec i))
