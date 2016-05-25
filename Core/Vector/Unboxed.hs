@@ -276,7 +276,7 @@ copyAddr :: (PrimMonad prim, PrimType ty)
          -> Int                -- ^ number of elements to copy
          -> prim ()
 copyAddr (MA dst) (I# od) (Ptr src) (I# os) (I# sz) = primitive $ \s ->
-    (# copyAddrToByteArray# (plusAddr# src os) dst od sz s, () #)
+    (# compatCopyAddrToByteArray# (plusAddr# src os) dst od sz s, () #)
 
 -- | return the number of elements of the array.
 length :: UVector ty -> Int
