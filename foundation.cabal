@@ -43,6 +43,7 @@ Library
                      Core.Collection
                      Core.Chunks
                      Core.Primitive
+                     Core.Data.STuple
                      -- Core.View
   Other-modules:     Core.String.Internal
                      Core.String.UTF8
