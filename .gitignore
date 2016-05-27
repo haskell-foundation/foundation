@@ -3,4 +3,5 @@
 *.tix
 *.mix
 .stack-work
+exts
 dist
