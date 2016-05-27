@@ -72,6 +72,10 @@ Collection properties:
 | Indexing             | Int (impl) | Int (impl) | Int (impl) | v     | k       | v         | k           |
 | Element              | Char       | a          | a          | ()    | v       | ()        | v           |
 | Length               | o(1)       | o(n)       | o(1)       |       |         |           |             |
+| Ordered              | ✔          | ✔          | ✔          | ✔     | ✔       |           |             |
+| Sorted               |            |            |            | ✔     | ✔       |           |             |
+| Order Preserving     | ✔          | ✔          | ✔          |       |         |           |             |
+| Duplicate Allowed    | ✔          | ✔          | ✔          |       |         |           |             |
 
 Operation supported by different collections:
 
