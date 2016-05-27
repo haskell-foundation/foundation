@@ -9,12 +9,21 @@ class KnownNat n => Nthable n a where
     type NthTy n a
     nth :: proxy n -> a -> NthTy n a
 
+--------------------
+-- 2 elements tuple
+--------------------
+
 instance Nthable 1 (a,b) where
     type NthTy 1 (a,b) = a
     nth _ (a,_) = a
 instance Nthable 2 (a,b) where
     type NthTy 2 (a,b) = b
     nth _ (_,b) = b
+
+--------------------
+-- 3 elements tuple
+--------------------
+
 instance Nthable 1 (a,b,c) where
     type NthTy 1 (a,b,c) = a
     nth _ (a,_,_) = a
@@ -24,6 +33,11 @@ instance Nthable 2 (a,b,c) where
 instance Nthable 3 (a,b,c) where
     type NthTy 3 (a,b,c) = c
     nth _ (_,_,c) = c
+
+--------------------
+-- 4 elements tuple
+--------------------
+
 instance Nthable 1 (a,b,c,d) where
     type NthTy 1 (a,b,c,d) = a
     nth _ (a,_,_,_) = a
