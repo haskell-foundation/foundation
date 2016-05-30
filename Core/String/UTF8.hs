@@ -65,6 +65,9 @@ instance C.OrderedCollection String where
     take = take
     drop = drop
     splitAt = splitAt
+    revTake = revTake
+    revDrop = revDrop
+    revSplitAt = revSplitAt
     splitOn = splitOn
     break = break
     span = span
