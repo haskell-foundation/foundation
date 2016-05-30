@@ -4,6 +4,7 @@ module Core.Data.STuple
     , Tuple3(..)
     , Tuple4(..)
     , Fstable(..)
+    , Sndable(..)
     ) where
 
 import Core.Internal.Base
