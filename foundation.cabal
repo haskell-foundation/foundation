@@ -1,10 +1,10 @@
 Name:                foundation
 Version:             0.0
-Synopsis:            foundational things (prelude, better default classes, better default types like array and strings)
+Synopsis:            Alternative prelude with batteries and no dependencies
 Description:
     A custom prelude with no dependencies apart from base.
     .
-    This package has 5 goals:
+    This package has the following goals:
     .
     * provide a base like sets of modules that provide a consistent set of features and bugfixes across multiple versions of GHC (unlike base).
     .
@@ -16,6 +16,9 @@ Description:
     .
     * Better numerical classes that better represent mathematical thing (No more all-in-one Num).
     .
+    * Better I/O system with less Lazy IO
+    .
+    * Usual partial functions distinguished through type system
 License:             BSD3
 License-file:        LICENSE
 Copyright:           Vincent Hanquez <vincent@snarc.org>
