@@ -22,7 +22,7 @@ module Core.Collection
     ) where
 
 import           Core.Internal.Base
-import           Core.Collection.List
+import qualified Core.Collection.List as ListExtra
 import           Core.Collection.Element
 import           Core.Collection.Keyed
 import           Core.Collection.Foldable
