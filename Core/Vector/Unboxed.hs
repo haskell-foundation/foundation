@@ -15,8 +15,8 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
 module Core.Vector.Unboxed
-    ( UVector
-    , MUVector
+    ( UVector(..)
+    , MUVector(..)
     , PrimType(..)
     -- * methods
     , mutableLength

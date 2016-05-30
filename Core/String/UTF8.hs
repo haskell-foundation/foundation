@@ -13,6 +13,7 @@
 module Core.String.UTF8
     ( String(..)
     --, Buffer
+    , create
     , replicate
     ) where
 
@@ -25,6 +26,9 @@ import           Core.Internal.Primitive
 import qualified Core.Collection as C
 import           Core.Primitive.Monad
 import           Core.String.UTF8Table
+import           Core.Vector.Unboxed (MUVector)
+import qualified Core.Vector.Unboxed as Vec
+import           Core.Number
 
 import qualified Data.List -- temporary
 
@@ -394,6 +398,14 @@ sizeBytes (String ba) = I# (sizeofByteArray# ba)
 
 new :: PrimMonad prim => Int -> prim (Buffer (PrimState prim))
 new (I# n) = primitive $ \st -> let (# st2, mba #) = newByteArray# n st in (# st2, Buffer mba #)
+
+create :: PrimMonad prim => Int -> (MUVector Word8 (PrimState prim) -> prim Int) -> prim String
+create sz f = do
+    muv@(Vec.MA mba) <- Vec.new sz
+    filled           <- f muv
+    if filled == sz
+        then primitive $ freeze mba
+        else take filled `fmap` primitive (freeze mba)
 
 charToBytes :: Int -> Int
 charToBytes c
