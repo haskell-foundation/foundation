@@ -60,7 +60,7 @@ class SemiOrderedCollection c where
 
 -- | A set of methods for ordered colection
 class (IsList c, Item c ~ Element c, Monoid c, SemiOrderedCollection c) => OrderedCollection c where
-    {-# MINIMAL null, ((take, drop) | splitAt), splitOn, (break | span), filter, reverse #-}
+    {-# MINIMAL null, ((take, drop) | splitAt), ((revTake, revDrop) | revSplitAt), splitOn, (break | span), filter, reverse #-}
     -- | Check if a collection is empty
     null :: c -> Bool
 
@@ -68,13 +68,25 @@ class (IsList c, Item c ~ Element c, Monoid c, SemiOrderedCollection c) => Order
     take :: Int -> c -> c
     take n = fst . splitAt n
 
+    -- | Take the last @n elements of a collection
+    revTake :: Int -> c -> c
+    revTake n = fst . revSplitAt n
+
     -- | Drop the first @n elements of a collection
     drop :: Int -> c -> c
     drop n = snd . splitAt n
 
+    -- | Drop the last @n elements of a collection
+    revDrop :: Int -> c -> c
+    revDrop n = snd . revSplitAt n
+
     -- | Split the collection at the @n'th elements
     splitAt :: Int -> c -> (c,c)
     splitAt n c = (take n c, drop n c)
+
+    -- | Split the collection at the @n'th elements from the end
+    revSplitAt :: Int -> c -> (c,c)
+    revSplitAt n c = (revTake n c, revDrop n c)
 
     -- | Split on a specific elements returning a list of colletion
     splitOn :: (Element c -> Bool) -> c -> [c]
@@ -104,8 +116,11 @@ instance OrderedCollection [a] where
     null = Data.List.null
     take = Data.List.take
     drop = Data.List.drop
+    revTake = ListExtra.revTake
+    revDrop = ListExtra.revDrop
     splitAt = Data.List.splitAt
-    splitOn = wordsWhen
+    revSplitAt = ListExtra.revSplitAt
+    splitOn = ListExtra.wordsWhen
     break = Data.List.break
     span = Data.List.span
     filter = Data.List.filter

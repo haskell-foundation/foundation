@@ -287,6 +287,16 @@ splitAt (I# n) s@(String ba)
         | bool# (i ==# n)    = splitIndex idx ba
         | otherwise          = loop (skipNext ba idx) (i +# 1#)
 
+revTake :: Int -> String -> String
+revTake nbElems v = drop (length v - nbElems) v
+
+revDrop :: Int -> String -> String
+revDrop nbElems v = take (length v - nbElems) v
+
+revSplitAt :: Int -> String -> (String, String)
+revSplitAt n v = (drop idx v, take idx v)
+  where idx = length v - n
+
 -- | Split on the input string using the predicate as separator
 --
 -- e.g.

@@ -100,8 +100,11 @@ instance PrimType ty => C.SemiOrderedCollection (UVector ty) where
 instance PrimType ty => C.OrderedCollection (UVector ty) where
     null = null
     take = take
+    revTake = revTake
     drop = drop
+    revDrop = revDrop
     splitAt = splitAt
+    revSplitAt = revSplitAt
     splitOn = splitOn
     break = break
     span = span
@@ -488,6 +491,16 @@ drop nbElems v
 
 splitAt :: PrimType ty => Int -> UVector ty -> (UVector ty, UVector ty)
 splitAt n v = (take n v, drop n v)
+
+revTake :: PrimType ty => Int -> UVector ty -> UVector ty
+revTake nbElems v = drop (length v - nbElems) v
+
+revDrop :: PrimType ty => Int -> UVector ty -> UVector ty
+revDrop nbElems v = take (length v - nbElems) v
+
+revSplitAt :: PrimType ty => Int -> UVector ty -> (UVector ty, UVector ty)
+revSplitAt n v = (drop idx v, take idx v)
+  where idx = length v - n
 
 splitOn :: PrimType ty => (ty -> Bool) -> UVector ty -> [UVector ty]
 splitOn predicate vec
