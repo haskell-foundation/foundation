@@ -15,6 +15,10 @@ module Core.String.UTF8
     --, Buffer
     , create
     , replicate
+    -- * Binary conversion
+    , Encoding(..)
+    , fromBytes
+    , fromBytesUnsafe
     ) where
 
 import           GHC.Prim
@@ -26,7 +30,7 @@ import           Core.Internal.Primitive
 import qualified Core.Collection as C
 import           Core.Primitive.Monad
 import           Core.String.UTF8Table
-import           Core.Vector.Unboxed (MUVector)
+import           Core.Vector.Unboxed (MUVector, ByteArray)
 import qualified Core.Vector.Unboxed as Vec
 import           Core.Number
 
@@ -34,7 +38,10 @@ import qualified Data.List -- temporary
 
 -- | Opaque packed array of characters in the UTF8 encoding
 data String = String ByteArray#
+--newtype String = String (UVector Word8)
 
+--newtype MutableString st = MutableString (MUVector Word8 st)
+--
 data Buffer st = Buffer (MutableByteArray# st)
 
 instance Show String where
@@ -78,28 +85,50 @@ instance C.OrderedCollection String where
     filter = filter
     reverse = reverse
 
-{-
-validate :: ByteArray# -> Int# -> (# Bool, Int# #)
-validate ba n =
-    case getNbBytes# h of
-        0# -> (# True, n +# 1# #)
-        1# -> (# isContinuation# (indexWord8Array# ba (n +# 1#)) , n +# 2# #)
-        2# -> (# isContinuation# (indexWord8Array# ba (n +# 1#)) &&
-                 isContinuation# (indexWord8Array# ba (n +# 2#)) , n +# 3# #)
-        3# -> (# isContinuation# (indexWord8Array# ba (n +# 1#)) &&
-                 isContinuation# (indexWord8Array# ba (n +# 2#)) &&
-                 isContinuation# (indexWord8Array# ba (n +# 3#)) , n +# 4# #)
-        _  -> (# False, n #)
+validateAt :: ByteArray# -> Offset# -> Size# -> (# Bool, Offset# #)
+validateAt ba n maxBytes
+    | bool# (nbBytes ># maxBytes) = (# False, n #)
+    | otherwise =
+        case nbBytes of
+            0# -> (# True, n +# 1# #)
+            1# -> (# isContinuation# (indexWord8Array# ba (n +# 1#)) , n +# 2# #)
+            2# -> (# isContinuation# (indexWord8Array# ba (n +# 1#)) &&
+                     isContinuation# (indexWord8Array# ba (n +# 2#)) , n +# 3# #)
+            3# -> (# isContinuation# (indexWord8Array# ba (n +# 1#)) &&
+                     isContinuation# (indexWord8Array# ba (n +# 2#)) &&
+                     isContinuation# (indexWord8Array# ba (n +# 3#)) , n +# 4# #)
+            _  -> (# False, n #)
   where
+    !nbBytes = getNbBytes# h
     !h = indexWord8Array# ba n
--}
 
-skipNext :: ByteArray# -> Int# -> Int#
+-- | Return whether the input is a valid UTF8 encoding
+validate :: ByteArray -> Int -> Int -> Maybe Int
+validate (Vec.A _ ba) (I# ofs) (I# n) = loopAligned ofs
+  where loopAligned pos
+            | bool# (pos ==# n)  = Nothing
+            | bool# (posp4 ># n) = loopSlow pos
+            | otherwise          =
+                -- fast case: check if we have 4 ASCII characters
+                let r = and# (indexWord32Array# ba pos) 0x80808080##
+                 in if bool# (eqWord# r 0##)
+                        then loopAligned posp4
+                        else loopSlow pos
+          where
+            !posp4 = pos +# 4#
+        loopSlow pos
+            | bool# (pos ==# n) = Nothing
+            | otherwise =
+                case validateAt ba pos (n -# pos) of
+                    (# True, nextPos #) -> loopSlow nextPos
+                    (# False, _      #) -> Just (I# pos)
+
+skipNext :: ByteArray# -> Offset# -> Int#
 skipNext ba n = n +# 1# +# getNbBytes# h
   where
     !h = indexWord8Array# ba n
 
-next :: ByteArray# -> Int# -> (# Char, Int# #)
+next :: ByteArray# -> Offset# -> (# Char, Offset# #)
 next ba n =
     case getNbBytes# h of
         0# -> (# toChar h, n +# 1# #)
@@ -546,3 +575,18 @@ reverse (String ba) = runST $ do
                              in st5
                         _  -> st -- impossible
              in loop mba (sidx +# nb) d st'
+
+-- | String encoding
+data Encoding = UTF8
+    deriving (Show,Eq)
+
+-- | Convert a Byte Array to a string and check UTF8 validity
+fromBytes :: Encoding -> ByteArray -> Maybe String
+fromBytes UTF8 bytes =
+    case validate bytes 0 (C.length bytes) of
+        Nothing -> Just $ fromBytesUnsafe bytes
+        Just _  -> Nothing
+
+-- | Convert a Byte Array directly to a string without checking for UTF8 validity
+fromBytesUnsafe :: ByteArray -> String
+fromBytesUnsafe (Vec.A _ ba) = String ba
