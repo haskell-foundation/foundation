@@ -10,6 +10,8 @@
 {-# LANGUAGE CPP #-}
 module Core.Internal.Primitive
     ( bool#
+    , Offset#
+    , Size#
     , compatAndI#
     , compatQuotRemInt#
     , compatCopyAddrToByteArray#
@@ -25,6 +27,16 @@ import           GHC.Word
 --  GHC 7.8  | Base 4.7
 --  GHC 7.6  | Base 4.6
 --  GHC 7.4  | Base 4.5
+
+-- | Offset in a bytearray, string, type alias
+--
+-- for code documentation purpose only, just a simple type alias on Int#
+type Offset# = Int#
+
+-- | Size in bytes type alias
+--
+-- for code documentation purpose only, just a simple type alias on Int#
+type Size# = Int#
 
 -- | turn an Int# into a Bool
 --
