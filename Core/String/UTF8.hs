@@ -401,7 +401,7 @@ new (I# n) = primitive $ \st -> let (# st2, mba #) = newByteArray# n st in (# st
 
 create :: PrimMonad prim => Int -> (MUVector Word8 (PrimState prim) -> prim Int) -> prim String
 create sz f = do
-    muv@(Vec.MA mba) <- Vec.new sz
+    muv@(Vec.MA _ mba) <- Vec.new sz
     filled           <- f muv
     if filled == sz
         then primitive $ freeze mba
