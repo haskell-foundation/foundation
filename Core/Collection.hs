@@ -56,8 +56,6 @@ class SemiOrderedCollection c where
     -- | Create a collection with a single element
     singleton :: Element c -> c
 
-
-
 -- | A set of methods for ordered colection
 class (IsList c, Item c ~ Element c, Monoid c, SemiOrderedCollection c) => OrderedCollection c where
     {-# MINIMAL null, ((take, drop) | splitAt), ((revTake, revDrop) | revSplitAt), splitOn, (break | span), filter, reverse #-}
