@@ -21,7 +21,7 @@ import           Core.Internal.Base (Exception, (.))
 -- | Primitive monad that can handle mutation.
 --
 -- For example: IO and ST.
-class Prelude.Monad m => PrimMonad m where
+class (Prelude.Functor m, Prelude.Monad m) => PrimMonad m where
     -- | type of state token associated with the PrimMonad m
     type PrimState m
     -- | Unwrap the State# token to pass to a function a primitive function that returns an unboxed state and a value.
