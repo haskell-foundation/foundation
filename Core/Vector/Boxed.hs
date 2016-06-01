@@ -69,6 +69,9 @@ instance C.OrderedCollection (Vector ty) where
     take = take
     drop = drop
     splitAt = splitAt
+    revTake = revTake
+    revDrop = revDrop
+    revSplitAt = revSplitAt
     splitOn = splitOn
     break = break
     span = span
@@ -369,6 +372,16 @@ drop nbElems v
 
 splitAt ::  Int -> Vector ty -> (Vector ty, Vector ty)
 splitAt n v = (take n v, drop n v)
+
+revTake :: Int -> Vector ty -> Vector ty
+revTake nbElems v = drop (length v - nbElems) v
+
+revDrop :: Int -> Vector ty -> Vector ty
+revDrop nbElems v = take (length v - nbElems) v
+
+revSplitAt :: Int -> Vector ty -> (Vector ty, Vector ty)
+revSplitAt n v = (drop idx v, take idx v)
+  where idx = length v - n
 
 splitOn ::  (ty -> Bool) -> Vector ty -> [Vector ty]
 splitOn predicate vec
