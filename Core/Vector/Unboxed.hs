@@ -53,7 +53,6 @@ import           Core.Primitive.Utils
 import qualified Core.Collection as C
 import           Core.Vector.Common
 import           Core.Number
---import           Foreign.ForeignPtr
 import qualified Data.List
 
 -- | An array of type built on top of GHC primitive.
@@ -61,14 +60,12 @@ import qualified Data.List
 -- The elements need to have fixed sized and the representation is a
 -- packed contiguous array in memory that can easily be passed
 -- to foreign interface
-data UVector ty = UVecBA      {-# UNPACK #-} !Int# ByteArray#
-                -- | UVecForeign {-# UNPACK #-} !Int# (ForeignPtr ())
+data UVector ty = UVecBA !Int# ByteArray#
 
 -- | A Mutable array of types built on top of GHC primitive.
 --
 -- Element in this array can be modified in place.
 data MUVector ty st = MUVecMA Int# (MutableByteArray# st)
-                    -- | MUVecForeign  (ForeignPtr ())
 
 -- | Byte Array alias
 type ByteArray = UVector Word8
