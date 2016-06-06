@@ -4,6 +4,7 @@ module Core.Primitive.FinalPtr
     ( FinalPtr
     , toFinalPtr
     , withFinalPtr
+    , withUnsafeFinalPtr
     ) where
 
 import GHC.Prim
@@ -29,3 +30,6 @@ withFinalPtr (FinalPtr ptr) f = do
     r <- f ptr
     primTouch ptr
     return r
+
+withUnsafeFinalPtr :: PrimMonad prim => FinalPtr p -> (Ptr p -> prim a) -> a
+withUnsafeFinalPtr fptr f = unsafePerformIO (unsafePrimToIO (withFinalPtr fptr f))

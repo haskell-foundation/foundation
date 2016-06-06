@@ -21,6 +21,7 @@ module Core.Primitive.Monad
     , unPrimMonad_
     , unsafePrimCast
     , unsafePrimToST
+    , unsafePrimToIO
     , unsafePrimFromIO
     , primTouch
     ) where
@@ -71,11 +72,15 @@ unsafePrimCast :: (PrimMonad m1, PrimMonad m2) => m1 a -> m2 a
 unsafePrimCast m = primitive (unsafeCoerce# (unPrimMonad m))
 
 -- | Convert any prim monad to an ST monad
-unsafePrimToST :: PrimMonad m => m a -> ST s a
+unsafePrimToST :: PrimMonad prim => prim a -> ST s a
 unsafePrimToST = unsafePrimCast
+
+unsafePrimToIO :: PrimMonad prim => prim a -> IO a
+unsafePrimToIO = unsafePrimCast
 
 unsafePrimFromIO :: PrimMonad prim => IO a -> prim a
 unsafePrimFromIO = unsafePrimCast
+
 
 -- | Touch primitive lifted to any prim monad
 primTouch :: PrimMonad m => a -> m ()
