@@ -64,6 +64,7 @@ Library
                      Core.Internal.Proxy
                      Core.Primitive.Types
                      Core.Primitive.Monad
+                     Core.Primitive.FinalPtr
                      Core.Primitive.Utils
                      Core.Vector.Common
                      Core.Vector.Unboxed

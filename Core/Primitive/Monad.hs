@@ -5,18 +5,31 @@
 -- Stability   : experimental
 -- Portability : portable
 --
+-- Allow to run operation in ST and IO, without having to
+-- distinguinsh between the two. Most operations exposes
+-- the bare nuts and bolts of how IO and ST actually
+-- works, and relatively easy to shoot yourself in the foot
+--
+-- this is highly similar to the Control.Monad.Primitive
+-- in the primitive package
+--
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
+{-# LANGUAGE ExistentialQuantification #-}
 module Core.Primitive.Monad
     ( PrimMonad(..)
-    , runPrimMonad_
+    , unPrimMonad_
+    , unsafePrimCast
+    , unsafePrimToST
+    , unsafePrimFromIO
+    , primTouch
     ) where
 
 import qualified Prelude
 import           GHC.ST
 import           GHC.IO
 import           GHC.Prim
-import           Core.Internal.Base (Exception, (.))
+import           Core.Internal.Base (Exception, (.), ($))
 
 -- | Primitive monad that can handle mutation.
 --
@@ -29,22 +42,41 @@ class (Prelude.Functor m, Prelude.Monad m) => PrimMonad m where
     -- | Throw Exception in the primitive monad
     primThrow :: Exception e => e -> m a
     -- | Run a Prim monad from a dedicated state#
-    runPrimMonad  :: m a -> State# (PrimState m) -> (# State# (PrimState m), a #)
+    unPrimMonad  :: m a -> State# (PrimState m) -> (# State# (PrimState m), a #)
 
--- | just like `internal` but throw away the result and return just the new State#
-runPrimMonad_ :: PrimMonad m => m () -> State# (PrimState m) -> State# (PrimState m)
-runPrimMonad_ p st =
-    case runPrimMonad p st of
+-- | just like `unwrapPrimMonad` but throw away the result and return just the new State#
+unPrimMonad_ :: PrimMonad m => m () -> State# (PrimState m) -> State# (PrimState m)
+unPrimMonad_ p st =
+    case unPrimMonad p st of
         (# st', () #) -> st'
 
 instance PrimMonad IO where
     type PrimState IO = RealWorld
     primitive = IO
     primThrow = throwIO
-    runPrimMonad (IO p) = p
+    unPrimMonad (IO p) = p
 
 instance PrimMonad (ST s) where
     type PrimState (ST s) = s
     primitive = ST
     primThrow = unsafeIOToST . throwIO
-    runPrimMonad (ST p) = p
+    unPrimMonad (ST p) = p
+
+-- | Convert a prim monad to another prim monad.
+--
+-- The net effect is that it coerce the state repr to another,
+-- so the runtime representation should be the same, otherwise
+-- hilary ensues.
+unsafePrimCast :: (PrimMonad m1, PrimMonad m2) => m1 a -> m2 a
+unsafePrimCast m = primitive (unsafeCoerce# (unPrimMonad m))
+
+-- | Convert any prim monad to an ST monad
+unsafePrimToST :: PrimMonad m => m a -> ST s a
+unsafePrimToST = unsafePrimCast
+
+unsafePrimFromIO :: PrimMonad prim => IO a -> prim a
+unsafePrimFromIO = unsafePrimCast
+
+-- | Touch primitive lifted to any prim monad
+primTouch :: PrimMonad m => a -> m ()
+primTouch x = unsafePrimFromIO $ primitive $ \s -> case touch# x s of { s2 -> (# s2, () #) }
