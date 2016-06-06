@@ -68,7 +68,7 @@ data UVector ty = UVecBA !Int# {- unpinned / pinned flag -} ByteArray#
 --
 -- Element in this array can be modified in place.
 data MUVector ty st = MUVecMA Int# (MutableByteArray# st)
-                    -- | MUVecAddr Int# (FinalPtr ())
+                    -- MUVecAddr Int# (FinalPtr ())
 
 -- | Byte Array alias
 type ByteArray = UVector Word8

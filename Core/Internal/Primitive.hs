@@ -49,6 +49,7 @@ bool# :: Prelude.Bool -> Prelude.Bool
 bool# v = v
 #endif
 
+-- | A version friendly of andI#
 compatAndI# :: Int# -> Int# -> Int#
 #if !MIN_VERSION_base(4,7,0)
 compatAndI# a b = word2Int# (and# (int2Word# a) (int2Word# b))
@@ -57,6 +58,7 @@ compatAndI# = andI#
 #endif
 {-# INLINE compatAndI# #-}
 
+-- | A version friendly of quotRemInt#
 compatQuotRemInt# :: Int# -> Int# -> (# Int#, Int# #)
 #if !MIN_VERSION_base(4,6,0)
 compatQuotRemInt# a b = (# quotInt# a b, remInt# a b #)
@@ -65,6 +67,8 @@ compatQuotRemInt# = quotRemInt#
 #endif
 {-# INLINE compatQuotRemInt# #-}
 
+-- | A version friendly fo copyAddrToByteArray#
+--
 -- only available from GHC 7.8
 compatCopyAddrToByteArray# :: Addr# -> MutableByteArray# s -> Int# -> Int# -> State# s -> State# s
 #if MIN_VERSION_base(4,7,0)

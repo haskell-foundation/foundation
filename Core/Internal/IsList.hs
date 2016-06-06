@@ -1,3 +1,11 @@
+-- |
+-- Module      : Core.Internal.IsList
+-- License     : BSD-style
+-- Maintainer  : Vincent Hanquez <vincent@snarc.org>
+-- Stability   : experimental
+-- Portability : portable
+--
+-- compat friendly version of IsList
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE CPP #-}
 module Core.Internal.IsList
@@ -18,7 +26,7 @@ class IsList l where
   toList    :: l -> [Item l]
 
   fromListN :: Prelude.Int -> [Item l] -> l
-  fromListN _ = fromList  
+  fromListN _ = fromList
 
 instance IsList [a] where
     type Item [a] = a

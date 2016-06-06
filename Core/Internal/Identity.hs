@@ -1,3 +1,12 @@
+-- |
+-- Module      : Core.Internal.Identity
+-- License     : BSD-style
+-- Maintainer  : Vincent Hanquez <vincent@snarc.org>
+-- Stability   : experimental
+-- Portability : portable
+--
+-- Identity re-export, with a compat wrapper for older version of base that
+-- do not have Data.Functor.Identity
 {-# LANGUAGE CPP #-}
 module Core.Internal.Identity
     ( Identity(..)

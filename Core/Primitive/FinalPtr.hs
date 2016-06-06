@@ -1,3 +1,14 @@
+-- |
+-- Module      : Core.Primitive.FinalPtr
+-- License     : BSD-style
+-- Maintainer  : Vincent Hanquez <vincent@snarc.org>
+-- Stability   : experimental
+-- Portability : portable
+--
+-- A smaller ForeignPtr reimplementation that work in any prim monad.
+--
+-- Here be dragon.
+--
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
 module Core.Primitive.FinalPtr
@@ -31,5 +42,6 @@ withFinalPtr (FinalPtr ptr) f = do
     primTouch ptr
     return r
 
+-- | Unsafe version of 'withFinalPtr'
 withUnsafeFinalPtr :: PrimMonad prim => FinalPtr p -> (Ptr p -> prim a) -> a
 withUnsafeFinalPtr fptr f = unsafePerformIO (unsafePrimToIO (withFinalPtr fptr f))

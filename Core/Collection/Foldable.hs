@@ -1,3 +1,12 @@
+-- |
+-- Module      : Core.Primitive.Foldable
+-- License     : BSD-style
+-- Maintainer  : Vincent Hanquez <vincent@snarc.org>
+-- Stability   : experimental
+-- Portability : portable
+--
+-- A mono-morphic re-thinking of the Foldable class
+--
 module Core.Collection.Foldable
     ( Foldable(..)
     ) where
@@ -6,6 +15,7 @@ import           Core.Internal.Base
 import           Core.Collection.Element
 import qualified Data.List
 
+-- | Give the ability to fold a collection on itself
 class Foldable collection where
     -- | Left-associative fold of a structure.
     --

@@ -75,12 +75,13 @@ unsafePrimCast m = primitive (unsafeCoerce# (unPrimMonad m))
 unsafePrimToST :: PrimMonad prim => prim a -> ST s a
 unsafePrimToST = unsafePrimCast
 
+-- | Convert any prim monad to an IO monad
 unsafePrimToIO :: PrimMonad prim => prim a -> IO a
 unsafePrimToIO = unsafePrimCast
 
+-- | Convert any IO monad to a prim monad
 unsafePrimFromIO :: PrimMonad prim => IO a -> prim a
 unsafePrimFromIO = unsafePrimCast
-
 
 -- | Touch primitive lifted to any prim monad
 primTouch :: PrimMonad m => a -> m ()

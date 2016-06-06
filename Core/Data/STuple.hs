@@ -1,3 +1,10 @@
+-- |
+-- Module      : Core.Data.STuple
+-- License     : BSD-style
+-- Maintainer  : Vincent Hanquez <vincent@snarc.org>
+-- Stability   : experimental
+-- Portability : portable
+--
 {-# LANGUAGE DeriveDataTypeable #-}
 module Core.Data.STuple
     ( Tuple2(..)
@@ -22,9 +29,11 @@ data Tuple3 a b c = Tuple3 !a !b !c
 data Tuple4 a b c d = Tuple4 !a !b !c !d
     deriving (Show,Eq,Ord,Typeable,Data)
 
+-- | Class of product types that have a first element
 class Fstable a where
     type FstTy a
     fst :: a -> FstTy a
+-- | Class of product types that have a second element
 class Sndable a where
     type SndTy a
     snd :: a -> SndTy a

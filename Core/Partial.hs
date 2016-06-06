@@ -35,12 +35,14 @@ partial = pure
 fromPartial :: Partial a -> a
 fromPartial (Partial ida) = runIdentity ida
 
+-- | Partial function to get the head of a list
 head :: [a] -> Partial a
 head l = partial $
     case l of
         []  -> error "head: empty list"
         x:_ -> x
 
+-- | Partial function to grab the value inside a Maybe
 fromJust :: Maybe a -> Partial a
 fromJust x = partial $
     case x of
