@@ -69,7 +69,7 @@ instance C.SemiOrderedCollection String where
     sortBy = sortBy
     length = length
     singleton = fromList . (:[])
-instance C.OrderedCollection String where
+instance C.Sequential String where
     null = null
     take = take
     drop = drop
