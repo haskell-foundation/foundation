@@ -75,6 +75,10 @@ module Core
     , Prelude.Rational
     , Prelude.Float
     , Prelude.Double
+      -- ** Collection types
+    , UVector
+    , Vector
+    , String
       -- ** Numeric functions
     -- , (Prelude.^)
     , (Prelude.^^)
@@ -145,6 +149,7 @@ import qualified Data.Traversable
 import           Data.Word (Word8, Word16, Word32, Word64, Word)
 import           Data.Int (Int8, Int16, Int32, Int64)
 import           Core.String (String)
+import           Core.Vector (UVector, Vector)
 --import           Core.Collection
 import qualified Core.String.IO
 
