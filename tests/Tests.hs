@@ -116,7 +116,7 @@ testMonoid proxy genElement =
     with2Elements f = forAll ((,) <$> listOfElement genElement <*> listOfElement genElement) f
     withNElements f = forAll (listOfElementMaxN 5 (listOfElement genElement)) f
 
-testCollection :: (Show e, Eq a, Eq e, Ord a, Ord e, Arbitrary e, OrderedCollection a, Item a ~ Element a, Element a ~ e) => Proxy a -> Gen e -> [TestTree]
+testCollection :: (Show e, Eq a, Eq e, Ord a, Ord e, Arbitrary e, SemiOrderedCollection a, Sequential a, Item a ~ Element a, Element a ~ e) => Proxy a -> Gen e -> [TestTree]
 testCollection proxy genElement =
     testMonoid proxy genElement <>
     [ testProperty "LString-convert" $ withElements $ isIdemPotent (toList . fromListP proxy)

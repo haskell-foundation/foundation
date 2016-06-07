@@ -52,8 +52,8 @@ instance (IsList s, C.InnerFunctor s, C.SemiOrderedCollection s)
     length = length
     singleton x = Chunk (C.singleton x) End
 
-instance (IsList s, C.InnerFunctor s, C.OrderedCollection s)
-        => C.OrderedCollection (Chunks s) where
+instance (IsList s, C.InnerFunctor s, C.SemiOrderedCollection s, C.Sequential s)
+        => C.Sequential (Chunks s) where
     null = null
     take = take
     drop = drop
@@ -104,12 +104,12 @@ sortBy :: C.SemiOrderedCollection s
        -> Chunks s
 sortBy = undefined
 
-null :: C.OrderedCollection s => Chunks s -> Bool
+null :: C.Sequential s => Chunks s -> Bool
 null End           = True
 null (Chunk s End) = C.null s
 null (Chunk s l)   = C.null s && null l
 
-take :: C.OrderedCollection s => Int -> Chunks s -> Chunks s
+take :: (C.SemiOrderedCollection s, C.Sequential s) => Int -> Chunks s -> Chunks s
 take n l
     | n <= 0    = End
     | otherwise =
@@ -121,7 +121,7 @@ take n l
                         then Chunk (C.take n s) End
                         else Chunk s (take (n - len) r)
 
-drop :: C.OrderedCollection s => Int -> Chunks s -> Chunks s
+drop :: (C.SemiOrderedCollection s, C.Sequential s) => Int -> Chunks s -> Chunks s
 drop n l
     | n <= 0    = l
     | otherwise =
@@ -133,7 +133,7 @@ drop n l
                         then Chunk (C.drop n s) r
                         else drop (n - len) l
 
-splitAt :: C.OrderedCollection s => Int -> Chunks s -> (Chunks s, Chunks s)
+splitAt :: (C.SemiOrderedCollection s, C.Sequential s) => Int -> Chunks s -> (Chunks s, Chunks s)
 splitAt _ End = (End, End)
 splitAt nbElements chunks
     | nbElements <= 0 = (End, chunks)
@@ -145,7 +145,7 @@ splitAt nbElements chunks
         | otherwise = loop (n - len) (\x -> toChunks (Chunk s x)) r
       where len = C.length s
 
-splitOn :: (C.Element (Chunks s) ~ Item s, C.OrderedCollection s) => (C.Element (Chunks s) -> Bool) -> Chunks s -> [Chunks s]
+splitOn :: (C.Element (Chunks s) ~ Item s, C.Sequential s) => (C.Element (Chunks s) -> Bool) -> Chunks s -> [Chunks s]
 splitOn predicate = fmap fromList . C.splitOn predicate . toList
     {-
     loop id
@@ -158,7 +158,7 @@ splitOn predicate = fmap fromList . C.splitOn predicate . toList
     loop toChunk End = toChunk End
     -}
 
-break :: (C.Element (Chunks s) ~ Item s, C.OrderedCollection s) => (C.Element (Chunks s) -> Bool) -> Chunks s -> (Chunks s, Chunks s)
+break :: (C.Element (Chunks s) ~ Item s, C.Sequential s) => (C.Element (Chunks s) -> Bool) -> Chunks s -> (Chunks s, Chunks s)
 break predicate = loop id
   where
     loop toChunk (Chunk s r) =
@@ -168,16 +168,16 @@ break predicate = loop id
             else (toChunk (Chunk s1 End), Chunk s2 r)
     loop toChunk End = (toChunk End, End)
 
-span :: (C.Element (Chunks s) ~ Item s, C.OrderedCollection s) => (C.Element (Chunks s) -> Bool) -> Chunks s -> (Chunks s, Chunks s)
+span :: (C.Element (Chunks s) ~ Item s, C.Sequential s) => (C.Element (Chunks s) -> Bool) -> Chunks s -> (Chunks s, Chunks s)
 span predicate = break (not . predicate)
 
-reverse :: C.OrderedCollection s => Chunks s -> Chunks s
+reverse :: C.Sequential s => Chunks s -> Chunks s
 reverse = loop End
   where
     loop stream End         = stream
     loop stream (Chunk s r) = loop (Chunk (C.reverse s) stream) r
 
-filter :: (C.Element (Chunks s) ~ Item s, C.OrderedCollection s) => (C.Element (Chunks s) -> Bool) -> Chunks s -> Chunks s
+filter :: (C.Element (Chunks s) ~ Item s, C.Sequential s) => (C.Element (Chunks s) -> Bool) -> Chunks s -> Chunks s
 filter f = mapChunks (C.filter f)
 
 mapChunks :: (s -> s) -> Chunks s -> Chunks s
@@ -200,7 +200,7 @@ foldChunks f initialAcc = loop initialAcc
 
 -- | Recreate chunks of specific size from a stream of chunks of
 -- each unknown and arbitrary size
-reChunk :: C.OrderedCollection s => Int -> Chunks s -> Chunks s
+reChunk :: (C.SemiOrderedCollection s, C.Sequential s) => Int -> Chunks s -> Chunks s
 reChunk n c =
     let (s1, s2) = splitAt n c
         s' = mconcat $ C.reverse $ foldChunks (flip (:)) [] s1

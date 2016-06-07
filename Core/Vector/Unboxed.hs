@@ -109,7 +109,7 @@ instance PrimType ty => C.SemiOrderedCollection (UVector ty) where
     length = length
     singleton = fromList . (:[])
 
-instance PrimType ty => C.OrderedCollection (UVector ty) where
+instance PrimType ty => C.Sequential (UVector ty) where
     null = null
     take = take
     revTake = revTake

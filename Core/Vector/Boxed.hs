@@ -64,7 +64,7 @@ instance C.SemiOrderedCollection (Vector ty) where
     length = length
     singleton = fromList . (:[])
 
-instance C.OrderedCollection (Vector ty) where
+instance C.Sequential (Vector ty) where
     null = null
     take = take
     drop = drop

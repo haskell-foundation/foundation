@@ -38,7 +38,7 @@ instance Monoid (View s) where
 instance (IsList s, C.InnerFunctor s, C.Element (View s) ~ Item s) => C.InnerFunctor (View s) where
     imap f (View s r) = View (C.imap f s) (C.imap f r)
 
-instance (IsList s, C.InnerFunctor s, C.OrderedCollection s, C.Element (View s) ~ Item s)
+instance (IsList s, C.InnerFunctor s, C.Sequential s, C.Element (View s) ~ Item s)
          => C.SemiOrderedCollection (View s) where
     snoc = snoc
     cons = cons
@@ -47,8 +47,8 @@ instance (IsList s, C.InnerFunctor s, C.OrderedCollection s, C.Element (View s) 
     length = viewLength
     singleton x = View 0 0 (fromList [x])
 
-instance (IsList s, C.InnerFunctor s, C.OrderedCollection s, C.Element (View s) ~ Item s)
-        => C.OrderedCollection (View s) where
+instance (IsList s, C.InnerFunctor s, C.Sequential s, C.Element (View s) ~ Item s)
+        => C.Sequential (View s) where
     null = (==) 0 . viewLength
     take = take
     drop = drop
@@ -62,13 +62,13 @@ instance (IsList s, C.InnerFunctor s, C.OrderedCollection s, C.Element (View s) 
 view :: C.SemiOrderedCollection a => a -> View a
 view a = View 0 (C.length a) a
 
-subView :: C.OrderedCollection c => View c -> c
+subView :: C.Sequential c => View c -> c
 subView (View ofs len c) = C.take len $ C.drop ofs len
 
-cons :: C.OrderedCollection c => C.Element c -> View c -> View c
+cons :: C.Sequential c => C.Element c -> View c -> View c
 cons e v = View 0 (succ $ viewLength v) (C.cons e $ subView v)
 
-snoc :: C.OrderedCollection c => View c -> C.Element c -> View c
+snoc :: C.Sequential c => View c -> C.Element c -> View c
 snoc v e = View 0 (succ $ viewLength v) (C.snoc (subView v) e)
 
 find :: (C.Element c -> View c) -> View c -> Maybe (C.Element c)
@@ -81,7 +81,7 @@ splitOn = undefined
 break = undefined
 span = undefined
 
-reverse :: C.OrderedCollection c => View c -> View c
+reverse :: C.Sequential c => View c -> View c
 reverse v = View 0 (viewLength v) $ C.reverse (C.drop (viewOffset v) $ subView v)
 
 filter = undefined

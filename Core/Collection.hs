@@ -15,7 +15,7 @@ module Core.Collection
     , InnerFunctor(..)
     , Foldable(..)
     , SemiOrderedCollection(..)
-    , OrderedCollection(..)
+    , Sequential(..)
     , MutableCollection(..)
     , IndexedCollection(..)
     , KeyedCollection(..)
@@ -57,7 +57,7 @@ class SemiOrderedCollection c where
     singleton :: Element c -> c
 
 -- | A set of methods for ordered colection
-class (IsList c, Item c ~ Element c, Monoid c, SemiOrderedCollection c) => OrderedCollection c where
+class (IsList c, Item c ~ Element c, Monoid c) => Sequential c where
     {-# MINIMAL null, ((take, drop) | splitAt), ((revTake, revDrop) | revSplitAt), splitOn, (break | span), filter, reverse #-}
     -- | Check if a collection is empty
     null :: c -> Bool
@@ -92,6 +92,7 @@ class (IsList c, Item c ~ Element c, Monoid c, SemiOrderedCollection c) => Order
     -- | Split a collection when the predicate return true
     break :: (Element c -> Bool) -> c -> (c,c)
     break predicate = span (not . predicate)
+
     -- | Split a collection while the predicate return true
     span :: (Element c -> Bool) -> c -> (c,c)
     span predicate = break (not . predicate)
@@ -110,7 +111,7 @@ instance SemiOrderedCollection [a] where
     sortBy = Data.List.sortBy
     length = Data.List.length
     singleton = (:[])
-instance OrderedCollection [a] where
+instance Sequential [a] where
     null = Data.List.null
     take = Data.List.take
     drop = Data.List.drop
