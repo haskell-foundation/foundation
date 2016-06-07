@@ -55,6 +55,7 @@ import qualified Core.Collection as C
 import           Core.Vector.Common
 import           Core.Number
 import qualified Data.List
+import           Foreign.Marshal.Utils (copyBytes)
 
 -- | An array of type built on top of GHC primitive.
 --
@@ -68,7 +69,7 @@ data UVector ty = UVecBA !Int# {- unpinned / pinned flag -} ByteArray#
 --
 -- Element in this array can be modified in place.
 data MUVector ty st = MUVecMA Int# (MutableByteArray# st)
-                    -- MUVecAddr Int# (FinalPtr ())
+                    | MUVecAddr Int# (FinalPtr ())
 
 -- | Byte Array alias
 type ByteArray = UVector Word8
@@ -228,6 +229,7 @@ read array n
 -- use 'read' if unsure.
 unsafeRead :: (PrimMonad prim, PrimType ty) => MUVector ty (PrimState prim) -> Int -> prim ty
 unsafeRead (MUVecMA _ mba) i = primMbaRead mba i
+unsafeRead (MUVecAddr _ fptr) i = withFinalPtr fptr $ \(Ptr addr) -> primAddrRead addr i
 {-# INLINE unsafeRead #-}
 
 -- | Write to a cell in a mutable array.
@@ -237,7 +239,8 @@ write :: (PrimMonad prim, PrimType ty) => MUVector ty (PrimState prim) -> Int ->
 write array n val
     | n < 0 || n >= len = primThrow (OutOfBound OOB_Write n len)
     | otherwise         = unsafeWrite array n val
-  where len = mutableLength array
+  where
+    len = mutableLength array
 {-# INLINE write #-}
 
 -- | write to a cell in a mutable array without bounds checking.
@@ -245,7 +248,8 @@ write array n val
 -- Writing with invalid bounds will corrupt memory and your program will
 -- become unreliable. use 'write' if unsure.
 unsafeWrite :: (PrimMonad prim, PrimType ty) => MUVector ty (PrimState prim) -> Int -> ty -> prim ()
-unsafeWrite (MUVecMA _ mba) i = primMbaWrite mba i
+unsafeWrite (MUVecMA _ mba) i v = primMbaWrite mba i v
+unsafeWrite (MUVecAddr _ fptr) i v = withFinalPtr fptr $ \(Ptr addr) -> primAddrWrite addr i v
 {-# INLINE unsafeWrite #-}
 
 -- | Create a new mutable array of size @n.
@@ -255,6 +259,13 @@ new :: (PrimMonad prim, PrimType ty) => Int -> prim (MUVector ty (PrimState prim
 new n
     | n > 0     = newPinned n
     | otherwise = newUnpinned n
+
+newNative :: (PrimMonad prim, PrimType ty) => Int -> (MutableByteArray# (PrimState prim) -> prim ()) -> prim (MUVector ty (PrimState prim))
+newNative n f = do
+    muvec <- new n
+    case muvec of
+        (MUVecMA _ mba) -> f mba >> return muvec
+        (MUVecAddr {})  -> error "internal error: unboxed new only supposed to allocate natively"
 
 -- | Create a new pinned mutable array of size @n.
 --
@@ -318,6 +329,10 @@ copyAddr :: (PrimMonad prim, PrimType ty)
          -> prim ()
 copyAddr (MUVecMA _ dst) (I# od) (Ptr src) (I# os) (I# sz) = primitive $ \s ->
     (# compatCopyAddrToByteArray# (plusAddr# src os) dst od sz s, () #)
+copyAddr (MUVecAddr _ fptr) od src os sz =
+    withFinalPtr fptr $ \dst ->
+        unsafePrimFromIO $ copyBytes (dst `plusPtr` od) (src `plusPtr` os) sz
+        --memcpy addr to addr
 
 -- | return the number of elements of the array.
 length :: PrimType ty => UVector ty -> Int
@@ -340,6 +355,7 @@ mutableLength = divBits Proxy
         let !(I# szBits) = sizeInBytes proxy
             !elems       = quotInt# (sizeofMutableByteArray# a) szBits
          in I# elems
+    divBits _     (MUVecAddr len _) = I# len
 {-# INLINE mutableLength #-}
 
 -- | Freeze a mutable array into an array.
@@ -349,6 +365,7 @@ unsafeFreeze :: PrimMonad prim => MUVector ty (PrimState prim) -> prim (UVector 
 unsafeFreeze (MUVecMA pinned mba) = primitive $ \s1 ->
     case unsafeFreezeByteArray# mba s1 of
         (# s2, ba #) -> (# s2, UVecBA pinned ba #)
+unsafeFreeze (MUVecAddr len fptr) = return $ UVecAddr len fptr
 {-# INLINE unsafeFreeze #-}
 
 freeze :: (PrimType ty, PrimMonad prim) => MUVector ty (PrimState prim) -> prim (UVector ty)
@@ -357,12 +374,13 @@ freeze ma = do
     copyAt ma' 0 ma 0 len
     unsafeFreeze ma'
   where len = mutableLength ma
+
 -- | Thaw an immutable array.
 --
 -- The UVector must not be used after thawing.
 unsafeThaw :: (PrimType ty, PrimMonad prim) => UVector ty -> prim (MUVector ty (PrimState prim))
 unsafeThaw (UVecBA pinned ba) = primitive $ \st -> (# st, MUVecMA pinned (unsafeCoerce# ba) #)
-unsafeThaw v@(UVecAddr {}) = thaw v
+unsafeThaw (UVecAddr len fptr) = return $ MUVecAddr len fptr
 {-# INLINE unsafeThaw #-}
 
 -- | Create a new array of size @n by settings each cells through the
@@ -561,12 +579,12 @@ sub vec startIdx expectedEndIdx
     | startIdx == endIdx     = return empty
     | startIdx >= length vec = return empty
     | otherwise              = do
-        muv@(MUVecMA _ mba) <- new (endIdx - startIdx)
-        case vec of
-            UVecBA _ ba           -> primitive $ \s -> (# copyByteArray# ba start mba 0# (end -# start) s, () #)
-            UVecAddr _ fptr  ->
-                withFinalPtr fptr $ \(Ptr addr) -> primitive $ \s ->
-                    (# compatCopyAddrToByteArray# addr mba 0# (end -# start) s, () #)
+        muv <- newNative (endIdx - startIdx) $ \mba ->
+            case vec of
+                UVecBA _ ba           -> primitive $ \s -> (# copyByteArray# ba start mba 0# (end -# start) s, () #)
+                UVecAddr _ fptr  ->
+                    withFinalPtr fptr $ \(Ptr addr) -> primitive $ \s ->
+                        (# compatCopyAddrToByteArray# addr mba 0# (end -# start) s, () #)
         unsafeFreeze muv
   where
     endIdx = min expectedEndIdx (length vec)
@@ -595,14 +613,12 @@ mapIndex f a = create (length a) (\i -> f i $ unsafeIndex a i)
 
 cons :: PrimType ty => ty -> UVector ty -> UVector ty
 cons e vec = runST $ do
-    muv@(MUVecMA _ mba) <- new (len + 1)
-    -- bench with "copyAtRO muv 1 vec 0 len"
-    case vec of
-        UVecBA _ ba      -> primCopyFreezedBytesOffset mba bytes ba (len# *# bytes)
-        UVecAddr _ fptr  ->
-            withFinalPtr fptr $ \(Ptr addr) -> primitive $ \s ->
-                (# compatCopyAddrToByteArray# addr mba bytes (len# *# bytes) s, () #)
-
+    muv <- newNative (len + 1) $ \mba ->
+        case vec of
+            UVecBA _ ba      -> primCopyFreezedBytesOffset mba bytes ba (len# *# bytes)
+            UVecAddr _ fptr  ->
+                withFinalPtr fptr $ \(Ptr addr) -> primitive $ \s ->
+                    (# compatCopyAddrToByteArray# addr mba bytes (len# *# bytes) s, () #)
     unsafeWrite muv 0 e
     unsafeFreeze muv
   where
@@ -611,12 +627,12 @@ cons e vec = runST $ do
 
 snoc :: PrimType ty => UVector ty -> ty -> UVector ty
 snoc vec e = runST $ do
-    muv@(MUVecMA _ mba) <- new (len + 1)
-    case vec of
-        UVecBA _ ba      -> primCopyFreezedBytes mba ba
-        UVecAddr _ fptr  ->
-            withFinalPtr fptr $ \(Ptr addr) -> primitive $ \s ->
-                (# compatCopyAddrToByteArray# addr mba 0# (len# *# bytes) s, () #)
+    muv <- newNative (len + 1) $ \mba ->
+        case vec of
+            UVecBA _ ba      -> primCopyFreezedBytes mba ba
+            UVecAddr _ fptr  ->
+                withFinalPtr fptr $ \(Ptr addr) -> primitive $ \s ->
+                    (# compatCopyAddrToByteArray# addr mba 0# (len# *# bytes) s, () #)
     unsafeWrite muv len e
     unsafeFreeze muv
   where
