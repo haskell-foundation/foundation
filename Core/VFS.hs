@@ -9,9 +9,11 @@ module Core.VFS
     ) where
 
 import           Core.Internal.Base
+import           Core
 import qualified Core.Collection as C
 import qualified Core.Vector.Unboxed as Vec
 import           Core.Vector.Unboxed (UVector)
+import qualified Core.String.UTF8 as S
 
 class Path path where
     type PathEnt path
@@ -51,7 +53,13 @@ fileSplitPathEnt (FilePath p)
     | otherwise           = Nothing
 
 filePathToString :: FilePath -> String
-filePathToString fp =
+filePathToString (FilePath fp) =
+    -- FIXME probably incorrect considering windows.
+    -- this is just to get going to be able to be able to reuse System.IO functions which
+    -- works on [Char]
+    case S.fromBytes S.UTF8 fp of
+        Just s -> s
+        Nothing -> error "cannot convert path"
 
 filePathToLString :: FilePath -> [Char]
-filePathToLString fp =
+filePathToLString = toList . filePathToString

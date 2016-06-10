@@ -42,6 +42,7 @@ Library
                      Core.Number
                      Core.String
                      Core.String.IO
+                     Core.IO
                      Core.Vector
                      Core.Collection
                      Core.Chunks
