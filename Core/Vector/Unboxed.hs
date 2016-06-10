@@ -170,7 +170,6 @@ fmapUVec mapper a = runST (new nbElems >>= copyMap (unsafeIndex a) mapper)
         iter i
             | i == nbElems = unsafeFreeze ma
             | otherwise    = unsafeWrite ma i (f $ get i) >> iter (i+1)
--}
 
 sizeInBytes :: PrimType ty => UVector ty -> Int
 sizeInBytes     (UVecBA _ ba)  = I# (sizeofByteArray# ba)
@@ -179,8 +178,9 @@ sizeInBytes vec@(UVecAddr l _) = (I# l) `div` sizeInBytesOfContent vec
 mutableSizeInBytes :: (PrimMonad prim, PrimType ty) => MUVector ty (PrimState prim) -> prim Int
 mutableSizeInBytes (MUVecMA _ mba) = primitive $ \s ->
     case compatGetSizeofMutableByteArray# mba s of { (# s2, i #) -> (# s2, I# i #) }
-mutableSizeInBytes muv@(MUVecAddr i fptr) =
+mutableSizeInBytes muv@(MUVecAddr i _) =
     return (I# i * sizeInMutableBytesOfContent muv)
+-}
 
 vectorProxyTy :: UVector ty -> Proxy ty
 vectorProxyTy _ = Proxy
