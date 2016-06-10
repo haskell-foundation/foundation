@@ -24,7 +24,7 @@ import           Core.Primitive.Monad
 -- Types need to be a instance of storable and have fixed sized.
 class PrimType ty where
     -- | get the size in bytes of a ty element
-    sizeInBytes :: Proxy ty -> Int
+    primSizeInBytes :: Proxy ty -> Int
 
     -----
     -- ByteArray section
@@ -71,8 +71,8 @@ class PrimType ty where
                   -> prim ()
 
 instance PrimType Word8 where
-    sizeInBytes _ = 1
-    {-# INLINE sizeInBytes #-}
+    primSizeInBytes _ = 1
+    {-# INLINE primSizeInBytes #-}
     primBaIndex ba (I# n) = W8# (indexWord8Array# ba n)
     {-# INLINE primBaIndex #-}
     primMbaRead mba (I# n) = primitive $ \s1 -> let (# s2, r #) = readWord8Array# mba n s1 in (# s2, W8# r #)
@@ -87,8 +87,8 @@ instance PrimType Word8 where
     {-# INLINE primAddrWrite #-}
 
 instance PrimType Word16 where
-    sizeInBytes _ = 2
-    {-# INLINE sizeInBytes #-}
+    primSizeInBytes _ = 2
+    {-# INLINE primSizeInBytes #-}
     primBaIndex ba (I# n) = W16# (indexWord16Array# ba n)
     {-# INLINE primBaIndex #-}
     primMbaRead mba (I# n) = primitive $ \s1 -> let (# s2, r #) = readWord16Array# mba n s1 in (# s2, W16# r #)
@@ -102,8 +102,8 @@ instance PrimType Word16 where
     primAddrWrite addr (I# n) (W16# w) = primitive $ \s1 -> (# writeWord16OffAddr# addr n w s1, () #)
     {-# INLINE primAddrWrite #-}
 instance PrimType Word32 where
-    sizeInBytes _ = 4
-    {-# INLINE sizeInBytes #-}
+    primSizeInBytes _ = 4
+    {-# INLINE primSizeInBytes #-}
     primBaIndex ba (I# n) = W32# (indexWord32Array# ba n)
     {-# INLINE primBaIndex #-}
     primMbaRead mba (I# n) = primitive $ \s1 -> let (# s2, r #) = readWord32Array# mba n s1 in (# s2, W32# r #)
@@ -117,8 +117,8 @@ instance PrimType Word32 where
     primAddrWrite addr (I# n) (W32# w) = primitive $ \s1 -> (# writeWord32OffAddr# addr n w s1, () #)
     {-# INLINE primAddrWrite #-}
 instance PrimType Word64 where
-    sizeInBytes _ = 8
-    {-# INLINE sizeInBytes #-}
+    primSizeInBytes _ = 8
+    {-# INLINE primSizeInBytes #-}
     primBaIndex ba (I# n) = W64# (indexWord64Array# ba n)
     {-# INLINE primBaIndex #-}
     primMbaRead mba (I# n) = primitive $ \s1 -> let (# s2, r #) = readWord64Array# mba n s1 in (# s2, W64# r #)
@@ -132,8 +132,8 @@ instance PrimType Word64 where
     primAddrWrite addr (I# n) (W64# w) = primitive $ \s1 -> (# writeWord64OffAddr# addr n w s1, () #)
     {-# INLINE primAddrWrite #-}
 instance PrimType Int8 where
-    sizeInBytes _ = 1
-    {-# INLINE sizeInBytes #-}
+    primSizeInBytes _ = 1
+    {-# INLINE primSizeInBytes #-}
     primBaIndex ba (I# n) = I8# (indexInt8Array# ba n)
     {-# INLINE primBaIndex #-}
     primMbaRead mba (I# n) = primitive $ \s1 -> let (# s2, r #) = readInt8Array# mba n s1 in (# s2, I8# r #)
@@ -147,8 +147,8 @@ instance PrimType Int8 where
     primAddrWrite addr (I# n) (I8# w) = primitive $ \s1 -> (# writeInt8OffAddr# addr n w s1, () #)
     {-# INLINE primAddrWrite #-}
 instance PrimType Int16 where
-    sizeInBytes _ = 2
-    {-# INLINE sizeInBytes #-}
+    primSizeInBytes _ = 2
+    {-# INLINE primSizeInBytes #-}
     primBaIndex ba (I# n) = I16# (indexInt16Array# ba n)
     {-# INLINE primBaIndex #-}
     primMbaRead mba (I# n) = primitive $ \s1 -> let (# s2, r #) = readInt16Array# mba n s1 in (# s2, I16# r #)
@@ -162,8 +162,8 @@ instance PrimType Int16 where
     primAddrWrite addr (I# n) (I16# w) = primitive $ \s1 -> (# writeInt16OffAddr# addr n w s1, () #)
     {-# INLINE primAddrWrite #-}
 instance PrimType Int32 where
-    sizeInBytes _ = 4
-    {-# INLINE sizeInBytes #-}
+    primSizeInBytes _ = 4
+    {-# INLINE primSizeInBytes #-}
     primBaIndex ba (I# n) = I32# (indexInt32Array# ba n)
     {-# INLINE primBaIndex #-}
     primMbaRead mba (I# n) = primitive $ \s1 -> let (# s2, r #) = readInt32Array# mba n s1 in (# s2, I32# r #)
@@ -177,8 +177,8 @@ instance PrimType Int32 where
     primAddrWrite addr (I# n) (I32# w) = primitive $ \s1 -> (# writeInt32OffAddr# addr n w s1, () #)
     {-# INLINE primAddrWrite #-}
 instance PrimType Int64 where
-    sizeInBytes _ = 8
-    {-# INLINE sizeInBytes #-}
+    primSizeInBytes _ = 8
+    {-# INLINE primSizeInBytes #-}
     primBaIndex ba (I# n) = I64# (indexInt64Array# ba n)
     {-# INLINE primBaIndex #-}
     primMbaRead mba (I# n) = primitive $ \s1 -> let (# s2, r #) = readInt64Array# mba n s1 in (# s2, I64# r #)
@@ -193,8 +193,8 @@ instance PrimType Int64 where
     {-# INLINE primAddrWrite #-}
 
 instance PrimType Float where
-    sizeInBytes _ = 4
-    {-# INLINE sizeInBytes #-}
+    primSizeInBytes _ = 4
+    {-# INLINE primSizeInBytes #-}
     primBaIndex ba (I# n) = F# (indexFloatArray# ba n)
     {-# INLINE primBaIndex #-}
     primMbaRead mba (I# n) = primitive $ \s1 -> let (# s2, r #) = readFloatArray# mba n s1 in (# s2, F# r #)
@@ -208,8 +208,8 @@ instance PrimType Float where
     primAddrWrite addr (I# n) (F# w) = primitive $ \s1 -> (# writeFloatOffAddr# addr n w s1, () #)
     {-# INLINE primAddrWrite #-}
 instance PrimType Double where
-    sizeInBytes _ = 8
-    {-# INLINE sizeInBytes #-}
+    primSizeInBytes _ = 8
+    {-# INLINE primSizeInBytes #-}
     primBaIndex ba (I# n) = D# (indexDoubleArray# ba n)
     {-# INLINE primBaIndex #-}
     primMbaRead mba (I# n) = primitive $ \s1 -> let (# s2, r #) = readDoubleArray# mba n s1 in (# s2, D# r #)

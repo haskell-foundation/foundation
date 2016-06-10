@@ -164,12 +164,30 @@ fmapUVec mapper a = runST (new nbElems >>= copyMap (unsafeIndex a) mapper)
             | otherwise    = unsafeWrite ma i (f $ get i) >> iter (i+1)
 -}
 
+sizeInBytes :: PrimType ty => UVector ty -> Int
+sizeInBytes     (UVecBA _ ba)  = I# (sizeofByteArray# ba)
+sizeInBytes vec@(UVecAddr l _) = (I# l) `div` sizeInBytesOfContent vec
+
+mutableSizeInBytes :: (PrimMonad prim, PrimType ty) => MUVector ty (PrimState prim) -> prim Int
+mutableSizeInBytes (MUVecMA _ mba) = primitive $ \s ->
+    case compatGetSizeofMutableByteArray# mba s of { (# s2, i #) -> (# s2, I# i #) }
+mutableSizeInBytes muv@(MUVecAddr i fptr) =
+    return (I# i * sizeInMutableBytesOfContent muv)
+
+vectorProxyTy :: UVector ty -> Proxy ty
+vectorProxyTy _ = Proxy
+
+mutableVectorProxyTy :: MUVector ty st -> Proxy ty
+mutableVectorProxyTy _ = Proxy
+
 -- rename to sizeInBitsOfCell
 sizeInBytesOfContent :: PrimType ty => UVector ty -> Int
-sizeInBytesOfContent = getSize Proxy
-  where getSize :: PrimType ty => Proxy ty -> UVector ty -> Int
-        getSize ty _ = sizeInBytes ty
+sizeInBytesOfContent = primSizeInBytes . vectorProxyTy
 {-# INLINE sizeInBytesOfContent #-}
+
+sizeInMutableBytesOfContent :: PrimType ty => MUVector ty s -> Int
+sizeInMutableBytesOfContent = primSizeInBytes . mutableVectorProxyTy
+{-# INLINE sizeInMutableBytesOfContent #-}
 
 -- | Copy every cells of an existing array to a new array
 copy :: PrimType ty => UVector ty -> UVector ty
@@ -279,7 +297,7 @@ newPinned n = newFake Proxy
             case newAlignedPinnedByteArray# bytes 8# s1 of
                 (# s2, mba #) -> (# s2, MUVecMA 1# mba #)
           where
-                !(I# bytes) = n * sizeInBytes ty
+                !(I# bytes) = n * primSizeInBytes ty
         {-# INLINE newFake #-}
 {-# INLINE new #-}
 
@@ -290,7 +308,7 @@ newUnpinned n = newFake Proxy
             case newByteArray# bytes s1 of
                 (# s2, mba #) -> (# s2, MUVecMA 0# mba #)
           where
-                !(I# bytes) = n * sizeInBytes ty
+                !(I# bytes) = n * primSizeInBytes ty
 
 -- | Copy a number of elements from an array to another array with offsets
 copyAt :: (PrimMonad prim, PrimType ty)
@@ -340,7 +358,7 @@ length = divBits Proxy
   where
     divBits :: PrimType ty => Proxy ty -> UVector ty -> Int
     divBits proxy (UVecBA _ a) =
-        let !(I# szBits) = sizeInBytes proxy
+        let !(I# szBits) = primSizeInBytes proxy
             !elems       = quotInt# (sizeofByteArray# a) szBits
          in I# elems
     divBits _     (UVecAddr len _) = I# len
@@ -352,7 +370,7 @@ mutableLength = divBits Proxy
   where
     divBits :: PrimType ty => Proxy ty -> MUVector ty st -> Int
     divBits proxy (MUVecMA _ a) =
-        let !(I# szBits) = sizeInBytes proxy
+        let !(I# szBits) = primSizeInBytes proxy
             !elems       = quotInt# (sizeofMutableByteArray# a) szBits
          in I# elems
     divBits _     (MUVecAddr len _) = I# len
