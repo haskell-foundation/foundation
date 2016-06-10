@@ -16,6 +16,8 @@ module Core.Vector
     , MVector
     , UVector
     , MUVector
+    , ByteArray
+    , Buffer
     -- exceptions
     , OutOfBound
     ) where
