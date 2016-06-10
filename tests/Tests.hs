@@ -16,6 +16,8 @@ import           Core
 import qualified Data.List as L
 import qualified Prelude
 
+import           ForeignUtils
+
 data Unicode = Unicode { unUnicode :: LString }
     deriving (Show)
 
@@ -144,9 +146,14 @@ testCollection proxy genElement =
     withElements2 f = forAll ((,) <$> listOfElement genElement <*> arbitrary) f
     withElements2E f = forAll ((,) <$> listOfElement genElement <*> genElement) f
 
+testUnboxedForeign :: (Show e, Eq a, Eq e, Ord a, Ord e, Arbitrary e, SemiOrderedCollection a, Sequential a, Item a ~ Element a, Element a ~ e, Storable e)
+                   => Proxy a -> Gen e -> [TestTree]
+testUnboxedForeign _ _ = []
+
 fromListP :: (IsList c, Item c ~ Element c) => Proxy c -> [Element c] -> c
 fromListP p = \x -> asProxyTypeOf (fromList x) p
 
+tests :: [TestTree]
 tests =
     [ testGroup "String"       (testCollection (Proxy :: Proxy String)           arbitraryChar)
     , testGroup "Vector"
@@ -161,6 +168,18 @@ tests =
             , testGroup "UVector(I64)" (testCollection (Proxy :: Proxy (UVector Int64))  arbitrary)
             , testGroup "UVector(F32)" (testCollection (Proxy :: Proxy (UVector Float))  arbitrary)
             , testGroup "UVector(F64)" (testCollection (Proxy :: Proxy (UVector Double)) arbitrary)
+            ]
+        , testGroup "Unboxed-Foreign"
+            [ testGroup "UVector(W8)"  (testUnboxedForeign (Proxy :: Proxy (UVector Word8))  arbitrary)
+            , testGroup "UVector(W16)" (testUnboxedForeign (Proxy :: Proxy (UVector Word16)) arbitrary)
+            , testGroup "UVector(W32)" (testUnboxedForeign (Proxy :: Proxy (UVector Word32)) arbitrary)
+            , testGroup "UVector(W64)" (testUnboxedForeign (Proxy :: Proxy (UVector Word64)) arbitrary)
+            , testGroup "UVector(I8)"  (testUnboxedForeign (Proxy :: Proxy (UVector Int8))   arbitrary)
+            , testGroup "UVector(I16)" (testUnboxedForeign (Proxy :: Proxy (UVector Int16))  arbitrary)
+            , testGroup "UVector(I32)" (testUnboxedForeign (Proxy :: Proxy (UVector Int32))  arbitrary)
+            , testGroup "UVector(I64)" (testUnboxedForeign (Proxy :: Proxy (UVector Int64))  arbitrary)
+            , testGroup "UVector(F32)" (testUnboxedForeign (Proxy :: Proxy (UVector Float))  arbitrary)
+            , testGroup "UVector(F64)" (testUnboxedForeign (Proxy :: Proxy (UVector Double)) arbitrary)
             ]
         , testGroup "Boxed"
             [ testGroup "Vector(W8)"  (testCollection (Proxy :: Proxy (Vector Word8))  arbitrary)
@@ -179,4 +198,5 @@ tests =
         ]
     ]
 
+main :: IO ()
 main = defaultMain $ testGroup "foundation" tests

@@ -14,6 +14,7 @@
 {-# LANGUAGE CPP #-}
 module Core.Primitive.FinalPtr
     ( FinalPtr
+    , castFinalPtr
     , toFinalPtr
     , withFinalPtr
     , withUnsafeFinalPtr
@@ -34,6 +35,10 @@ toFinalPtr ptr finalizer = unsafePrimFromIO (primitive makeWithFinalizer)
   where
     makeWithFinalizer s =
         case compatMkWeak# ptr () (finalizer ptr) s of { (# s2, _ #) -> (# s2, FinalPtr ptr #) }
+
+-- | Cast a finalized pointer from type a to type b
+castFinalPtr :: FinalPtr a -> FinalPtr b
+castFinalPtr (FinalPtr a) = FinalPtr (castPtr a)
 
 -- | Looks at the raw pointer inside a FinalPtr, making sure the
 -- data pointed by the pointer is not finalized during the call to 'f'

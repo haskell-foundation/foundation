@@ -42,6 +42,9 @@ module Core.Vector.Unboxed
     -- * Functions
     , map
     , mapIndex
+    -- * Foreign creation
+    , foreignMem
+    , mutableForeignMem
     ) where
 
 import           GHC.Prim
@@ -68,13 +71,13 @@ import           Foreign.Marshal.Utils (copyBytes)
 -- packed contiguous array in memory that can easily be passed
 -- to foreign interface
 data UVector ty = UVecBA {-# UNPACK #-} !PinnedStatus {- unpinned / pinned flag -} ByteArray#
-                | UVecAddr !Int# {- number of items of type ty -} (FinalPtr ())
+                | UVecAddr !Int# {- number of items of type ty -} (FinalPtr ty)
 
 -- | A Mutable array of types built on top of GHC primitive.
 --
 -- Element in this array can be modified in place.
 data MUVector ty st = MUVecMA {-# UNPACK #-} !PinnedStatus (MutableByteArray# st)
-                    | MUVecAddr Int# (FinalPtr ())
+                    | MUVecAddr Int# (FinalPtr ty)
 
 -- | Byte Array alias
 type ByteArray = UVector Word8
@@ -292,6 +295,19 @@ newNative n f = do
     case muvec of
         (MUVecMA _ mba) -> f mba >> return muvec
         (MUVecAddr {})  -> error "internal error: unboxed new only supposed to allocate natively"
+
+mutableForeignMem :: (PrimMonad prim, PrimType ty)
+                  => FinalPtr ty -- ^ the start pointer with a finalizer
+                  -> Int         -- ^ the number of elements (in elements, not bytes)
+                  -> prim (MUVector ty (PrimState prim))
+mutableForeignMem fptr (I# nb) = return $ MUVecAddr nb fptr
+
+foreignMem :: PrimType ty
+           => FinalPtr ty -- ^ the start pointer with a finalizer
+           -> Int         -- ^ the number of elements (in elements, not bytes)
+           -> UVector ty
+foreignMem fptr (I# nb) = UVecAddr nb fptr
+
 
 -- | Create a new pinned mutable array of size @n.
 --
@@ -539,9 +555,9 @@ unsafeUpdate array modifiers = runST (thaw array >>= doUpdate modifiers)
         {-# INLINE doUpdate #-}
 
 withPtr :: UVector ty
-        -> (Ptr Word8 -> IO a)
+        -> (Ptr ty -> IO a)
         -> IO a
-withPtr (UVecAddr _ fptr)  f = withFinalPtr fptr (f . castPtr)
+withPtr (UVecAddr _ fptr)  f = withFinalPtr fptr f
 withPtr (UVecBA pstatus a) f
     | isPinned pstatus = f $ Ptr (byteArrayContents# a)
     | otherwise        = do
@@ -554,7 +570,7 @@ withPtr (UVecBA pstatus a) f
         f a'
 
 withMutablePtr :: MUVector ty RealWorld
-               -> (Ptr Word8 -> IO a)
+               -> (Ptr ty -> IO a)
                -> IO a
 withMutablePtr muvec f = do
     v <- unsafeFreeze muvec
@@ -562,7 +578,7 @@ withMutablePtr muvec f = do
 
 unsafeRecast :: (PrimType a, PrimType b) => UVector a -> UVector b
 unsafeRecast (UVecBA i b) = UVecBA i b
-unsafeRecast (UVecAddr len a) = UVecAddr len a
+unsafeRecast (UVecAddr len a) = UVecAddr len (castFinalPtr a)
 
 null :: UVector ty -> Bool
 null (UVecBA _ a) = bool# (sizeofByteArray# a ==# 0#)
