@@ -28,6 +28,7 @@ module Core.Vector.Unboxed
     , unsafeRecast
     -- * Creation
     , new
+    , newPinned
     , create
     , sub
     -- * accessors
