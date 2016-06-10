@@ -31,6 +31,8 @@ module Core.Vector.Unboxed
     , newPinned
     , create
     , sub
+    , withPtr
+    , withMutablePtr
     -- * accessors
     , update
     , unsafeUpdate
@@ -522,19 +524,27 @@ unsafeUpdate array modifiers = runST (thaw array >>= doUpdate modifiers)
                 {-# INLINE loop #-}
         {-# INLINE doUpdate #-}
 
-{-
-withConstPtr :: UVector ty
-             -> (Ptr Word8 -> IO a)
-             -> IO a
-withConstPtr (UVecBA _ a) f =
-    f $ Ptr (byteArrayContents# a)
+withPtr :: UVector ty
+        -> (Ptr Word8 -> IO a)
+        -> IO a
+withPtr (UVecAddr _ fptr)  f = withFinalPtr fptr (f . castPtr)
+withPtr (UVecBA pstatus a) f
+    | isPinned pstatus = f $ Ptr (byteArrayContents# a)
+    | otherwise        = do
+        let !sz# = sizeofByteArray# a
+        a' <- primitive $ \s -> do
+            case newAlignedPinnedByteArray# sz# 8# s of { (# s2, mba #) ->
+            case copyByteArray# a 0# mba 0# sz# s2 of { s3 ->
+            case unsafeFreezeByteArray# mba s3 of { (# s4, ba #) ->
+                (# s4, Ptr (byteArrayContents# ba) #) }}}
+        f a'
 
 withMutablePtr :: MUVector ty RealWorld
                -> (Ptr Word8 -> IO a)
                -> IO a
-withMutablePtr ma f =
-    stToIO (unsafeFreeze ma) >>= flip withConstPtr f
--}
+withMutablePtr muvec f = do
+    v <- unsafeFreeze muvec
+    withPtr v f
 
 unsafeRecast :: (PrimType a, PrimType b) => UVector a -> UVector b
 unsafeRecast (UVecBA i b) = UVecBA i b
