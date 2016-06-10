@@ -11,6 +11,7 @@
 --
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
+{-# LANGUAGE CPP #-}
 module Core.Primitive.FinalPtr
     ( FinalPtr
     , toFinalPtr
@@ -18,21 +19,21 @@ module Core.Primitive.FinalPtr
     , withUnsafeFinalPtr
     ) where
 
-import GHC.Prim
 import GHC.Ptr
 import GHC.IO
 import Core.Primitive.Monad
+import Core.Internal.Primitive
 import Core.Internal.Base (return)
 
 -- | Create a pointer with an associated finalizer
 data FinalPtr a = FinalPtr (Ptr a)
 
--- | create a new FPtr from a Pointer
+-- | create a new FinalPtr from a Pointer
 toFinalPtr :: PrimMonad prim => Ptr a -> (Ptr a -> IO ()) -> prim (FinalPtr a)
 toFinalPtr ptr finalizer = unsafePrimFromIO (primitive makeWithFinalizer)
   where
     makeWithFinalizer s =
-        case mkWeak# ptr () (finalizer ptr) s of { (# s2, _ #) -> (# s2, FinalPtr ptr #) }
+        case compatMkWeak# ptr () (finalizer ptr) s of { (# s2, _ #) -> (# s2, FinalPtr ptr #) }
 
 -- | Looks at the raw pointer inside a FinalPtr, making sure the
 -- data pointed by the pointer is not finalized during the call to 'f'

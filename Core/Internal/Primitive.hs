@@ -15,6 +15,7 @@ module Core.Internal.Primitive
     , compatAndI#
     , compatQuotRemInt#
     , compatCopyAddrToByteArray#
+    , compatMkWeak#
     , Word(..)
     ) where
 
@@ -84,3 +85,18 @@ compatCopyAddrToByteArray# addr ba ofs sz stini =
                 (# st2, w #) -> loop (o +# 1#) (i +# 1#) (writeWord8Array# ba o w st2)
 #endif
 {-# INLINE compatCopyAddrToByteArray# #-}
+
+-- | A mkWeak# version that keep working on 8.0
+--
+-- signature change in ghc-prim:
+-- * 0.4: mkWeak# :: o -> b -> c -> State# RealWorld -> (#State# RealWorld, Weak# b#)
+-- * 0.5 :mkWeak# :: o -> b -> (State# RealWorld -> (#State# RealWorld, c#)) -> State# RealWorld -> (#State# RealWorld, Weak# b#)
+--
+compatMkWeak# :: o -> b -> c -> State# RealWorld -> (#State# RealWorld, Weak# b #)
+#if __GLASGOW_HASKELL__ >= 800
+compatMkWeak# o b c s = mkWeak# o b (unPrimMonad f) s
+#else
+compatMkWeak# o b c s = mkWeak# o b c s
+#endif
+{-# INLINE compatMkWeak# #-}
+
