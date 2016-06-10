@@ -34,6 +34,7 @@ module Core.Vector.Unboxed
     , sub
     , withPtr
     , withMutablePtr
+    , unsafeFreezeShrink
     -- * accessors
     , update
     , unsafeUpdate
@@ -392,6 +393,15 @@ unsafeFreeze (MUVecMA pinnedState mba) = primitive $ \s1 ->
         (# s2, ba #) -> (# s2, UVecBA pinnedState ba #)
 unsafeFreeze (MUVecAddr len fptr) = return $ UVecAddr len fptr
 {-# INLINE unsafeFreeze #-}
+
+unsafeFreezeShrink :: (PrimType ty, PrimMonad prim) => MUVector ty (PrimState prim) -> Int -> prim (UVector ty)
+unsafeFreezeShrink muvec n@(I# n#) = do
+    let !(I# newSize) = n * (sizeInMutableBytesOfContent muvec)
+    case muvec of
+        MUVecMA _ mba -> do
+            muvec2 <- primitive $ \s -> case compatShrinkMutableByteArray# mba newSize s of { (# s2, mba2 #) -> (# s2, MUVecMA pinned mba2 #) }
+            unsafeFreeze muvec2
+        MUVecAddr _ addr        -> unsafeFreeze (MUVecAddr n# addr)
 
 freeze :: (PrimType ty, PrimMonad prim) => MUVector ty (PrimState prim) -> prim (UVector ty)
 freeze ma = do
