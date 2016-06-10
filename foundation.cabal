@@ -53,6 +53,7 @@ Library
                      Core.String.UTF8Table
                      Core.Collection.List
                      Core.Collection.Element
+                     Core.Collection.Sequential
                      Core.Collection.Keyed
                      Core.Collection.Indexed
                      Core.Collection.Foldable
