@@ -17,6 +17,9 @@ module Core.Internal.Primitive
     , compatQuotRemInt#
     , compatCopyAddrToByteArray#
     , compatMkWeak#
+    , compatGetSizeofMutableByteArray#
+    , compatShrinkMutableByteArray#
+    , compatResizeMutableByteArray#
     , Word(..)
     ) where
 
@@ -114,3 +117,36 @@ compatMkWeak# o b c s = mkWeak# o b c s
 #endif
 {-# INLINE compatMkWeak# #-}
 
+compatGetSizeofMutableByteArray# :: MutableByteArray# s -> State# s -> (#State# s, Int# #)
+#if __GLASGOW_HASKELL__ >= 800
+compatGetSizeofMutableByteArray# mba s = getSizeofMutableByteArray# mba s
+#else
+compatGetSizeofMutableByteArray# mba s = (# s, sizeofMutableByteArray# mba #)
+#endif
+{-# INLINE compatGetSizeofMutableByteArray# #-}
+
+compatShrinkMutableByteArray# :: MutableByteArray# s -> Int# -> State# s -> (# State# s, MutableByteArray# s #)
+#if __GLASGOW_HASKELL__ >= 800
+compatShrinkMutableByteArray# mba i s =
+    case shrinkMutableByteArray# mba i s of { s2 -> (# s2, mba #) }
+#else
+compatShrinkMutableByteArray# src i s =
+    -- not check whether i is smaller than the size of the buffer
+    case newAlignedPinnedByteArray# i 8# s of { (# s2, dst #) ->
+    case copyMutableByteArray# dst 0# src 0# i s2 of { s3 -> (# s3, dst #) }}
+#endif
+{-# INLINE compatShrinkMutableByteArray# #-}
+
+--shrinkMutableByteArray# :: MutableByteArray# s -> Int# -> State# s -> State# s
+compatResizeMutableByteArray# :: MutableByteArray# s -> Int# -> State# s -> (# State# s, MutableByteArray# s #)
+#if __GLASGOW_HASKELL__ >= 800
+compatResizeMutableByteArray# mba i s = resizeMutableByteArray# mba i s
+#else
+compatResizeMutableByteArray# src i s =
+    case newAlignedPinnedByteArray# i 8# s of { (# s2, dst #) ->
+    case copyMutableByteArray# dst 0# src 0# (if isGrow then len else i) s2 of { s3 -> (# s3, dst #) }}
+  where
+    isGrow = bool# (i ># len)
+    !len = sizeofMutableByteArray# src
+#endif
+{-# INLINE compatResizeMutableByteArray# #-}
