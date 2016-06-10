@@ -109,7 +109,7 @@ compatCopyAddrToByteArray# addr ba ofs sz stini =
 -- * 0.4: mkWeak# :: o -> b -> c -> State# RealWorld -> (#State# RealWorld, Weak# b#)
 -- * 0.5 :mkWeak# :: o -> b -> (State# RealWorld -> (#State# RealWorld, c#)) -> State# RealWorld -> (#State# RealWorld, Weak# b#)
 --
-compatMkWeak# :: o -> b -> c -> State# RealWorld -> (#State# RealWorld, Weak# b #)
+compatMkWeak# :: o -> b -> Prelude.IO () -> State# RealWorld -> (#State# RealWorld, Weak# b #)
 #if __GLASGOW_HASKELL__ >= 800
 compatMkWeak# o b c s = mkWeak# o b (unPrimMonad c) s
 #else
