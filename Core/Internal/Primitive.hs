@@ -12,6 +12,7 @@ module Core.Internal.Primitive
     ( bool#
     , Offset#
     , Size#
+    , PinnedStatus, pinned, unpinned, isPinned
     , compatAndI#
     , compatQuotRemInt#
     , compatCopyAddrToByteArray#
@@ -38,6 +39,19 @@ type Offset# = Int#
 --
 -- for code documentation purpose only, just a simple type alias on Int#
 type Size# = Int#
+
+-- | Flag record whether a specific byte array is pinned or not
+data PinnedStatus = PinnedStatus Int#
+
+isPinned :: PinnedStatus -> Prelude.Bool
+isPinned (PinnedStatus 0#) = Prelude.False
+isPinned _                 = Prelude.True
+
+pinned :: PinnedStatus
+pinned = PinnedStatus 1#
+
+unpinned :: PinnedStatus
+unpinned = PinnedStatus 0#
 
 -- | turn an Int# into a Bool
 --

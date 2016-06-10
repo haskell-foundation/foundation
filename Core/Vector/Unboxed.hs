@@ -62,13 +62,13 @@ import           Foreign.Marshal.Utils (copyBytes)
 -- The elements need to have fixed sized and the representation is a
 -- packed contiguous array in memory that can easily be passed
 -- to foreign interface
-data UVector ty = UVecBA !Int# {- unpinned / pinned flag -} ByteArray#
+data UVector ty = UVecBA {-# UNPACK #-} !PinnedStatus {- unpinned / pinned flag -} ByteArray#
                 | UVecAddr !Int# {- number of items of type ty -} (FinalPtr ())
 
 -- | A Mutable array of types built on top of GHC primitive.
 --
 -- Element in this array can be modified in place.
-data MUVector ty st = MUVecMA Int# (MutableByteArray# st)
+data MUVector ty st = MUVecMA {-# UNPACK #-} !PinnedStatus (MutableByteArray# st)
                     | MUVecAddr Int# (FinalPtr ())
 
 -- | Byte Array alias
@@ -295,7 +295,7 @@ newPinned n = newFake Proxy
   where newFake :: (PrimMonad prim, PrimType ty) => Proxy ty -> prim (MUVector ty (PrimState prim))
         newFake ty = primitive $ \s1 ->
             case newAlignedPinnedByteArray# bytes 8# s1 of
-                (# s2, mba #) -> (# s2, MUVecMA 1# mba #)
+                (# s2, mba #) -> (# s2, MUVecMA pinned mba #)
           where
                 !(I# bytes) = n * primSizeInBytes ty
         {-# INLINE newFake #-}
@@ -306,7 +306,7 @@ newUnpinned n = newFake Proxy
   where newFake :: (PrimMonad prim, PrimType ty) => Proxy ty -> prim (MUVector ty (PrimState prim))
         newFake ty = primitive $ \s1 ->
             case newByteArray# bytes s1 of
-                (# s2, mba #) -> (# s2, MUVecMA 0# mba #)
+                (# s2, mba #) -> (# s2, MUVecMA unpinned mba #)
           where
                 !(I# bytes) = n * primSizeInBytes ty
 
@@ -380,9 +380,9 @@ mutableLength = divBits Proxy
 --
 -- the MUVector must not be changed after freezing.
 unsafeFreeze :: PrimMonad prim => MUVector ty (PrimState prim) -> prim (UVector ty)
-unsafeFreeze (MUVecMA pinned mba) = primitive $ \s1 ->
+unsafeFreeze (MUVecMA pinnedState mba) = primitive $ \s1 ->
     case unsafeFreezeByteArray# mba s1 of
-        (# s2, ba #) -> (# s2, UVecBA pinned ba #)
+        (# s2, ba #) -> (# s2, UVecBA pinnedState ba #)
 unsafeFreeze (MUVecAddr len fptr) = return $ UVecAddr len fptr
 {-# INLINE unsafeFreeze #-}
 
@@ -397,7 +397,7 @@ freeze ma = do
 --
 -- The UVector must not be used after thawing.
 unsafeThaw :: (PrimType ty, PrimMonad prim) => UVector ty -> prim (MUVector ty (PrimState prim))
-unsafeThaw (UVecBA pinned ba) = primitive $ \st -> (# st, MUVecMA pinned (unsafeCoerce# ba) #)
+unsafeThaw (UVecBA pinnedState ba) = primitive $ \st -> (# st, MUVecMA pinnedState (unsafeCoerce# ba) #)
 unsafeThaw (UVecAddr len fptr) = return $ MUVecAddr len fptr
 {-# INLINE unsafeThaw #-}
 
