@@ -43,6 +43,7 @@ Library
                      Core.String
                      Core.String.IO
                      Core.IO
+                     Core.VFS
                      Core.Vector
                      Core.Collection
                      Core.Chunks
