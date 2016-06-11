@@ -66,6 +66,8 @@ Library
                      Core.Internal.IsList
                      Core.Internal.Identity
                      Core.Internal.Proxy
+                     Core.Internal.Types
+                     Core.Internal.PrimTypes
                      Core.Primitive.Types
                      Core.Primitive.Monad
                      Core.Primitive.Utils
