@@ -16,6 +16,7 @@ module Core.Vector
     , MVector
     , UVector
     , MUVector
+    , PrimType
     , ByteArray
     , Buffer
     -- exceptions

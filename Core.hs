@@ -77,6 +77,7 @@ module Core
     , Prelude.Double
       -- ** Collection types
     , UVector
+    , PrimType
     , Vector
     , ByteArray
     , String
@@ -150,7 +151,7 @@ import qualified Data.Traversable
 import           Data.Word (Word8, Word16, Word32, Word64, Word)
 import           Data.Int (Int8, Int16, Int32, Int64)
 import           Core.String (String)
-import           Core.Vector (UVector, Vector, ByteArray)
+import           Core.Vector (UVector, Vector, ByteArray, PrimType)
 --import           Core.Collection
 import qualified Core.String.IO
 
