@@ -4,6 +4,7 @@ module Core.VFS
       FilePath
     , FileName
     , filePathToString
+    , filePathFromString
     , filePathToLString
     , Path(..)
     ) where
@@ -64,6 +65,9 @@ filePathToString (FilePath fp) =
     case S.fromBytes S.UTF8 fp of
         Just s -> s
         Nothing -> error "cannot convert path"
+
+filePathFromString :: String -> FilePath
+filePathFromString s = FilePath (S.toBytes S.UTF8 s)
 
 filePathToLString :: FilePath -> [Char]
 filePathToLString = toList . filePathToString

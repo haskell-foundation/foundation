@@ -19,6 +19,7 @@ module Core.String.UTF8
     , Encoding(..)
     , fromBytes
     , fromBytesUnsafe
+    , toBytes
     ) where
 
 import           GHC.Prim
@@ -536,3 +537,7 @@ fromBytes UTF8 bytes =
 -- | Convert a Byte Array directly to a string without checking for UTF8 validity
 fromBytesUnsafe :: ByteArray -> String
 fromBytesUnsafe = String
+
+-- | Convert a String to a bytearray
+toBytes :: Encoding -> String -> ByteArray
+toBytes UTF8 (String ba) = ba
