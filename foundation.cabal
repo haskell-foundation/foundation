@@ -45,6 +45,7 @@ Library
                      Core.IO
                      Core.VFS
                      Core.Vector
+                     Core.Foreign
                      Core.Collection
                      Core.Chunks
                      Core.Primitive
@@ -67,8 +68,8 @@ Library
                      Core.Internal.Proxy
                      Core.Primitive.Types
                      Core.Primitive.Monad
-                     Core.Primitive.FinalPtr
                      Core.Primitive.Utils
+                     Core.Primitive.FinalPtr
                      Core.Vector.Common
                      Core.Vector.Unboxed
                      Core.Vector.Boxed
