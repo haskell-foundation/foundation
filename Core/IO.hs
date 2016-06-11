@@ -40,7 +40,7 @@ hGet handle n = do
     mv <- V.newPinned n
     r <- V.withMutablePtr mv $ \ptr -> loop n ptr
     if r < n
-        then V.unsafeFreezeShrink mv r
+        then V.unsafeFreezeShrink mv (n - r)
         else unsafeFreeze mv
   where
     loop left dst
@@ -66,7 +66,8 @@ withFile fp mode act = bracket (openFile fp mode) closeFile act
 -- | Read a binary file and return the whole content in one contiguous buffer.
 readFile :: FilePath -> IO ByteArray
 readFile fp = withFile fp S.ReadMode $ \h -> do
-    -- TODO filesize is an integer (whyyy ?!), and transforming to Int is probably the wrong thing to do here..
+    -- TODO filesize is an integer (whyyy ?!), and transforming to Int using
+    -- fromIntegral is probably the wrong thing to do here..
     sz <- S.hFileSize h
     mv <- V.newPinned (fromIntegral sz)
     V.withMutablePtr mv $ loop h (fromIntegral sz)
