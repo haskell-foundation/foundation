@@ -1,16 +1,19 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Main where
 
 import           Test.Tasty
 --import           Test.Tasty.Options
 --import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
+import           Test.QuickCheck.Monadic
 import           Control.Monad
 
 import           Core.String
 import           Core.Vector
+import           Core.Foreign
 import           Core.Collection
 import           Core
 import qualified Data.List as L
@@ -146,9 +149,22 @@ testCollection proxy genElement =
     withElements2 f = forAll ((,) <$> listOfElement genElement <*> arbitrary) f
     withElements2E f = forAll ((,) <$> listOfElement genElement <*> genElement) f
 
-testUnboxedForeign :: (Show e, Eq a, Eq e, Ord a, Ord e, Arbitrary e, SemiOrderedCollection a, Sequential a, Item a ~ Element a, Element a ~ e, Storable e)
+testUnboxedForeign :: (PrimType e, Show e, Eq a, Eq e, Ord a, Ord e, Arbitrary e, SemiOrderedCollection a, Sequential a, Item a ~ Element a, Element a ~ e, Storable e)
                    => Proxy a -> Gen e -> [TestTree]
-testUnboxedForeign _ _ = []
+testUnboxedForeign proxy genElement =
+    [ testProperty "equal" $ withElementsM $ \fptr l ->
+        return $ toVectorP proxy l == foreignMem fptr (length l)
+    , testProperty "take" $ withElementsM $ \fptr l -> do
+        n <- pick arbitrary
+        return $ take n (toVectorP proxy l) == take n (foreignMem fptr (length l))
+    , testProperty "take" $ withElementsM $ \fptr l -> do
+        n <- pick arbitrary
+        return $ drop n (toVectorP proxy l) == drop n (foreignMem fptr (length l))
+    ]
+  where
+    withElementsM f = monadicIO $ forAllM (listOfElement genElement) $ \l -> run (createPtr l) >>= \fptr -> f fptr l
+    toVectorP :: PrimType (Element c) => Proxy c -> [Element c] -> UVector (Element c)
+    toVectorP _ l = fromList l
 
 fromListP :: (IsList c, Item c ~ Element c) => Proxy c -> [Element c] -> c
 fromListP p = \x -> asProxyTypeOf (fromList x) p

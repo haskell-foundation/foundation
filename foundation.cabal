@@ -103,6 +103,7 @@ Test-Suite test-foundation
   Main-is:           Tests.hs
   Build-Depends:     base >= 3 && < 5
                    , mtl
+                   , QuickCheck
                    , tasty
                    , tasty-quickcheck
                    , tasty-hunit
