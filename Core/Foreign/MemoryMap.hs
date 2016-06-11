@@ -3,7 +3,7 @@ module Core.Foreign.MemoryMap
     ( fileMapRead
     ) where
 
-#ifdef __WIN32__
+#ifdef mingw32_HOST_OS
 import Core.Foreign.MemoryMap.Windows
 #else
 import Core.Foreign.MemoryMap.Posix

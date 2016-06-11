@@ -1,17 +1,15 @@
 module Core.Foreign.MemoryMap.Windows
-    ( mapViewOfFile
+    ( fileMapRead
     ) where
 
-import System.Win32.Types   ( HANDLE, DWORD, BOOL, SIZE_T, LPCTSTR, withTString
-                            , failIf, failIfNull, DDWORD, ddwordToDwords
-                            , iNVALID_HANDLE_VALUE )
 import System.Win32.Mem
 import System.Win32.File
 import System.Win32.FileMapping
-import System.Win32.Info
-import Control.Exception
+import Control.Exception hiding (handle)
 
 import Core.Internal.Types
+import Core.Internal.Base
+import Core.Primitive.FinalPtr
 import Core.VFS
 import Core.Foreign.MemoryMap.Types
 
@@ -23,8 +21,8 @@ fileMapRead path = bracket doOpen closeHandle doMapping
                                closeHandle
                                (getSizeAndMap handle)
     getSizeAndMap handle filemap = do
-        fileInfo <- getFileInformationByHandle fh
+        fileInfo <- getFileInformationByHandle handle
         fp <- mask_ $ do
             ptr <- mapViewOfFile filemap fILE_MAP_READ 0 0
-            toFinalPtr c_UnmapViewOfFileFinaliser ptr
-        return (fp, fromIntegral $ bhfiSize fileInfo) -- bhfiSize DDWord=Word64
+            toFinalPtr ptr unmapViewOfFile
+        return (fp, FileSize $ bhfiSize fileInfo) -- bhfiSize DDWord=Word64
