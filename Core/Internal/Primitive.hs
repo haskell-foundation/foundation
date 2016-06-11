@@ -26,6 +26,9 @@ module Core.Internal.Primitive
 import qualified Prelude
 import           GHC.Prim
 import           GHC.Word
+#if __GLASGOW_HASKELL__ >= 800
+import           GHC.IO
+#endif
 
 --  GHC 8.0  | Base 4.9
 --  GHC 7.10 | Base 4.8
@@ -106,12 +109,12 @@ compatCopyAddrToByteArray# addr ba ofs sz stini =
 -- | A mkWeak# version that keep working on 8.0
 --
 -- signature change in ghc-prim:
--- * 0.4: mkWeak# :: o -> b -> c -> State# RealWorld -> (#State# RealWorld, Weak# b#)
+-- * 0.4: mkWeak# :: o -> b -> c                                             -> State# RealWorld -> (#State# RealWorld, Weak# b#)
 -- * 0.5 :mkWeak# :: o -> b -> (State# RealWorld -> (#State# RealWorld, c#)) -> State# RealWorld -> (#State# RealWorld, Weak# b#)
 --
 compatMkWeak# :: o -> b -> Prelude.IO () -> State# RealWorld -> (#State# RealWorld, Weak# b #)
 #if __GLASGOW_HASKELL__ >= 800
-compatMkWeak# o b c s = mkWeak# o b (unPrimMonad c) s
+compatMkWeak# o b c s = mkWeak# o b (case c of IO { f -> f }) s
 #else
 compatMkWeak# o b c s = mkWeak# o b c s
 #endif
