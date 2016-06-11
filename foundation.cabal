@@ -76,6 +76,7 @@ Library
                      Core.Vector.Unboxed
                      Core.Vector.Boxed
                      Core.Foreign.MemoryMap
+                     Core.Foreign.MemoryMap.Types
                      Core.Partial
   if os(windows)
     Other-modules:   Core.Foreign.MemoryMap.Windows

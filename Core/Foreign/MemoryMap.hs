@@ -1,21 +1,13 @@
 {-# LANGUAGE CPP #-}
 module Core.Foreign.MemoryMap
-    (
+    ( fileMapRead
     ) where
 
-import Core.Internal.Base
-import Core.Collection.Indexed
-import Foreign.ForeignPtr
-
-#ifndef __WIN32__
-import Core.Foreign.MemoryMap.Posix
-#else
+#ifdef __WIN32__
 import Core.Foreign.MemoryMap.Windows
+#else
+import Core.Foreign.MemoryMap.Posix
 #endif
-
-data FileMap = FileMap
-    { fptr :: ForeignPtr Word8
-    }
 
 {-
 fileMap :: Fd -> Int -> IO FileMap

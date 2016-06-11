@@ -37,15 +37,28 @@ module Core.Foreign.MemoryMap.Posix
     , MemorySyncFlag(..)
     -- * system page size
     , sysconfPageSize
+    -- * High level
+    , fileMapRead
     ) where
 
 import Core.Internal.Base
+import Core.Internal.Types
 import System.Posix.Types
 import Foreign.Ptr
 import Foreign.C.Types
 import Foreign.C.Error
 import Data.Bits
-import qualified Prelude
+
+import Core.Collection.Foldable
+import Core.Primitive.FinalPtr
+import Core.VFS
+import qualified Prelude (fromIntegral)
+import Core.Foreign.MemoryMap.Types
+import Control.Exception
+
+import           GHC.IO.FD
+import           GHC.IO.IOMode
+import qualified GHC.IO.Device as IO
 
 foreign import ccall unsafe "mmap"
     c_mmap :: Ptr a -> CSize -> CInt -> CInt -> CInt -> COff -> IO (Ptr a)
@@ -119,7 +132,7 @@ data MemorySyncFlag =
     deriving (Show,Eq)
 
 cvalueOfMemoryProts :: [MemoryProtection] -> CInt
-cvalueOfMemoryProts = Prelude.foldl (.|.) 0 . fmap toProt
+cvalueOfMemoryProts = foldl (.|.) 0 . fmap toProt
   where toProt :: MemoryProtection -> CInt
         toProt MemoryProtectionNone    = (#const PROT_NONE)
         toProt MemoryProtectionRead    = (#const PROT_READ)
@@ -127,7 +140,7 @@ cvalueOfMemoryProts = Prelude.foldl (.|.) 0 . fmap toProt
         toProt MemoryProtectionExecute = (#const PROT_EXEC)
 
 cvalueOfMemorySync :: [MemorySyncFlag] -> CInt
-cvalueOfMemorySync = Prelude.foldl (.|.) 0 . fmap toSync
+cvalueOfMemorySync = foldl (.|.) 0 . fmap toSync
   where toSync MemorySyncAsync      = (#const MS_ASYNC)
         toSync MemorySyncSync       = (#const MS_SYNC)
         toSync MemorySyncInvalidate = (#const MS_INVALIDATE)
@@ -222,3 +235,19 @@ memorySync ptr sz flags = throwErrnoIfMinus1_ "msync" (c_msync ptr sz cflags)
 -- call 'sysconf'
 sysconfPageSize :: Int
 sysconfPageSize = Prelude.fromIntegral $ c_sysconf (#const _SC_PAGESIZE)
+
+--------------------------------------------------------------------------------
+
+fileSizeToCSize :: FileSize -> CSize
+fileSizeToCSize (FileSize sz) = Prelude.fromIntegral sz
+
+fileSizeFromInteger :: Integer -> FileSize
+fileSizeFromInteger = FileSize . Prelude.fromIntegral
+
+fileMapRead :: FileMapReadF
+fileMapRead fp = bracket (openFile (filePathToLString fp) ReadMode True) (IO.close . fst) $ \(fd,_) -> do
+    sz   <- fileSizeFromInteger `fmap` IO.getSize fd
+    let csz = fileSizeToCSize sz
+    p    <- memoryMap Nothing csz [MemoryProtectionRead] MemoryMapPrivate (Just $ Fd $ fdFD fd) 0
+    fptr <- toFinalPtr p (\p -> memoryUnmap p csz)
+    return (fptr, sz)

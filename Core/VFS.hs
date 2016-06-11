@@ -11,16 +11,16 @@ module Core.VFS
 import           Core.Internal.Base
 import           Core
 import qualified Core.Collection as C
-import qualified Core.Vector.Unboxed as Vec
-import           Core.Vector.Unboxed (UVector)
 import qualified Core.String.UTF8 as S
 
+-- | Represent an abstract Path that is made of PathEnt
 class Path path where
     type PathEnt path
     (</>)        :: path -> PathEnt path -> path
     splitPath    :: path -> [PathEnt path]
     splitPathEnt :: path -> Maybe (path, PathEnt path)
 
+-- | operating system local file
 instance Path FilePath where
     type PathEnt FilePath = FileName
     (</>)        = fileAppendEnt
@@ -33,10 +33,14 @@ pathSeparator = 0x2f -- '/'
 vPathSeparator :: UVector Word8
 vPathSeparator = fromList [pathSeparator]
 
-newtype FilePath = FilePath (UVector Word8)
+-- | Represent an opaque filepath on the operating system
+newtype FilePath = FilePath ByteArray
     deriving (Eq,Ord)
 
-data FileName = FileName (UVector Word8)
+-- | Represent a file name on the operating system
+--
+-- typically a file name doesn't contains any path separator
+data FileName = FileName ByteArray
     deriving (Eq,Ord)
 
 fileAppendEnt :: FilePath -> FileName -> FilePath

@@ -426,8 +426,10 @@ span p = break (not . p)
 map :: (a -> b) -> Vector a -> Vector b
 map f a = create (length a) (\i -> f $ unsafeIndex a i)
 
+{-
 mapIndex :: (Int -> a -> b) -> Vector a -> Vector b
 mapIndex f a = create (length a) (\i -> f i $ unsafeIndex a i)
+-}
 
 cons ::  ty -> Vector ty -> Vector ty
 cons e vec = runST $ do
