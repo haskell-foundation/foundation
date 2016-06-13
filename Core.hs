@@ -22,8 +22,7 @@ module Core
       -- ** Functions
     , Prelude.not
     , Prelude.otherwise
-    , Prelude.fst
-    , Prelude.snd
+    , module Core.Tuple
     , Control.Category.id
     , Prelude.maybe
     , Prelude.either
@@ -161,6 +160,7 @@ import qualified Core.Internal.Proxy
 
 import qualified Core.Number
 import qualified Core.Partial
+import           Core.Tuple
 
 import qualified Data.Maybe
 import qualified Data.Either

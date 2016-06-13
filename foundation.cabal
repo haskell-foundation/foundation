@@ -49,11 +49,11 @@ Library
                      Core.Collection
                      Core.Chunks
                      Core.Primitive
-                     Core.Data.STuple
                      -- Core.View
   Other-modules:     Core.String.Internal
                      Core.String.UTF8
                      Core.String.UTF8Table
+                     Core.Tuple
                      Core.Collection.List
                      Core.Collection.Element
                      Core.Collection.Sequential

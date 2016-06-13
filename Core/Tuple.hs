@@ -1,17 +1,18 @@
 -- |
--- Module      : Core.Data.STuple
+-- Module      : Core.STuple
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
 -- Portability : portable
 --
 {-# LANGUAGE DeriveDataTypeable #-}
-module Core.Data.STuple
+module Core.Tuple
     ( Tuple2(..)
     , Tuple3(..)
     , Tuple4(..)
     , Fstable(..)
     , Sndable(..)
+    , Thdable(..)
     ) where
 
 import Core.Internal.Base
@@ -33,21 +34,16 @@ data Tuple4 a b c d = Tuple4 !a !b !c !d
 class Fstable a where
     type FstTy a
     fst :: a -> FstTy a
+
 -- | Class of product types that have a second element
 class Sndable a where
     type SndTy a
     snd :: a -> SndTy a
 
-{-
+-- | Class of product types that have a third element
 class Thdable a where
     type ThdTy a
     thd :: a -> ThdTy a
-class Fthable a where
-    type FthTy a
-    fth :: a -> FthTy a
--}
-
---first :: (a -> b) -> (a,c) -> (b,c)
 
 instance Fstable (a,b) where
     type FstTy (a,b) = a
@@ -86,3 +82,16 @@ instance Sndable (Tuple3 a b c) where
 instance Sndable (Tuple4 a b c d) where
     type SndTy (Tuple4 a b c d) = b
     snd (Tuple4 _ b _ _) = b
+
+instance Thdable (a,b,c) where
+    type ThdTy (a,b,c) = c
+    thd (_,_,c) = c
+instance Thdable (a,b,c,d) where
+    type ThdTy (a,b,c,d) = c
+    thd (_,_,c,_) = c
+instance Thdable (Tuple3 a b c) where
+    type ThdTy (Tuple3 a b c) = c
+    thd (Tuple3 _ _ c) = c
+instance Thdable (Tuple4 a b c d) where
+    type ThdTy (Tuple4 a b c d) = c
+    thd (Tuple4 _ _ c _) = c
