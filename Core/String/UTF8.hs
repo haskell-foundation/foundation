@@ -5,6 +5,14 @@
 -- Stability   : experimental
 -- Portability : portable
 --
+-- A String type backed by a UTF8 encoded byte array and all the necessary
+-- functions to manipulate the string.
+--
+-- You can think of String as a specialization of a byte array that
+-- have element of type Char.
+--
+-- The String data must contain UTF8 valid data.
+--
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE UnboxedTuples #-}
