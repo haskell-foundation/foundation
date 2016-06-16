@@ -56,6 +56,7 @@ Library
                      Core.Tuple
                      Core.Collection.List
                      Core.Collection.Element
+                     Core.Collection.InnerFunctor
                      Core.Collection.Sequential
                      Core.Collection.Keyed
                      Core.Collection.Indexed

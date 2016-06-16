@@ -23,6 +23,7 @@ module Core.Collection
 
 import           Core.Internal.Base
 import           Core.Collection.Element
+import           Core.Collection.InnerFunctor
 import           Core.Collection.Keyed
 import           Core.Collection.Foldable
 import           Core.Collection.Sequential
@@ -30,17 +31,13 @@ import           Core.Collection.Indexed
 import           Core.Collection.Mutable
 import qualified Data.List
 
--- | A monomorphic functor that maps the inner values to values of the same type
-class InnerFunctor c where
-    imap :: (Element c -> Element c) -> c -> c
-    default imap :: (Functor f, Element (f a) ~ a, f a ~ c) => (a -> a) -> f a -> f a
-    imap = fmap
-
 -- | A set of methods on non empty ordered collection
 --
 -- note: Ordered does not mean sorted, it means the
 -- elements have a given order that is retained by
 -- the data structure.
+--
+-- TODO: to remove and streamline all those function in different classes.
 class SemiOrderedCollection c where
     {-# MINIMAL snoc, cons, find, sortBy, length, singleton #-}
     -- | Prepend an element to an ordered collection
@@ -56,7 +53,6 @@ class SemiOrderedCollection c where
     -- | Create a collection with a single element
     singleton :: Element c -> c
 
-instance InnerFunctor [a]
 instance SemiOrderedCollection [a] where
     snoc c e = c `mappend` [e]
     cons e c = e : c
