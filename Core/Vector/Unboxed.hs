@@ -18,6 +18,7 @@ module Core.Vector.Unboxed
     ( UVector(..)
     , MUVector(..)
     , ByteArray
+    , MutableByteArray
     , Buffer
     , PrimType(..)
     -- * methods
@@ -83,7 +84,10 @@ data MUVector ty st = MUVecMA {-# UNPACK #-} !PinnedStatus (MutableByteArray# st
 type ByteArray = UVector Word8
 
 -- | Mutable Byte Array alias
-type Buffer st = MUVector Word8
+type MutableByteArray st = MUVector Word8 st
+
+-- | Mutable Byte Array alias
+type Buffer st = MUVector Word8 st
 
 instance (PrimType ty, Show ty) => Show (UVector ty) where
     show v = show (toList v)

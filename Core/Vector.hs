@@ -18,6 +18,7 @@ module Core.Vector
     , MUVector
     , PrimType
     , ByteArray
+    , MutableByteArray
     , Buffer
     -- exceptions
     , OutOfBound
