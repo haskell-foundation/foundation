@@ -36,6 +36,8 @@ module Core.Vector.Unboxed
     , withPtr
     , withMutablePtr
     , unsafeFreezeShrink
+    , freezeShrink
+    , unsafeSlide
     -- * accessors
     , update
     , unsafeUpdate
@@ -390,7 +392,16 @@ length = divBits Proxy
             !elems       = quotInt# (sizeofByteArray# a) szBits
          in I# elems
     divBits _     (UVecAddr len _) = I# len
-{-# INLINE length #-}
+{-# INLINE[1] length #-}
+
+-- fast case for ByteArray
+{-# RULES "length/ByteArray"  length = lengthByteArray #-}
+
+lengthByteArray :: UVector Word8 -> Int
+lengthByteArray (UVecBA _ a) = I# (sizeofByteArray# a)
+lengthByteArray (UVecAddr len _) = I# len
+
+-- length :: UVector Word8 -> Int
 
 -- | return the numbers of elements in a mutable array
 mutableLength :: PrimType ty => MUVector ty st -> Int
@@ -429,6 +440,17 @@ freeze ma = do
     copyAt ma' 0 ma 0 len
     unsafeFreeze ma'
   where len = mutableLength ma
+
+freezeShrink :: (PrimType ty, PrimMonad prim) => MUVector ty (PrimState prim) -> Int -> prim (UVector ty)
+freezeShrink ma n = do
+    ma' <- new n
+    copyAt ma' 0 ma 0 n
+    unsafeFreeze ma'
+
+unsafeSlide :: PrimMonad prim => MUVector ty (PrimState prim) -> Int -> Int -> prim ()
+unsafeSlide (MUVecMA _ mba) start end    = primMutableByteArraySlideToStart mba start end
+unsafeSlide (MUVecAddr _ fptr) start end = withFinalPtr fptr $ \(Ptr addr) ->
+    primMutableAddrSlideToStart addr start end
 
 -- | Thaw an immutable array.
 --
@@ -489,6 +511,11 @@ equal a b
     !lb = length b
     loop n | n == la    = True
            | otherwise = (unsafeIndex a n == unsafeIndex b n) && loop (n+1)
+
+{-
+sizeEqual :: PrimType ty => UVector ty -> UVector ty -> Bool
+sizeEqual a b = length a == length b -- TODO optimise with direct comparaison of bytes or elements when possible
+-}
 
 -- | Compare 2 vectors
 vCompare :: (Ord ty, PrimType ty) => UVector ty -> UVector ty -> Ordering

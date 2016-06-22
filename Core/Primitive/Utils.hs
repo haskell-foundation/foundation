@@ -12,12 +12,15 @@ module Core.Primitive.Utils
     , primCopyFreezedBytesOffset
     , primCopyFreezedW32
     , primCopyFreezedW64
+    , primMutableAddrSlideToStart
+    , primMutableByteArraySlideToStart
     ) where
 
 import           Core.Internal.Base
 import           Core.Internal.Primitive
 import           Core.Primitive.Monad
 import           GHC.Prim
+import           GHC.Types
 
 -- | Copy all bytes from a byteArray# to a mutableByteArray#
 primCopyFreezedBytes :: PrimMonad m => MutableByteArray# (PrimState m) -> ByteArray# -> m ()
@@ -52,3 +55,17 @@ primCopyFreezedW64 mba ba = primitive $ \st -> (# loop st 0#, () #)
         | otherwise         = loop (writeWord64Array# mba n (indexWord64Array# ba n) st) (n +# 1#)
     {-# INLINE loop #-}
 {-# INLINE primCopyFreezedW64 #-}
+
+primMutableByteArraySlideToStart :: PrimMonad m => MutableByteArray# (PrimState m) -> Int -> Int -> m ()
+primMutableByteArraySlideToStart mba (I# ofs) (I# end) = primitive $ \st ->
+    (# copyMutableByteArray# mba 0# mba ofs (end -# ofs) st, () #)
+
+primMutableAddrSlideToStart :: PrimMonad m => Addr# -> Int -> Int -> m ()
+primMutableAddrSlideToStart addr (I# ofsIni) (I# end) = primitive $ \st -> (# loop st 0# ofsIni, () #)
+  where
+    loop !st !dst !ofs
+        | bool# (ofs ==# end) = st
+        | otherwise           =
+            case readWord8OffAddr# addr ofs st of { (# st', v #) ->
+            case writeWord8OffAddr# addr dst v st' of { st'' ->
+                loop st'' (dst +# 1#) (ofs +# 1#) }}

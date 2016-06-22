@@ -14,6 +14,7 @@ module Core.IO
     , withFile
     , hGet
     , readFile
+    , foldTextFile
     ) where
 
 import           System.IO (Handle, IOMode)
@@ -22,6 +23,7 @@ import           Core
 import           Core.Collection
 import           Core.VFS
 import qualified Core.Vector.Unboxed as V
+import qualified Core.String.UTF8 as S
 import           Control.Exception (bracket)
 import           Foreign.Ptr (plusPtr)
 
@@ -81,6 +83,30 @@ readFile fp = withFile fp S.ReadMode $ \h -> do
             if r > 0 && r <= toRead
                 then loop h (left - r) (dst `plusPtr` r)
                 else error "readFile: " -- turn into proper error
+
+foldTextFile :: (String -> a -> IO a) -> a -> FilePath -> IO a
+foldTextFile chunkf ini fp = do
+    buf <- V.newPinned blockSize
+    V.withMutablePtr buf $ \ptr ->
+        withFile fp S.ReadMode $ doFold buf ptr
+  where
+    doFold mv ptr handle = loop 0 ini
+      where
+        loop absPos acc = do
+            r <- S.hGetBuf handle ptr blockSize
+            if r > 0 && r <= blockSize
+                then do
+                    (pos, validateRet) <- S.mutableValidate mv 0 r
+                    s <- case validateRet of
+                        Nothing -> S.fromBytesUnsafe <$> V.freezeShrink mv r
+                        Just S.MissingByte -> do
+                            sRet <- S.fromBytesUnsafe <$> V.freezeShrink mv pos
+                            V.unsafeSlide mv pos r
+                            return sRet
+                        Just _ ->
+                            error ("foldTextFile: invalid UTF8 sequence: byte position: " <> show (absPos + pos))
+                    chunkf s acc >>= loop (absPos + r)
+                else error ("foldTextFile: read failed") -- FIXME
 
 blockSize :: Int
 blockSize = 4096

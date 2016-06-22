@@ -26,8 +26,11 @@ module Core.String.UTF8
     -- * Binary conversion
     , Encoding(..)
     , fromBytes
+    , fromChunkBytes
     , fromBytesUnsafe
     , toBytes
+    , mutableValidate
+    , ValidationFailure(..)
     ) where
 
 import           GHC.Prim
@@ -40,7 +43,7 @@ import           Core.Internal.Primitive
 import qualified Core.Collection as C
 import           Core.Primitive.Monad
 import           Core.String.UTF8Table
-import           Core.Vector.Unboxed (UVector, MUVector, ByteArray)
+import           Core.Vector.Unboxed (ByteArray, MutableByteArray)
 import qualified Core.Vector.Unboxed as Vec
 import           Core.Number
 
@@ -49,7 +52,7 @@ import qualified Data.List -- temporary
 -- | Opaque packed array of characters in the UTF8 encoding
 newtype String = String ByteArray
 
-newtype MutableString st = MutableString (MUVector Word8 st)
+newtype MutableString st = MutableString (MutableByteArray st)
 
 instance Show String where
     show = show . sToList
@@ -92,48 +95,105 @@ instance C.Sequential String where
     filter = filter
     reverse = reverse
 
-validateAt :: UVector Word8 -> Int -> Int -> (# Bool, Int #)
-validateAt ba n maxBytes
-    | nbBytes > maxBytes = (# False, n #)
-    | otherwise =
-        case nbBytes of
-            0 -> (# True, n + 1 #)
-            1 -> (# isContinuation (Vec.unsafeIndex ba (n + 1)) , n + 2 #)
-            2 -> (# isContinuation (Vec.unsafeIndex ba (n + 1)) &&
-                    isContinuation (Vec.unsafeIndex ba (n + 2)) , n + 3 #)
-            3 -> (# isContinuation (Vec.unsafeIndex ba (n + 1)) &&
-                    isContinuation (Vec.unsafeIndex ba (n + 2)) &&
-                    isContinuation (Vec.unsafeIndex ba (n + 3)) , n + 4 #)
-            _  -> (# False, n #)
-  where
-    !nbBytes = getNbBytes h
-    !h = Vec.unsafeIndex ba n
+data ValidationFailure = InvalidHeader
+                       | InvalidContinuation
+                       | MissingByte
+                       deriving (Show,Eq)
 
--- | Return whether the input is a valid UTF8 encoding
-validate :: ByteArray -> Int -> Int -> Maybe Int
-validate ba ofs n = loopSlow ofs
-  where {-loopAligned pos
-            | pos == n   = Nothing
-            | posp4 ># n = loopSlow pos
-            | otherwise  =
-                ba32
-                .&. 0x80808080
-                -- fast case: check if we have 4 ASCII characters
-                let r = and# (indexWord32Array# ba pos) 0x80808080##
-                 in if bool# (eqWord# r 0##)
-                        then loopAligned posp4
-                        else loopSlow pos
-          where
-        ba32 :: UVector Word32
-        ba32 = unsafeRecast ba
-             posp4  4
-            !posp4 = pos + 4 -}
-        loopSlow pos
-            | pos == n  = Nothing
-            | otherwise =
-                case validateAt ba pos (n - pos) of
-                    (# True, nextPos #) -> loopSlow nextPos
-                    (# False, _      #) -> Just pos
+validate :: ByteArray
+         -> Int
+         -> Int
+         -> (Int, Maybe ValidationFailure)
+validate ba ofsStart sz = loop ofsStart
+  where
+    end = ofsStart + sz
+
+    loop ofs
+        | ofs > end  = error "validate: internal error: went pass offset"
+        | ofs == end = (end, Nothing)
+        | otherwise  =
+            case one ofs of
+                (nextOfs, Nothing)  -> loop nextOfs
+                (pos, Just failure) -> (pos, Just failure)
+
+    one pos = do
+        let h = Vec.unsafeIndex ba pos
+            nbConts = getNbBytes h
+        if nbConts == 0xff
+            then (pos, Just InvalidHeader)
+            else if pos + 1 + nbConts > end
+                then (pos, Just MissingByte)
+                else do
+                    case nbConts of
+                        0 -> (pos + 1, Nothing)
+                        1 ->
+                            let c1 = Vec.unsafeIndex ba (pos + 1)
+                             in if isContinuation c1
+                                    then (pos + 2, Nothing)
+                                    else (pos, Just InvalidContinuation)
+                        2 ->
+                            let c1 = Vec.unsafeIndex ba (pos + 1)
+                                c2 = Vec.unsafeIndex ba (pos + 2)
+                             in if isContinuation c1 && isContinuation c2
+                                    then (pos + 3, Nothing)
+                                    else (pos, Just InvalidContinuation)
+                        3 ->
+                            let c1 = Vec.unsafeIndex ba (pos + 1)
+                                c2 = Vec.unsafeIndex ba (pos + 2)
+                                c3 = Vec.unsafeIndex ba (pos + 3)
+                             in if isContinuation c1 && isContinuation c2 && isContinuation c3
+                                    then (pos + 4, Nothing)
+                                    else (pos, Just InvalidContinuation)
+                        _ -> error "internal error"
+
+mutableValidate :: PrimMonad prim
+                => MutableByteArray (PrimState prim)
+                -> Int
+                -> Int
+                -> prim (Int, Maybe ValidationFailure)
+mutableValidate mba ofsStart sz = do
+    loop ofsStart
+  where
+    end = ofsStart + sz
+
+    loop ofs
+        | ofs > end  = error "mutableValidate: internal error: went pass offset"
+        | ofs == end = return (end, Nothing)
+        | otherwise  = do
+            r <- one ofs
+            case r of
+                (nextOfs, Nothing)  -> loop nextOfs
+                (pos, Just failure) -> return (pos, Just failure)
+
+    one pos = do
+        h <- C.mutUnsafeRead mba pos
+        let nbConts = getNbBytes h
+        if nbConts == 0xff
+            then return (pos, Just InvalidHeader)
+            else if pos + 1 + nbConts > end
+                then return (pos, Just MissingByte)
+                else do
+                    case nbConts of
+                        0 -> return (pos + 1, Nothing)
+                        1 -> do
+                            c1 <- C.mutUnsafeRead mba (pos + 1)
+                            if isContinuation c1
+                                then return (pos + 2, Nothing)
+                                else return (pos, Just InvalidContinuation)
+                        2 -> do
+                            c1 <- C.mutUnsafeRead mba (pos + 1)
+                            c2 <- C.mutUnsafeRead mba (pos + 2)
+                            if isContinuation c1 && isContinuation c2
+                                then return (pos + 3, Nothing)
+                                else return (pos, Just InvalidContinuation)
+                        3 -> do
+                            c1 <- C.mutUnsafeRead mba (pos + 1)
+                            c2 <- C.mutUnsafeRead mba (pos + 2)
+                            c3 <- C.mutUnsafeRead mba (pos + 3)
+                            if isContinuation c1 && isContinuation c2 && isContinuation c3
+                                then return (pos + 4, Nothing)
+                                else return (pos, Just InvalidContinuation)
+                        _ -> error "internal error"
 
 skipNext :: String -> Int -> Int
 skipNext (String ba) n = n + 1 + getNbBytes h
@@ -539,8 +599,25 @@ data Encoding = UTF8
 fromBytes :: Encoding -> ByteArray -> Maybe String
 fromBytes UTF8 bytes =
     case validate bytes 0 (C.length bytes) of
-        Nothing -> Just $ fromBytesUnsafe bytes
-        Just _  -> Nothing
+        (_, Nothing) -> Just $ fromBytesUnsafe bytes
+        (_, Just _)  -> Nothing
+
+fromChunkBytes :: [ByteArray] -> [String]
+fromChunkBytes l = loop l
+  where
+    loop []         = []
+    loop (bytes:[]) =
+        case validate bytes 0 (C.length bytes) of
+            (_, Nothing)  -> [fromBytesUnsafe bytes]
+            (_, Just err) -> doErr err
+    loop (bytes:cs@(c1:c2)) =
+        case validate bytes 0 (C.length bytes) of
+            (_, Nothing) -> fromBytesUnsafe bytes : loop cs
+            (pos, Just MissingByte) ->
+                let (b1,b2) = C.splitAt pos bytes
+                 in fromBytesUnsafe b1 : loop ((b2 `mappend` c1) : c2)
+            (_, Just err) -> doErr err
+    doErr err = error ("fromChunkBytes: " <> show err)
 
 -- | Convert a Byte Array directly to a string without checking for UTF8 validity
 fromBytesUnsafe :: ByteArray -> String
