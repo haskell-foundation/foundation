@@ -34,7 +34,7 @@ Default-Extensions: NoImplicitPrelude
 Then in your modules:
 
 ```haskell
-import Overture
+import Core
 ```
 
 How to contribute
