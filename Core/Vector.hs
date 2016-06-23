@@ -19,7 +19,6 @@ module Core.Vector
     , PrimType
     , ByteArray
     , MutableByteArray
-    , Buffer
     -- exceptions
     , OutOfBound
     ) where

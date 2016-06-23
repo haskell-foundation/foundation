@@ -51,8 +51,10 @@ import qualified Data.List -- temporary
 
 -- | Opaque packed array of characters in the UTF8 encoding
 newtype String = String ByteArray
+    deriving (Typeable)
 
 newtype MutableString st = MutableString (MutableByteArray st)
+    deriving (Typeable)
 
 instance Show String where
     show = show . sToList

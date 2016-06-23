@@ -27,9 +27,11 @@ import           Prelude ((-), (+))
 
 -- | Vector of a
 data Vector a = Vector (Array# a)
+    deriving (Typeable)
 
 -- | Mutable Vector of a
 data MVector a st = MVector (MutableArray# st a)
+    deriving (Typeable)
 
 instance Functor Vector where
     fmap = map

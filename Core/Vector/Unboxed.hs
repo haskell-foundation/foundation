@@ -19,7 +19,6 @@ module Core.Vector.Unboxed
     , MUVector(..)
     , ByteArray
     , MutableByteArray
-    , Buffer
     , PrimType(..)
     -- * methods
     , mutableLength
@@ -87,9 +86,6 @@ type ByteArray = UVector Word8
 
 -- | Mutable Byte Array alias
 type MutableByteArray st = MUVector Word8 st
-
--- | Mutable Byte Array alias
-type Buffer st = MUVector Word8 st
 
 instance (PrimType ty, Show ty) => Show (UVector ty) where
     show v = show (toList v)

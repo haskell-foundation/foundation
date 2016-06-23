@@ -86,6 +86,7 @@ Library
   Default-Extensions: NoImplicitPrelude
                       TypeFamilies
                       BangPatterns
+                      DeriveDataTypeable
   Build-depends:     base >= 4 && < 5
                    , ghc-prim
   if os(windows)
