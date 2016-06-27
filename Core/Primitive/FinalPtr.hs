@@ -14,6 +14,7 @@
 {-# LANGUAGE CPP #-}
 module Core.Primitive.FinalPtr
     ( FinalPtr
+    , finalPtrSameMemory
     , castFinalPtr
     , toFinalPtr
     , withFinalPtr
@@ -24,10 +25,18 @@ import GHC.Ptr
 import GHC.IO
 import Core.Primitive.Monad
 import Core.Internal.Primitive
-import Core.Internal.Base (return)
+import Core.Internal.Base (return, Bool(..), (==))
 
 -- | Create a pointer with an associated finalizer
 data FinalPtr a = FinalPtr (Ptr a)
+
+-- | Check if 2 final ptr points on the same memory bits
+--
+-- it stand to reason that provided a final ptr that is still being referenced
+-- and thus have the memory still valid, if 2 final ptrs have the
+-- same address, they should be the same final ptr
+finalPtrSameMemory :: FinalPtr a -> FinalPtr b -> Bool
+finalPtrSameMemory (FinalPtr p1) (FinalPtr p2) = p1 == (castPtr p2)
 
 -- | create a new FinalPtr from a Pointer
 toFinalPtr :: PrimMonad prim => Ptr a -> (Ptr a -> IO ()) -> prim (FinalPtr a)
