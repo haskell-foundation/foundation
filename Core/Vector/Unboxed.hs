@@ -10,26 +10,24 @@
 -- to allow easy use with Foreign interfaces, ByteString
 -- and always aligned to 64 bytes.
 --
--- Import this module qualified
---
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
 module Core.Vector.Unboxed
     ( UVector(..)
-    , MUVector(..)
     , ByteArray
-    , MutableByteArray
     , PrimType(..)
     -- * methods
-    , mutableLength
     , copy
     , copyAtRO
     -- * internal methods
     , copyAddr
     , unsafeRecast
+    , length
+    , freeze
+    , unsafeFreeze
+    , thaw
+    , unsafeThaw
     -- * Creation
-    , new
-    , newPinned
     , create
     , sub
     , withPtr
@@ -44,9 +42,27 @@ module Core.Vector.Unboxed
     -- * Functions
     , map
     , mapIndex
-    -- * Foreign creation
+    , index
+    , null
+    , take
+    , drop
+    , splitAt
+    , revDrop
+    , revTake
+    , revSplitAt
+    , splitOn
+    , break
+    , span
+    , cons
+    , snoc
+    , find
+    , sortBy
+    , filter
+    , reverse
+    , foldl
+    , foldr
+    , foldl'
     , foreignMem
-    , mutableForeignMem
     ) where
 
 import           GHC.Prim
@@ -61,11 +77,10 @@ import           Core.Primitive.Monad
 import           Core.Primitive.Types
 import           Core.Primitive.FinalPtr
 import           Core.Primitive.Utils
-import qualified Core.Collection as C
 import           Core.Vector.Common
+import           Core.Vector.Unboxed.Mutable
 import           Core.Number
 import qualified Data.List
-import           Foreign.Marshal.Utils (copyBytes)
 
 -- | An array of type built on top of GHC primitive.
 --
@@ -75,17 +90,8 @@ import           Foreign.Marshal.Utils (copyBytes)
 data UVector ty = UVecBA {-# UNPACK #-} !PinnedStatus {- unpinned / pinned flag -} ByteArray#
                 | UVecAddr !Int# {- number of items of type ty -} (FinalPtr ty)
 
--- | A Mutable array of types built on top of GHC primitive.
---
--- Element in this array can be modified in place.
-data MUVector ty st = MUVecMA {-# UNPACK #-} !PinnedStatus (MutableByteArray# st)
-                    | MUVecAddr Int# (FinalPtr ty)
-
 -- | Byte Array alias
 type ByteArray = UVector Word8
-
--- | Mutable Byte Array alias
-type MutableByteArray st = MUVector Word8 st
 
 instance (PrimType ty, Show ty) => Show (UVector ty) where
     show v = show (toList v)
@@ -99,69 +105,12 @@ instance PrimType ty => Monoid (UVector ty) where
     mappend = append
     mconcat = concat
 
-type instance C.Element (UVector ty) = ty
-
 instance PrimType ty => IsList (UVector ty) where
     type Item (UVector ty) = ty
     fromList = vFromList
     toList = vToList
 
-instance PrimType ty => C.InnerFunctor (UVector ty) where
-    imap = map
 
-instance PrimType ty => C.Foldable (UVector ty) where
-    foldl = foldl
-    foldr = foldr
-    foldl' = foldl'
-
-instance PrimType ty => C.SemiOrderedCollection (UVector ty) where
-    snoc = snoc
-    cons = cons
-    find = find
-    sortBy = sortBy
-    length = length
-    singleton = fromList . (:[])
-
-instance PrimType ty => C.Sequential (UVector ty) where
-    null = null
-    take = take
-    revTake = revTake
-    drop = drop
-    revDrop = revDrop
-    splitAt = splitAt
-    revSplitAt = revSplitAt
-    splitOn = splitOn
-    break = break
-    span = span
-    filter = filter
-    reverse = reverse
-
-instance PrimType ty => C.IndexedCollection (UVector ty) where
-    (!) l n
-        | n < 0 || n >= length l = Nothing
-        | otherwise              = Just $ index l n
-    findIndex predicate c = loop 0
-      where
-        !len = length c
-        loop i
-            | i == len                    = Nothing
-            | predicate (unsafeIndex c i) = Just i
-            | otherwise                   = Nothing
-
-instance PrimType ty => C.MutableCollection (MUVector ty) where
-    type Collection (MUVector ty) = UVector ty
-    type MutableKey (MUVector ty) = Int
-    type MutableValue (MUVector ty) = ty
-
-    thaw = thaw
-    freeze = freeze
-    unsafeThaw = unsafeThaw
-    unsafeFreeze = unsafeFreeze
-
-    mutUnsafeWrite = unsafeWrite
-    mutUnsafeRead = unsafeRead
-    mutWrite = write
-    mutRead = read
 
 {-
 fmapUVec :: (PrimType a, PrimType b) => (a -> b) -> UVector a -> UVector b
@@ -190,17 +139,10 @@ mutableSizeInBytes muv@(MUVecAddr i _) =
 vectorProxyTy :: UVector ty -> Proxy ty
 vectorProxyTy _ = Proxy
 
-mutableVectorProxyTy :: MUVector ty st -> Proxy ty
-mutableVectorProxyTy _ = Proxy
-
 -- rename to sizeInBitsOfCell
 sizeInBytesOfContent :: PrimType ty => UVector ty -> Int
 sizeInBytesOfContent = primSizeInBytes . vectorProxyTy
 {-# INLINE sizeInBytesOfContent #-}
-
-sizeInMutableBytesOfContent :: PrimType ty => MUVector ty s -> Int
-sizeInMutableBytesOfContent = primSizeInBytes . mutableVectorProxyTy
-{-# INLINE sizeInMutableBytesOfContent #-}
 
 -- | Copy every cells of an existing array to a new array
 copy :: PrimType ty => UVector ty -> UVector ty
@@ -244,139 +186,12 @@ unsafeIndex v@(UVecAddr _ fptr) n = withUnsafeFinalPtr fptr (primAddrIndex' v)
     primAddrIndex' _ (Ptr addr) = return (primAddrIndex addr n)
 {-# INLINE unsafeIndex #-}
 
--- | read a cell in a mutable array.
---
--- If the index is out of bounds, an error is raised.
-read :: (PrimMonad prim, PrimType ty) => MUVector ty (PrimState prim) -> Int -> prim ty
-read array n
-    | n < 0 || n >= len = primThrow (OutOfBound OOB_Read n len)
-    | otherwise         = unsafeRead array n
-  where len = mutableLength array
-{-# INLINE read #-}
-
--- | read from a cell in a mutable array without bounds checking.
---
--- Reading from invalid memory can return unpredictable and invalid values.
--- use 'read' if unsure.
-unsafeRead :: (PrimMonad prim, PrimType ty) => MUVector ty (PrimState prim) -> Int -> prim ty
-unsafeRead (MUVecMA _ mba) i = primMbaRead mba i
-unsafeRead (MUVecAddr _ fptr) i = withFinalPtr fptr $ \(Ptr addr) -> primAddrRead addr i
-{-# INLINE unsafeRead #-}
-
--- | Write to a cell in a mutable array.
---
--- If the index is out of bounds, an error is raised.
-write :: (PrimMonad prim, PrimType ty) => MUVector ty (PrimState prim) -> Int -> ty -> prim ()
-write array n val
-    | n < 0 || n >= len = primThrow (OutOfBound OOB_Write n len)
-    | otherwise         = unsafeWrite array n val
-  where
-    len = mutableLength array
-{-# INLINE write #-}
-
--- | write to a cell in a mutable array without bounds checking.
---
--- Writing with invalid bounds will corrupt memory and your program will
--- become unreliable. use 'write' if unsure.
-unsafeWrite :: (PrimMonad prim, PrimType ty) => MUVector ty (PrimState prim) -> Int -> ty -> prim ()
-unsafeWrite (MUVecMA _ mba) i v = primMbaWrite mba i v
-unsafeWrite (MUVecAddr _ fptr) i v = withFinalPtr fptr $ \(Ptr addr) -> primAddrWrite addr i v
-{-# INLINE unsafeWrite #-}
-
--- | Create a new mutable array of size @n.
---
--- TODO: heuristic to allocated unpinned (< 1K for example)
-new :: (PrimMonad prim, PrimType ty) => Int -> prim (MUVector ty (PrimState prim))
-new n
-    | n > 0     = newPinned n
-    | otherwise = newUnpinned n
-
-newNative :: (PrimMonad prim, PrimType ty) => Int -> (MutableByteArray# (PrimState prim) -> prim ()) -> prim (MUVector ty (PrimState prim))
-newNative n f = do
-    muvec <- new n
-    case muvec of
-        (MUVecMA _ mba) -> f mba >> return muvec
-        (MUVecAddr {})  -> error "internal error: unboxed new only supposed to allocate natively"
-
-mutableForeignMem :: (PrimMonad prim, PrimType ty)
-                  => FinalPtr ty -- ^ the start pointer with a finalizer
-                  -> Int         -- ^ the number of elements (in elements, not bytes)
-                  -> prim (MUVector ty (PrimState prim))
-mutableForeignMem fptr (I# nb) = return $ MUVecAddr nb fptr
-
 foreignMem :: PrimType ty
            => FinalPtr ty -- ^ the start pointer with a finalizer
            -> Int         -- ^ the number of elements (in elements, not bytes)
            -> UVector ty
 foreignMem fptr (I# nb) = UVecAddr nb fptr
 
-
--- | Create a new pinned mutable array of size @n.
---
--- all the cells are uninitialized and could contains invalid values.
---
--- All mutable arrays are allocated on a 64 bits aligned addresses
-newPinned :: (PrimMonad prim, PrimType ty) => Int -> prim (MUVector ty (PrimState prim))
-newPinned n = newFake Proxy
-  where newFake :: (PrimMonad prim, PrimType ty) => Proxy ty -> prim (MUVector ty (PrimState prim))
-        newFake ty = primitive $ \s1 ->
-            case newAlignedPinnedByteArray# bytes 8# s1 of
-                (# s2, mba #) -> (# s2, MUVecMA pinned mba #)
-          where
-                !(I# bytes) = n * primSizeInBytes ty
-        {-# INLINE newFake #-}
-{-# INLINE new #-}
-
-newUnpinned :: (PrimMonad prim, PrimType ty) => Int -> prim (MUVector ty (PrimState prim))
-newUnpinned n = newFake Proxy
-  where newFake :: (PrimMonad prim, PrimType ty) => Proxy ty -> prim (MUVector ty (PrimState prim))
-        newFake ty = primitive $ \s1 ->
-            case newByteArray# bytes s1 of
-                (# s2, mba #) -> (# s2, MUVecMA unpinned mba #)
-          where
-                !(I# bytes) = n * primSizeInBytes ty
-
--- | Copy a number of elements from an array to another array with offsets
-copyAt :: (PrimMonad prim, PrimType ty)
-       => MUVector ty (PrimState prim) -- ^ destination array
-       -> Int                -- ^ offset at destination
-       -> MUVector ty (PrimState prim) -- ^ source array
-       -> Int                -- ^ offset at source
-       -> Int                -- ^ number of elements to copy
-       -> prim ()
-copyAt dst od src os n = loop od os
-  where endIndex = os + n
-        loop d i
-            | i == endIndex = return ()
-            | otherwise     = unsafeRead src i >>= unsafeWrite dst d >> loop (d+1) (i+1)
-
--- TODO Optimise with copyByteArray#
-copyAtRO :: (PrimMonad prim, PrimType ty)
-         => MUVector ty (PrimState prim) -- ^ destination array
-         -> Int                -- ^ offset at destination
-         -> UVector ty         -- ^ source array
-         -> Int                -- ^ offset at source
-         -> Int                -- ^ number of elements to copy
-         -> prim ()
-copyAtRO dst od src os n = loop od os
-  where endIndex = os + n
-        loop d i
-            | i == endIndex = return ()
-            | otherwise     = unsafeWrite dst d (unsafeIndex src i) >> loop (d+1) (i+1)
-
-copyAddr :: (PrimMonad prim, PrimType ty)
-         => MUVector ty (PrimState prim) -- ^ destination array
-         -> Int                -- ^ offset at destination
-         -> Ptr Word8          -- ^ source ptr
-         -> Int                -- ^ offset at source
-         -> Int                -- ^ number of elements to copy
-         -> prim ()
-copyAddr (MUVecMA _ dst) (I# od) (Ptr src) (I# os) (I# sz) = primitive $ \s ->
-    (# compatCopyAddrToByteArray# (plusAddr# src os) dst od sz s, () #)
-copyAddr (MUVecAddr _ fptr) od src os sz =
-    withFinalPtr fptr $ \dst ->
-        unsafePrimFromIO $ copyBytes (dst `plusPtr` od) (src `plusPtr` os) sz
-        --memcpy addr to addr
 
 -- | return the number of elements of the array.
 length :: PrimType ty => UVector ty -> Int
@@ -397,19 +212,22 @@ lengthByteArray :: UVector Word8 -> Int
 lengthByteArray (UVecBA _ a) = I# (sizeofByteArray# a)
 lengthByteArray (UVecAddr len _) = I# len
 
--- length :: UVector Word8 -> Int
+-- TODO Optimise with copyByteArray#
+copyAtRO :: (PrimMonad prim, PrimType ty)
+         => MUVector ty (PrimState prim) -- ^ destination array
+         -> Int                -- ^ offset at destination
+         -> UVector ty         -- ^ source array
+         -> Int                -- ^ offset at source
+         -> Int                -- ^ number of elements to copy
+         -> prim ()
+copyAtRO dst od src os n = loop od os
+  where endIndex = os + n
+        loop d i
+            | i == endIndex = return ()
+            | otherwise     = unsafeWrite dst d (unsafeIndex src i) >> loop (d+1) (i+1)
 
--- | return the numbers of elements in a mutable array
-mutableLength :: PrimType ty => MUVector ty st -> Int
-mutableLength = divBits Proxy
-  where
-    divBits :: PrimType ty => Proxy ty -> MUVector ty st -> Int
-    divBits proxy (MUVecMA _ a) =
-        let !(I# szBits) = primSizeInBytes proxy
-            !elems       = quotInt# (sizeofMutableByteArray# a) szBits
-         in I# elems
-    divBits _     (MUVecAddr len _) = I# len
-{-# INLINE mutableLength #-}
+
+-- length :: UVector Word8 -> Int
 
 -- | Freeze a mutable array into an array.
 --
@@ -486,7 +304,7 @@ vFromList l = runST $ do
     ma <- new len
     iter 0 l $ \i x -> unsafeWrite ma i x
     unsafeFreeze ma
-  where len = C.length l
+  where len = Data.List.length l
         iter _ [] _ = return ()
         iter i (x:xs) z = z i x >> iter (i+1) xs z
 

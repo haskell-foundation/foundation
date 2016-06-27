@@ -14,6 +14,7 @@ module Core.Collection.Foldable
 import           Core.Internal.Base
 import           Core.Collection.Element
 import qualified Data.List
+import qualified Core.Vector.Unboxed as UV
 
 -- | Give the ability to fold a collection on itself
 class Foldable collection where
@@ -48,3 +49,8 @@ instance Foldable [a] where
     foldl = Data.List.foldl
     foldr = Data.List.foldr
     foldl' = Data.List.foldl'
+
+instance UV.PrimType ty => Foldable (UV.UVector ty) where
+    foldl = UV.foldl
+    foldr = UV.foldr
+    foldl' = UV.foldl'

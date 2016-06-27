@@ -75,6 +75,7 @@ Library
                      Core.Primitive.FinalPtr
                      Core.Vector.Common
                      Core.Vector.Unboxed
+                     Core.Vector.Unboxed.Mutable
                      Core.Vector.Boxed
                      Core.Foreign.MemoryMap
                      Core.Foreign.MemoryMap.Types

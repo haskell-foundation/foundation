@@ -30,6 +30,7 @@ import           Core.Collection.Sequential
 import           Core.Collection.Indexed
 import           Core.Collection.Mutable
 import qualified Data.List
+import qualified Core.Vector.Unboxed as UV
 
 -- | A set of methods on non empty ordered collection
 --
@@ -61,4 +62,11 @@ instance SemiOrderedCollection [a] where
     length = Data.List.length
     singleton = (:[])
 
+instance UV.PrimType ty => SemiOrderedCollection (UV.UVector ty) where
+    snoc = UV.snoc
+    cons = UV.cons
+    find = UV.find
+    sortBy = UV.sortBy
+    length = UV.length
+    singleton = fromList . (:[])
 --takeWhile p = fst . span p

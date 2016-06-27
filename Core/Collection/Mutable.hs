@@ -10,6 +10,10 @@ module Core.Collection.Mutable
     ) where
 
 import Core.Primitive.Monad
+import Core.Internal.Base
+
+import qualified Core.Vector.Unboxed.Mutable as MUV
+import qualified Core.Vector.Unboxed as UV
 
 -- | Collection of things that can be made mutable, modified and then freezed into an immutable collection
 class MutableCollection c where
@@ -31,3 +35,18 @@ class MutableCollection c where
     mutWrite       :: PrimMonad prim => c (PrimState prim) -> MutableKey c -> MutableValue c -> prim ()
     mutUnsafeRead :: PrimMonad prim => c (PrimState prim) -> MutableKey c -> prim (MutableValue c)
     mutRead       :: PrimMonad prim => c (PrimState prim) -> MutableKey c -> prim (MutableValue c)
+
+instance UV.PrimType ty => MutableCollection (MUV.MUVector ty) where
+    type Collection (MUV.MUVector ty) = UV.UVector ty
+    type MutableKey (MUV.MUVector ty) = Int
+    type MutableValue (MUV.MUVector ty) = ty
+
+    thaw = UV.thaw
+    freeze = UV.freeze
+    unsafeThaw = UV.unsafeThaw
+    unsafeFreeze = UV.unsafeFreeze
+
+    mutUnsafeWrite = MUV.unsafeWrite
+    mutUnsafeRead = MUV.unsafeRead
+    mutWrite = MUV.write
+    mutRead = MUV.read

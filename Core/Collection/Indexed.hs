@@ -14,6 +14,7 @@ module Core.Collection.Indexed
 import           Core.Internal.Base
 import           Core.Collection.Element
 import qualified Data.List
+import qualified Core.Vector.Unboxed as UV
 
 -- | Collection of elements that can indexed by int
 class IndexedCollection c where
@@ -27,3 +28,15 @@ instance IndexedCollection [a] where
                         []  -> Nothing
                         x:_ -> Just x
     findIndex = Data.List.findIndex
+
+instance UV.PrimType ty => IndexedCollection (UV.UVector ty) where
+    (!) l n
+        | n < 0 || n >= UV.length l = Nothing
+        | otherwise                 = Just $ UV.index l n
+    findIndex predicate c = loop 0
+      where
+        !len = UV.length c
+        loop i
+            | i == len                       = Nothing
+            | predicate (UV.unsafeIndex c i) = Just i
+            | otherwise                      = Nothing

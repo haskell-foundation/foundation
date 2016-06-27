@@ -9,6 +9,9 @@ module Core.Collection.Element
     ( Element
     ) where
 
+import Core.Vector.Unboxed (UVector)
+
 -- | Element type of a collection
 type family Element container
 type instance Element [a] = a
+type instance Element (UVector ty) = ty
