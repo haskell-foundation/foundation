@@ -43,8 +43,10 @@ import           Core.Internal.Primitive
 import qualified Core.Collection as C
 import           Core.Primitive.Monad
 import           Core.String.UTF8Table
-import           Core.Vector.Unboxed (ByteArray, MutableByteArray)
+import           Core.Vector.Unboxed (ByteArray)
+import           Core.Vector.Unboxed.Mutable (MutableByteArray)
 import qualified Core.Vector.Unboxed as Vec
+import qualified Core.Vector.Unboxed.Mutable as MVec
 import           Core.Number
 
 import qualified Data.List -- temporary
@@ -102,6 +104,10 @@ data ValidationFailure = InvalidHeader
                        | MissingByte
                        deriving (Show,Eq)
 
+-- | Validate a bytearray for UTF8'ness
+--
+-- On success Nothing is returned
+-- On Failure the position along with the failure reason
 validate :: ByteArray
          -> Int
          -> Int
@@ -449,7 +455,7 @@ sizeBytes (String ba) = I# (sizeofByteArray# ba)
 new :: PrimMonad prim
     => Int -- ^ in number of bytes, not of elements.
     -> prim (MutableString (PrimState prim))
-new n = MutableString `fmap` Vec.new n
+new n = MutableString `fmap` MVec.new n
 
 create :: PrimMonad prim => Int -> (MutableString (PrimState prim) -> prim Int) -> prim String
 create sz f = do
@@ -597,12 +603,22 @@ reverse s@(String ba) = runST $ do
 data Encoding = UTF8
     deriving (Show,Eq)
 
+{-
 -- | Convert a Byte Array to a string and check UTF8 validity
 fromBytes :: Encoding -> ByteArray -> Maybe String
 fromBytes UTF8 bytes =
     case validate bytes 0 (C.length bytes) of
         (_, Nothing) -> Just $ fromBytesUnsafe bytes
         (_, Just _)  -> Nothing
+        -}
+
+fromBytes :: Encoding -> ByteArray -> (String, ByteArray)
+fromBytes UTF8 bytes =
+    case validate bytes 0 (C.length bytes) of
+        (_, Nothing)  -> (fromBytesUnsafe bytes, mempty)
+        (pos, Just _) ->
+            let (b1, b2) = C.splitAt pos bytes
+             in (fromBytesUnsafe b1, b2)
 
 fromChunkBytes :: [ByteArray] -> [String]
 fromChunkBytes l = loop l

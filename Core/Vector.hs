@@ -26,3 +26,4 @@ module Core.Vector
 import           Core.Vector.Common
 import           Core.Vector.Boxed
 import           Core.Vector.Unboxed
+import           Core.Vector.Unboxed.Mutable

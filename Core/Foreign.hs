@@ -14,4 +14,5 @@ module Core.Foreign
 
 import           Core.Primitive.FinalPtr
 import qualified Core.Vector.Unboxed as V
+import qualified Core.Vector.Unboxed.Mutable as V
 import           Core.Foreign.MemoryMap
