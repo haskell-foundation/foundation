@@ -27,3 +27,4 @@ import           Core.Vector.Common
 import           Core.Vector.Boxed
 import           Core.Vector.Unboxed
 import           Core.Vector.Unboxed.Mutable
+import           Core.Vector.Unboxed.ByteArray

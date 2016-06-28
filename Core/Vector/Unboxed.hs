@@ -226,9 +226,6 @@ copyAtRO dst od src os n = loop od os
             | i == endIndex = return ()
             | otherwise     = unsafeWrite dst d (unsafeIndex src i) >> loop (d+1) (i+1)
 
-
--- length :: UVector Word8 -> Int
-
 -- | Freeze a mutable array into an array.
 --
 -- the MUVector must not be changed after freezing.
