@@ -14,8 +14,6 @@
 {-# LANGUAGE UnboxedTuples #-}
 module Core.Vector.Unboxed.Mutable
     ( MUVector(..)
-    , MutableByteArray
-
     -- * Property queries
     , sizeInMutableBytesOfContent
     , mutableLength
@@ -52,9 +50,6 @@ import           Foreign.Marshal.Utils (copyBytes)
 -- Element in this array can be modified in place.
 data MUVector ty st = MUVecMA {-# UNPACK #-} !PinnedStatus (MutableByteArray# st)
                     | MUVecAddr Int# (FinalPtr ty)
-
--- | Mutable Byte Array alias
-type MutableByteArray st = MUVector Word8 st
 
 mutableVectorProxyTy :: MUVector ty st -> Proxy ty
 mutableVectorProxyTy _ = Proxy

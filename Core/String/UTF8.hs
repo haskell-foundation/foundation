@@ -44,7 +44,7 @@ import qualified Core.Collection as C
 import           Core.Primitive.Monad
 import           Core.String.UTF8Table
 import           Core.Vector.Unboxed (ByteArray)
-import           Core.Vector.Unboxed.Mutable (MutableByteArray)
+import           Core.Vector.Unboxed.ByteArray (MutableByteArray)
 import qualified Core.Vector.Unboxed as Vec
 import qualified Core.Vector.Unboxed.Mutable as MVec
 import           Core.Number
