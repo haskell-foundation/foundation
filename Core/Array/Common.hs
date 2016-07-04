@@ -1,5 +1,5 @@
 -- |
--- Module      : Core.Vector.Common
+-- Module      : Core.Array.Common
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
@@ -8,7 +8,7 @@
 -- Common part for vectors
 --
 {-# LANGUAGE DeriveDataTypeable #-}
-module Core.Vector.Common
+module Core.Array.Common
     ( OutOfBound(..)
     , OutOfBoundOperation(..)
     ) where

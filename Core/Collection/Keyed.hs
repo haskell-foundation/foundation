@@ -1,5 +1,5 @@
 -- |
--- Module      : Core.Vector.Keyed
+-- Module      : Core.Array.Keyed
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental

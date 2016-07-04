@@ -1,5 +1,5 @@
 -- |
--- Module      : Core.Vector.Element
+-- Module      : Core.Array.Element
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
@@ -9,9 +9,9 @@ module Core.Collection.Element
     ( Element
     ) where
 
-import Core.Vector.Unboxed (UVector)
+import Core.Array.Unboxed (UArray)
 
 -- | Element type of a collection
 type family Element container
 type instance Element [a] = a
-type instance Element (UVector ty) = ty
+type instance Element (UArray ty) = ty

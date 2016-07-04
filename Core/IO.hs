@@ -22,8 +22,8 @@ import qualified System.IO as S
 import           Core
 import           Core.Collection
 import           Core.VFS
-import qualified Core.Vector.Unboxed.Mutable as V
-import qualified Core.Vector.Unboxed as V
+import qualified Core.Array.Unboxed.Mutable as V
+import qualified Core.Array.Unboxed as V
 import qualified Core.String.UTF8 as S
 import           Control.Exception (bracket)
 import           Foreign.Ptr (plusPtr)

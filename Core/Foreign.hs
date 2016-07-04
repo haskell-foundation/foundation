@@ -13,6 +13,6 @@ module Core.Foreign
     ) where
 
 import           Core.Primitive.FinalPtr
-import qualified Core.Vector.Unboxed as V
-import qualified Core.Vector.Unboxed.Mutable as V
+import qualified Core.Array.Unboxed as V
+import qualified Core.Array.Unboxed.Mutable as V
 import           Core.Foreign.MemoryMap

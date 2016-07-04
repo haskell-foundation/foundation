@@ -19,7 +19,7 @@ import           Core.Internal.Proxy
 import           Core.Internal.Base
 import           Core.Primitive.Monad
 
--- | Represent the accessor for types that can be stored in the UVector and MUVector.
+-- | Represent the accessor for types that can be stored in the UArray and MUArray.
 --
 -- Types need to be a instance of storable and have fixed sized.
 class PrimType ty where

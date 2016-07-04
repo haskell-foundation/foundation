@@ -1,5 +1,5 @@
 -- |
--- Module      : Core.Vector.Mutable
+-- Module      : Core.Array.Mutable
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
@@ -12,8 +12,8 @@ module Core.Collection.Mutable
 import Core.Primitive.Monad
 import Core.Internal.Base
 
-import qualified Core.Vector.Unboxed.Mutable as MUV
-import qualified Core.Vector.Unboxed as UV
+import qualified Core.Array.Unboxed.Mutable as MUV
+import qualified Core.Array.Unboxed as UV
 
 -- | Collection of things that can be made mutable, modified and then freezed into an immutable collection
 class MutableCollection c where
@@ -36,10 +36,10 @@ class MutableCollection c where
     mutUnsafeRead :: PrimMonad prim => c (PrimState prim) -> MutableKey c -> prim (MutableValue c)
     mutRead       :: PrimMonad prim => c (PrimState prim) -> MutableKey c -> prim (MutableValue c)
 
-instance UV.PrimType ty => MutableCollection (MUV.MUVector ty) where
-    type Collection (MUV.MUVector ty) = UV.UVector ty
-    type MutableKey (MUV.MUVector ty) = Int
-    type MutableValue (MUV.MUVector ty) = ty
+instance UV.PrimType ty => MutableCollection (MUV.MUArray ty) where
+    type Collection (MUV.MUArray ty) = UV.UArray ty
+    type MutableKey (MUV.MUArray ty) = Int
+    type MutableValue (MUV.MUArray ty) = ty
 
     thaw = UV.thaw
     freeze = UV.freeze

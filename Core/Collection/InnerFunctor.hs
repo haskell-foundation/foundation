@@ -5,7 +5,7 @@ module Core.Collection.InnerFunctor
 
 import Core.Internal.Base
 import Core.Collection.Element
-import qualified Core.Vector.Unboxed as UV
+import qualified Core.Array.Unboxed as UV
 
 -- | A monomorphic functor that maps the inner values to values of the same type
 class InnerFunctor c where
@@ -15,5 +15,5 @@ class InnerFunctor c where
 
 instance InnerFunctor [a]
 
-instance UV.PrimType ty => InnerFunctor (UV.UVector ty) where
+instance UV.PrimType ty => InnerFunctor (UV.UArray ty) where
     imap = UV.map

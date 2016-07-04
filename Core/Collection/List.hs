@@ -1,5 +1,5 @@
 -- |
--- Module      : Core.Vector.List
+-- Module      : Core.Array.List
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental

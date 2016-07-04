@@ -30,17 +30,17 @@ import           Core.Internal.Primitive
 import qualified Core.Collection as C
 import           Core.Primitive.Monad
 import           Core.String.UTF8Table
-import           Core.Vector.Unboxed (MUVector, ByteArray)
-import qualified Core.Vector.Unboxed as Vec
+import           Core.Array.Unboxed (MUArray, ByteArray)
+import qualified Core.Array.Unboxed as Vec
 import           Core.Number
 
 import qualified Data.List -- temporary
 
 -- | Opaque packed array of characters in the UTF8 encoding
 data String = String ByteArray#
---newtype String = String (UVector Word8)
+--newtype String = String (UArray Word8)
 
---newtype MutableString st = MutableString (MUVector Word8 st)
+--newtype MutableString st = MutableString (MUArray Word8 st)
 --
 data Buffer st = Buffer (MutableByteArray# st)
 
@@ -428,7 +428,7 @@ sizeBytes (String ba) = I# (sizeofByteArray# ba)
 new :: PrimMonad prim => Int -> prim (Buffer (PrimState prim))
 new (I# n) = primitive $ \st -> let (# st2, mba #) = newByteArray# n st in (# st2, Buffer mba #)
 
-create :: PrimMonad prim => Int -> (MUVector Word8 (PrimState prim) -> prim Int) -> prim String
+create :: PrimMonad prim => Int -> (MUArray Word8 (PrimState prim) -> prim Int) -> prim String
 create sz f = do
     muv@(Vec.MA _ mba) <- Vec.new sz
     filled           <- f muv

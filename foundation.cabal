@@ -40,11 +40,11 @@ source-repository head
 Library
   Exposed-modules:   Core
                      Core.Number
+                     Core.Array
                      Core.String
                      Core.String.IO
                      Core.IO
                      Core.VFS
-                     Core.Vector
                      Core.Foreign
                      Core.Collection
                      Core.Chunks
@@ -73,11 +73,11 @@ Library
                      Core.Primitive.Monad
                      Core.Primitive.Utils
                      Core.Primitive.FinalPtr
-                     Core.Vector.Common
-                     Core.Vector.Unboxed
-                     Core.Vector.Unboxed.Mutable
-                     Core.Vector.Unboxed.ByteArray
-                     Core.Vector.Boxed
+                     Core.Array.Common
+                     Core.Array.Unboxed
+                     Core.Array.Unboxed.Mutable
+                     Core.Array.Unboxed.ByteArray
+                     Core.Array.Boxed
                      Core.Foreign.MemoryMap
                      Core.Foreign.MemoryMap.Types
                      Core.Partial

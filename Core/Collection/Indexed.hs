@@ -1,5 +1,5 @@
 -- |
--- Module      : Core.Vector.Indexed
+-- Module      : Core.Array.Indexed
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
@@ -14,7 +14,7 @@ module Core.Collection.Indexed
 import           Core.Internal.Base
 import           Core.Collection.Element
 import qualified Data.List
-import qualified Core.Vector.Unboxed as UV
+import qualified Core.Array.Unboxed as UV
 
 -- | Collection of elements that can indexed by int
 class IndexedCollection c where
@@ -29,7 +29,7 @@ instance IndexedCollection [a] where
                         x:_ -> Just x
     findIndex = Data.List.findIndex
 
-instance UV.PrimType ty => IndexedCollection (UV.UVector ty) where
+instance UV.PrimType ty => IndexedCollection (UV.UArray ty) where
     (!) l n
         | n < 0 || n >= UV.length l = Nothing
         | otherwise                 = Just $ UV.index l n

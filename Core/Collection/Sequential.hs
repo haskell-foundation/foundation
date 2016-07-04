@@ -17,7 +17,7 @@ import           Core.Internal.Base
 import           Core.Collection.Element
 import qualified Core.Collection.List as ListExtra
 import qualified Data.List
-import qualified Core.Vector.Unboxed as UV
+import qualified Core.Array.Unboxed as UV
 
 -- | A set of methods for ordered colection
 class (IsList c, Item c ~ Element c, Monoid c) => Sequential c where
@@ -80,7 +80,7 @@ instance Sequential [a] where
     filter = Data.List.filter
     reverse = Data.List.reverse
 
-instance UV.PrimType ty => Sequential (UV.UVector ty) where
+instance UV.PrimType ty => Sequential (UV.UArray ty) where
     null = UV.null
     take = UV.take
     revTake = UV.revTake

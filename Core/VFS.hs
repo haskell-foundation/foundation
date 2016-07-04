@@ -31,7 +31,7 @@ instance Path FilePath where
 pathSeparator :: Word8
 pathSeparator = 0x2f -- '/'
 
-vPathSeparator :: UVector Word8
+vPathSeparator :: UArray Word8
 vPathSeparator = fromList [pathSeparator]
 
 -- | Represent an opaque filepath on the operating system

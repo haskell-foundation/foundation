@@ -1,5 +1,5 @@
 -- |
--- Module      : Core.Vector.Unboxed
+-- Module      : Core.Array.Unboxed
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
@@ -12,8 +12,8 @@
 --
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
-module Core.Vector.Unboxed
-    ( UVector(..)
+module Core.Array.Unboxed
+    ( UArray(..)
     , ByteArray
     , PrimType(..)
     -- * methods
@@ -77,8 +77,8 @@ import           Core.Primitive.Monad
 import           Core.Primitive.Types
 import           Core.Primitive.FinalPtr
 import           Core.Primitive.Utils
-import           Core.Vector.Common
-import           Core.Vector.Unboxed.Mutable
+import           Core.Array.Common
+import           Core.Array.Unboxed.Mutable
 import           Core.Number
 import qualified Data.List
 
@@ -87,72 +87,72 @@ import qualified Data.List
 -- The elements need to have fixed sized and the representation is a
 -- packed contiguous array in memory that can easily be passed
 -- to foreign interface
-data UVector ty = UVecBA {-# UNPACK #-} !PinnedStatus {- unpinned / pinned flag -} ByteArray#
+data UArray ty = UVecBA {-# UNPACK #-} !PinnedStatus {- unpinned / pinned flag -} ByteArray#
                 | UVecAddr !Int# {- number of items of type ty -} (FinalPtr ty)
 
 -- | Byte Array alias
-type ByteArray = UVector Word8
+type ByteArray = UArray Word8
 
-instance (PrimType ty, Show ty) => Show (UVector ty) where
+instance (PrimType ty, Show ty) => Show (UArray ty) where
     show v = show (toList v)
-instance (PrimType ty, Eq ty) => Eq (UVector ty) where
+instance (PrimType ty, Eq ty) => Eq (UArray ty) where
     (==) = equal
-instance (PrimType ty, Ord ty) => Ord (UVector ty) where
+instance (PrimType ty, Ord ty) => Ord (UArray ty) where
     compare = vCompare
 
-instance PrimType ty => Monoid (UVector ty) where
+instance PrimType ty => Monoid (UArray ty) where
     mempty  = empty
     mappend = append
     mconcat = concat
 
-instance PrimType ty => IsList (UVector ty) where
-    type Item (UVector ty) = ty
+instance PrimType ty => IsList (UArray ty) where
+    type Item (UArray ty) = ty
     fromList = vFromList
     toList = vToList
 
 
 
 {-
-fmapUVec :: (PrimType a, PrimType b) => (a -> b) -> UVector a -> UVector b
+fmapUVec :: (PrimType a, PrimType b) => (a -> b) -> UArray a -> UArray b
 fmapUVec mapper a = runST (new nbElems >>= copyMap (unsafeIndex a) mapper)
   where
     !nbElems = length a
     copyMap :: (PrimType a, PrimType b, PrimMonad prim)
-            => (Int -> a) -> (a -> b) -> MUVector b (PrimState prim) -> prim (UVector b)
+            => (Int -> a) -> (a -> b) -> MUArray b (PrimState prim) -> prim (UArray b)
     copyMap get f ma = iter 0
       where
         iter i
             | i == nbElems = unsafeFreeze ma
             | otherwise    = unsafeWrite ma i (f $ get i) >> iter (i+1)
 
-sizeInBytes :: PrimType ty => UVector ty -> Int
+sizeInBytes :: PrimType ty => UArray ty -> Int
 sizeInBytes     (UVecBA _ ba)  = I# (sizeofByteArray# ba)
 sizeInBytes vec@(UVecAddr l _) = (I# l) `div` sizeInBytesOfContent vec
 
-mutableSizeInBytes :: (PrimMonad prim, PrimType ty) => MUVector ty (PrimState prim) -> prim Int
+mutableSizeInBytes :: (PrimMonad prim, PrimType ty) => MUArray ty (PrimState prim) -> prim Int
 mutableSizeInBytes (MUVecMA _ mba) = primitive $ \s ->
     case compatGetSizeofMutableByteArray# mba s of { (# s2, i #) -> (# s2, I# i #) }
 mutableSizeInBytes muv@(MUVecAddr i _) =
     return (I# i * sizeInMutableBytesOfContent muv)
 -}
 
-vectorProxyTy :: UVector ty -> Proxy ty
+vectorProxyTy :: UArray ty -> Proxy ty
 vectorProxyTy _ = Proxy
 
 -- rename to sizeInBitsOfCell
-sizeInBytesOfContent :: PrimType ty => UVector ty -> Int
+sizeInBytesOfContent :: PrimType ty => UArray ty -> Int
 sizeInBytesOfContent = primSizeInBytes . vectorProxyTy
 {-# INLINE sizeInBytesOfContent #-}
 
 -- | Copy every cells of an existing array to a new array
-copy :: PrimType ty => UVector ty -> UVector ty
+copy :: PrimType ty => UArray ty -> UArray ty
 copy array = runST (thaw array >>= unsafeFreeze)
 
 -- | Thaw an array to a mutable array.
 --
 -- the array is not modified, instead a new mutable array is created
 -- and every values is copied, before returning the mutable array.
-thaw :: (PrimMonad prim, PrimType ty) => UVector ty -> prim (MUVector ty (PrimState prim))
+thaw :: (PrimMonad prim, PrimType ty) => UArray ty -> prim (MUArray ty (PrimState prim))
 thaw array@(UVecBA _ ba) = do
     ma@(MUVecMA _ mba) <- new (length array)
     primCopyFreezedBytes mba ba
@@ -167,7 +167,7 @@ thaw array@(UVecAddr len fptr) = withFinalPtr fptr $ \(Ptr addr) -> do
 -- | Return the element at a specific index from an array.
 --
 -- If the index @n is out of bounds, an error is raised.
-index :: PrimType ty => UVector ty -> Int -> ty
+index :: PrimType ty => UArray ty -> Int -> ty
 index array n
     | n < 0 || n >= len = throw (OutOfBound OOB_Index n len)
     | otherwise         = unsafeIndex array n
@@ -178,26 +178,26 @@ index array n
 --
 -- Reading from invalid memory can return unpredictable and invalid values.
 -- use 'index' if unsure.
-unsafeIndex :: PrimType ty => UVector ty -> Int -> ty
+unsafeIndex :: PrimType ty => UArray ty -> Int -> ty
 unsafeIndex (UVecBA _ ba) n = primBaIndex ba n
 unsafeIndex v@(UVecAddr _ fptr) n = withUnsafeFinalPtr fptr (primAddrIndex' v)
   where
-    primAddrIndex' :: PrimType ty => UVector ty -> Ptr a -> IO ty
+    primAddrIndex' :: PrimType ty => UArray ty -> Ptr a -> IO ty
     primAddrIndex' _ (Ptr addr) = return (primAddrIndex addr n)
 {-# INLINE unsafeIndex #-}
 
 foreignMem :: PrimType ty
            => FinalPtr ty -- ^ the start pointer with a finalizer
            -> Int         -- ^ the number of elements (in elements, not bytes)
-           -> UVector ty
+           -> UArray ty
 foreignMem fptr (I# nb) = UVecAddr nb fptr
 
 
 -- | return the number of elements of the array.
-length :: PrimType ty => UVector ty -> Int
+length :: PrimType ty => UArray ty -> Int
 length = divBits Proxy
   where
-    divBits :: PrimType ty => Proxy ty -> UVector ty -> Int
+    divBits :: PrimType ty => Proxy ty -> UArray ty -> Int
     divBits proxy (UVecBA _ a) =
         let !(I# szBits) = primSizeInBytes proxy
             !elems       = quotInt# (sizeofByteArray# a) szBits
@@ -208,15 +208,15 @@ length = divBits Proxy
 -- fast case for ByteArray
 {-# RULES "length/ByteArray"  length = lengthByteArray #-}
 
-lengthByteArray :: UVector Word8 -> Int
+lengthByteArray :: UArray Word8 -> Int
 lengthByteArray (UVecBA _ a) = I# (sizeofByteArray# a)
 lengthByteArray (UVecAddr len _) = I# len
 
 -- TODO Optimise with copyByteArray#
 copyAtRO :: (PrimMonad prim, PrimType ty)
-         => MUVector ty (PrimState prim) -- ^ destination array
+         => MUArray ty (PrimState prim) -- ^ destination array
          -> Int                -- ^ offset at destination
-         -> UVector ty         -- ^ source array
+         -> UArray ty         -- ^ source array
          -> Int                -- ^ offset at source
          -> Int                -- ^ number of elements to copy
          -> prim ()
@@ -228,15 +228,15 @@ copyAtRO dst od src os n = loop od os
 
 -- | Freeze a mutable array into an array.
 --
--- the MUVector must not be changed after freezing.
-unsafeFreeze :: PrimMonad prim => MUVector ty (PrimState prim) -> prim (UVector ty)
+-- the MUArray must not be changed after freezing.
+unsafeFreeze :: PrimMonad prim => MUArray ty (PrimState prim) -> prim (UArray ty)
 unsafeFreeze (MUVecMA pinnedState mba) = primitive $ \s1 ->
     case unsafeFreezeByteArray# mba s1 of
         (# s2, ba #) -> (# s2, UVecBA pinnedState ba #)
 unsafeFreeze (MUVecAddr len fptr) = return $ UVecAddr len fptr
 {-# INLINE unsafeFreeze #-}
 
-unsafeFreezeShrink :: (PrimType ty, PrimMonad prim) => MUVector ty (PrimState prim) -> Int -> prim (UVector ty)
+unsafeFreezeShrink :: (PrimType ty, PrimMonad prim) => MUArray ty (PrimState prim) -> Int -> prim (UArray ty)
 unsafeFreezeShrink muvec n@(I# n#) = do
     let !(I# newSize) = n * (sizeInMutableBytesOfContent muvec)
     case muvec of
@@ -245,28 +245,28 @@ unsafeFreezeShrink muvec n@(I# n#) = do
             unsafeFreeze muvec2
         MUVecAddr _ addr        -> unsafeFreeze (MUVecAddr n# addr)
 
-freeze :: (PrimType ty, PrimMonad prim) => MUVector ty (PrimState prim) -> prim (UVector ty)
+freeze :: (PrimType ty, PrimMonad prim) => MUArray ty (PrimState prim) -> prim (UArray ty)
 freeze ma = do
     ma' <- new len
     copyAt ma' 0 ma 0 len
     unsafeFreeze ma'
   where len = mutableLength ma
 
-freezeShrink :: (PrimType ty, PrimMonad prim) => MUVector ty (PrimState prim) -> Int -> prim (UVector ty)
+freezeShrink :: (PrimType ty, PrimMonad prim) => MUArray ty (PrimState prim) -> Int -> prim (UArray ty)
 freezeShrink ma n = do
     ma' <- new n
     copyAt ma' 0 ma 0 n
     unsafeFreeze ma'
 
-unsafeSlide :: PrimMonad prim => MUVector ty (PrimState prim) -> Int -> Int -> prim ()
+unsafeSlide :: PrimMonad prim => MUArray ty (PrimState prim) -> Int -> Int -> prim ()
 unsafeSlide (MUVecMA _ mba) start end    = primMutableByteArraySlideToStart mba start end
 unsafeSlide (MUVecAddr _ fptr) start end = withFinalPtr fptr $ \(Ptr addr) ->
     primMutableAddrSlideToStart addr start end
 
 -- | Thaw an immutable array.
 --
--- The UVector must not be used after thawing.
-unsafeThaw :: (PrimType ty, PrimMonad prim) => UVector ty -> prim (MUVector ty (PrimState prim))
+-- The UArray must not be used after thawing.
+unsafeThaw :: (PrimType ty, PrimMonad prim) => UArray ty -> prim (MUArray ty (PrimState prim))
 unsafeThaw (UVecBA pinnedState ba) = primitive $ \st -> (# st, MUVecMA pinnedState (unsafeCoerce# ba) #)
 unsafeThaw (UVecAddr len fptr) = return $ MUVecAddr len fptr
 {-# INLINE unsafeThaw #-}
@@ -276,10 +276,10 @@ unsafeThaw (UVecAddr len fptr) = return $ MUVecAddr len fptr
 create :: PrimType ty
        => Int         -- ^ the size of the array
        -> (Int -> ty) -- ^ the function that set the value at the index
-       -> UVector ty  -- ^ the array created
+       -> UArray ty  -- ^ the array created
 create n initializer = runST (new n >>= iter initializer)
   where
-    iter :: (PrimType ty, PrimMonad prim) => (Int -> ty) -> MUVector ty (PrimState prim) -> prim (UVector ty)
+    iter :: (PrimType ty, PrimMonad prim) => (Int -> ty) -> MUArray ty (PrimState prim) -> prim (UArray ty)
     iter f ma = loop 0
       where
         loop i
@@ -292,11 +292,11 @@ create n initializer = runST (new n >>= iter initializer)
 -- higher level collection implementation
 -----------------------------------------------------------------------
 
-empty :: PrimType ty => UVector ty
+empty :: PrimType ty => UArray ty
 empty = runST (new 0 >>= unsafeFreeze)
 
 -- | make an array from a list of elements.
-vFromList :: PrimType ty => [ty] -> UVector ty
+vFromList :: PrimType ty => [ty] -> UArray ty
 vFromList l = runST $ do
     ma <- new len
     iter 0 l $ \i x -> unsafeWrite ma i x
@@ -306,14 +306,14 @@ vFromList l = runST $ do
         iter i (x:xs) z = z i x >> iter (i+1) xs z
 
 -- | transform an array to a list.
-vToList :: PrimType ty => UVector ty -> [ty]
+vToList :: PrimType ty => UArray ty -> [ty]
 vToList a = loop 0
   where len = length a
         loop i | i == len  = []
                | otherwise = unsafeIndex a i : loop (i+1)
 
 -- | Check if two vectors are identical
-equal :: (PrimType ty, Eq ty) => UVector ty -> UVector ty -> Bool
+equal :: (PrimType ty, Eq ty) => UArray ty -> UArray ty -> Bool
 equal a b
     | la /= lb  = False
     | otherwise = loop 0
@@ -324,12 +324,12 @@ equal a b
            | otherwise = (unsafeIndex a n == unsafeIndex b n) && loop (n+1)
 
 {-
-sizeEqual :: PrimType ty => UVector ty -> UVector ty -> Bool
+sizeEqual :: PrimType ty => UArray ty -> UArray ty -> Bool
 sizeEqual a b = length a == length b -- TODO optimise with direct comparaison of bytes or elements when possible
 -}
 
 -- | Compare 2 vectors
-vCompare :: (Ord ty, PrimType ty) => UVector ty -> UVector ty -> Ordering
+vCompare :: (Ord ty, PrimType ty) => UArray ty -> UArray ty -> Ordering
 vCompare a b = loop 0
   where
     !la = length a
@@ -343,7 +343,7 @@ vCompare a b = loop 0
                 r  -> r
 
 -- | Append 2 arrays together by creating a new bigger array
-append :: PrimType ty => UVector ty -> UVector ty -> UVector ty
+append :: PrimType ty => UArray ty -> UArray ty -> UArray ty
 append a b
     | la == 0 && lb == 0 = empty
     | la == 0            = b
@@ -359,7 +359,7 @@ append a b
     !la = length a
     !lb = length b
 
-concat :: PrimType ty => [UVector ty] -> UVector ty
+concat :: PrimType ty => [UArray ty] -> UArray ty
 concat l = runST $ do
     r <- new (Prelude.sum $ fmap length l)
     loop r 0 l
@@ -375,9 +375,9 @@ concat l = runST $ do
 --
 -- the operation copy the previous array, modify it in place, then freeze it.
 update :: PrimType ty
-       => UVector ty
+       => UArray ty
        -> [(Int, ty)]
-       -> UVector ty
+       -> UArray ty
 update array modifiers = runST (thaw array >>= doUpdate modifiers)
   where doUpdate l ma = loop l
           where loop []         = unsafeFreeze ma
@@ -386,9 +386,9 @@ update array modifiers = runST (thaw array >>= doUpdate modifiers)
         {-# INLINE doUpdate #-}
 
 unsafeUpdate :: PrimType ty
-             => UVector ty
+             => UArray ty
              -> [(Int, ty)]
-             -> UVector ty
+             -> UArray ty
 unsafeUpdate array modifiers = runST (thaw array >>= doUpdate modifiers)
   where doUpdate l ma = loop l
           where loop []         = unsafeFreeze ma
@@ -396,7 +396,7 @@ unsafeUpdate array modifiers = runST (thaw array >>= doUpdate modifiers)
                 {-# INLINE loop #-}
         {-# INLINE doUpdate #-}
 
-withPtr :: UVector ty
+withPtr :: UArray ty
         -> (Ptr ty -> IO a)
         -> IO a
 withPtr (UVecAddr _ fptr)  f = withFinalPtr fptr f
@@ -411,22 +411,22 @@ withPtr (UVecBA pstatus a) f
                 (# s4, Ptr (byteArrayContents# ba) #) }}}
         f a'
 
-withMutablePtr :: MUVector ty RealWorld
+withMutablePtr :: MUArray ty RealWorld
                -> (Ptr ty -> IO a)
                -> IO a
 withMutablePtr muvec f = do
     v <- unsafeFreeze muvec
     withPtr v f
 
-unsafeRecast :: (PrimType a, PrimType b) => UVector a -> UVector b
+unsafeRecast :: (PrimType a, PrimType b) => UArray a -> UArray b
 unsafeRecast (UVecBA i b) = UVecBA i b
 unsafeRecast (UVecAddr len a) = UVecAddr len (castFinalPtr a)
 
-null :: UVector ty -> Bool
+null :: UArray ty -> Bool
 null (UVecBA _ a) = bool# (sizeofByteArray# a ==# 0#)
 null (UVecAddr l _) = bool# (l ==# 0#)
 
-take :: PrimType ty => Int -> UVector ty -> UVector ty
+take :: PrimType ty => Int -> UArray ty -> UArray ty
 take nbElems v
     | nbElems <= 0 = empty
     | otherwise    = runST $ do
@@ -436,7 +436,7 @@ take nbElems v
   where
     n = min nbElems (length v)
 
-drop :: PrimType ty => Int -> UVector ty -> UVector ty
+drop :: PrimType ty => Int -> UArray ty -> UArray ty
 drop nbElems v
     | nbElems <= 0 = v
     | otherwise    = runST $ do
@@ -447,20 +447,20 @@ drop nbElems v
     offset = min nbElems (length v)
     n = length v - offset
 
-splitAt :: PrimType ty => Int -> UVector ty -> (UVector ty, UVector ty)
+splitAt :: PrimType ty => Int -> UArray ty -> (UArray ty, UArray ty)
 splitAt n v = (take n v, drop n v)
 
-revTake :: PrimType ty => Int -> UVector ty -> UVector ty
+revTake :: PrimType ty => Int -> UArray ty -> UArray ty
 revTake nbElems v = drop (length v - nbElems) v
 
-revDrop :: PrimType ty => Int -> UVector ty -> UVector ty
+revDrop :: PrimType ty => Int -> UArray ty -> UArray ty
 revDrop nbElems v = take (length v - nbElems) v
 
-revSplitAt :: PrimType ty => Int -> UVector ty -> (UVector ty, UVector ty)
+revSplitAt :: PrimType ty => Int -> UArray ty -> (UArray ty, UArray ty)
 revSplitAt n v = (drop idx v, take idx v)
   where idx = length v - n
 
-splitOn :: PrimType ty => (ty -> Bool) -> UVector ty -> [UVector ty]
+splitOn :: PrimType ty => (ty -> Bool) -> UArray ty -> [UArray ty]
 splitOn predicate vec
     | len == 0  = []
     | otherwise = loop 0 0
@@ -475,7 +475,7 @@ splitOn predicate vec
                     then runST (sub vec prevIdx idx) : loop idx' idx'
                     else loop prevIdx idx'
 
-sub :: (PrimType ty, PrimMonad prim) => UVector ty -> Int -> Int -> prim (UVector ty)
+sub :: (PrimType ty, PrimMonad prim) => UArray ty -> Int -> Int -> prim (UArray ty)
 sub vec startIdx expectedEndIdx
     | startIdx == endIdx     = return empty
     | startIdx >= length vec = return empty
@@ -493,7 +493,7 @@ sub vec startIdx expectedEndIdx
     !(I# start) = startIdx * bytes
     bytes = sizeInBytesOfContent vec
 
-break :: PrimType ty => (ty -> Bool) -> UVector ty -> (UVector ty, UVector ty)
+break :: PrimType ty => (ty -> Bool) -> UArray ty -> (UArray ty, UArray ty)
 break predicate v = findBreak 0
   where
     findBreak i
@@ -503,16 +503,16 @@ break predicate v = findBreak 0
                 then splitAt i v
                 else findBreak (i+1)
 
-span :: PrimType ty => (ty -> Bool) -> UVector ty -> (UVector ty, UVector ty)
+span :: PrimType ty => (ty -> Bool) -> UArray ty -> (UArray ty, UArray ty)
 span p = break (not . p)
 
-map :: (PrimType a, PrimType b) => (a -> b) -> UVector a -> UVector b
+map :: (PrimType a, PrimType b) => (a -> b) -> UArray a -> UArray b
 map f a = create (length a) (\i -> f $ unsafeIndex a i)
 
-mapIndex :: (PrimType a, PrimType b) => (Int -> a -> b) -> UVector a -> UVector b
+mapIndex :: (PrimType a, PrimType b) => (Int -> a -> b) -> UArray a -> UArray b
 mapIndex f a = create (length a) (\i -> f i $ unsafeIndex a i)
 
-cons :: PrimType ty => ty -> UVector ty -> UVector ty
+cons :: PrimType ty => ty -> UArray ty -> UArray ty
 cons e vec = runST $ do
     muv <- newNative (len + 1) $ \mba ->
         case vec of
@@ -526,7 +526,7 @@ cons e vec = runST $ do
     !(I# bytes) = sizeInBytesOfContent vec
     !len@(I# len#) = length vec
 
-snoc :: PrimType ty => UVector ty -> ty -> UVector ty
+snoc :: PrimType ty => UArray ty -> ty -> UArray ty
 snoc vec e = runST $ do
     muv <- newNative (len + 1) $ \mba ->
         case vec of
@@ -540,7 +540,7 @@ snoc vec e = runST $ do
     !(I# bytes) = sizeInBytesOfContent vec
     !len@(I# len#) = length vec
 
-find :: PrimType ty => (ty -> Bool) -> UVector ty -> Maybe ty
+find :: PrimType ty => (ty -> Bool) -> UArray ty -> Maybe ty
 find predicate vec = loop 0
   where
     !len = length vec
@@ -550,11 +550,11 @@ find predicate vec = loop 0
             let e = unsafeIndex vec i
              in if predicate e then Just e else loop (i+1)
 
-sortBy :: PrimType ty => (ty -> ty -> Ordering) -> UVector ty -> UVector ty
+sortBy :: PrimType ty => (ty -> ty -> Ordering) -> UArray ty -> UArray ty
 sortBy xford vec = runST (thaw vec >>= doSort xford)
   where
     len = length vec
-    doSort :: (PrimType ty, PrimMonad prim) => (ty -> ty -> Ordering) -> MUVector ty (PrimState prim) -> prim (UVector ty)
+    doSort :: (PrimType ty, PrimMonad prim) => (ty -> ty -> Ordering) -> MUArray ty (PrimState prim) -> prim (UArray ty)
     doSort ford ma = qsort 0 (len - 1) >> unsafeFreeze ma
       where
         qsort lo hi
@@ -585,16 +585,16 @@ sortBy xford vec = runST (thaw vec >>= doSort xford)
             unsafeWrite ma i ahi
             return i
 
-filter :: PrimType ty => (ty -> Bool) -> UVector ty -> UVector ty
+filter :: PrimType ty => (ty -> Bool) -> UArray ty -> UArray ty
 filter predicate vec = vFromList $ Data.List.filter predicate $ vToList vec
 
-reverse :: PrimType ty => UVector ty -> UVector ty
+reverse :: PrimType ty => UArray ty -> UArray ty
 reverse a = create len toEnd
   where
     len = length a
     toEnd i = unsafeIndex a (len - i - 1)
 
-foldl :: PrimType ty => (a -> ty -> a) -> a -> UVector ty -> a
+foldl :: PrimType ty => (a -> ty -> a) -> a -> UArray ty -> a
 foldl f initialAcc vec = loop 0 initialAcc
   where
     len = length vec
@@ -602,7 +602,7 @@ foldl f initialAcc vec = loop 0 initialAcc
         | i == len  = acc
         | otherwise = loop (i+1) (f acc (unsafeIndex vec i))
 
-foldr :: PrimType ty => (ty -> a -> a) -> a -> UVector ty -> a
+foldr :: PrimType ty => (ty -> a -> a) -> a -> UArray ty -> a
 foldr f initialAcc vec = loop 0
   where
     len = length vec
@@ -610,7 +610,7 @@ foldr f initialAcc vec = loop 0
         | i == len  = initialAcc
         | otherwise = unsafeIndex vec i `f` loop (i+1)
 
-foldl' :: PrimType ty => (a -> ty -> a) -> a -> UVector ty -> a
+foldl' :: PrimType ty => (a -> ty -> a) -> a -> UArray ty -> a
 foldl' f initialAcc vec = loop 0 initialAcc
   where
     len = length vec

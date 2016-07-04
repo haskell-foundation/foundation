@@ -1,5 +1,5 @@
 -- |
--- Module      : Core.Vector.Boxed
+-- Module      : Core.Array.Boxed
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
@@ -10,9 +10,9 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE UnboxedTuples #-}
-module Core.Vector.Boxed
-    ( Vector
-    , MVector
+module Core.Array.Boxed
+    ( Array
+    , MArray
     ) where
 
 import           GHC.Prim
@@ -20,45 +20,45 @@ import           GHC.Types
 import           GHC.ST
 import           Core.Internal.Base
 import           Core.Primitive.Monad
-import           Core.Vector.Common
+import           Core.Array.Common
 import qualified Core.Collection as C
 import qualified Prelude
 import           Prelude ((-), (+))
 
--- | Vector of a
-data Vector a = Vector (Array# a)
+-- | Array of a
+data Array a = Array (Array# a)
     deriving (Typeable)
 
--- | Mutable Vector of a
-data MVector a st = MVector (MutableArray# st a)
+-- | Mutable Array of a
+data MArray a st = MArray (MutableArray# st a)
     deriving (Typeable)
 
-instance Functor Vector where
+instance Functor Array where
     fmap = map
 
-instance Monoid (Vector a) where
+instance Monoid (Array a) where
     mempty  = empty
     mappend = append
     mconcat = concat
 
-instance Show a => Show (Vector a) where
+instance Show a => Show (Array a) where
     show v = show (toList v)
 
-instance Eq a => Eq (Vector a) where
+instance Eq a => Eq (Array a) where
     (==) = equal
-instance Ord a => Ord (Vector a) where
+instance Ord a => Ord (Array a) where
     compare = vCompare
 
-type instance C.Element (Vector ty) = ty
+type instance C.Element (Array ty) = ty
 
-instance IsList (Vector ty) where
-    type Item (Vector ty) = ty
+instance IsList (Array ty) where
+    type Item (Array ty) = ty
     fromList = vFromList
     toList = vToList
 
-instance C.InnerFunctor (Vector ty)
+instance C.InnerFunctor (Array ty)
 
-instance C.SemiOrderedCollection (Vector ty) where
+instance C.SemiOrderedCollection (Array ty) where
     snoc = snoc
     cons = cons
     find = find
@@ -66,7 +66,7 @@ instance C.SemiOrderedCollection (Vector ty) where
     length = length
     singleton = fromList . (:[])
 
-instance C.Sequential (Vector ty) where
+instance C.Sequential (Array ty) where
     null = null
     take = take
     drop = drop
@@ -80,10 +80,10 @@ instance C.Sequential (Vector ty) where
     reverse = reverse
     filter = filter
 
-instance C.MutableCollection (MVector ty) where
-    type Collection (MVector ty) = Vector ty
-    type MutableKey (MVector ty) = Int
-    type MutableValue (MVector ty) = ty
+instance C.MutableCollection (MArray ty) where
+    type Collection (MArray ty) = Array ty
+    type MutableKey (MArray ty) = Int
+    type MutableValue (MArray ty) = ty
 
     thaw = thaw
     freeze = freeze
@@ -95,7 +95,7 @@ instance C.MutableCollection (MVector ty) where
     mutWrite = write
     mutRead = read
 
-instance C.IndexedCollection (Vector ty) where
+instance C.IndexedCollection (Array ty) where
     (!) l n
         | n < 0 || n >= length l = Nothing
         | otherwise              = Just $ index l n
@@ -108,14 +108,14 @@ instance C.IndexedCollection (Vector ty) where
                 if predicate (unsafeIndex c i) then Just i else Nothing
 
 -- | return the numbers of elements in a mutable array
-mutableLength :: MVector ty st -> Int
-mutableLength (MVector ma) = I# (sizeofMutableArray# ma)
+mutableLength :: MArray ty st -> Int
+mutableLength (MArray ma) = I# (sizeofMutableArray# ma)
 {-# INLINE mutableLength #-}
 
 -- | Return the element at a specific index from an array.
 --
 -- If the index @n is out of bounds, an error is raised.
-index :: Vector ty -> Int -> ty
+index :: Array ty -> Int -> ty
 index array n
     | n < 0 || n >= len = throw (OutOfBound OOB_Index n len)
     | otherwise         = unsafeIndex array n
@@ -126,14 +126,14 @@ index array n
 --
 -- Reading from invalid memory can return unpredictable and invalid values.
 -- use 'index' if unsure.
-unsafeIndex :: Vector ty -> Int -> ty
-unsafeIndex (Vector a) (I# n) = let (# v #) = indexArray# a n in v
+unsafeIndex :: Array ty -> Int -> ty
+unsafeIndex (Array a) (I# n) = let (# v #) = indexArray# a n in v
 {-# INLINE unsafeIndex #-}
 
 -- | read a cell in a mutable array.
 --
 -- If the index is out of bounds, an error is raised.
-read :: PrimMonad prim => MVector ty (PrimState prim) -> Int -> prim ty
+read :: PrimMonad prim => MArray ty (PrimState prim) -> Int -> prim ty
 read array n
     | n < 0 || n >= len = primThrow (OutOfBound OOB_Read n len)
     | otherwise         = unsafeRead array n
@@ -144,15 +144,15 @@ read array n
 --
 -- Reading from invalid memory can return unpredictable and invalid values.
 -- use 'read' if unsure.
-unsafeRead :: PrimMonad prim => MVector ty (PrimState prim) -> Int -> prim ty
-unsafeRead (MVector ma) (I# i) = primitive $ \s1 -> readArray# ma i s1
+unsafeRead :: PrimMonad prim => MArray ty (PrimState prim) -> Int -> prim ty
+unsafeRead (MArray ma) (I# i) = primitive $ \s1 -> readArray# ma i s1
 --readArray# :: MutableArray# s a -> Int# -> State# s -> (#State# s, a#)
 {-# INLINE unsafeRead #-}
 
 -- | Write to a cell in a mutable array.
 --
 -- If the index is out of bounds, an error is raised.
-write :: PrimMonad prim => MVector ty (PrimState prim) -> Int -> ty -> prim ()
+write :: PrimMonad prim => MArray ty (PrimState prim) -> Int -> ty -> prim ()
 write array n val
     | n < 0 || n >= len = primThrow (OutOfBound OOB_Write n len)
     | otherwise         = unsafeWrite array n val
@@ -163,45 +163,45 @@ write array n val
 --
 -- Writing with invalid bounds will corrupt memory and your program will
 -- become unreliable. use 'write' if unsure.
-unsafeWrite :: PrimMonad prim => MVector ty (PrimState prim) -> Int -> ty -> prim ()
-unsafeWrite (MVector ma) (I# i) v = primitive $ \s1 -> let !s2 = writeArray# ma i v s1 in (# s2, () #)
+unsafeWrite :: PrimMonad prim => MArray ty (PrimState prim) -> Int -> ty -> prim ()
+unsafeWrite (MArray ma) (I# i) v = primitive $ \s1 -> let !s2 = writeArray# ma i v s1 in (# s2, () #)
 {-# INLINE unsafeWrite #-}
 
 -- | Freeze a mutable array into an array.
 --
--- the MVector must not be changed after freezing.
-unsafeFreeze :: PrimMonad prim => MVector ty (PrimState prim) -> prim (Vector ty)
-unsafeFreeze (MVector ma) = primitive $ \s1 ->
+-- the MArray must not be changed after freezing.
+unsafeFreeze :: PrimMonad prim => MArray ty (PrimState prim) -> prim (Array ty)
+unsafeFreeze (MArray ma) = primitive $ \s1 ->
     case unsafeFreezeArray# ma s1 of
-        (# s2, a #) -> (# s2, Vector a #)
+        (# s2, a #) -> (# s2, Array a #)
 {-# INLINE unsafeFreeze #-}
 
 -- | Thaw an immutable array.
 --
--- The Vector must not be used after thawing.
-unsafeThaw :: PrimMonad prim => Vector ty -> prim (MVector ty (PrimState prim))
-unsafeThaw (Vector a) = primitive $ \st -> (# st, MVector (unsafeCoerce# a) #)
+-- The Array must not be used after thawing.
+unsafeThaw :: PrimMonad prim => Array ty -> prim (MArray ty (PrimState prim))
+unsafeThaw (Array a) = primitive $ \st -> (# st, MArray (unsafeCoerce# a) #)
 {-# INLINE unsafeThaw #-}
 
 -- | Thaw an array to a mutable array.
 --
 -- the array is not modified, instead a new mutable array is created
 -- and every values is copied, before returning the mutable array.
-thaw :: PrimMonad prim => Vector ty -> prim (MVector ty (PrimState prim))
+thaw :: PrimMonad prim => Array ty -> prim (MArray ty (PrimState prim))
 thaw array = do
     m <- new (length array)
     copyAtRO m 0 array 0 (length array)
     return m
 {-# INLINE thaw #-}
 
-freeze :: PrimMonad prim => MVector ty (PrimState prim) -> prim (Vector ty)
+freeze :: PrimMonad prim => MArray ty (PrimState prim) -> prim (Array ty)
 freeze = undefined
 
 -- | Copy a number of elements from an array to another array with offsets
 copyAt :: PrimMonad prim
-       => MVector ty (PrimState prim) -- ^ destination array
+       => MArray ty (PrimState prim) -- ^ destination array
        -> Int                -- ^ offset at destination
-       -> MVector ty (PrimState prim) -- ^ source array
+       -> MArray ty (PrimState prim) -- ^ source array
        -> Int                -- ^ offset at source
        -> Int                -- ^ number of elements to copy
        -> prim ()
@@ -212,9 +212,9 @@ copyAt dst od src os n = loop od os
             | otherwise     = unsafeRead src i >>= unsafeWrite dst d >> loop (d+1) (i+1)
 
 copyAtRO :: PrimMonad prim
-         => MVector ty (PrimState prim) -- ^ destination array
+         => MArray ty (PrimState prim) -- ^ destination array
          -> Int                -- ^ offset at destination
-         -> Vector ty         -- ^ source array
+         -> Array ty         -- ^ source array
          -> Int                -- ^ offset at source
          -> Int                -- ^ number of elements to copy
          -> prim ()
@@ -230,19 +230,19 @@ copyAtRO dst od src os n = loop od os
 --
 -- All mutable arrays are allocated on a 64 bits aligned addresses
 -- and always contains a number of bytes multiples of 64 bits.
-new :: PrimMonad prim => Int -> prim (MVector ty (PrimState prim))
+new :: PrimMonad prim => Int -> prim (MArray ty (PrimState prim))
 new (I# n) = primitive $ \s1 ->
                 case newArray# n (error "vector: internal error uninitialized vector") s1 of
-                    (# s2, ma #) -> (# s2, MVector ma #)
+                    (# s2, ma #) -> (# s2, MArray ma #)
 
 -- | Create a new array of size @n by settings each cells through the
 -- function @f.
 create :: Int         -- ^ the size of the array
        -> (Int -> ty) -- ^ the function that set the value at the index
-       -> Vector ty   -- ^ the array created
+       -> Array ty   -- ^ the array created
 create n initializer = runST (new n >>= iter initializer)
   where
-    iter :: PrimMonad prim => (Int -> ty) -> MVector ty (PrimState prim) -> prim (Vector ty)
+    iter :: PrimMonad prim => (Int -> ty) -> MArray ty (PrimState prim) -> prim (Array ty)
     iter f ma = loop 0
       where
         loop i
@@ -254,7 +254,7 @@ create n initializer = runST (new n >>= iter initializer)
 -----------------------------------------------------------------------
 -- higher level collection implementation
 -----------------------------------------------------------------------
-equal :: Eq a => Vector a -> Vector a -> Bool
+equal :: Eq a => Array a -> Array a -> Bool
 equal a b = (len == length b) && eachEqual 0
   where
     len = length a
@@ -263,7 +263,7 @@ equal a b = (len == length b) && eachEqual 0
         | unsafeIndex a i /= unsafeIndex b i = False
         | otherwise                          = eachEqual (i+1)
 
-vCompare :: Ord a => Vector a -> Vector a -> Ordering
+vCompare :: Ord a => Array a -> Array a -> Ordering
 vCompare a b = loop 0
   where
     !la = length a
@@ -276,24 +276,24 @@ vCompare a b = loop 0
                 EQ -> loop (n+1)
                 r  -> r
 
-empty :: Vector a
+empty :: Array a
 empty = runST $ onNewArray 0 (\_ s -> s)
 
-length :: Vector a -> Int
-length (Vector a) = I# (sizeofArray# a)
+length :: Array a -> Int
+length (Array a) = I# (sizeofArray# a)
 
-vFromList :: [a] -> Vector a
+vFromList :: [a] -> Array a
 vFromList l = runST (new len >>= loop 0 l)
   where
     len = Prelude.length l
     loop _ []     ma = unsafeFreeze ma
     loop i (x:xs) ma = unsafeWrite ma i x >> loop (i+1) xs ma
 
-vToList :: Vector a -> [a]
+vToList :: Array a -> [a]
 vToList v = fmap (unsafeIndex v) [0..(Prelude.subtract 1 $ length v)]
 
 -- | Append 2 arrays together by creating a new bigger array
-append :: Vector ty -> Vector ty -> Vector ty
+append :: Array ty -> Array ty -> Array ty
 append a b = runST $ do
     r  <- new (la+lb)
     ma <- unsafeThaw a
@@ -304,7 +304,7 @@ append a b = runST $ do
   where la = length a
         lb = length b
 
-concat :: [Vector ty] -> Vector ty
+concat :: [Array ty] -> Array ty
 concat l = runST $ do
     r <- new (Prelude.sum $ fmap length l)
     loop r 0 l
@@ -318,16 +318,16 @@ concat l = runST $ do
 
 {-
 modify :: PrimMonad m
-       => Vector a
-       -> (MVector (PrimState m) a -> m ())
-       -> m (Vector a)
-modify (Vector a) f = primitive $ \st -> do
+       => Array a
+       -> (MArray (PrimState m) a -> m ())
+       -> m (Array a)
+modify (Array a) f = primitive $ \st -> do
     case thawArray# a 0# (sizeofArray# a) st of
         (# st2, mv #) ->
-            case internal_ (f $ MVector mv) st2 of
+            case internal_ (f $ MArray mv) st2 of
                 st3 ->
                     case unsafeFreezeArray# mv st3 of
-                        (# st4, a' #) -> (# st4, Vector a' #)
+                        (# st4, a' #) -> (# st4, Array a' #)
 -}
 
 -----------------------------------------------------------------------
@@ -336,22 +336,22 @@ modify (Vector a) f = primitive $ \st -> do
 onNewArray :: PrimMonad m
            => Int
            -> (MutableArray# (PrimState m) a -> State# (PrimState m) -> State# (PrimState m))
-           -> m (Vector a)
+           -> m (Array a)
 onNewArray (I# len) f = primitive $ \st -> do
     case newArray# len (error "onArray") st of
         (# st2, mv #) ->
             case f mv st2 of
                 st3 ->
                     case unsafeFreezeArray# mv st3 of
-                        (# st4, a #) -> (# st4, Vector a #)
+                        (# st4, a #) -> (# st4, Array a #)
 
 -----------------------------------------------------------------------
 
 
-null :: Vector ty -> Bool
+null :: Array ty -> Bool
 null = (==) 0 . length
 
-take ::  Int -> Vector ty -> Vector ty
+take ::  Int -> Array ty -> Array ty
 take nbElems v
     | nbElems <= 0 = empty
     | otherwise    = runST $ do
@@ -361,7 +361,7 @@ take nbElems v
   where
     n = min nbElems (length v)
 
-drop ::  Int -> Vector ty -> Vector ty
+drop ::  Int -> Array ty -> Array ty
 drop nbElems v
     | nbElems <= 0 = v
     | otherwise    = runST $ do
@@ -372,20 +372,20 @@ drop nbElems v
     offset = min nbElems (length v)
     n = length v - offset
 
-splitAt ::  Int -> Vector ty -> (Vector ty, Vector ty)
+splitAt ::  Int -> Array ty -> (Array ty, Array ty)
 splitAt n v = (take n v, drop n v)
 
-revTake :: Int -> Vector ty -> Vector ty
+revTake :: Int -> Array ty -> Array ty
 revTake nbElems v = drop (length v - nbElems) v
 
-revDrop :: Int -> Vector ty -> Vector ty
+revDrop :: Int -> Array ty -> Array ty
 revDrop nbElems v = take (length v - nbElems) v
 
-revSplitAt :: Int -> Vector ty -> (Vector ty, Vector ty)
+revSplitAt :: Int -> Array ty -> (Array ty, Array ty)
 revSplitAt n v = (drop idx v, take idx v)
   where idx = length v - n
 
-splitOn ::  (ty -> Bool) -> Vector ty -> [Vector ty]
+splitOn ::  (ty -> Bool) -> Array ty -> [Array ty]
 splitOn predicate vec
     | len == 0  = []
     | otherwise = loop 0 0
@@ -400,7 +400,7 @@ splitOn predicate vec
                     then runST (sub vec prevIdx idx) : loop idx' idx'
                     else loop prevIdx idx'
 
-sub :: PrimMonad prim => Vector ty -> Int -> Int -> prim (Vector ty)
+sub :: PrimMonad prim => Array ty -> Int -> Int -> prim (Array ty)
 sub vec startIdx expectedEndIdx
     | startIdx == endIdx     = return empty
     | startIdx >= length vec = return empty
@@ -412,7 +412,7 @@ sub vec startIdx expectedEndIdx
     !sz  = endIdx - startIdx
     !endIdx = min expectedEndIdx (length vec)
 
-break ::  (ty -> Bool) -> Vector ty -> (Vector ty, Vector ty)
+break ::  (ty -> Bool) -> Array ty -> (Array ty, Array ty)
 break predicate v = findBreak 0
   where
     findBreak i
@@ -422,18 +422,18 @@ break predicate v = findBreak 0
                 then splitAt i v
                 else findBreak (i+1)
 
-span ::  (ty -> Bool) -> Vector ty -> (Vector ty, Vector ty)
+span ::  (ty -> Bool) -> Array ty -> (Array ty, Array ty)
 span p = break (not . p)
 
-map :: (a -> b) -> Vector a -> Vector b
+map :: (a -> b) -> Array a -> Array b
 map f a = create (length a) (\i -> f $ unsafeIndex a i)
 
 {-
-mapIndex :: (Int -> a -> b) -> Vector a -> Vector b
+mapIndex :: (Int -> a -> b) -> Array a -> Array b
 mapIndex f a = create (length a) (\i -> f i $ unsafeIndex a i)
 -}
 
-cons ::  ty -> Vector ty -> Vector ty
+cons ::  ty -> Array ty -> Array ty
 cons e vec = runST $ do
     mv <- new (len + 1)
     unsafeWrite mv 0 e
@@ -442,7 +442,7 @@ cons e vec = runST $ do
   where
     !len = length vec
 
-snoc ::  Vector ty -> ty -> Vector ty
+snoc ::  Array ty -> ty -> Array ty
 snoc vec e = runST $ do
     mv <- new (len + 1)
     copyAtRO mv 0 vec 0 len
@@ -451,7 +451,7 @@ snoc vec e = runST $ do
   where
     !len = length vec
 
-find ::  (ty -> Bool) -> Vector ty -> Maybe ty
+find ::  (ty -> Bool) -> Array ty -> Maybe ty
 find predicate vec = loop 0
   where
     !len = length vec
@@ -461,11 +461,11 @@ find predicate vec = loop 0
             let e = unsafeIndex vec i
              in if predicate e then Just e else loop (i+1)
 
-sortBy ::  (ty -> ty -> Ordering) -> Vector ty -> Vector ty
+sortBy ::  (ty -> ty -> Ordering) -> Array ty -> Array ty
 sortBy xford vec = runST (thaw vec >>= doSort xford)
   where
     len = length vec
-    doSort :: PrimMonad prim => (ty -> ty -> Ordering) -> MVector ty (PrimState prim) -> prim (Vector ty)
+    doSort :: PrimMonad prim => (ty -> ty -> Ordering) -> MArray ty (PrimState prim) -> prim (Array ty)
     doSort ford ma = qsort 0 (len - 1) >> unsafeFreeze ma
       where
         qsort lo hi
@@ -496,11 +496,11 @@ sortBy xford vec = runST (thaw vec >>= doSort xford)
             unsafeWrite ma i ahi
             return i
 
-filter :: (ty -> Bool) -> Vector ty -> Vector ty
+filter :: (ty -> Bool) -> Array ty -> Array ty
 filter predicate vec = runST (new len >>= copyFilterFreeze predicate (unsafeIndex vec))
   where
     !len = length vec
-    copyFilterFreeze :: PrimMonad prim => (ty -> Bool) -> (Int -> ty) -> MVector ty (PrimState prim) -> prim (Vector ty)
+    copyFilterFreeze :: PrimMonad prim => (ty -> Bool) -> (Int -> ty) -> MArray ty (PrimState prim) -> prim (Array ty)
     copyFilterFreeze predi getVec mvec = loop 0 0 >>= freezeUntilIndex mvec
       where
         loop d s
@@ -510,13 +510,13 @@ filter predicate vec = runST (new len >>= copyFilterFreeze predicate (unsafeInde
           where
             v = getVec s
 
-freezeUntilIndex :: PrimMonad prim => MVector ty (PrimState prim) -> Int -> prim (Vector ty)
+freezeUntilIndex :: PrimMonad prim => MArray ty (PrimState prim) -> Int -> prim (Array ty)
 freezeUntilIndex mvec d = do
     m <- new d
     copyAt m 0 mvec 0 d
     unsafeFreeze m
 
-reverse :: Vector ty -> Vector ty
+reverse :: Array ty -> Array ty
 reverse a = create len toEnd
   where
     len = length a

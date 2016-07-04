@@ -1,4 +1,4 @@
-module Core.Vector.Unboxed.ByteArray
+module Core.Array.Unboxed.ByteArray
     ( MutableByteArray
     , mutableByteArraySet
     , mutableByteArraySetBetween
@@ -7,15 +7,15 @@ module Core.Vector.Unboxed.ByteArray
 
 import Core.Internal.Base
 import Core.Primitive.Monad
-import Core.Vector.Common
-import Core.Vector.Unboxed
-import Core.Vector.Unboxed.Mutable
+import Core.Array.Common
+import Core.Array.Unboxed
+import Core.Array.Unboxed.Mutable
 import Core.Number
 import Control.Monad (forM_)
 import qualified Core.Collection as C
 
 -- | Mutable Byte Array alias
-type MutableByteArray st = MUVector Word8 st
+type MutableByteArray st = MUArray Word8 st
 
 mutableByteArraySet :: PrimMonad prim => MutableByteArray (PrimState prim) -> Word8 -> prim ()
 mutableByteArraySet mba val = do

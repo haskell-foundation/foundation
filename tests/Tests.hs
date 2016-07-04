@@ -12,7 +12,7 @@ import           Test.QuickCheck.Monadic
 import           Control.Monad
 
 import           Core.String
-import           Core.Vector
+import           Core.Array
 import           Core.Foreign
 import           Core.Collection
 import           Core
@@ -153,18 +153,18 @@ testUnboxedForeign :: (PrimType e, Show e, Eq a, Eq e, Ord a, Ord e, Arbitrary e
                    => Proxy a -> Gen e -> [TestTree]
 testUnboxedForeign proxy genElement =
     [ testProperty "equal" $ withElementsM $ \fptr l ->
-        return $ toVectorP proxy l == foreignMem fptr (length l)
+        return $ toArrayP proxy l == foreignMem fptr (length l)
     , testProperty "take" $ withElementsM $ \fptr l -> do
         n <- pick arbitrary
-        return $ take n (toVectorP proxy l) == take n (foreignMem fptr (length l))
+        return $ take n (toArrayP proxy l) == take n (foreignMem fptr (length l))
     , testProperty "take" $ withElementsM $ \fptr l -> do
         n <- pick arbitrary
-        return $ drop n (toVectorP proxy l) == drop n (foreignMem fptr (length l))
+        return $ drop n (toArrayP proxy l) == drop n (foreignMem fptr (length l))
     ]
   where
     withElementsM f = monadicIO $ forAllM (listOfElement genElement) $ \l -> run (createPtr l) >>= \fptr -> f fptr l
-    toVectorP :: PrimType (Element c) => Proxy c -> [Element c] -> UVector (Element c)
-    toVectorP _ l = fromList l
+    toArrayP :: PrimType (Element c) => Proxy c -> [Element c] -> UArray (Element c)
+    toArrayP _ l = fromList l
 
 fromListP :: (IsList c, Item c ~ Element c) => Proxy c -> [Element c] -> c
 fromListP p = \x -> asProxyTypeOf (fromList x) p
@@ -172,44 +172,44 @@ fromListP p = \x -> asProxyTypeOf (fromList x) p
 tests :: [TestTree]
 tests =
     [ testGroup "String"       (testCollection (Proxy :: Proxy String)           arbitraryChar)
-    , testGroup "Vector"
+    , testGroup "Array"
         [ testGroup "Unboxed"
-            [ testGroup "UVector(W8)"  (testCollection (Proxy :: Proxy (UVector Word8))  arbitrary)
-            , testGroup "UVector(W16)" (testCollection (Proxy :: Proxy (UVector Word16)) arbitrary)
-            , testGroup "UVector(W32)" (testCollection (Proxy :: Proxy (UVector Word32)) arbitrary)
-            , testGroup "UVector(W64)" (testCollection (Proxy :: Proxy (UVector Word64)) arbitrary)
-            , testGroup "UVector(I8)"  (testCollection (Proxy :: Proxy (UVector Int8))   arbitrary)
-            , testGroup "UVector(I16)" (testCollection (Proxy :: Proxy (UVector Int16))  arbitrary)
-            , testGroup "UVector(I32)" (testCollection (Proxy :: Proxy (UVector Int32))  arbitrary)
-            , testGroup "UVector(I64)" (testCollection (Proxy :: Proxy (UVector Int64))  arbitrary)
-            , testGroup "UVector(F32)" (testCollection (Proxy :: Proxy (UVector Float))  arbitrary)
-            , testGroup "UVector(F64)" (testCollection (Proxy :: Proxy (UVector Double)) arbitrary)
+            [ testGroup "UArray(W8)"  (testCollection (Proxy :: Proxy (UArray Word8))  arbitrary)
+            , testGroup "UArray(W16)" (testCollection (Proxy :: Proxy (UArray Word16)) arbitrary)
+            , testGroup "UArray(W32)" (testCollection (Proxy :: Proxy (UArray Word32)) arbitrary)
+            , testGroup "UArray(W64)" (testCollection (Proxy :: Proxy (UArray Word64)) arbitrary)
+            , testGroup "UArray(I8)"  (testCollection (Proxy :: Proxy (UArray Int8))   arbitrary)
+            , testGroup "UArray(I16)" (testCollection (Proxy :: Proxy (UArray Int16))  arbitrary)
+            , testGroup "UArray(I32)" (testCollection (Proxy :: Proxy (UArray Int32))  arbitrary)
+            , testGroup "UArray(I64)" (testCollection (Proxy :: Proxy (UArray Int64))  arbitrary)
+            , testGroup "UArray(F32)" (testCollection (Proxy :: Proxy (UArray Float))  arbitrary)
+            , testGroup "UArray(F64)" (testCollection (Proxy :: Proxy (UArray Double)) arbitrary)
             ]
         , testGroup "Unboxed-Foreign"
-            [ testGroup "UVector(W8)"  (testUnboxedForeign (Proxy :: Proxy (UVector Word8))  arbitrary)
-            , testGroup "UVector(W16)" (testUnboxedForeign (Proxy :: Proxy (UVector Word16)) arbitrary)
-            , testGroup "UVector(W32)" (testUnboxedForeign (Proxy :: Proxy (UVector Word32)) arbitrary)
-            , testGroup "UVector(W64)" (testUnboxedForeign (Proxy :: Proxy (UVector Word64)) arbitrary)
-            , testGroup "UVector(I8)"  (testUnboxedForeign (Proxy :: Proxy (UVector Int8))   arbitrary)
-            , testGroup "UVector(I16)" (testUnboxedForeign (Proxy :: Proxy (UVector Int16))  arbitrary)
-            , testGroup "UVector(I32)" (testUnboxedForeign (Proxy :: Proxy (UVector Int32))  arbitrary)
-            , testGroup "UVector(I64)" (testUnboxedForeign (Proxy :: Proxy (UVector Int64))  arbitrary)
-            , testGroup "UVector(F32)" (testUnboxedForeign (Proxy :: Proxy (UVector Float))  arbitrary)
-            , testGroup "UVector(F64)" (testUnboxedForeign (Proxy :: Proxy (UVector Double)) arbitrary)
+            [ testGroup "UArray(W8)"  (testUnboxedForeign (Proxy :: Proxy (UArray Word8))  arbitrary)
+            , testGroup "UArray(W16)" (testUnboxedForeign (Proxy :: Proxy (UArray Word16)) arbitrary)
+            , testGroup "UArray(W32)" (testUnboxedForeign (Proxy :: Proxy (UArray Word32)) arbitrary)
+            , testGroup "UArray(W64)" (testUnboxedForeign (Proxy :: Proxy (UArray Word64)) arbitrary)
+            , testGroup "UArray(I8)"  (testUnboxedForeign (Proxy :: Proxy (UArray Int8))   arbitrary)
+            , testGroup "UArray(I16)" (testUnboxedForeign (Proxy :: Proxy (UArray Int16))  arbitrary)
+            , testGroup "UArray(I32)" (testUnboxedForeign (Proxy :: Proxy (UArray Int32))  arbitrary)
+            , testGroup "UArray(I64)" (testUnboxedForeign (Proxy :: Proxy (UArray Int64))  arbitrary)
+            , testGroup "UArray(F32)" (testUnboxedForeign (Proxy :: Proxy (UArray Float))  arbitrary)
+            , testGroup "UArray(F64)" (testUnboxedForeign (Proxy :: Proxy (UArray Double)) arbitrary)
             ]
         , testGroup "Boxed"
-            [ testGroup "Vector(W8)"  (testCollection (Proxy :: Proxy (Vector Word8))  arbitrary)
-            , testGroup "Vector(W16)" (testCollection (Proxy :: Proxy (Vector Word16)) arbitrary)
-            , testGroup "Vector(W32)" (testCollection (Proxy :: Proxy (Vector Word32)) arbitrary)
-            , testGroup "Vector(W64)" (testCollection (Proxy :: Proxy (Vector Word64)) arbitrary)
-            , testGroup "Vector(I8)"  (testCollection (Proxy :: Proxy (Vector Int8))   arbitrary)
-            , testGroup "Vector(I16)" (testCollection (Proxy :: Proxy (Vector Int16))  arbitrary)
-            , testGroup "Vector(I32)" (testCollection (Proxy :: Proxy (Vector Int32))  arbitrary)
-            , testGroup "Vector(I64)" (testCollection (Proxy :: Proxy (Vector Int64))  arbitrary)
-            , testGroup "Vector(F32)" (testCollection (Proxy :: Proxy (Vector Float))  arbitrary)
-            , testGroup "Vector(F64)" (testCollection (Proxy :: Proxy (Vector Double)) arbitrary)
-            , testGroup "Vector(Int)" (testCollection (Proxy :: Proxy (Vector Int))  arbitrary)
-            , testGroup "Vector(Integer)" (testCollection (Proxy :: Proxy (Vector Integer)) arbitrary)
+            [ testGroup "Array(W8)"  (testCollection (Proxy :: Proxy (Array Word8))  arbitrary)
+            , testGroup "Array(W16)" (testCollection (Proxy :: Proxy (Array Word16)) arbitrary)
+            , testGroup "Array(W32)" (testCollection (Proxy :: Proxy (Array Word32)) arbitrary)
+            , testGroup "Array(W64)" (testCollection (Proxy :: Proxy (Array Word64)) arbitrary)
+            , testGroup "Array(I8)"  (testCollection (Proxy :: Proxy (Array Int8))   arbitrary)
+            , testGroup "Array(I16)" (testCollection (Proxy :: Proxy (Array Int16))  arbitrary)
+            , testGroup "Array(I32)" (testCollection (Proxy :: Proxy (Array Int32))  arbitrary)
+            , testGroup "Array(I64)" (testCollection (Proxy :: Proxy (Array Int64))  arbitrary)
+            , testGroup "Array(F32)" (testCollection (Proxy :: Proxy (Array Float))  arbitrary)
+            , testGroup "Array(F64)" (testCollection (Proxy :: Proxy (Array Double)) arbitrary)
+            , testGroup "Array(Int)" (testCollection (Proxy :: Proxy (Array Int))  arbitrary)
+            , testGroup "Array(Integer)" (testCollection (Proxy :: Proxy (Array Integer)) arbitrary)
             ]
         ]
     ]
