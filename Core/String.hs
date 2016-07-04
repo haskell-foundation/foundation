@@ -22,6 +22,8 @@
 --
 module Core.String
     ( String
+    , Encoding(..)
+    , fromBytes
     ) where
 
 import Core.String.UTF8
