@@ -6,6 +6,7 @@
 -- Portability : portable
 --
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric #-}
 module Core.Tuple
     ( Tuple2(..)
     , Tuple3(..)
@@ -20,15 +21,15 @@ import Data.Data
 
 -- | Strict tuple (a,b)
 data Tuple2 a b = Tuple2 !a !b
-    deriving (Show,Eq,Ord,Typeable,Data)
+    deriving (Show,Eq,Ord,Typeable,Data,Generic)
 
 -- | Strict tuple (a,b,c)
 data Tuple3 a b c = Tuple3 !a !b !c
-    deriving (Show,Eq,Ord,Typeable,Data)
+    deriving (Show,Eq,Ord,Typeable,Data,Generic)
 
 -- | Strict tuple (a,b,c,d)
 data Tuple4 a b c d = Tuple4 !a !b !c !d
-    deriving (Show,Eq,Ord,Typeable,Data)
+    deriving (Show,Eq,Ord,Typeable,Data,Generic)
 
 -- | Class of product types that have a first element
 class Fstable a where
