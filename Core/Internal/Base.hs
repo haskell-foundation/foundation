@@ -43,6 +43,7 @@ module Core.Internal.Base
     , Prelude.IO
     , Core.Internal.IsList.IsList (..)
     , GHC.Exts.IsString (..)
+    , GHC.Generics.Generic (..)
     , Prelude.Either (..)
     , Data.Typeable.Typeable
     , Data.Monoid.Monoid (..)
@@ -62,3 +63,4 @@ import qualified Data.Word
 import qualified Data.Int
 import qualified Core.Internal.IsList
 import qualified GHC.Exts
+import qualified GHC.Generics
