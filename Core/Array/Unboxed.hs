@@ -88,7 +88,7 @@ import qualified Data.List
 -- packed contiguous array in memory that can easily be passed
 -- to foreign interface
 data UArray ty = UVecBA {-# UNPACK #-} !PinnedStatus {- unpinned / pinned flag -} ByteArray#
-                | UVecAddr !Int# {- number of items of type ty -} (FinalPtr ty)
+               | UVecAddr !Int# {- number of items of type ty -} (FinalPtr ty)
 
 -- | Byte Array alias
 type ByteArray = UArray Word8
