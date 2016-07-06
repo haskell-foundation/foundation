@@ -192,17 +192,13 @@ foreignMem :: PrimType ty
            -> UArray ty
 foreignMem fptr (I# nb) = UVecAddr nb fptr
 
-
 -- | return the number of elements of the array.
 length :: PrimType ty => UArray ty -> Int
-length = divBits Proxy
-  where
-    divBits :: PrimType ty => Proxy ty -> UArray ty -> Int
-    divBits proxy (UVecBA _ a) =
-        let !(I# szBits) = primSizeInBytes proxy
-            !elems       = quotInt# (sizeofByteArray# a) szBits
-         in I# elems
-    divBits _     (UVecAddr len _) = I# len
+length (UVecAddr len _) = I# len
+length v@(UVecBA _ a) =
+    let !(I# szBits) = primSizeInBytes (vectorProxyTy v)
+        !elems       = quotInt# (sizeofByteArray# a) szBits
+     in I# elems
 {-# INLINE[1] length #-}
 
 -- fast case for ByteArray
