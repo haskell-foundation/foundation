@@ -55,6 +55,8 @@ module Core.Array.Unboxed
     , span
     , cons
     , snoc
+    , uncons
+    , unsnoc
     , find
     , sortBy
     , filter
@@ -549,6 +551,21 @@ snoc vec e = runST $ do
   where
     !(I# bytes) = sizeInBytesOfContent vec
     !len@(I# len#) = length vec
+
+uncons :: PrimType ty => UArray ty -> Maybe (ty, UArray ty)
+uncons vec
+    | nbElems == 0 = Nothing
+    | otherwise    = Just (unsafeIndex vec 0, runST (sub vec 1 nbElems))
+  where
+    !nbElems = length vec
+
+unsnoc :: PrimType ty => UArray ty -> Maybe (ty, UArray ty)
+unsnoc vec
+    | nbElems == 0 = Nothing
+    | otherwise    = Just (unsafeIndex vec lastElem, runST (sub vec 0 lastElem))
+  where
+    !lastElem = nbElems - 1
+    !nbElems = length vec
 
 find :: PrimType ty => (ty -> Bool) -> UArray ty -> Maybe ty
 find predicate vec = loop 0
