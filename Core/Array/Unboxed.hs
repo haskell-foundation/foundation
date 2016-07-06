@@ -110,8 +110,6 @@ instance PrimType ty => IsList (UArray ty) where
     fromList = vFromList
     toList = vToList
 
-
-
 {-
 fmapUVec :: (PrimType a, PrimType b) => (a -> b) -> UArray a -> UArray b
 fmapUVec mapper a = runST (new nbElems >>= copyMap (unsafeIndex a) mapper)
