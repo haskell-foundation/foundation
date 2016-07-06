@@ -214,6 +214,22 @@ copyAtRO :: (PrimMonad prim, PrimType ty)
          -> Int                -- ^ offset at source
          -> Int                -- ^ number of elements to copy
          -> prim ()
+copyAtRO (MUVecMA _ dstMba) ed uvec@(UVecBA _ srcBa) es n =
+    primitive $ \st -> (# copyByteArray# srcBa os dstMba od nBytes st, () #)
+  where
+    sz = primSizeInBytes (vectorProxyTy uvec)
+    !(I# os)     = es * sz
+    !(I# od)     = ed * sz
+    !(I# nBytes) = n * sz
+copyAtRO (MUVecMA _ dstMba) ed uvec@(UVecAddr _ srcFptr) es n =
+    withFinalPtr srcFptr $ \srcPtr ->
+        let !(Ptr srcAddr) = srcPtr `plusPtr` os
+         in primitive $ \s -> (# compatCopyAddrToByteArray# srcAddr dstMba od nBytes s, () #)
+  where
+    sz  = primSizeInBytes (vectorProxyTy uvec)
+    !os = es * sz
+    !(I# od)     = ed * sz
+    !(I# nBytes) = n * sz
 copyAtRO dst od src os n = loop od os
   where endIndex = os + n
         loop d i
