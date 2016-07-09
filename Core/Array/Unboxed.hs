@@ -12,6 +12,7 @@
 --
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
+{-# LANGUAGE ViewPatterns #-}
 module Core.Array.Unboxed
     ( UArray(..)
     , ByteArray
@@ -382,10 +383,16 @@ append a b
     !lb = length b
 
 concat :: PrimType ty => [UArray ty] -> UArray ty
-concat l = runST $ do
-    r <- new (Prelude.sum $ fmap length l)
-    loop r 0 l
-    unsafeFreeze r
+concat (Data.List.dropWhile null -> l) =
+  let lens = fmap length l
+      count = Prelude.sum lens
+  in case lens of
+      [] -> empty
+      len:_ | len == count -> Data.List.head l
+      _ -> runST $ do
+          r <- new count
+          loop r 0 l
+          unsafeFreeze r
   where loop _ _ []     = return ()
         loop r i (x:xs) = do
             mx <- unsafeThaw x
