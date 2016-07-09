@@ -58,14 +58,6 @@ instance IsList (Array ty) where
 
 instance C.InnerFunctor (Array ty)
 
-instance C.SemiOrderedCollection (Array ty) where
-    snoc = snoc
-    cons = cons
-    find = find
-    sortBy = sortBy
-    length = length
-    singleton = fromList . (:[])
-
 instance C.Sequential (Array ty) where
     null = null
     take = take
@@ -81,6 +73,12 @@ instance C.Sequential (Array ty) where
     filter = filter
     unsnoc = unsnoc
     uncons = uncons
+    snoc = snoc
+    cons = cons
+    find = find
+    sortBy = sortBy
+    length = length
+    singleton = fromList . (:[])
 
 instance C.MutableCollection (MArray ty) where
     type Collection (MArray ty) = Array ty

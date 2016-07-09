@@ -21,7 +21,14 @@ import qualified Core.Array.Unboxed as UV
 
 -- | A set of methods for ordered colection
 class (IsList c, Item c ~ Element c, Monoid c) => Sequential c where
-    {-# MINIMAL null, ((take, drop) | splitAt), ((revTake, revDrop) | revSplitAt), splitOn, (break | span), filter, reverse, uncons, unsnoc #-}
+    {-# MINIMAL null, ((take, drop) | splitAt)
+              , ((revTake, revDrop) | revSplitAt)
+              , splitOn
+              , (break | span)
+              , filter, reverse
+              , uncons, unsnoc, snoc, cons
+              , find, sortBy, length, singleton #-}
+
     -- | Check if a collection is empty
     null :: c -> Bool
 
@@ -74,6 +81,24 @@ class (IsList c, Item c ~ Element c, Monoid c) => Sequential c where
     -- If the collection is empty, returns Nothing.
     unsnoc :: c -> Maybe (c, Element c)
 
+    -- | Prepend an element to an ordered collection
+    snoc :: c -> Element c -> c
+
+    -- | Append an element to an ordered collection
+    cons :: Element c -> c -> c
+
+    -- | Find an element in an ordered collection
+    find :: (Element c -> Bool) -> c -> Maybe (Element c)
+
+    -- | Sort an ordered collection using the specified order function
+    sortBy :: (Element c -> Element c -> Ordering) -> c -> c
+
+    -- | Length of a collection (number of Element c)
+    length :: c -> Int
+
+    -- | Create a collection with a single element
+    singleton :: Element c -> c
+
 instance Sequential [a] where
     null = Data.List.null
     take = Data.List.take
@@ -89,6 +114,12 @@ instance Sequential [a] where
     reverse = Data.List.reverse
     uncons = ListExtra.uncons
     unsnoc = ListExtra.unsnoc
+    snoc c e = c `mappend` [e]
+    cons e c = e : c
+    find = Data.List.find
+    sortBy = Data.List.sortBy
+    length = Data.List.length
+    singleton = (:[])
 
 instance UV.PrimType ty => Sequential (UV.UArray ty) where
     null = UV.null
@@ -105,3 +136,9 @@ instance UV.PrimType ty => Sequential (UV.UArray ty) where
     reverse = UV.reverse
     uncons = UV.uncons
     unsnoc = UV.unsnoc
+    snoc = UV.snoc
+    cons = UV.cons
+    find = UV.find
+    sortBy = UV.sortBy
+    length = UV.length
+    singleton = fromList . (:[])

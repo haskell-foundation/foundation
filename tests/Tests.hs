@@ -135,7 +135,7 @@ testCollectionProps proxy genElement =
   where
     withCollection2 f = forAll ((,) <$> (fromListP proxy <$> listOfElement genElement) <*> arbitrary) f
 
-testCollection :: (Show a, Show e, Eq a, Eq e, Ord a, Ord e, Arbitrary e, SemiOrderedCollection a, Sequential a, Item a ~ Element a, Element a ~ e) => Proxy a -> Gen e -> [TestTree]
+testCollection :: (Show a, Show e, Eq a, Eq e, Ord a, Ord e, Arbitrary e, Sequential a, Item a ~ Element a, Element a ~ e) => Proxy a -> Gen e -> [TestTree]
 testCollection proxy genElement =
     testMonoid proxy genElement <>
     [ testProperty "LString-convert" $ withElements $ isIdemPotent (toList . fromListP proxy)
@@ -176,7 +176,7 @@ testCollection proxy genElement =
     withElements3 f = forAll ((,,) <$> listOfElement genElement <*> arbitrary <*> arbitrary) f
     withElements2E f = forAll ((,) <$> listOfElement genElement <*> genElement) f
 
-testUnboxedForeign :: (PrimType e, Show e, Eq a, Eq e, Ord a, Ord e, Arbitrary e, SemiOrderedCollection a, Sequential a, Item a ~ Element a, Element a ~ e, Storable e)
+testUnboxedForeign :: (PrimType e, Show e, Eq a, Eq e, Ord a, Ord e, Arbitrary e, Sequential a, Item a ~ Element a, Element a ~ e, Storable e)
                    => Proxy a -> Gen e -> [TestTree]
 testUnboxedForeign proxy genElement =
     [ testProperty "equal" $ withElementsM $ \fptr l ->

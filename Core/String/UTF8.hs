@@ -78,13 +78,6 @@ type instance C.Element String = Char
 
 instance C.InnerFunctor String where
     imap = charMap
-instance C.SemiOrderedCollection String where
-    snoc = snoc
-    cons = cons
-    find = find
-    sortBy = sortBy
-    length = length
-    singleton = fromList . (:[])
 instance C.Sequential String where
     null = null
     take = take
@@ -100,6 +93,12 @@ instance C.Sequential String where
     reverse = reverse
     unsnoc = unsnoc
     uncons = uncons
+    snoc = snoc
+    cons = cons
+    find = find
+    sortBy = sortBy
+    length = length
+    singleton = fromList . (:[])
 
 data ValidationFailure = InvalidHeader
                        | InvalidContinuation

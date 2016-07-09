@@ -45,16 +45,7 @@ instance (IsList s, C.InnerFunctor s) => C.InnerFunctor (Chunks s) where
     imap _ End         = End
     imap f (Chunk s r) = Chunk (C.imap f s) (C.imap f r)
 
-instance (IsList s, C.InnerFunctor s, C.SemiOrderedCollection s)
-         => C.SemiOrderedCollection (Chunks s) where
-    snoc = snoc
-    cons = cons
-    find = find
-    sortBy = sortBy
-    length = length
-    singleton x = Chunk (C.singleton x) End
-
-instance (IsList s, C.InnerFunctor s, C.SemiOrderedCollection s, C.Sequential s)
+instance (IsList s, C.InnerFunctor s, C.Sequential s)
         => C.Sequential (Chunks s) where
     null = null
     take = take
@@ -65,6 +56,12 @@ instance (IsList s, C.InnerFunctor s, C.SemiOrderedCollection s, C.Sequential s)
     span = span
     reverse = reverse
     filter = filter
+    snoc = snoc
+    cons = cons
+    find = find
+    sortBy = sortBy
+    length = length
+    singleton x = Chunk (C.singleton x) End
 
 append :: Chunks s -> Chunks s -> Chunks s
 append s1  End = s1
@@ -80,27 +77,27 @@ concat (s1:sl) = appendEnd s1 sl
         appendEnd End         []     = End
         appendEnd End         (x:xs) = appendEnd x xs
 
-length :: C.SemiOrderedCollection s => Chunks s -> Int
+length :: C.Sequential s => Chunks s -> Int
 length = sumLength 0
   where
     sumLength !sum End  = sum
     sumLength !sum (Chunk s k) = sumLength (sum + C.length s) k
 
-snoc :: C.SemiOrderedCollection s
+snoc :: C.Sequential s
      => Chunks s -> C.Element (Chunks s) -> Chunks s
 snoc End         el = Chunk (C.singleton el) End
 snoc (Chunk s r) el = Chunk s (snoc r el)
 
-cons :: C.SemiOrderedCollection s
+cons :: C.Sequential s
      => C.Element (Chunks s) -> Chunks s -> Chunks s
 cons e = Chunk (C.singleton e)
 
-find :: C.SemiOrderedCollection s
+find :: C.Sequential s
      => (C.Element (Chunks s) -> Bool) -> Chunks s -> Maybe (C.Element (Chunks s))
 find _ End         = Nothing
 find f (Chunk s r) = C.find f s `mplus` find f r
 
-sortBy :: C.SemiOrderedCollection s
+sortBy :: C.Sequential s
        => (C.Element (Chunks s) -> C.Element (Chunks s) -> Ordering)
        -> Chunks s
        -> Chunks s
@@ -111,7 +108,7 @@ null End           = True
 null (Chunk s End) = C.null s
 null (Chunk s l)   = C.null s && null l
 
-take :: (C.SemiOrderedCollection s, C.Sequential s) => Int -> Chunks s -> Chunks s
+take :: C.Sequential s => Int -> Chunks s -> Chunks s
 take n l
     | n <= 0    = End
     | otherwise =
@@ -123,7 +120,7 @@ take n l
                         then Chunk (C.take n s) End
                         else Chunk s (take (n - len) r)
 
-drop :: (C.SemiOrderedCollection s, C.Sequential s) => Int -> Chunks s -> Chunks s
+drop :: C.Sequential s => Int -> Chunks s -> Chunks s
 drop n l
     | n <= 0    = l
     | otherwise =
@@ -135,7 +132,7 @@ drop n l
                         then Chunk (C.drop n s) r
                         else drop (n - len) l
 
-splitAt :: (C.SemiOrderedCollection s, C.Sequential s) => Int -> Chunks s -> (Chunks s, Chunks s)
+splitAt :: C.Sequential s => Int -> Chunks s -> (Chunks s, Chunks s)
 splitAt _ End = (End, End)
 splitAt nbElements chunks
     | nbElements <= 0 = (End, chunks)
@@ -202,7 +199,7 @@ foldChunks f initialAcc = loop initialAcc
 
 -- | Recreate chunks of specific size from a stream of chunks of
 -- each unknown and arbitrary size
-reChunk :: (C.SemiOrderedCollection s, C.Sequential s) => Int -> Chunks s -> Chunks s
+reChunk :: C.Sequential s => Int -> Chunks s -> Chunks s
 reChunk n c =
     let (s1, s2) = splitAt n c
         s' = mconcat $ C.reverse $ foldChunks (flip (:)) [] s1
