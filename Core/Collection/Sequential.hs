@@ -21,7 +21,7 @@ import qualified Core.Array.Unboxed as UV
 
 -- | A set of methods for ordered colection
 class (IsList c, Item c ~ Element c, Monoid c) => Sequential c where
-    {-# MINIMAL null, ((take, drop) | splitAt), ((revTake, revDrop) | revSplitAt), splitOn, (break | span), filter, reverse #-}
+    {-# MINIMAL null, ((take, drop) | splitAt), ((revTake, revDrop) | revSplitAt), splitOn, (break | span), filter, reverse, uncons, unsnoc #-}
     -- | Check if a collection is empty
     null :: c -> Bool
 
@@ -66,6 +66,14 @@ class (IsList c, Item c ~ Element c, Monoid c) => Sequential c where
     -- | Reverse a collection
     reverse :: c -> c
 
+    -- | Decompose a collection into its first element and the remaining collection.
+    -- If the collection is empty, returns Nothing.
+    uncons :: c -> Maybe (Element c, c)
+
+    -- | Decompose a collection into a collection without its last element, and the last element
+    -- If the collection is empty, returns Nothing.
+    unsnoc :: c -> Maybe (c, Element c)
+
 instance Sequential [a] where
     null = Data.List.null
     take = Data.List.take
@@ -79,6 +87,8 @@ instance Sequential [a] where
     span = Data.List.span
     filter = Data.List.filter
     reverse = Data.List.reverse
+    uncons = ListExtra.uncons
+    unsnoc = ListExtra.unsnoc
 
 instance UV.PrimType ty => Sequential (UV.UArray ty) where
     null = UV.null
@@ -93,3 +103,5 @@ instance UV.PrimType ty => Sequential (UV.UArray ty) where
     span = UV.span
     filter = UV.filter
     reverse = UV.reverse
+    uncons = UV.uncons
+    unsnoc = UV.unsnoc

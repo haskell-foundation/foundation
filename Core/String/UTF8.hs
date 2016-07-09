@@ -98,6 +98,8 @@ instance C.Sequential String where
     span = span
     filter = filter
     reverse = reverse
+    unsnoc = unsnoc
+    uncons = uncons
 
 data ValidationFailure = InvalidHeader
                        | InvalidContinuation
@@ -549,6 +551,24 @@ cons c s@(String ba) = runST $ do
   where
     !len     = size s
     !nbBytes = charToBytes (fromEnum c)
+
+unsnoc :: String -> Maybe (String, Char)
+unsnoc s
+    | null s    = Nothing
+    | otherwise =
+        let (s1,s2) = revSplitAt 1 s
+         in case toList s1 of -- TODO use index instead of toList
+                [c] -> Just (s2, c)
+                _   -> error "impossible"
+
+uncons :: String -> Maybe (Char, String)
+uncons s
+    | null s    = Nothing
+    | otherwise =
+        let (s1,s2) = splitAt 1 s
+         in case toList s1 of -- TODO use index instead of ToList
+                [c] -> Just (c, s2)
+                _   -> error "impossible"
 
 find :: (Char -> Bool) -> String -> Maybe Char
 find predicate s = loop 0

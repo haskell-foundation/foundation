@@ -26,6 +26,8 @@ data Chunks s =
       End
     | Chunk !s (Chunks s)
 
+--newtype Chunks a = Chunks [a]
+
 type instance C.Element (Chunks a) = C.Element a
 
 instance IsList s => IsList (Chunks s) where

@@ -79,6 +79,8 @@ instance C.Sequential (Array ty) where
     span = span
     reverse = reverse
     filter = filter
+    unsnoc = unsnoc
+    uncons = uncons
 
 instance C.MutableCollection (MArray ty) where
     type Collection (MArray ty) = Array ty
@@ -448,6 +450,20 @@ snoc vec e = runST $ do
     copyAtRO mv 0 vec 0 len
     unsafeWrite mv len e
     unsafeFreeze mv
+  where
+    !len = length vec
+
+uncons :: Array ty -> Maybe (ty, Array ty)
+uncons vec
+    | len == 0  = Nothing
+    | otherwise = Just (unsafeIndex vec 0, drop 1 vec)
+  where
+    !len = length vec
+
+unsnoc :: Array ty -> Maybe (Array ty, ty)
+unsnoc vec
+    | len == 0  = Nothing
+    | otherwise = Just (take (len - 1) vec, unsafeIndex vec (len-1))
   where
     !len = length vec
 

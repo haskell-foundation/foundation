@@ -611,10 +611,10 @@ uncons vec
   where
     !nbElems = length vec
 
-unsnoc :: PrimType ty => UArray ty -> Maybe (ty, UArray ty)
+unsnoc :: PrimType ty => UArray ty -> Maybe (UArray ty, ty)
 unsnoc vec
     | nbElems == 0 = Nothing
-    | otherwise    = Just (unsafeIndex vec lastElem, sub vec 0 lastElem)
+    | otherwise    = Just (sub vec 0 lastElem, unsafeIndex vec lastElem)
   where
     !lastElem = nbElems - 1
     !nbElems = length vec

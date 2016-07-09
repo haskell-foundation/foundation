@@ -148,6 +148,8 @@ testCollection proxy genElement =
     , testProperty "revSplitAt" $ withElements2 $ \(l, n) -> toList2 (revSplitAt n $ fromListP proxy l) == (revSplitAt n) l
     , testProperty "snoc" $ withElements2E $ \(l, c) -> toList (snoc (fromListP proxy l) c) == (l <> [c])
     , testProperty "cons" $ withElements2E $ \(l, c) -> toList (cons c (fromListP proxy l)) == (c : l)
+    , testProperty "unsnoc" $ withElements $ \l -> fmap toListFirst (unsnoc (fromListP proxy l)) == unsnoc l
+    , testProperty "uncons" $ withElements $ \l -> fmap toListSecond (uncons (fromListP proxy l)) == uncons l
     , testProperty "splitOn" $ withElements2E $ \(l, ch) ->
          fmap toList (splitOn (== ch) (fromListP proxy l)) == splitOn (== ch) l
     , testProperty "sortBy" $ withElements $ \l ->
@@ -167,6 +169,8 @@ testCollection proxy genElement =
 -}
   where
     toList2 (x,y) = (toList x, toList y)
+    toListFirst (x,y) = (toList x, y)
+    toListSecond (x,y) = (x, toList y)
     withElements f = forAll (listOfElement genElement) f
     withElements2 f = forAll ((,) <$> listOfElement genElement <*> arbitrary) f
     withElements3 f = forAll ((,,) <$> listOfElement genElement <*> arbitrary <*> arbitrary) f

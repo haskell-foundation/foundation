@@ -10,6 +10,8 @@ module Core.Collection.List
     , revTake
     , revDrop
     , revSplitAt
+    , uncons
+    , unsnoc
     ) where
 
 import qualified Data.List
@@ -42,3 +44,17 @@ revSplitAt :: Int -> [a] -> ([a],[a])
 revSplitAt n l = swap $ Data.List.splitAt (len - n) l
   where
     len = Data.List.length l
+
+uncons :: [a] -> Maybe (a, [a])
+uncons []     = Nothing
+uncons (x:xs) = Just (x,xs)
+
+unsnoc :: [a] -> Maybe ([a], a)
+unsnoc []       = Nothing
+unsnoc [x]      = Just ([], x)
+unsnoc [x,y]    = Just ([x], y)
+unsnoc (x:xs@(_:_)) = Just $ loop [x] xs
+  where
+    loop acc [y]    = (Data.List.reverse acc, y)
+    loop acc (y:ys) = loop (y:acc) ys
+    loop _   _      = error "impossible"
