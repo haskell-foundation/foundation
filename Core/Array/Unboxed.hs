@@ -91,6 +91,7 @@ import qualified Data.List
 -- to foreign interface
 data UArray ty = UVecBA {-# UNPACK #-} !PinnedStatus {- unpinned / pinned flag -} ByteArray#
                | UVecAddr !Int# {- number of items of type ty -} (FinalPtr ty)
+               | UVecSlice {-# UNPACK #-} !Int {-# UNPACK #-} !Int (UArray ty)
 
 -- | Byte Array alias
 type ByteArray = UArray Word8
@@ -162,6 +163,11 @@ thaw array@(UVecAddr len fptr) = withFinalPtr fptr $ \(Ptr addr) -> do
     let !(I# bytes#) = sizeInBytesOfContent array * (I# len)
     primitive $ \s -> (# compatCopyAddrToByteArray# addr mba 0# bytes# s, () #)
     return ma
+thaw (UVecSlice start end parent) = do
+    let sz = end - start
+    ma <- new sz
+    copyAtRO ma 0 parent start sz
+    return ma
 {-# INLINE thaw #-}
 
 -- | Return the element at a specific index from an array.
@@ -184,6 +190,7 @@ unsafeIndex v@(UVecAddr _ fptr) n = withUnsafeFinalPtr fptr (primAddrIndex' v)
   where
     primAddrIndex' :: PrimType ty => UArray ty -> Ptr a -> IO ty
     primAddrIndex' _ (Ptr addr) = return (primAddrIndex addr n)
+unsafeIndex (UVecSlice start _ parent) n = unsafeIndex parent (n + start)
 {-# INLINE unsafeIndex #-}
 
 foreignMem :: PrimType ty
@@ -199,6 +206,7 @@ length v@(UVecBA _ a) =
     let !(I# szBits) = primSizeInBytes (vectorProxyTy v)
         !elems       = quotInt# (sizeofByteArray# a) szBits
      in I# elems
+length (UVecSlice start end _) = end - start
 {-# INLINE[1] length #-}
 
 -- fast case for ByteArray
@@ -207,6 +215,7 @@ length v@(UVecBA _ a) =
 lengthByteArray :: UArray Word8 -> Int
 lengthByteArray (UVecBA _ a) = I# (sizeofByteArray# a)
 lengthByteArray (UVecAddr len _) = I# len
+lengthByteArray (UVecSlice start end _) = end - start
 
 -- TODO Optimise with copyByteArray#
 copyAtRO :: (PrimMonad prim, PrimType ty)
@@ -281,6 +290,7 @@ unsafeSlide (MUVecAddr _ fptr) start end = withFinalPtr fptr $ \(Ptr addr) ->
 unsafeThaw :: (PrimType ty, PrimMonad prim) => UArray ty -> prim (MUArray ty (PrimState prim))
 unsafeThaw (UVecBA pinnedState ba) = primitive $ \st -> (# st, MUVecMA pinnedState (unsafeCoerce# ba) #)
 unsafeThaw (UVecAddr len fptr) = return $ MUVecAddr len fptr
+unsafeThaw v = thaw v
 {-# INLINE unsafeThaw #-}
 
 -- | Create a new array of size @n by settings each cells through the
@@ -408,7 +418,8 @@ unsafeUpdate array modifiers = runST (thaw array >>= doUpdate modifiers)
                 {-# INLINE loop #-}
         {-# INLINE doUpdate #-}
 
-withPtr :: UArray ty
+withPtr :: PrimType ty
+        => UArray ty
         -> (Ptr ty -> IO a)
         -> IO a
 withPtr (UVecAddr _ fptr)  f = withFinalPtr fptr f
@@ -422,8 +433,11 @@ withPtr (UVecBA pstatus a) f
             case unsafeFreezeByteArray# mba s3 of { (# s4, ba #) ->
                 (# s4, Ptr (byteArrayContents# ba) #) }}}
         f a'
+withPtr v@(UVecSlice start _ parent) f =
+    withPtr parent $ \ptr -> f (ptr `plusPtr` (start * sizeInBytesOfContent v))
 
-withMutablePtr :: MUArray ty RealWorld
+withMutablePtr :: PrimType ty
+               => MUArray ty RealWorld
                -> (Ptr ty -> IO a)
                -> IO a
 withMutablePtr muvec f = do
@@ -433,34 +447,53 @@ withMutablePtr muvec f = do
 unsafeRecast :: (PrimType a, PrimType b) => UArray a -> UArray b
 unsafeRecast (UVecBA i b) = UVecBA i b
 unsafeRecast (UVecAddr len a) = UVecAddr len (castFinalPtr a)
+unsafeRecast (UVecSlice start end parent) = sliceRecast Proxy Proxy parent
+  where
+    sliceRecast :: (PrimType a, PrimType b) => Proxy b -> Proxy a -> UArray a -> UArray b
+    sliceRecast dstProxy srcProxy _ =
+        let szB = primSizeInBytes dstProxy
+            szA = primSizeInBytes srcProxy
+         in UVecSlice ((start * szA) `div` szB) ((end * szA) `div` szB) (unsafeRecast parent)
 
 null :: UArray ty -> Bool
 null (UVecBA _ a) = bool# (sizeofByteArray# a ==# 0#)
 null (UVecAddr l _) = bool# (l ==# 0#)
+null (UVecSlice start end _) = start == end
 
 take :: PrimType ty => Int -> UArray ty -> UArray ty
 take nbElems v
     | nbElems <= 0 = empty
-    | otherwise    = runST $ do
-        muv <- new n
-        copyAtRO muv 0 v 0 n
-        unsafeFreeze muv
+    | n == len     = v
+    | otherwise    =
+        case v of
+            UVecSlice start _ parent -> UVecSlice start (start + n) parent
+            _                        -> UVecSlice 0 n v
   where
-    n = min nbElems (length v)
+    n = min nbElems len
+    len = length v
 
 drop :: PrimType ty => Int -> UArray ty -> UArray ty
 drop nbElems v
     | nbElems <= 0 = v
-    | otherwise    = runST $ do
-        muv <- new n
-        copyAtRO muv 0 v offset n
-        unsafeFreeze muv
+    | n == len     = empty
+    | otherwise    =
+        case v of
+            UVecSlice start end parent -> UVecSlice (start + n) end parent
+            _                          -> UVecSlice n len v
   where
-    offset = min nbElems (length v)
-    n = length v - offset
+    n = min nbElems len
+    len = length v
 
 splitAt :: PrimType ty => Int -> UArray ty -> (UArray ty, UArray ty)
-splitAt n v = (take n v, drop n v)
+splitAt nbElems v
+    | nbElems <= 0  = (empty, v)
+    | n == length v = (v, empty)
+    | otherwise     =
+        case v of
+            UVecSlice start end parent -> (UVecSlice start (start + n) parent, UVecSlice (start + n) end parent)
+            _                          -> (UVecSlice 0 n v, UVecSlice n (length v) v)
+  where
+    n = min nbElems (length v)
 
 revTake :: PrimType ty => Int -> UArray ty -> UArray ty
 revTake nbElems v = drop (length v - nbElems) v
@@ -479,14 +512,25 @@ splitOn predicate vec
   where
     !len = length vec
     loop prevIdx idx
-        | idx == len = [runST $ sub vec prevIdx idx]
+        | idx == len = [sub vec prevIdx idx]
         | otherwise  =
             let e = unsafeIndex vec idx
                 idx' = idx + 1
              in if predicate e
-                    then runST (sub vec prevIdx idx) : loop idx' idx'
+                    then sub vec prevIdx idx : loop idx' idx'
                     else loop prevIdx idx'
 
+sub :: PrimType ty => UArray ty -> Int -> Int -> UArray ty
+sub vec startIdx expectedEndIdx
+    | startIdx >= endIdx = empty
+    | otherwise          =
+        case vec of
+            UVecSlice start _ parent -> UVecSlice (start+startIdx) (start+endIdx) parent
+            _                        -> UVecSlice startIdx expectedEndIdx vec
+  where
+    endIdx = min expectedEndIdx len
+    len = length vec
+{-
 sub :: (PrimType ty, PrimMonad prim) => UArray ty -> Int -> Int -> prim (UArray ty)
 sub vec startIdx expectedEndIdx
     | startIdx == endIdx     = return empty
@@ -494,16 +538,20 @@ sub vec startIdx expectedEndIdx
     | otherwise              = do
         muv <- newNative (endIdx - startIdx) $ \mba ->
             case vec of
-                UVecBA _ ba           -> primitive $ \s -> (# copyByteArray# ba start mba 0# (end -# start) s, () #)
+                UVecBA _ ba      -> primitive $ \s -> (# copyByteArray# ba start mba 0# (end -# start) s, () #)
                 UVecAddr _ fptr  ->
                     withFinalPtr fptr $ \(Ptr addr) -> primitive $ \s ->
                         (# compatCopyAddrToByteArray# addr mba 0# (end -# start) s, () #)
+                UVecSlice startSlice _ parent ->
+                    -- copy from parent at index start+startIdx until index end-endIdx
+                    copyAtRO (MUVecMA unpinned mba) 0 parent (startIdx + startSlice) (endIdx - startIdx)
         unsafeFreeze muv
   where
     endIdx = min expectedEndIdx (length vec)
     !(I# end) = endIdx * bytes
     !(I# start) = startIdx * bytes
     bytes = sizeInBytesOfContent vec
+    -}
 
 break :: PrimType ty => (ty -> Bool) -> UArray ty -> (UArray ty, UArray ty)
 break predicate v = findBreak 0
@@ -532,6 +580,8 @@ cons e vec = runST $ do
             UVecAddr _ fptr  ->
                 withFinalPtr fptr $ \(Ptr addr) -> primitive $ \s ->
                     (# compatCopyAddrToByteArray# addr mba bytes (len# *# bytes) s, () #)
+            UVecSlice start _ parent ->
+                copyAtRO (MUVecMA unpinned mba) 1 parent start len
     unsafeWrite muv 0 e
     unsafeFreeze muv
   where
@@ -546,6 +596,8 @@ snoc vec e = runST $ do
             UVecAddr _ fptr  ->
                 withFinalPtr fptr $ \(Ptr addr) -> primitive $ \s ->
                     (# compatCopyAddrToByteArray# addr mba 0# (len# *# bytes) s, () #)
+            UVecSlice start _ parent ->
+                copyAtRO (MUVecMA unpinned mba) 0 parent start len
     unsafeWrite muv len e
     unsafeFreeze muv
   where
@@ -555,14 +607,14 @@ snoc vec e = runST $ do
 uncons :: PrimType ty => UArray ty -> Maybe (ty, UArray ty)
 uncons vec
     | nbElems == 0 = Nothing
-    | otherwise    = Just (unsafeIndex vec 0, runST (sub vec 1 nbElems))
+    | otherwise    = Just (unsafeIndex vec 0, sub vec 1 nbElems)
   where
     !nbElems = length vec
 
 unsnoc :: PrimType ty => UArray ty -> Maybe (ty, UArray ty)
 unsnoc vec
     | nbElems == 0 = Nothing
-    | otherwise    = Just (unsafeIndex vec lastElem, runST (sub vec 0 lastElem))
+    | otherwise    = Just (unsafeIndex vec lastElem, sub vec 0 lastElem)
   where
     !lastElem = nbElems - 1
     !nbElems = length vec

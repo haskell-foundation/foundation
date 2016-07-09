@@ -398,7 +398,7 @@ splitOn predicate s@(String ba)
                     else loop prevIdx idx'
 
 sub :: String -> Int -> Int -> String
-sub (String ba) start end = String $ runST $ Vec.sub ba start end
+sub (String ba) start end = String $ Vec.sub ba start end
 
 -- | Split at a given index.
 splitIndex :: Int -> String -> (String, String)

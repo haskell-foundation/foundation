@@ -65,14 +65,17 @@ instance Arbitrary CharMap where
     arbitrary = do
         CharMap <$> arbitrary <*> choose (1,12)
 
+isIdemPotent :: Eq a => (a -> a) -> a -> Bool
 isIdemPotent f s = f s == s
 
+transEq :: Eq a => (t -> t1) -> (t1 -> a) -> (t1 -> a) -> t -> Bool
 transEq unWrap f g s =
     let s' = unWrap s in f s' == g s'
 
 --stringEq :: Eq a => (b -> a) -> (String -> b) -> (LString -> a) -> Unicode -> Bool
 --stringEq back f g s =
 
+assertEq :: (Eq a, Show a) => a -> a -> Bool
 assertEq a b
     | a == b    = True
     | otherwise = error ("got: " <> show a <> " expected: " <> show b)
@@ -84,6 +87,7 @@ listOfElementMaxN :: Int -> Gen e -> Gen [e]
 listOfElementMaxN n e = choose (0,n) >>= flip replicateM e
 
 -- | Set in front of tests to make them verbose
+qcv :: TestTree -> TestTree
 qcv = adjustOption (\(QuickCheckVerbose _) -> QuickCheckVerbose True)
 
 testEq :: (Show e, Eq e, Eq a, Monoid a, Element a ~ e, IsList a, Item a ~ Element a) => Proxy a -> Gen e -> [TestTree]
@@ -121,14 +125,27 @@ testMonoid proxy genElement =
     with2Elements f = forAll ((,) <$> listOfElement genElement <*> listOfElement genElement) f
     withNElements f = forAll (listOfElementMaxN 5 (listOfElement genElement)) f
 
-testCollection :: (Show e, Eq a, Eq e, Ord a, Ord e, Arbitrary e, SemiOrderedCollection a, Sequential a, Item a ~ Element a, Element a ~ e) => Proxy a -> Gen e -> [TestTree]
+testCollectionProps :: (Show a, Sequential a, Eq a, e ~ Item a) => Proxy a -> Gen e -> [TestTree]
+testCollectionProps proxy genElement =
+    [ testProperty "splitAt == (take, drop)" $ withCollection2 $ \(col, n) ->
+        splitAt n col == (take n col, drop n col)
+    , testProperty "revSplitAt == (revTake, revDrop)" $ withCollection2 $ \(col, n) ->
+        revSplitAt n col == (revTake n col, revDrop n col)
+    ]
+  where
+    withCollection2 f = forAll ((,) <$> (fromListP proxy <$> listOfElement genElement) <*> arbitrary) f
+
+testCollection :: (Show a, Show e, Eq a, Eq e, Ord a, Ord e, Arbitrary e, SemiOrderedCollection a, Sequential a, Item a ~ Element a, Element a ~ e) => Proxy a -> Gen e -> [TestTree]
 testCollection proxy genElement =
     testMonoid proxy genElement <>
     [ testProperty "LString-convert" $ withElements $ isIdemPotent (toList . fromListP proxy)
     , testProperty "length" $ withElements $ \l -> (length $ fromListP proxy l) == length l
     , testProperty "take" $ withElements2 $ \(l, n) -> toList (take n $ fromListP proxy l) == (take n) l
     , testProperty "drop" $ withElements2 $ \(l, n) -> toList (drop n $ fromListP proxy l) == (drop n) l
-    , testProperty "splitAt" $ withElements2 $ \(l, n) -> toList2 (splitAt n $ fromListP proxy l) == (L.splitAt n) l
+    , testProperty "splitAt" $ withElements2 $ \(l, n) -> toList2 (splitAt n $ fromListP proxy l) == (splitAt n) l
+    , testProperty "revTake" $ withElements2 $ \(l, n) -> toList (revTake n $ fromListP proxy l) == (revTake n) l
+    , testProperty "revDrop" $ withElements2 $ \(l, n) -> toList (revDrop n $ fromListP proxy l) == (revDrop n) l
+    , testProperty "revSplitAt" $ withElements2 $ \(l, n) -> toList2 (revSplitAt n $ fromListP proxy l) == (revSplitAt n) l
     , testProperty "snoc" $ withElements2E $ \(l, c) -> toList (snoc (fromListP proxy l) c) == (l <> [c])
     , testProperty "cons" $ withElements2E $ \(l, c) -> toList (cons c (fromListP proxy l)) == (c : l)
     , testProperty "splitOn" $ withElements2E $ \(l, ch) ->
@@ -137,7 +154,12 @@ testCollection proxy genElement =
         (sortBy compare $ fromListP proxy l) == fromListP proxy (sortBy compare l)
     , testProperty "reverse" $ withElements $ \l ->
         (reverse $ fromListP proxy l) == fromListP proxy (reverse l)
-    ]
+    -- stress slicing
+    , testProperty "take . take" $ withElements3 $ \(l, n1, n2) -> toList (take n2 $ take n1 $ fromListP proxy l) == (take n2 $ take n1 l)
+    , testProperty "drop . take" $ withElements3 $ \(l, n1, n2) -> toList (drop n2 $ take n1 $ fromListP proxy l) == (drop n2 $ take n1 l)
+    , testProperty "drop . drop" $ withElements3 $ \(l, n1, n2) -> toList (drop n2 $ drop n1 $ fromListP proxy l) == (drop n2 $ drop n1 l)
+    , testProperty "drop . take" $ withElements3 $ \(l, n1, n2) -> toList (drop n2 $ take n1 $ fromListP proxy l) == (drop n2 $ take n1 l)
+    ] <> testCollectionProps proxy genElement
 {-
     , testProperty "imap" $ \(CharMap (Unicode u) i) ->
         (imap (addChar i) (fromList u) :: String) `assertEq` fromList (Prelude.map (addChar i) u)
@@ -147,6 +169,7 @@ testCollection proxy genElement =
     toList2 (x,y) = (toList x, toList y)
     withElements f = forAll (listOfElement genElement) f
     withElements2 f = forAll ((,) <$> listOfElement genElement <*> arbitrary) f
+    withElements3 f = forAll ((,,) <$> listOfElement genElement <*> arbitrary <*> arbitrary) f
     withElements2E f = forAll ((,) <$> listOfElement genElement <*> genElement) f
 
 testUnboxedForeign :: (PrimType e, Show e, Eq a, Eq e, Ord a, Ord e, Arbitrary e, SemiOrderedCollection a, Sequential a, Item a ~ Element a, Element a ~ e, Storable e)
