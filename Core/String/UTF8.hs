@@ -352,7 +352,7 @@ drop n s@(String ba)
 
 splitAt :: Int -> String -> (String, String)
 splitAt n s@(String ba)
-    | n <= 0    = (empty, s)
+    | n <= 0    = (mempty, s)
     | otherwise = loop 0 0
   where
     !sz = C.length ba
@@ -411,7 +411,7 @@ break predicate s@(String ba) = loop 0
   where
     !sz = C.length ba
     loop idx
-        | idx == sz = (s, empty)
+        | idx == sz = (s, mempty)
         | otherwise          =
             let (# c, idx' #) = next s idx
              in case predicate c of
