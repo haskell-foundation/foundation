@@ -90,6 +90,14 @@ listOfElementMaxN n e = choose (0,n) >>= flip replicateM e
 qcv :: TestTree -> TestTree
 qcv = adjustOption (\(QuickCheckVerbose _) -> QuickCheckVerbose True)
 
+-- | Set the number of tests
+qcnSet :: Int -> TestTree -> TestTree
+qcnSet n = adjustOption (\(QuickCheckTests _) -> QuickCheckTests n)
+
+-- | Scale the number of tests
+qcnScale :: Int -> TestTree -> TestTree
+qcnScale n = adjustOption (\(QuickCheckTests actual) -> QuickCheckTests (actual * n))
+
 testEq :: (Show e, Eq e, Eq a, Monoid a, Element a ~ e, IsList a, Item a ~ Element a) => Proxy a -> Gen e -> [TestTree]
 testEq proxy genElement =
     [ testProperty "x == x" $ withElements $ \l -> let col = fromListP proxy l in col == col
