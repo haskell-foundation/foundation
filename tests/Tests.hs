@@ -250,6 +250,7 @@ tests =
             , testGroup "Array(F32)" (testCollection (Proxy :: Proxy (Array Float))  arbitrary)
             , testGroup "Array(F64)" (testCollection (Proxy :: Proxy (Array Double)) arbitrary)
             , testGroup "Array(Int)" (testCollection (Proxy :: Proxy (Array Int))  arbitrary)
+            , testGroup "Array(Int,Int)" (testCollection (Proxy :: Proxy (Array (Int,Int)))  arbitrary)
             , testGroup "Array(Integer)" (testCollection (Proxy :: Proxy (Array Integer)) arbitrary)
             ]
         ]
