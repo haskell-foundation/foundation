@@ -172,7 +172,10 @@ testCollection proxy genElement =
     , testProperty "drop . take" $ withElements3 $ \(l, n1, n2) -> toList (drop n2 $ take n1 $ fromListP proxy l) == (drop n2 $ take n1 l)
     , testProperty "drop . drop" $ withElements3 $ \(l, n1, n2) -> toList (drop n2 $ drop n1 $ fromListP proxy l) == (drop n2 $ drop n1 l)
     , testProperty "drop . take" $ withElements3 $ \(l, n1, n2) -> toList (drop n2 $ take n1 $ fromListP proxy l) == (drop n2 $ take n1 l)
-    ] <> testCollectionProps proxy genElement
+    , testProperty "second take . splitAt" $ withElements3 $ \(l, n1, n2) ->
+        (toList2 $ (second (take n1) . splitAt n2) $ fromListP proxy l) == (second (take n1) . splitAt n2) l
+    ]
+    <> testCollectionProps proxy genElement
 {-
     , testProperty "imap" $ \(CharMap (Unicode u) i) ->
         (imap (addChar i) (fromList u) :: String) `assertEq` fromList (Prelude.map (addChar i) u)
