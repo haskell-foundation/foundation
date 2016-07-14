@@ -55,10 +55,11 @@ Design
 
 Foundation started on the simple idea of trying to put everything I need in one
 simple and consistent package. The amazing haskell ecosystem is extremely
-fragmented and maintain by different people with different goals, free time,
+fragmented and maintained by different people with different goals, free time,
 and style. The overall scare of not trying to change anything relatively
 central (base, bytestring, text, vector ..) for a promise of stability has push
 many people to work on their own thing, leading to unnecessary work duplication
 and further fragmentation.
+
 
 Foundation uses and abuses type families.
