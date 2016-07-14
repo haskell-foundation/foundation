@@ -6,7 +6,7 @@ module Main where
 
 import           Test.Tasty
 --import           Test.Tasty.Options
---import           Test.Tasty.HUnit
+import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 import           Test.QuickCheck.Monadic
 import           Control.Monad
@@ -76,9 +76,9 @@ transEq unWrap f g s =
 --stringEq back f g s =
 
 assertEq :: (Eq a, Show a) => a -> a -> Bool
-assertEq a b
-    | a == b    = True
-    | otherwise = error ("got: " <> show a <> " expected: " <> show b)
+assertEq got expected
+    | got == expected = True
+    | otherwise       = error ("got: " <> show got <> " expected: " <> show expected)
 
 listOfElement :: Gen e -> Gen [e]
 listOfElement e = choose (0,49) >>= flip replicateM e
@@ -210,10 +210,62 @@ testUnboxedForeign proxy genElement =
 fromListP :: (IsList c, Item c ~ Element c) => Proxy c -> [Element c] -> c
 fromListP p = \x -> asProxyTypeOf (fromList x) p
 
+data RandomList = RandomList [Int]
+    deriving (Show,Eq)
+
+instance Arbitrary RandomList where
+    arbitrary = RandomList <$> (choose (100,400) >>= flip replicateM (choose (0,8)))
+
+chunks :: Sequential c => RandomList -> c -> [c]
+chunks (RandomList randomInts) = loop (randomInts <> [1..])
+  where
+    loop rx c
+        | null c  = []
+        | otherwise =
+            case rx of
+                r:rs ->
+                    let (c1,c2) = splitAt r c
+                     in c1 : loop rs c2
+                [] ->
+                    loop randomInts c
+
+
+testStringCases :: [TestTree]
+testStringCases =
+    [ testGroup "Validation"
+        [ testProperty "fromBytes . toBytes == valid" $ \(Unicode l) ->
+            let s = fromList l
+             in (fromBytes UTF8 $ toBytes UTF8 s) === (s, Nothing, mempty)
+        , testProperty "Streaming" $ \(Unicode l, randomInts) ->
+            let wholeS  = fromList l
+                wholeBA = toBytes UTF8 wholeS
+                reconstruct (prevBa, errs, acc) ba =
+                    let ba' = prevBa `mappend` ba
+                        (s, merr, nextBa) = fromBytes UTF8 ba'
+                     in (nextBa, merr : errs, s : acc)
+
+                (remainingBa, allErrs, chunkS) = foldl reconstruct (mempty, [], []) $ chunks randomInts wholeBA
+             in (catMaybes allErrs === []) .&&. (remainingBa === mempty) .&&. (mconcat (reverse chunkS) === wholeS)
+        ]
+    , testGroup "Cases"
+        [ testGroup "Invalid-UTF8"
+            [ testCase "ff" $ expectFromBytesErr ("", Just InvalidHeader, 0) (fromList [0xff])
+            , testCase "80" $ expectFromBytesErr ("", Just InvalidHeader, 0) (fromList [0x80])
+            , testCase "E2 82 0C" $ expectFromBytesErr ("", Just InvalidContinuation, 0) (fromList [0xE2,0x82,0x0c])
+            , testCase "30 31 E2 82 0C" $ expectFromBytesErr ("01", Just InvalidContinuation, 2) (fromList [0x30,0x31,0xE2,0x82,0x0c])
+            ]
+        ]
+    ]
+  where
+    expectFromBytesErr (expectedString,expectedErr,positionErr) ba = do
+        let (s', merr, ba') = fromBytes UTF8 ba
+        assertEqual "error" expectedErr merr
+        assertEqual "remaining" (drop positionErr ba) ba'
+        assertEqual "string" expectedString (toList s')
+
 tests :: [TestTree]
 tests =
-    [ testGroup "String"       (testCollection (Proxy :: Proxy String)           arbitraryChar)
-    , testGroup "Array"
+    [ testGroup "Array"
         [ testGroup "Unboxed"
             [ testGroup "UArray(W8)"  (testCollection (Proxy :: Proxy (UArray Word8))  arbitrary)
             , testGroup "UArray(W16)" (testCollection (Proxy :: Proxy (UArray Word16)) arbitrary)
@@ -254,6 +306,9 @@ tests =
             , testGroup "Array(Integer)" (testCollection (Proxy :: Proxy (Array Integer)) arbitrary)
             ]
         ]
+    , testGroup "String"
+        (  testCollection (Proxy :: Proxy String) arbitraryChar
+        <> testStringCases)
     ]
 
 main :: IO ()

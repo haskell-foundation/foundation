@@ -103,7 +103,9 @@ instance C.Sequential String where
 data ValidationFailure = InvalidHeader
                        | InvalidContinuation
                        | MissingByte
-                       deriving (Show,Eq)
+                       deriving (Show,Eq,Typeable)
+
+instance Exception ValidationFailure
 
 -- | Validate a bytearray for UTF8'ness
 --
@@ -620,6 +622,7 @@ reverse s@(String ba) = runST $ do
 
 -- | String encoding
 data Encoding = UTF8
+    -- | UTF8_Lenient
     deriving (Show,Eq)
 
 {-
@@ -631,13 +634,19 @@ fromBytes UTF8 bytes =
         (_, Just _)  -> Nothing
         -}
 
-fromBytes :: Encoding -> ByteArray -> (String, ByteArray)
-fromBytes UTF8 bytes =
-    case validate bytes 0 (C.length bytes) of
-        (_, Nothing)  -> (fromBytesUnsafe bytes, mempty)
-        (pos, Just _) ->
-            let (b1, b2) = C.splitAt pos bytes
-             in (fromBytesUnsafe b1, b2)
+fromBytes :: Encoding -> ByteArray -> (String, Maybe ValidationFailure, ByteArray)
+fromBytes UTF8 bytes
+    | C.null bytes = (mempty, Nothing, mempty)
+    | otherwise    =
+        case validate bytes 0 (C.length bytes) of
+            (_, Nothing)  -> (fromBytesUnsafe bytes, Nothing, mempty)
+            (pos, Just vf) ->
+                let (b1, b2) = C.splitAt pos bytes
+                 in (fromBytesUnsafe b1, toErr vf, b2)
+  where
+    toErr MissingByte         = Nothing
+    toErr InvalidHeader       = Just InvalidHeader
+    toErr InvalidContinuation = Just InvalidContinuation
 
 fromChunkBytes :: [ByteArray] -> [String]
 fromChunkBytes l = loop l

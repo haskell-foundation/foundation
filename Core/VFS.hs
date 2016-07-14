@@ -63,9 +63,10 @@ filePathToString (FilePath fp) =
     -- this is just to get going to be able to be able to reuse System.IO functions which
     -- works on [Char]
     case S.fromBytes S.UTF8 fp of
-        (s, bs)
+        (s, Nothing, bs)
             | C.null bs -> s
             | otherwise -> error "cannot convert path"
+        (s, Just _, _) -> error "cannot convert path"
 
 filePathFromString :: String -> FilePath
 filePathFromString s = FilePath (S.toBytes S.UTF8 s)

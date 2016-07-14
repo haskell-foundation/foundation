@@ -24,6 +24,8 @@ module Core.String
     ( String
     , Encoding(..)
     , fromBytes
+    , toBytes
+    , ValidationFailure(..)
     ) where
 
 import Core.String.UTF8
