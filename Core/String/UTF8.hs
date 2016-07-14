@@ -18,6 +18,7 @@
 {-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Core.String.UTF8
     ( String(..)
     --, Buffer
@@ -53,20 +54,13 @@ import qualified Data.List -- temporary
 
 -- | Opaque packed array of characters in the UTF8 encoding
 newtype String = String ByteArray
-    deriving (Typeable)
+    deriving (Typeable, Monoid, Eq, Ord)
 
 newtype MutableString st = MutableString (MutableByteArray st)
     deriving (Typeable)
 
 instance Show String where
     show = show . sToList
-instance Eq String where
-    (==) = equal
-instance Ord String where
-    compare = compareString
-instance Monoid String where
-    mempty = empty
-    mappend = append
 instance IsString String where
     fromString = sFromList
 instance IsList String where
@@ -319,20 +313,8 @@ sFromList l = runST (new bytes >>= copy)
     -- write those bytes
     --loop :: MutableByteArray# st -> Int# -> State# st -> [Char] -> (# State# st, String #)
 
-empty :: String
-empty = String mempty
-
 null :: String -> Bool
 null (String ba) = C.length ba == 0
-
-append :: String -> String -> String
-append (String a) (String b) = String (mappend a b)
-
-equal :: String -> String -> Bool
-equal (String a) (String b) = a == b
-
-compareString :: String -> String -> Ordering
-compareString (String a) (String b) = compare a b
 
 -- | Create a string composed of a number @n of Chars (Unicode code points).
 --
@@ -354,7 +336,7 @@ drop n s@(String ba)
 
 splitAt :: Int -> String -> (String, String)
 splitAt n s@(String ba)
-    | n <= 0    = (empty, s)
+    | n <= 0    = (mempty, s)
     | otherwise = loop 0 0
   where
     !sz = C.length ba
@@ -413,7 +395,7 @@ break predicate s@(String ba) = loop 0
   where
     !sz = C.length ba
     loop idx
-        | idx == sz = (s, empty)
+        | idx == sz = (s, mempty)
         | otherwise          =
             let (# c, idx' #) = next s idx
              in case predicate c of
