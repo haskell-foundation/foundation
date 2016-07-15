@@ -196,6 +196,19 @@ unsafeIndex v@(UVecAddr _ fptr) n = withUnsafeFinalPtr fptr (primAddrIndex' v)
 unsafeIndex (UVecSlice start _ parent) n = unsafeIndex parent (n + start)
 {-# INLINE unsafeIndex #-}
 
+unsafeIndexer :: (PrimMonad prim, PrimType ty) => UArray ty -> ((Int -> ty) -> prim a) -> prim a
+unsafeIndexer (UVecBA _ ba)     f = f (primBaIndex ba)
+unsafeIndexer (UVecAddr _ fptr) f = withFinalPtr fptr (\ptr -> f (primAddrIndex' ptr))
+  where
+    primAddrIndex' :: PrimType ty => Ptr a -> (Int -> ty)
+    primAddrIndex' (Ptr addr) = primAddrIndex addr
+unsafeIndexer (UVecSlice start _ (UVecBA _ ba))     f = f (\n -> primBaIndex ba (start + n))
+unsafeIndexer (UVecSlice start _ (UVecAddr _ fptr)) f = withFinalPtr fptr (f . primAddrIndex')
+  where
+    primAddrIndex' :: PrimType ty => Ptr a -> (Int -> ty)
+    primAddrIndex' (Ptr addr) = \n -> primAddrIndex addr (start + n)
+unsafeIndexer (UVecSlice _     _ _) _ = error "internal error: cannot happen"
+
 foreignMem :: PrimType ty
            => FinalPtr ty -- ^ the start pointer with a finalizer
            -> Int         -- ^ the number of elements (in elements, not bytes)
@@ -338,10 +351,14 @@ vFromList l = runST $ do
 
 -- | transform an array to a list.
 vToList :: PrimType ty => UArray ty -> [ty]
-vToList a = loop 0
-  where len = length a
+vToList a = runST (unsafeIndexer a go)
+  where
+    !len = length a
+    go :: (Int -> ty) -> ST s [ty]
+    go getIdx = return $ loop 0
+      where
         loop i | i == len  = []
-               | otherwise = unsafeIndex a i : loop (i+1)
+               | otherwise = getIdx i : loop (i+1)
 
 -- | Check if two vectors are identical
 equal :: (PrimType ty, Eq ty) => UArray ty -> UArray ty -> Bool
@@ -521,19 +538,22 @@ revSplitAt n v = (drop idx v, take idx v)
   where idx = length v - n
 
 splitOn :: PrimType ty => (ty -> Bool) -> UArray ty -> [UArray ty]
-splitOn predicate vec
+splitOn xpredicate ivec
     | len == 0  = []
-    | otherwise = loop 0 0
+    | otherwise = runST $ unsafeIndexer ivec (go ivec xpredicate)
   where
-    !len = length vec
-    loop prevIdx idx
-        | idx == len = [sub vec prevIdx idx]
-        | otherwise  =
-            let e = unsafeIndex vec idx
-                idx' = idx + 1
-             in if predicate e
-                    then sub vec prevIdx idx : loop idx' idx'
-                    else loop prevIdx idx'
+    !len = length ivec
+    go :: PrimType ty => UArray ty -> (ty -> Bool) -> (Int -> ty) -> ST s [UArray ty]
+    go v predicate getIdx = return (loop 0 0)
+      where
+        loop !prevIdx !idx
+            | idx == len = [sub v prevIdx idx]
+            | otherwise  =
+                let e = getIdx idx
+                    idx' = idx + 1
+                 in if predicate e
+                        then sub v prevIdx idx : loop idx' idx'
+                        else loop prevIdx idx'
 
 sub :: PrimType ty => UArray ty -> Int -> Int -> UArray ty
 sub vec startIdx expectedEndIdx
@@ -569,14 +589,16 @@ sub vec startIdx expectedEndIdx
     -}
 
 break :: PrimType ty => (ty -> Bool) -> UArray ty -> (UArray ty, UArray ty)
-break predicate v = findBreak 0
+break xpredicate iniv = runST $ unsafeIndexer iniv (go iniv xpredicate)
   where
-    findBreak i
-        | i == length v = (v, empty)
-        | otherwise     =
-            if predicate (unsafeIndex v i)
-                then splitAt i v
-                else findBreak (i+1)
+    !len = length iniv
+    go :: PrimType ty => UArray ty -> (ty -> Bool) -> (Int -> ty) -> ST s (UArray ty, UArray ty)
+    go v predicate getIdx = return (findBreak 0)
+      where
+        findBreak !i
+            | i == len             = (v, empty)
+            | predicate (getIdx i) = splitAt i v
+            | otherwise            = findBreak (i+1)
 
 span :: PrimType ty => (ty -> Bool) -> UArray ty -> (UArray ty, UArray ty)
 span p = break (not . p)
