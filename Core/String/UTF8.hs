@@ -604,7 +604,7 @@ reverse s@(String ba) = runST $ do
 
 -- | String encoding
 data Encoding = UTF8
-    -- | UTF8_Lenient
+    -- UTF8_Lenient
     deriving (Show,Eq)
 
 {-
