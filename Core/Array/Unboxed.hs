@@ -66,12 +66,14 @@ module Core.Array.Unboxed
     , foldr
     , foldl'
     , foreignMem
+    , fromForeignPtr
     ) where
 
 import           GHC.Prim
 import           GHC.Types
 import           GHC.ST
 import           GHC.Ptr
+import           GHC.ForeignPtr (ForeignPtr)
 import qualified Prelude
 import           Core.Internal.Base
 import           Core.Internal.Primitive
@@ -199,6 +201,12 @@ foreignMem :: PrimType ty
            -> Int         -- ^ the number of elements (in elements, not bytes)
            -> UArray ty
 foreignMem fptr (I# nb) = UVecAddr nb fptr
+
+fromForeignPtr :: PrimType ty
+               => (ForeignPtr ty, Int, Int) -- ForeignPtr, an offset in prim elements, a size in prim elements
+               -> UArray ty
+fromForeignPtr (fptr, 0, I# len) = UVecAddr len (toFinalPtrForeign fptr)
+fromForeignPtr (fptr, ofs, I# len) = UVecSlice ofs (I# len) (UVecAddr len (toFinalPtrForeign fptr))
 
 -- | return the number of elements of the array.
 length :: PrimType ty => UArray ty -> Int
