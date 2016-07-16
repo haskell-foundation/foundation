@@ -93,7 +93,7 @@ import qualified Data.List
 -- packed contiguous array in memory that can easily be passed
 -- to foreign interface
 data UArray ty = UVecBA {-# UNPACK #-} !PinnedStatus {- unpinned / pinned flag -} ByteArray#
-               | UVecAddr !Int# {- number of items of type ty -} (FinalPtr ty)
+               | UVecAddr {-# UNPACK #-} !Int {- number of items of type ty -} (FinalPtr ty)
                | UVecSlice {-# UNPACK #-} !Int {-# UNPACK #-} !Int (UArray ty)
 
 -- | Byte Array alias
@@ -162,8 +162,8 @@ thaw array@(UVecBA _ ba) = do
     primCopyFreezedBytes mba ba
     return ma
 thaw array@(UVecAddr len fptr) = withFinalPtr fptr $ \(Ptr addr) -> do
-    ma@(MUVecMA _ mba) <- new (I# len)
-    let !(I# bytes#) = sizeInBytesOfContent array * (I# len)
+    ma@(MUVecMA _ mba) <- new len
+    let !(I# bytes#) = sizeInBytesOfContent array * len
     primitive $ \s -> (# compatCopyAddrToByteArray# addr mba 0# bytes# s, () #)
     return ma
 thaw (UVecSlice start end parent) = do
@@ -213,17 +213,17 @@ foreignMem :: PrimType ty
            => FinalPtr ty -- ^ the start pointer with a finalizer
            -> Int         -- ^ the number of elements (in elements, not bytes)
            -> UArray ty
-foreignMem fptr (I# nb) = UVecAddr nb fptr
+foreignMem fptr nb = UVecAddr nb fptr
 
 fromForeignPtr :: PrimType ty
                => (ForeignPtr ty, Int, Int) -- ForeignPtr, an offset in prim elements, a size in prim elements
                -> UArray ty
-fromForeignPtr (fptr, 0, I# len) = UVecAddr len (toFinalPtrForeign fptr)
-fromForeignPtr (fptr, ofs, I# len) = UVecSlice ofs (I# len) (UVecAddr len (toFinalPtrForeign fptr))
+fromForeignPtr (fptr, 0, len) = UVecAddr len (toFinalPtrForeign fptr)
+fromForeignPtr (fptr, ofs, len) = UVecSlice ofs len (UVecAddr len (toFinalPtrForeign fptr))
 
 -- | return the number of elements of the array.
 length :: PrimType ty => UArray ty -> Int
-length (UVecAddr len _) = I# len
+length (UVecAddr len _) = len
 length v@(UVecBA _ a) =
     let !(I# szBits) = primSizeInBytes (vectorProxyTy v)
         !elems       = quotInt# (sizeofByteArray# a) szBits
@@ -236,7 +236,7 @@ length (UVecSlice start end _) = end - start
 
 lengthByteArray :: UArray Word8 -> Int
 lengthByteArray (UVecBA _ a) = I# (sizeofByteArray# a)
-lengthByteArray (UVecAddr len _) = I# len
+lengthByteArray (UVecAddr len _) = len
 lengthByteArray (UVecSlice start end _) = end - start
 
 -- TODO Optimise with copyByteArray#
@@ -280,13 +280,13 @@ unsafeFreeze (MUVecAddr len fptr) = return $ UVecAddr len fptr
 {-# INLINE unsafeFreeze #-}
 
 unsafeFreezeShrink :: (PrimType ty, PrimMonad prim) => MUArray ty (PrimState prim) -> Int -> prim (UArray ty)
-unsafeFreezeShrink muvec n@(I# n#) = do
+unsafeFreezeShrink muvec n = do
     let !(I# newSize) = n * (sizeInMutableBytesOfContent muvec)
     case muvec of
         MUVecMA _ mba -> do
             muvec2 <- primitive $ \s -> case compatShrinkMutableByteArray# mba newSize s of { (# s2, mba2 #) -> (# s2, MUVecMA pinned mba2 #) }
             unsafeFreeze muvec2
-        MUVecAddr _ addr        -> unsafeFreeze (MUVecAddr n# addr)
+        MUVecAddr _ addr        -> unsafeFreeze (MUVecAddr n addr)
 
 freeze :: (PrimType ty, PrimMonad prim) => MUArray ty (PrimState prim) -> prim (UArray ty)
 freeze ma = do
@@ -489,7 +489,7 @@ unsafeRecast (UVecSlice start end parent) = sliceRecast Proxy Proxy parent
 
 null :: UArray ty -> Bool
 null (UVecBA _ a) = bool# (sizeofByteArray# a ==# 0#)
-null (UVecAddr l _) = bool# (l ==# 0#)
+null (UVecAddr l _) = l == 0
 null (UVecSlice start end _) = start == end
 
 take :: PrimType ty => Int -> UArray ty -> UArray ty

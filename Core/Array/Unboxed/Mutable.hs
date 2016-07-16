@@ -49,7 +49,7 @@ import           Foreign.Marshal.Utils (copyBytes)
 --
 -- Element in this array can be modified in place.
 data MUArray ty st = MUVecMA {-# UNPACK #-} !PinnedStatus (MutableByteArray# st)
-                    | MUVecAddr Int# (FinalPtr ty)
+                    | MUVecAddr {-# UNPACK #-} !Int (FinalPtr ty)
 
 mutableArrayProxyTy :: MUArray ty st -> Proxy ty
 mutableArrayProxyTy _ = Proxy
@@ -149,7 +149,7 @@ mutableForeignMem :: (PrimMonad prim, PrimType ty)
                   => FinalPtr ty -- ^ the start pointer with a finalizer
                   -> Int         -- ^ the number of elements (in elements, not bytes)
                   -> prim (MUArray ty (PrimState prim))
-mutableForeignMem fptr (I# nb) = return $ MUVecAddr nb fptr
+mutableForeignMem fptr nb = return $ MUVecAddr nb fptr
 
 -- | Copy a number of elements from an array to another array with offsets
 copyAt :: (PrimMonad prim, PrimType ty)
@@ -188,5 +188,5 @@ mutableLength = divBits Proxy
         let !(I# szBits) = primSizeInBytes proxy
             !elems       = quotInt# (sizeofMutableByteArray# a) szBits
          in I# elems
-    divBits _     (MUVecAddr len _) = I# len
+    divBits _     (MUVecAddr len _) = len
 {-# INLINE mutableLength #-}
