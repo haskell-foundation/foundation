@@ -219,7 +219,8 @@ fromForeignPtr :: PrimType ty
                => (ForeignPtr ty, Int, Int) -- ForeignPtr, an offset in prim elements, a size in prim elements
                -> UArray ty
 fromForeignPtr (fptr, 0, I# len) = UVecAddr len (toFinalPtrForeign fptr)
-fromForeignPtr (fptr, ofs, I# len) = UVecSlice ofs (I# len) (UVecAddr len (toFinalPtrForeign fptr))
+fromForeignPtr (fptr, ofs, len) =
+  let !(I# l) = len + ofs in UVecSlice ofs (I# l) (UVecAddr l (toFinalPtrForeign fptr))
 
 -- | return the number of elements of the array.
 length :: PrimType ty => UArray ty -> Int
