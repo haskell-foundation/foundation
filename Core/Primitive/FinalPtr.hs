@@ -13,7 +13,7 @@
 {-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE CPP #-}
 module Core.Primitive.FinalPtr
-    ( FinalPtr
+    ( FinalPtr(..)
     , finalPtrSameMemory
     , castFinalPtr
     , toFinalPtr
@@ -71,7 +71,9 @@ withFinalPtr (FinalForeign fptr) f = do
     r <- f (unsafeForeignPtrToPtr fptr)
     unsafePrimFromIO (touchForeignPtr fptr)
     return r
+{-# INLINE withFinalPtr #-}
 
 -- | Unsafe version of 'withFinalPtr'
 withUnsafeFinalPtr :: PrimMonad prim => FinalPtr p -> (Ptr p -> prim a) -> a
 withUnsafeFinalPtr fptr f = unsafePerformIO (unsafePrimToIO (withFinalPtr fptr f))
+{-# NOINLINE withUnsafeFinalPtr #-}

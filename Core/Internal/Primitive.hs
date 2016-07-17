@@ -57,6 +57,7 @@ bool# v = tagToEnum# v
 bool# :: Prelude.Bool -> Prelude.Bool
 bool# v = v
 #endif
+{-# INLINE bool# #-}
 
 -- | A version friendly of andI#
 compatAndI# :: Int# -> Int# -> Int#

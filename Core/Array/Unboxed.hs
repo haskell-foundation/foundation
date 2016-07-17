@@ -202,12 +202,15 @@ unsafeIndexer (UVecAddr _ fptr) f = withFinalPtr fptr (\ptr -> f (primAddrIndex'
   where
     primAddrIndex' :: PrimType ty => Ptr a -> (Int -> ty)
     primAddrIndex' (Ptr addr) = primAddrIndex addr
+    {-# INLINE primAddrIndex' #-}
 unsafeIndexer (UVecSlice start _ (UVecBA _ ba))     f = f (\n -> primBaIndex ba (start + n))
 unsafeIndexer (UVecSlice start _ (UVecAddr _ fptr)) f = withFinalPtr fptr (f . primAddrIndex')
   where
     primAddrIndex' :: PrimType ty => Ptr a -> (Int -> ty)
     primAddrIndex' (Ptr addr) = \n -> primAddrIndex addr (start + n)
+    {-# INLINE primAddrIndex' #-}
 unsafeIndexer (UVecSlice _     _ _) _ = error "internal error: cannot happen"
+{-# INLINE unsafeIndexer #-}
 
 foreignMem :: PrimType ty
            => FinalPtr ty -- ^ the start pointer with a finalizer

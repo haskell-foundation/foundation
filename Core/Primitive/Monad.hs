@@ -50,18 +50,23 @@ unPrimMonad_ :: PrimMonad m => m () -> State# (PrimState m) -> State# (PrimState
 unPrimMonad_ p st =
     case unPrimMonad p st of
         (# st', () #) -> st'
+{-# INLINE unPrimMonad_ #-}
 
 instance PrimMonad IO where
     type PrimState IO = RealWorld
     primitive = IO
+    {-# INLINE primitive #-}
     primThrow = throwIO
     unPrimMonad (IO p) = p
+    {-# INLINE unPrimMonad #-}
 
 instance PrimMonad (ST s) where
     type PrimState (ST s) = s
     primitive = ST
+    {-# INLINE primitive #-}
     primThrow = unsafeIOToST . throwIO
     unPrimMonad (ST p) = p
+    {-# INLINE unPrimMonad #-}
 
 -- | Convert a prim monad to another prim monad.
 --
@@ -70,19 +75,24 @@ instance PrimMonad (ST s) where
 -- hilary ensues.
 unsafePrimCast :: (PrimMonad m1, PrimMonad m2) => m1 a -> m2 a
 unsafePrimCast m = primitive (unsafeCoerce# (unPrimMonad m))
+{-# INLINE unsafePrimCast #-}
 
 -- | Convert any prim monad to an ST monad
 unsafePrimToST :: PrimMonad prim => prim a -> ST s a
 unsafePrimToST = unsafePrimCast
+{-# INLINE unsafePrimToST #-}
 
 -- | Convert any prim monad to an IO monad
 unsafePrimToIO :: PrimMonad prim => prim a -> IO a
 unsafePrimToIO = unsafePrimCast
+{-# INLINE unsafePrimToIO #-}
 
 -- | Convert any IO monad to a prim monad
 unsafePrimFromIO :: PrimMonad prim => IO a -> prim a
 unsafePrimFromIO = unsafePrimCast
+{-# INLINE unsafePrimFromIO #-}
 
 -- | Touch primitive lifted to any prim monad
 primTouch :: PrimMonad m => a -> m ()
 primTouch x = unsafePrimFromIO $ primitive $ \s -> case touch# x s of { s2 -> (# s2, () #) }
+{-# INLINE primTouch #-}
