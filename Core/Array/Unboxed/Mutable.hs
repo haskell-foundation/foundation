@@ -159,11 +159,28 @@ copyAt :: (PrimMonad prim, PrimType ty)
        -> Int                -- ^ offset at source
        -> Int                -- ^ number of elements to copy
        -> prim ()
+copyAt (MUVecMA _ dstMba) ed uvec@(MUVecMA _ srcBa) es n =
+    primitive $ \st -> (# copyMutableByteArray# srcBa os dstMba od nBytes st, () #)
+  where
+    sz = primSizeInBytes (mutableArrayProxyTy uvec)
+    !(I# os)     = es * sz
+    !(I# od)     = ed * sz
+    !(I# nBytes) = n * sz
+copyAt (MUVecMA _ dstMba) ed muvec@(MUVecAddr _ srcFptr) es n =
+    withFinalPtr srcFptr $ \srcPtr ->
+        let !(Ptr srcAddr) = srcPtr `plusPtr` os
+         in primitive $ \s -> (# compatCopyAddrToByteArray# srcAddr dstMba od nBytes s, () #)
+  where
+    sz  = primSizeInBytes (mutableArrayProxyTy muvec)
+    !os = es * sz
+    !(I# od)     = ed * sz
+    !(I# nBytes) = n * sz
 copyAt dst od src os n = loop od os
-  where endIndex = os + n
-        loop d i
-            | i == endIndex = return ()
-            | otherwise     = unsafeRead src i >>= unsafeWrite dst d >> loop (d+1) (i+1)
+  where
+    endIndex = os + n
+    loop d i
+        | i == endIndex = return ()
+        | otherwise     = unsafeRead src i >>= unsafeWrite dst d >> loop (d+1) (i+1)
 
 copyAddr :: (PrimMonad prim, PrimType ty)
          => MUArray ty (PrimState prim) -- ^ destination array
