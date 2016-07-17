@@ -40,6 +40,7 @@ module Core.Array.Unboxed
     , update
     , unsafeUpdate
     , unsafeIndex
+    , unsafeIndexer
     -- * Functions
     , map
     , mapIndex

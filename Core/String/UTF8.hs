@@ -109,47 +109,76 @@ validate :: ByteArray
          -> Int
          -> Int
          -> (Int, Maybe ValidationFailure)
-validate ba ofsStart sz = loop ofsStart
+validate ba ofsStart sz = runST (Vec.unsafeIndexer ba go)
   where
     end = ofsStart + sz
 
-    loop ofs
-        | ofs > end  = error "validate: internal error: went pass offset"
-        | ofs == end = (end, Nothing)
-        | otherwise  =
-            case one ofs of
-                (nextOfs, Nothing)  -> loop nextOfs
-                (pos, Just failure) -> (pos, Just failure)
+    go :: (Int -> Word8) -> ST s (Int, Maybe ValidationFailure)
+    go getIdx = return $ loop ofsStart
+      where
+        loop ofs
+            | ofs > end  = error "validate: internal error: went pass offset"
+            | ofs == end = (end, Nothing)
+            | otherwise  =
+                case {-# SCC "validate.one" #-} one ofs of
+                    (nextOfs, Nothing)  -> loop nextOfs
+                    (pos, Just failure) -> (pos, Just failure)
 
-    one pos = do
-        let h = Vec.unsafeIndex ba pos
-            nbConts = getNbBytes h
-        if nbConts == 0xff
-            then (pos, Just InvalidHeader)
-            else if pos + 1 + nbConts > end
-                then (pos, Just MissingByte)
-                else do
-                    case nbConts of
-                        0 -> (pos + 1, Nothing)
-                        1 ->
-                            let c1 = Vec.unsafeIndex ba (pos + 1)
-                             in if isContinuation c1
-                                    then (pos + 2, Nothing)
-                                    else (pos, Just InvalidContinuation)
-                        2 ->
-                            let c1 = Vec.unsafeIndex ba (pos + 1)
-                                c2 = Vec.unsafeIndex ba (pos + 2)
-                             in if isContinuation c1 && isContinuation c2
-                                    then (pos + 3, Nothing)
-                                    else (pos, Just InvalidContinuation)
-                        3 ->
-                            let c1 = Vec.unsafeIndex ba (pos + 1)
-                                c2 = Vec.unsafeIndex ba (pos + 2)
-                                c3 = Vec.unsafeIndex ba (pos + 3)
-                             in if isContinuation c1 && isContinuation c2 && isContinuation c3
-                                    then (pos + 4, Nothing)
-                                    else (pos, Just InvalidContinuation)
-                        _ -> error "internal error"
+        one pos =
+            case nbConts of
+                0    -> (pos + 1, Nothing)
+                0xff -> (pos, Just InvalidHeader)
+                _ | pos + 1 + nbConts > end -> (pos, Just MissingByte)
+                1    ->
+                    let c1 = getIdx (pos + 1)
+                     in if isContinuation c1
+                            then (pos + 2, Nothing)
+                            else (pos, Just InvalidContinuation)
+                2 ->
+                    let c1 = getIdx (pos + 1)
+                        c2 = getIdx (pos + 2)
+                     in if isContinuation c1 && isContinuation c2
+                            then (pos + 3, Nothing)
+                            else (pos, Just InvalidContinuation)
+                3 ->
+                    let c1 = getIdx (pos + 1)
+                        c2 = getIdx (pos + 2)
+                        c3 = getIdx (pos + 3)
+                     in if isContinuation c1 && isContinuation c2 && isContinuation c3
+                            then (pos + 4, Nothing)
+                            else (pos, Just InvalidContinuation)
+                _ -> error "internal error"
+                {-
+            if nbConts == 0xff
+                then
+                else if pos + 1 + nbConts > end
+                    then (pos, Just MissingByte)
+                    else do
+                        case nbConts of
+                            1 ->
+                                let c1 = getIdx (pos + 1)
+                                 in if isContinuation c1
+                                        then (pos + 2, Nothing)
+                                        else (pos, Just InvalidContinuation)
+                            2 ->
+                                let c1 = getIdx (pos + 1)
+                                    c2 = getIdx (pos + 2)
+                                 in if isContinuation c1 && isContinuation c2
+                                        then (pos + 3, Nothing)
+                                        else (pos, Just InvalidContinuation)
+                            3 ->
+                                let c1 = getIdx (pos + 1)
+                                    c2 = getIdx (pos + 2)
+                                    c3 = getIdx (pos + 3)
+                                 in if isContinuation c1 && isContinuation c2 && isContinuation c3
+                                        then (pos + 4, Nothing)
+                                        else (pos, Just InvalidContinuation)
+                            _ -> error "internal error"
+                            -}
+          where
+            !h = getIdx pos
+            !nbConts = getNbBytes h
+    {-# INLINE go #-}
 
 mutableValidate :: PrimMonad prim
                 => MutableByteArray (PrimState prim)
