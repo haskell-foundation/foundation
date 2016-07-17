@@ -22,7 +22,7 @@ import           Core.Primitive.Monad
 -- | Represent the accessor for types that can be stored in the UArray and MUArray.
 --
 -- Types need to be a instance of storable and have fixed sized.
-class PrimType ty where
+class Eq ty => PrimType ty where
     -- | get the size in bytes of a ty element
     primSizeInBytes :: Proxy ty -> Int
 
