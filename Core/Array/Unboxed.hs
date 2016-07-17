@@ -342,7 +342,9 @@ create :: PrimType ty
        => Int         -- ^ the size of the array
        -> (Int -> ty) -- ^ the function that set the value at the index
        -> UArray ty  -- ^ the array created
-create n initializer = runST (new n >>= iter initializer)
+create n initializer
+    | n == 0    = empty
+    | otherwise = runST (new n >>= iter initializer)
   where
     iter :: (PrimType ty, PrimMonad prim) => (Int -> ty) -> MUArray ty (PrimState prim) -> prim (UArray ty)
     iter f ma = loop 0
@@ -358,7 +360,10 @@ create n initializer = runST (new n >>= iter initializer)
 -----------------------------------------------------------------------
 
 empty :: PrimType ty => UArray ty
-empty = runST (new 0 >>= unsafeFreeze)
+empty = UVecAddr 0 (FinalPtr $ error "empty de-referenced")
+
+singleton :: PrimType ty => ty -> UArray ty
+singleton ty = create 1 (\_ -> ty)
 
 -- | make an array from a list of elements.
 vFromList :: PrimType ty => [ty] -> UArray ty
@@ -372,7 +377,9 @@ vFromList l = runST $ do
 
 -- | transform an array to a list.
 vToList :: PrimType ty => UArray ty -> [ty]
-vToList a = runST (unsafeIndexer a go)
+vToList a
+    | null a    = []
+    | otherwise = runST (unsafeIndexer a go)
   where
     !len = length a
     go :: (Int -> ty) -> ST s [ty]
@@ -380,6 +387,7 @@ vToList a = runST (unsafeIndexer a go)
       where
         loop i | i == len  = []
                | otherwise = getIdx i : loop (i+1)
+    {-# INLINE go #-}
 
 -- | Check if two vectors are identical
 equal :: (PrimType ty, Eq ty) => UArray ty -> UArray ty -> Bool
@@ -429,22 +437,28 @@ append a b
     !lb = length b
 
 concat :: PrimType ty => [UArray ty] -> UArray ty
-concat (Data.List.dropWhile null -> l) =
-  let lens = fmap length l
-      count = Prelude.sum lens
-  in case lens of
-      [] -> empty
-      len:_ | len == count -> Data.List.head l
-      _ -> runST $ do
-          r <- new count
-          loop r 0 l
-          unsafeFreeze r
-  where loop _ _ []     = return ()
-        loop r i (x:xs) = do
-            mx <- unsafeThaw x
-            copyAt r i mx 0 lx
-            loop r (i+lx) xs
-          where lx = length x
+concat [] = empty
+concat l  =
+    case filterAndSum 0 [] l of
+        (_,[])            -> empty
+        (_,[x])           -> x
+        (totalLen,chunks) -> runST $ do
+            r <- new totalLen
+            doCopy r 0 chunks
+            unsafeFreeze r
+  where
+    -- TODO would go faster not to reverse but pack from the end instead
+    filterAndSum !totalLen acc []     = (totalLen, Prelude.reverse acc)
+    filterAndSum !totalLen acc (x:xs)
+        | len == 0  = filterAndSum totalLen acc xs
+        | otherwise = filterAndSum (len+totalLen) (x:acc) xs
+      where len = length x
+
+    doCopy _ _ []     = return ()
+    doCopy r i (x:xs) = do
+        copyAtRO r i x 0 lx
+        doCopy r (i+lx) xs
+      where lx = length x
 
 -- | update an array by creating a new array with the updates.
 --
@@ -575,6 +589,7 @@ splitOn xpredicate ivec
                  in if predicate e
                         then sub v prevIdx idx : loop idx' idx'
                         else loop prevIdx idx'
+    {-# INLINE go #-}
 
 sub :: PrimType ty => UArray ty -> Int -> Int -> UArray ty
 sub vec startIdx expectedEndIdx
@@ -655,33 +670,37 @@ mapIndex :: (PrimType a, PrimType b) => (Int -> a -> b) -> UArray a -> UArray b
 mapIndex f a = create (length a) (\i -> f i $ unsafeIndex a i)
 
 cons :: PrimType ty => ty -> UArray ty -> UArray ty
-cons e vec = runST $ do
-    muv <- newNative (len + 1) $ \mba ->
-        case vec of
-            UVecBA _ ba      -> primCopyFreezedBytesOffset mba bytes ba (len# *# bytes)
-            UVecAddr _ fptr  ->
-                withFinalPtr fptr $ \(Ptr addr) -> primitive $ \s ->
-                    (# compatCopyAddrToByteArray# addr mba bytes (len# *# bytes) s, () #)
-            UVecSlice start _ parent ->
-                copyAtRO (MUVecMA unpinned mba) 1 parent start len
-    unsafeWrite muv 0 e
-    unsafeFreeze muv
+cons e vec
+    | len == 0  = singleton e
+    | otherwise = runST $ do
+        muv <- newNative (len + 1) $ \mba ->
+            case vec of
+                UVecBA _ ba      -> primCopyFreezedBytesOffset mba bytes ba (len# *# bytes)
+                UVecAddr _ fptr  ->
+                    withFinalPtr fptr $ \(Ptr addr) -> primitive $ \s ->
+                        (# compatCopyAddrToByteArray# addr mba bytes (len# *# bytes) s, () #)
+                UVecSlice start _ parent ->
+                    copyAtRO (MUVecMA unpinned mba) 1 parent start len
+        unsafeWrite muv 0 e
+        unsafeFreeze muv
   where
     !(I# bytes) = sizeInBytesOfContent vec
     !len@(I# len#) = length vec
 
 snoc :: PrimType ty => UArray ty -> ty -> UArray ty
-snoc vec e = runST $ do
-    muv <- newNative (len + 1) $ \mba ->
-        case vec of
-            UVecBA _ ba      -> primCopyFreezedBytes mba ba
-            UVecAddr _ fptr  ->
-                withFinalPtr fptr $ \(Ptr addr) -> primitive $ \s ->
-                    (# compatCopyAddrToByteArray# addr mba 0# (len# *# bytes) s, () #)
-            UVecSlice start _ parent ->
-                copyAtRO (MUVecMA unpinned mba) 0 parent start len
-    unsafeWrite muv len e
-    unsafeFreeze muv
+snoc vec e
+    | len == 0  = singleton e
+    | otherwise = runST $ do
+        muv <- newNative (len + 1) $ \mba ->
+            case vec of
+                UVecBA _ ba      -> primCopyFreezedBytes mba ba
+                UVecAddr _ fptr  ->
+                    withFinalPtr fptr $ \(Ptr addr) -> primitive $ \s ->
+                        (# compatCopyAddrToByteArray# addr mba 0# (len# *# bytes) s, () #)
+                UVecSlice start _ parent ->
+                    copyAtRO (MUVecMA unpinned mba) 0 parent start len
+        unsafeWrite muv len e
+        unsafeFreeze muv
   where
     !(I# bytes) = sizeInBytesOfContent vec
     !len@(I# len#) = length vec
