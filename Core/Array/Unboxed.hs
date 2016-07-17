@@ -54,6 +54,7 @@ module Core.Array.Unboxed
     , revSplitAt
     , splitOn
     , break
+    , breakElem
     , span
     , cons
     , snoc
@@ -609,9 +610,11 @@ sub vec startIdx expectedEndIdx
     -}
 
 break :: PrimType ty => (ty -> Bool) -> UArray ty -> (UArray ty, UArray ty)
-break xpredicate iniv = runST $ unsafeIndexer iniv (go iniv xpredicate)
+break xpredicate xv
+    | len == 0  = (empty, empty)
+    | otherwise = runST $ unsafeIndexer xv (go xv xpredicate)
   where
-    !len = length iniv
+    !len = length xv
     go :: PrimType ty => UArray ty -> (ty -> Bool) -> (Int -> ty) -> ST s (UArray ty, UArray ty)
     go v predicate getIdx = return (findBreak 0)
       where
@@ -619,6 +622,28 @@ break xpredicate iniv = runST $ unsafeIndexer iniv (go iniv xpredicate)
             | i == len             = (v, empty)
             | predicate (getIdx i) = splitAt i v
             | otherwise            = findBreak (i+1)
+        {-# INLINE findBreak #-}
+    {-# INLINE go #-}
+{-# NOINLINE break #-}
+
+{-# RULES "break (== ty)"  forall (x :: forall ty . PrimType ty => ty) . break (== x) = breakElem x #-}
+{-# RULES "break (ty ==)"  forall (x :: forall ty . PrimType ty => ty) . break (x ==) = breakElem x #-}
+{-# RULES "break (== ty)"  forall (x :: Word8) . break (== x) = breakElem x #-}
+
+breakElem :: PrimType ty => ty -> UArray ty -> (UArray ty, UArray ty)
+breakElem xelem xv
+    | len == 0  = (empty, empty)
+    | otherwise = runST $ unsafeIndexer xv (go xv xelem)
+  where
+    !len = length xv
+    go :: PrimType ty => UArray ty -> ty -> (Int -> ty) -> ST s (UArray ty, UArray ty)
+    go v elem getIdx = return (findBreak 0)
+      where
+        findBreak !i
+            | i == len         = (v, empty)
+            | getIdx i == elem = splitAt i v
+            | otherwise        = findBreak (i+1)
+    {-# INLINE go #-}
 
 span :: PrimType ty => (ty -> Bool) -> UArray ty -> (UArray ty, UArray ty)
 span p = break (not . p)
