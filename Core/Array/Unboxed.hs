@@ -639,11 +639,12 @@ break xpredicate xv
             | otherwise            = findBreak (i+1)
         {-# INLINE findBreak #-}
     {-# INLINE go #-}
-{-# NOINLINE break #-}
+{-# NOINLINE [2] break #-}
+{-# SPECIALIZE [2] break :: (Word8 -> Bool) -> ByteArray -> (ByteArray, ByteArray) #-}
 
-{-# RULES "break (== ty)"  forall (x :: forall ty . PrimType ty => ty) . break (== x) = breakElem x #-}
-{-# RULES "break (ty ==)"  forall (x :: forall ty . PrimType ty => ty) . break (x ==) = breakElem x #-}
-{-# RULES "break (== ty)"  forall (x :: Word8) . break (== x) = breakElem x #-}
+{-# RULES "break (== ty)" [3] forall (x :: forall ty . PrimType ty => ty) . break (== x) = breakElem x #-}
+{-# RULES "break (ty ==)" [3] forall (x :: forall ty . PrimType ty => ty) . break (x ==) = breakElem x #-}
+{-# RULES "break (== ty)" [3] forall (x :: Word8) . break (== x) = breakElem x #-}
 
 breakElem :: PrimType ty => ty -> UArray ty -> (UArray ty, UArray ty)
 breakElem xelem xv
@@ -659,6 +660,7 @@ breakElem xelem xv
             | getIdx i == elem = splitAt i v
             | otherwise        = findBreak (i+1)
     {-# INLINE go #-}
+{-# SPECIALIZE [2] breakElem :: Word8 -> ByteArray -> (ByteArray, ByteArray) #-}
 
 span :: PrimType ty => (ty -> Bool) -> UArray ty -> (UArray ty, UArray ty)
 span p = break (not . p)
