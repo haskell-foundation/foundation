@@ -1,5 +1,5 @@
 -- |
--- Module      : Core.STuple
+-- Module      : Core.Tuple
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
