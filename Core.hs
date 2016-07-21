@@ -83,7 +83,6 @@ module Core
       -- ** Numeric functions
     -- , (Prelude.^)
     , (Prelude.^^)
-    , Prelude.subtract
     , Prelude.fromIntegral
     , Prelude.realToFrac
       -- ** Monoids
