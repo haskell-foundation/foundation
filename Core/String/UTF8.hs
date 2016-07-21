@@ -148,33 +148,6 @@ validate ba ofsStart sz = runST (Vec.unsafeIndexer ba go)
                             then (pos + 4, Nothing)
                             else (pos, Just InvalidContinuation)
                 _ -> error "internal error"
-                {-
-            if nbConts == 0xff
-                then
-                else if pos + 1 + nbConts > end
-                    then (pos, Just MissingByte)
-                    else do
-                        case nbConts of
-                            1 ->
-                                let c1 = getIdx (pos + 1)
-                                 in if isContinuation c1
-                                        then (pos + 2, Nothing)
-                                        else (pos, Just InvalidContinuation)
-                            2 ->
-                                let c1 = getIdx (pos + 1)
-                                    c2 = getIdx (pos + 2)
-                                 in if isContinuation c1 && isContinuation c2
-                                        then (pos + 3, Nothing)
-                                        else (pos, Just InvalidContinuation)
-                            3 ->
-                                let c1 = getIdx (pos + 1)
-                                    c2 = getIdx (pos + 2)
-                                    c3 = getIdx (pos + 3)
-                                 in if isContinuation c1 && isContinuation c2 && isContinuation c3
-                                        then (pos + 4, Nothing)
-                                        else (pos, Just InvalidContinuation)
-                            _ -> error "internal error"
-                            -}
           where
             !h = getIdx pos
             !nbConts = getNbBytes h
