@@ -48,8 +48,8 @@ import           Foreign.Marshal.Utils (copyBytes)
 -- | A Mutable array of types built on top of GHC primitive.
 --
 -- Element in this array can be modified in place.
-data MUArray ty st = MUVecMA {-# UNPACK #-} !PinnedStatus (MutableByteArray# st)
-                    | MUVecAddr {-# UNPACK #-} !Int (FinalPtr ty)
+data MUArray ty st = MUVecMA {-# UNPACK #-} !Int {-# UNPACK #-} !Int {-# UNPACK #-} !PinnedStatus (MutableByteArray# st)
+                   | MUVecAddr {-# UNPACK #-} !Int {-# UNPACK #-} !Int !(FinalPtr ty)
 
 mutableArrayProxyTy :: MUArray ty st -> Proxy ty
 mutableArrayProxyTy _ = Proxy
@@ -73,8 +73,8 @@ read array n
 -- Reading from invalid memory can return unpredictable and invalid values.
 -- use 'read' if unsure.
 unsafeRead :: (PrimMonad prim, PrimType ty) => MUArray ty (PrimState prim) -> Int -> prim ty
-unsafeRead (MUVecMA _ mba) i = primMbaRead mba i
-unsafeRead (MUVecAddr _ fptr) i = withFinalPtr fptr $ \(Ptr addr) -> primAddrRead addr i
+unsafeRead (MUVecMA start _ _ mba) i = primMbaRead mba (start+i)
+unsafeRead (MUVecAddr start _ fptr) i = withFinalPtr fptr $ \(Ptr addr) -> primAddrRead addr (start+i)
 {-# INLINE unsafeRead #-}
 
 -- | Write to a cell in a mutable array.
@@ -93,8 +93,8 @@ write array n val
 -- Writing with invalid bounds will corrupt memory and your program will
 -- become unreliable. use 'write' if unsure.
 unsafeWrite :: (PrimMonad prim, PrimType ty) => MUArray ty (PrimState prim) -> Int -> ty -> prim ()
-unsafeWrite (MUVecMA _ mba) i v = primMbaWrite mba i v
-unsafeWrite (MUVecAddr _ fptr) i v = withFinalPtr fptr $ \(Ptr addr) -> primAddrWrite addr i v
+unsafeWrite (MUVecMA start _ _ mba)  i v = primMbaWrite mba (start+i) v
+unsafeWrite (MUVecAddr start _ fptr) i v = withFinalPtr fptr $ \(Ptr addr) -> primAddrWrite addr (start+i) v
 {-# INLINE unsafeWrite #-}
 
 -- | Create a new pinned mutable array of size @n.
@@ -107,7 +107,7 @@ newPinned n = newFake Proxy
   where newFake :: (PrimMonad prim, PrimType ty) => Proxy ty -> prim (MUArray ty (PrimState prim))
         newFake ty = primitive $ \s1 ->
             case newAlignedPinnedByteArray# bytes 8# s1 of
-                (# s2, mba #) -> (# s2, MUVecMA pinned mba #)
+                (# s2, mba #) -> (# s2, MUVecMA 0 n pinned mba #)
           where
                 !(I# bytes) = n * primSizeInBytes ty
         {-# INLINE newFake #-}
@@ -118,7 +118,7 @@ newUnpinned n = newFake Proxy
   where newFake :: (PrimMonad prim, PrimType ty) => Proxy ty -> prim (MUArray ty (PrimState prim))
         newFake ty = primitive $ \s1 ->
             case newByteArray# bytes s1 of
-                (# s2, mba #) -> (# s2, MUVecMA unpinned mba #)
+                (# s2, mba #) -> (# s2, MUVecMA 0 n unpinned mba #)
           where
                 !(I# bytes) = n * primSizeInBytes ty
 
@@ -132,7 +132,7 @@ new n
 
 
 mutableSame :: MUArray ty st -> MUArray ty2 st -> Bool
-mutableSame (MUVecMA _ ma)   (MUVecMA _ mb)   = bool# (sameMutableByteArray# ma mb)
+mutableSame (MUVecMA sa ea _ ma) (MUVecMA sb eb _ mb) = and [ sa == sb, ea == eb, bool# (sameMutableByteArray# ma mb)]
 mutableSame (MUVecAddr _ f1) (MUVecAddr _ f2) = finalPtrSameMemory f1 f2
 mutableSame (MUVecMA {})     (MUVecAddr {})   = False
 mutableSame (MUVecAddr {})   (MUVecMA {})     = False

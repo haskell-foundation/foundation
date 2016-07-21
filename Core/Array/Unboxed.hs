@@ -94,8 +94,8 @@ import qualified Data.List
 -- The elements need to have fixed sized and the representation is a
 -- packed contiguous array in memory that can easily be passed
 -- to foreign interface
-data UArray ty = UVecBA {-# UNPACK #-} !PinnedStatus {- unpinned / pinned flag -} ByteArray#
-               | UVecAddr {-# UNPACK #-} !Int {- number of items of type ty -} (FinalPtr ty)
+data UArray ty = UVecBA   {-# UNPACK #-} !PinnedStatus {- unpinned / pinned flag -} ByteArray#
+               | UVecAddr {-# UNPACK #-} !Int {-# UNPACK #-} !Int {- number of items of type ty -} (FinalPtr ty)
                | UVecSlice {-# UNPACK #-} !Int {-# UNPACK #-} !Int (UArray ty)
 
 -- | Byte Array alias
@@ -159,8 +159,9 @@ copy array = runST (thaw array >>= unsafeFreeze)
 -- the array is not modified, instead a new mutable array is created
 -- and every values is copied, before returning the mutable array.
 thaw :: (PrimMonad prim, PrimType ty) => UArray ty -> prim (MUArray ty (PrimState prim))
-thaw array@(UVecBA _ ba) = do
+thaw array@(UVecBA start end _ ba) = do
     ma@(MUVecMA _ mba) <- new (length array)
+    copyAtRO array
     primCopyFreezedBytes mba ba
     return ma
 thaw array@(UVecAddr len fptr) = withFinalPtr fptr $ \(Ptr addr) -> do

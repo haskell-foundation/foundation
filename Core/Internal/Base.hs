@@ -22,6 +22,7 @@ module Core.Internal.Base
     , Prelude.flip
     , Prelude.const
     , Prelude.error
+    , Prelude.and
     , Prelude.undefined
     , Prelude.seq
     , Prelude.Show (..)
