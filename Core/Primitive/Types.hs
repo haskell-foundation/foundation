@@ -222,3 +222,19 @@ instance PrimType Double where
     {-# INLINE primAddrRead #-}
     primAddrWrite addr (I# n) (D# w) = primitive $ \s1 -> (# writeDoubleOffAddr# addr n w s1, () #)
     {-# INLINE primAddrWrite #-}
+
+instance PrimType Char where
+    primSizeInBytes _ = 4
+    {-# INLINE primSizeInBytes #-}
+    primBaIndex ba (I# n) = C# (indexWideCharArray# ba n)
+    {-# INLINE primBaIndex #-}
+    primMbaRead mba (I# n) = primitive $ \s1 -> let (# s2, r #) = readWideCharArray# mba n s1 in (# s2, C# r #)
+    {-# INLINE primMbaRead #-}
+    primMbaWrite mba (I# n) (C# w) = primitive $ \s1 -> (# writeWideCharArray# mba n w s1, () #)
+    {-# INLINE primMbaWrite #-}
+    primAddrIndex addr (I# n) = C# (indexWideCharOffAddr# addr n)
+    {-# INLINE primAddrIndex #-}
+    primAddrRead addr (I# n) = primitive $ \s1 -> let (# s2, r #) = readWideCharOffAddr# addr n s1 in (# s2, C# r #)
+    {-# INLINE primAddrRead #-}
+    primAddrWrite addr (I# n) (C# w) = primitive $ \s1 -> (# writeWideCharOffAddr# addr n w s1, () #)
+    {-# INLINE primAddrWrite #-}
