@@ -12,12 +12,13 @@ module Core.Convertible
     ) where
 
 import Core.Internal.Base
+import Core.Internal.Proxy
 
 -- | Class of things that can be converted from a to b
 class Convertible a b where
     type Convert a b
-    convert :: a -> Convert a b
+    convert :: Proxy b -> a -> Convert a b
 
 instance Convertible a a where
     type Convert a a = a
-    convert = id
+    convert _ = id
