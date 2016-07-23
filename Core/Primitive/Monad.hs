@@ -28,6 +28,8 @@ module Core.Primitive.Monad
 
 import qualified Prelude
 import           GHC.ST
+import           GHC.STRef
+import           GHC.IORef
 import           GHC.IO
 import           GHC.Prim
 import           Core.Internal.Base (Exception, (.), ($))
@@ -38,12 +40,21 @@ import           Core.Internal.Base (Exception, (.), ($))
 class (Prelude.Functor m, Prelude.Monad m) => PrimMonad m where
     -- | type of state token associated with the PrimMonad m
     type PrimState m
+    -- | type of variable associated with the PrimMonad m
+    type PrimVar m :: * -> *
     -- | Unwrap the State# token to pass to a function a primitive function that returns an unboxed state and a value.
     primitive :: (State# (PrimState m) -> (# State# (PrimState m), a #)) -> m a
     -- | Throw Exception in the primitive monad
     primThrow :: Exception e => e -> m a
     -- | Run a Prim monad from a dedicated state#
     unPrimMonad  :: m a -> State# (PrimState m) -> (# State# (PrimState m), a #)
+
+    -- | Build a new variable in the Prim Monad
+    primVarNew :: a -> m (PrimVar m a)
+    -- | Read the variable in the Prim Monad
+    primVarRead :: PrimVar m a -> m a
+    -- | Write the variable in the Prim Monad
+    primVarWrite :: PrimVar m a -> a -> m ()
 
 -- | just like `unwrapPrimMonad` but throw away the result and return just the new State#
 unPrimMonad_ :: PrimMonad m => m () -> State# (PrimState m) -> State# (PrimState m)
@@ -54,19 +65,27 @@ unPrimMonad_ p st =
 
 instance PrimMonad IO where
     type PrimState IO = RealWorld
+    type PrimVar IO = IORef
     primitive = IO
     {-# INLINE primitive #-}
     primThrow = throwIO
     unPrimMonad (IO p) = p
     {-# INLINE unPrimMonad #-}
+    primVarNew = newIORef
+    primVarRead = readIORef
+    primVarWrite = writeIORef
 
 instance PrimMonad (ST s) where
     type PrimState (ST s) = s
+    type PrimVar (ST s) = STRef s
     primitive = ST
     {-# INLINE primitive #-}
     primThrow = unsafeIOToST . throwIO
     unPrimMonad (ST p) = p
     {-# INLINE unPrimMonad #-}
+    primVarNew = newSTRef
+    primVarRead = readSTRef
+    primVarWrite = writeSTRef
 
 -- | Convert a prim monad to another prim monad.
 --
