@@ -51,6 +51,7 @@ Library
                      Core.Collection
                      Core.Chunks
                      Core.Primitive
+                     Core.System.Info
                      -- Core.View
   Other-modules:     Core.String.Internal
                      Core.String.UTF8
@@ -93,6 +94,13 @@ Library
                       DeriveDataTypeable
   Build-depends:     base >= 4 && < 5
                    , ghc-prim
+  if (arch(i386) || arch(x86_64) || arch(armel) || arch(mipsel))
+    CPP-options: -DARCH_IS_LITTLE_ENDIAN
+  else
+    if (arch(powerpc) || arch(powerpc64) || arch(armeb) || arch(mipseb))
+      CPP-options: -DARCH_IS_BIG_ENDIAN
+    else
+      CPP-options: -DARCH_IS_UNKNOWN_ENDIAN
   if os(windows)
     Build-depends:    Win32
   ghc-options:       -Wall -fwarn-tabs
