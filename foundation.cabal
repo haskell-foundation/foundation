@@ -46,6 +46,9 @@ Library
                      Core.String.IO
                      Core.IO
                      Core.VFS
+                     Core.VFS.Path
+                     Core.VFS.FilePath
+                     Core.VFS.URI
                      Core.Foreign
                      Core.Collection
                      Core.Chunks

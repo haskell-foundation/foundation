@@ -15,6 +15,9 @@ module Core.IO
     , hGet
     , readFile
     , foldTextFile
+
+      -- * Directory
+    , getDirectory
     ) where
 
 import           System.IO (Handle, IOMode)
@@ -27,6 +30,12 @@ import qualified Core.Array.Unboxed as V
 import qualified Core.String.UTF8 as S
 import           Control.Exception (bracket)
 import           Foreign.Ptr (plusPtr)
+
+-- | list the file name in the given FilePath directory
+--
+-- TODO: error manegement and not implemented yet
+getDirectory :: FilePath -> IO [FileName]
+getDirectory = undefined
 
 -- | Open a new handle on the file
 openFile :: FilePath -> IOMode -> IO Handle
