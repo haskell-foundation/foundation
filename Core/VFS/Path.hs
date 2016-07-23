@@ -70,11 +70,22 @@ class Path path where
               -> path
 
 
-
+-- | parent is only going to drop the filename.
+--
+-- if you actually want to reference to the parent directory, simply uses:
+--
+-- ```
+-- parent "." /= "." </> ".."
+-- ```
 parent :: Path path => path -> path
 parent path = buildPath (p, init ps, s)
   where
     (p, ps , s) = splitPath path
+
+
+-- | get the filename of the given path
+--
+-- If there is no filename, you will receive the mempty of the PathEnt
 filename :: (Path path, Monoid (PathEnt path)) => path -> PathEnt path
 filename path = case ps of
     [] -> mempty
@@ -82,11 +93,13 @@ filename path = case ps of
   where
     (_, ps , _) = splitPath path
 
+-- TODO: this might be better in Sequential ?
 init :: [a] -> [a]
 init [] = []
 init [_] = []
 init (x:xs) = x : init xs
 
+-- TODO: this might be better in Sequential ?
 last :: [a] -> a
 last [] = undefined
 last [x] = x
