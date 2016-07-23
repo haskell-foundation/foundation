@@ -28,6 +28,10 @@ module Core.Number
 import           Core.Internal.Base
 import qualified Prelude
 
+infixl 7  *
+infixl 6  +, -
+infixr 8  ^
+
 -- | Sign of a signed number
 data Sign = Negative | Zero | Positive
     deriving (Eq)

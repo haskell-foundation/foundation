@@ -382,6 +382,18 @@ tests =
     , testGroup "VFS"
         [ testGroup "FilePath" $ testCaseFilePath <> (testPath (arbitrary :: Gen FilePath))
         ]
+    , testGroup "Number"
+        [ testGroup "Precedence"
+            [ testProperty "+ and - (1)" $ \a (b :: Int) (c :: Int) -> (a + b - c) === ((a + b) - c)
+            , testProperty "+ and - (2)" $ \a (b :: Int) (c :: Int) -> (a - b + c) === ((a - b) + c)
+            , testProperty "+ and * (1)" $ \a b (c :: Int) -> (a + b * c) === (a + (b * c))
+            , testProperty "+ and * (2)" $ \a b (c :: Int) -> (a * b + c) === ((a * b) + c)
+            , testProperty "- and * (1)" $ \a b (c :: Int) -> (a - b * c) === (a - (b * c))
+            , testProperty "- and * (2)" $ \a b (c :: Int) -> (a * b - c) === ((a * b) - c)
+            , testProperty "* and ^ (1)" $ \a (Positive b :: Positive Int) (c :: Int) -> (a ^ b * c) === ((a ^ b) * c)
+            , testProperty "* and ^ (2)" $ \a (b :: Int) (Positive c :: Positive Int) -> (a * b ^ c) === (a * (b ^ c))
+            ]
+        ]
     ]
 
 main :: IO ()
