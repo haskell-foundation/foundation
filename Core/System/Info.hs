@@ -11,7 +11,8 @@
 module Core.System.Info
     (
       -- * Operation System info
-      os
+      OS(..)
+    , os
       -- * CPU info
     , arch
     , cpus
@@ -27,12 +28,34 @@ import qualified GHC.Conc
 import Core.String
 import Core.Internal.Base
 
+data OS
+    = Windows
+    | OSX
+    | Linux
+    | Android
+    | BSD
+    | Unknown
+    | Other String
+  deriving (Show, Eq)
+
+instance IsString OS where
+    fromString str = case str of
+        []        -> Unknown
+        "darwin"  -> OSX
+        "mingw32" -> Windows
+        "linux"   -> Linux
+        "linux-android" -> Android
+        "openbsd" -> BSD
+        "netbsd"  -> BSD
+        "freebsd" -> BSD
+        _ -> Other $ fromList str
+
 -- | get the OS name
 --
 -- get the `os` from base package but convert
 -- it into a strict String
-os :: String
-os = fromList System.Info.os
+os :: OS
+os = fromString System.Info.os
 
 -- | get the architecture info
 --
