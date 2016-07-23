@@ -51,6 +51,7 @@ Library
                      Core.Collection
                      Core.Chunks
                      Core.Primitive
+                     Core.System.Info
                      -- Core.View
   Other-modules:     Core.String.Internal
                      Core.String.UTF8
@@ -93,6 +94,15 @@ Library
                       DeriveDataTypeable
   Build-depends:     base >= 4 && < 5
                    , ghc-prim
+  -- FIXME add suport for armel mipsel
+  --  CPP-options: -DARCH_IS_LITTLE_ENDIAN
+  -- FIXME add support for powerpc powerpc64 armeb mipseb
+  --  CPP-options: -DARCH_IS_BIG_ENDIAN
+  if (arch(i386) || arch(x86_64))
+    CPP-options: -DARCH_IS_LITTLE_ENDIAN
+  else
+    CPP-options: -DARCH_IS_UNKNOWN_ENDIAN
+    C-sources: cbits/endian.c
   if os(windows)
     Build-depends:    Win32
   ghc-options:       -Wall -fwarn-tabs
