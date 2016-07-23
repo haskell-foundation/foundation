@@ -7,7 +7,6 @@
 --
 
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE ForeignFunctionInterface #-}
 
 module Core.System.Info
     (
@@ -28,14 +27,16 @@ import qualified System.Info
 import qualified GHC.Conc
 import Core.String
 import Core.Internal.Base
+import Core
 
 #ifdef ARCH_IS_UNKNOWN_ENDIAN
-import qualified Foreign.C.Types as C
+import Foreign.Marshal.Alloc (alloca)
+import Foreign.Ptr (castPtr)
+import Foreign.Storable (poke, peek)
+import Data.Word (Word8, Word32)
 import System.IO.Unsafe (unsafePerformIO)
-
-foreign import ccall safe "is_little_endian" c_is_little_endian :: IO C.CInt
-
 #endif
+
 data OS
     = Windows
     | OSX
@@ -103,7 +104,18 @@ endianness = LittleEndian
 endianness = BigEndian
 #else
 -- ! ARCH_IS_UNKNOWN_ENDIAN
-endianness = if littleEndian then LittleEndian else BigEndian
-littleEndian :: Bool
-littleEndian = unsafePerformIO c_is_little_endian == 1
+endianness = unsafePerformIO $ bytesToEndianness <$> word32ToByte input
+  where
+    input :: Word32
+    input = 0x01020304
+{-# NOINLINE endianness #-}
+
+word32ToByte :: Word32 -> IO Word8
+word32ToByte word = alloca $ \wordPtr -> do
+         poke wordPtr word
+         peek (castPtr wordPtr)
+
+bytesToEndianness :: Word8 -> Endianness
+bytesToEndianness 1 = BigEndian
+bytesToEndianness _ = LittleEndian
 #endif
