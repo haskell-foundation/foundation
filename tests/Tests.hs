@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -15,6 +16,8 @@ import           Core.String
 import           Core.Array
 import           Core.Foreign
 import           Core.Collection
+import           Core.VFS (Path(..), parent, filename)
+import           Core.VFS.FilePath
 import           Core
 import qualified Data.List as L
 import qualified Prelude
@@ -64,6 +67,29 @@ instance Arbitrary Split where
 instance Arbitrary CharMap where
     arbitrary = do
         CharMap <$> arbitrary <*> choose (1,12)
+
+instance Arbitrary FileName where
+    arbitrary = do
+        s <- choose (1, 30)
+        unsafeFileName . fromList <$> vectorOf s genChar
+      where
+        genChar :: Gen Word8
+        genChar = frequency
+                    [ (10, pure 0x2e) -- '.'
+                    , (10, choose (0x41, 0x5A)) -- [A-Z]
+                    , (10, choose (0x61, 0x7A)) -- [a-z]
+                    , (5, choose (0x30, 0x39)) -- [a-z]
+                    , (5, elements [0x2d, 0x5f]) -- [-_]
+                    ]
+
+instance Arbitrary Relativity where
+    arbitrary = elements [ Absolute, Relative ]
+
+instance Arbitrary FilePath where
+    arbitrary = do
+        s <- choose (0, 10)
+        unsafeFilePath <$> arbitrary
+                       <*> vectorOf s arbitrary
 
 isIdemPotent :: Eq a => (a -> a) -> a -> Bool
 isIdemPotent f s = f s == s
@@ -142,6 +168,44 @@ testCollectionProps proxy genElement =
     ]
   where
     withCollection2 f = forAll ((,) <$> (fromListP proxy <$> listOfElement genElement) <*> arbitrary) f
+
+testCaseFilePath :: [TestTree]
+testCaseFilePath = Prelude.map (makeTestCases . (\x -> (show x, x)))
+    [ "/"
+    , "."
+    , ".."
+    , "C:" </> "Users" </> "haskell-lang"
+    , "/home"
+    , "/home" </> "haskell-lang" </> "new hope" </> "foundation"
+    , "~" </> "new hope" </> "foundation"
+    , "new hope" </> "foundation"
+    , "new hope" </> "foundation" </> ".."
+    , "." </> "new hope" </> ".." </> ".." </> "haskell-lang" </> "new hope"
+    ]
+  where
+    makeTestCases :: ([Char], FilePath) -> TestTree
+    makeTestCases (title, p) = testGroup title
+        [ testCase "buildPath . splitPath == id)" $ assertBuildSplitIdemPotent p
+        , testCase "p == (parent p </> filename p)" $ assertParentFilenameIdemPotent p
+        ]
+
+    assertParentFilenameIdemPotent :: FilePath -> Assertion
+    assertParentFilenameIdemPotent p =
+      unless (assertEq (parent p </> filename p) p) $
+         error "assertion failed"
+    assertBuildSplitIdemPotent :: FilePath -> Assertion
+    assertBuildSplitIdemPotent p =
+      unless (assertEq (buildPath $ splitPath p) p) $
+         error "assertion failed"
+
+testPath :: (Path path, Show path, Eq path)
+         => Gen path
+         -> [TestTree]
+testPath genElement =
+    [ testProperty "buildPath . splitPath == id" $ withElements $ isIdemPotent (buildPath . splitPath)
+    ]
+  where
+    withElements f = forAll genElement f
 
 testCollection :: ( Show a, Show (Element a)
                   , Eq a, Eq (Element a)
@@ -309,6 +373,9 @@ tests =
     , testGroup "String"
         (  testCollection (Proxy :: Proxy String) arbitraryChar
         <> testStringCases)
+    , testGroup "VFS"
+        [ testGroup "FilePath" $ testCaseFilePath <> (testPath (arbitrary :: Gen FilePath))
+        ]
     ]
 
 main :: IO ()
