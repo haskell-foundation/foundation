@@ -40,8 +40,10 @@ import           GHC.ST
 import           GHC.Word
 import qualified Prelude
 import           Core.Internal.Base
+import           Core.Internal.Types
 import           Core.Internal.Primitive
 import qualified Core.Collection as C
+import           Core.Primitive.Types
 import           Core.Primitive.Monad
 import           Core.String.UTF8Table
 import           Core.Array.Unboxed (ByteArray)
@@ -107,14 +109,14 @@ instance Exception ValidationFailure
 -- On success Nothing is returned
 -- On Failure the position along with the failure reason
 validate :: ByteArray
-         -> Int
-         -> Int
-         -> (Int, Maybe ValidationFailure)
+         -> Offset8
+         -> Size Word8
+         -> (Offset8, Maybe ValidationFailure)
 validate ba ofsStart sz = runST (Vec.unsafeIndexer ba go)
   where
-    end = ofsStart + sz
+    end = ofsStart `offsetPlusE` sz
 
-    go :: (Int -> Word8) -> ST s (Int, Maybe ValidationFailure)
+    go :: (Offset Word8 -> Word8) -> ST s (Offset Word8, Maybe ValidationFailure)
     go getIdx = return $ loop ofsStart
       where
         loop ofs
@@ -127,32 +129,34 @@ validate ba ofsStart sz = runST (Vec.unsafeIndexer ba go)
 
         one pos =
             case nbConts of
-                0    -> (pos + 1, Nothing)
+                0    -> (pos + o1, Nothing)
                 0xff -> (pos, Just InvalidHeader)
-                _ | pos + 1 + nbConts > end -> (pos, Just MissingByte)
+                _ | (pos + o1) `offsetPlusE` nbContsE > end -> (pos, Just MissingByte)
                 1    ->
-                    let c1 = getIdx (pos + 1)
+                    let c1 = getIdx (pos + o1)
                      in if isContinuation c1
-                            then (pos + 2, Nothing)
+                            then (pos + Offset 2, Nothing)
                             else (pos, Just InvalidContinuation)
                 2 ->
-                    let c1 = getIdx (pos + 1)
-                        c2 = getIdx (pos + 2)
+                    let c1 = getIdx (pos + o1)
+                        c2 = getIdx (pos + Offset 2)
                      in if isContinuation c1 && isContinuation c2
-                            then (pos + 3, Nothing)
+                            then (pos + Offset 3, Nothing)
                             else (pos, Just InvalidContinuation)
                 3 ->
-                    let c1 = getIdx (pos + 1)
-                        c2 = getIdx (pos + 2)
-                        c3 = getIdx (pos + 3)
+                    let c1 = getIdx (pos + Offset 1)
+                        c2 = getIdx (pos + Offset 2)
+                        c3 = getIdx (pos + Offset 3)
                      in if isContinuation c1 && isContinuation c2 && isContinuation c3
-                            then (pos + 4, Nothing)
+                            then (pos + Offset 4, Nothing)
                             else (pos, Just InvalidContinuation)
                 _ -> error "internal error"
           where
             !h = getIdx pos
-            !nbConts = getNbBytes h
+            !nbContsE@(Size nbConts) = Size $ getNbBytes h
     {-# INLINE go #-}
+
+    o1 = Offset 1
 
 mutableValidate :: PrimMonad prim
                 => MutableByteArray (PrimState prim)
@@ -208,16 +212,16 @@ skipNext (String ba) n = n + 1 + getNbBytes h
   where
     !h = Vec.unsafeIndex ba n
 
-next :: String -> Int -> (# Char, Int #)
-next (String ba) n =
+next :: String -> Offset8 -> (# Char, Offset8 #)
+next (String ba) ofs@(Offset n) =
     case getNbBytes# h of
-        0# -> (# toChar h, n + 1 #)
-        1# -> (# toChar (decode2 (Vec.unsafeIndex ba (n + 1))) , n + 2 #)
+        0# -> (# toChar h, Offset $ n + 1 #)
+        1# -> (# toChar (decode2 (Vec.unsafeIndex ba (n + 1))) , Offset $ n + 2 #)
         2# -> (# toChar (decode3 (Vec.unsafeIndex ba (n + 1))
-                                 (Vec.unsafeIndex ba (n + 2))) , n + 3 #)
+                                 (Vec.unsafeIndex ba (n + 2))) , Offset $ n + 3 #)
         3# -> (# toChar (decode4 (Vec.unsafeIndex ba (n + 1))
                                  (Vec.unsafeIndex ba (n + 2))
-                                 (Vec.unsafeIndex ba (n + 3))) , n + 4 #)
+                                 (Vec.unsafeIndex ba (n + 3))) , Offset $ n + 4 #)
         r -> error ("next: internal error: invalid input: " <> show (I# r) <> " " <> show (W# h))
   where
     !(W8# h) = Vec.unsafeIndex ba n
@@ -244,8 +248,8 @@ next (String ba) n =
                     (and# c3 0x3f##))
             )
 
-write :: PrimMonad prim => MutableString (PrimState prim) -> Int -> Char -> prim Int
-write (MutableString mba) idx c =
+write :: PrimMonad prim => MutableString (PrimState prim) -> Offset8 -> Char -> prim Offset8
+write (MutableString mba) idx@(Offset i) c =
     if      bool# (ltWord# x 0x80##   ) then encode1
     else if bool# (ltWord# x 0x800##  ) then encode2
     else if bool# (ltWord# x 0x10000##) then encode3
@@ -254,34 +258,34 @@ write (MutableString mba) idx c =
     !(I# xi) = fromEnum c
     !x       = int2Word# xi
 
-    encode1 = C.mutUnsafeWrite mba idx (W8# x) >> return (idx + 1)
+    encode1 = C.mutUnsafeWrite mba i (W8# x) >> return (Offset $ i + 1)
 
     encode2 = do
         let x1  = or# (uncheckedShiftRL# x 6#) 0xc0##
             x2  = toContinuation x
-        C.mutUnsafeWrite mba idx     (W8# x1)
-        C.mutUnsafeWrite mba (idx+1) (W8# x2)
-        return (idx + 2)
+        C.mutUnsafeWrite mba i     (W8# x1)
+        C.mutUnsafeWrite mba (i+1) (W8# x2)
+        return $ Offset (i + 2)
 
     encode3 = do
         let x1  = or# (uncheckedShiftRL# x 12#) 0xe0##
             x2  = toContinuation (uncheckedShiftRL# x 6#)
             x3  = toContinuation x
-        C.mutUnsafeWrite mba idx     (W8# x1)
-        C.mutUnsafeWrite mba (idx+1) (W8# x2)
-        C.mutUnsafeWrite mba (idx+2) (W8# x3)
-        return (idx + 3)
+        C.mutUnsafeWrite mba i     (W8# x1)
+        C.mutUnsafeWrite mba (i+1) (W8# x2)
+        C.mutUnsafeWrite mba (i+2) (W8# x3)
+        return $ Offset (i + 3)
 
     encode4 = do
         let x1  = or# (uncheckedShiftRL# x 18#) 0xf0##
             x2  = toContinuation (uncheckedShiftRL# x 12#)
             x3  = toContinuation (uncheckedShiftRL# x 6#)
             x4  = toContinuation x
-        C.mutUnsafeWrite mba idx     (W8# x1)
-        C.mutUnsafeWrite mba (idx+1) (W8# x2)
-        C.mutUnsafeWrite mba (idx+2) (W8# x3)
-        C.mutUnsafeWrite mba (idx+3) (W8# x4)
-        return (idx + 4)
+        C.mutUnsafeWrite mba i     (W8# x1)
+        C.mutUnsafeWrite mba (i+1) (W8# x2)
+        C.mutUnsafeWrite mba (i+2) (W8# x3)
+        C.mutUnsafeWrite mba (i+3) (W8# x4)
+        return $ Offset (i + 4)
 
     toContinuation :: Word# -> Word#
     toContinuation w = or# (and# w 0x3f##) 0x80##
@@ -294,22 +298,23 @@ freeze (MutableString mba) = String `fmap` C.unsafeFreeze mba
 -- real functions
 
 sToList :: String -> [Char]
-sToList s = loop 0
+sToList s = loop azero
   where
     !nbBytes = size s
-    loop n
-        | n == nbBytes = []
-        | otherwise    =
-            let (# c , n' #) = next s n in c : loop n'
+    end = azero `offsetPlusE` nbBytes
+    loop idx
+        | idx == end = []
+        | otherwise  =
+            let (# c , idx' #) = next s idx in c : loop idx'
 
 sFromList :: [Char] -> String
 sFromList l = runST (new bytes >>= copy)
   where
     -- count how many bytes
-    !bytes = Prelude.sum $ fmap (charToBytes . fromEnum) l
+    !bytes = C.foldl' (+) (Size 0) $ fmap (charToBytes . fromEnum) l
 
     copy :: MutableString (PrimState (ST st)) -> ST st String
-    copy ms = loop 0 l
+    copy ms = loop azero l
       where
         loop _   []     = freeze ms
         loop idx (c:xs) = write ms idx c >>= \idx' -> loop idx' xs
@@ -372,34 +377,36 @@ revSplitAt n v = (drop idx v, take idx v)
 -- > splitOn (== ':') "::abc::def" == ["","","abc","","def"]
 --
 splitOn :: (Char -> Bool) -> String -> [String]
-splitOn predicate s@(String ba)
-    | sz == 0   = []
-    | otherwise = loop 0 0
+splitOn predicate s
+    | sz == Size 0 = []
+    | otherwise    = loop azero azero
   where
-    !sz = C.length ba
+    !sz = size s
+    end = azero `offsetPlusE` sz
     loop prevIdx idx
-        | idx == sz = [sub s prevIdx idx]
+        | idx == end = [sub s prevIdx idx]
         | otherwise =
             let (# c, idx' #) = next s idx
              in if predicate c
                     then sub s prevIdx idx : loop idx' idx'
                     else loop prevIdx idx'
 
-sub :: String -> Int -> Int -> String
-sub (String ba) start end = String $ Vec.sub ba start end
+sub :: String -> Offset8 -> Offset8 -> String
+sub (String ba) (Offset start) (Offset end) = String $ Vec.sub ba start end
 
 -- | Split at a given index.
-splitIndex :: Int -> String -> (String, String)
-splitIndex idx (String ba) = (String v1, String v2)
+splitIndex :: Offset8 -> String -> (String, String)
+splitIndex (Offset idx) (String ba) = (String v1, String v2)
   where (v1,v2) = C.splitAt idx ba
 
 break :: (Char -> Bool) -> String -> (String, String)
-break predicate s@(String ba) = loop 0
+break predicate s@(String ba) = loop (Offset 0)
   where
-    !sz = C.length ba
+    !sz = size s
+    end = azero `offsetPlusE` sz
     loop idx
-        | idx == sz = (s, mempty)
-        | otherwise          =
+        | idx == end = (s, mempty)
+        | otherwise  =
             let (# c, idx' #) = next s idx
              in case predicate c of
                     True  -> splitIndex idx s
@@ -443,8 +450,8 @@ span :: (Char -> Bool) -> String -> (String, String)
 span predicate s = break (not . predicate) s
 
 -- | size in bytes
-size :: String -> Int
-size (String ba) = C.length ba
+size :: String -> Size8
+size (String ba) = Size $ C.length ba
 
 length :: String -> Int
 length s@(String ba) = loop 0 0
@@ -459,14 +466,15 @@ length s@(String ba) = loop 0 0
 replicate :: Int -> Char -> String
 replicate n c = runST (new nbBytes >>= fill)
   where
-    !nbBytes = sz * n
-    sz       = charToBytes (fromEnum c)
+    end       = azero `offsetPlusE` nbBytes
+    nbBytes   = Size $ sz * n
+    (Size sz) = charToBytes (fromEnum c)
     fill :: PrimMonad prim => MutableString (PrimState prim) -> prim String
-    fill ms = loop 0
+    fill ms = loop (Offset 0)
       where
         loop idx
-            | idx == nbBytes = freeze ms
-            | otherwise      = write ms idx c >>= loop
+            | idx == end = freeze ms
+            | otherwise  = write ms idx c >>= loop
 
 {-
 sizeBytes :: String -> Int
@@ -475,49 +483,50 @@ sizeBytes (String ba) = I# (sizeofByteArray# ba)
 
 -- | Allocate a MutableString of a specific size in bytes.
 new :: PrimMonad prim
-    => Int -- ^ in number of bytes, not of elements.
+    => Size8 -- ^ in number of bytes, not of elements.
     -> prim (MutableString (PrimState prim))
 new n = MutableString `fmap` MVec.new n
 
 create :: PrimMonad prim => Int -> (MutableString (PrimState prim) -> prim Int) -> prim String
 create sz f = do
-    ms     <- new sz
+    ms     <- new (Size sz)
     filled <- f ms
     if filled == sz
         then freeze ms
         else C.take filled `fmap` freeze ms
 
-charToBytes :: Int -> Int
+charToBytes :: Int -> Size8
 charToBytes c
-    | c < 0x80     = 1
-    | c < 0x800    = 2
-    | c < 0x10000  = 3
-    | c < 0x110000 = 4
+    | c < 0x80     = Size 1
+    | c < 0x800    = Size 2
+    | c < 0x10000  = Size 3
+    | c < 0x110000 = Size 4
     | otherwise    = error ("invalid code point: " `mappend` show c)
 
 charMap :: (Char -> Char) -> String -> String
 charMap f src@(String srcBa) =
-    let !(elems, nbBytes) = allocateAndFill [] 0 0
+    let !(elems, nbBytes) = allocateAndFill [] (Offset 0) (Size 0)
      in runST $ do
             dest <- new nbBytes
-            copyLoop dest elems nbBytes
+            copyLoop dest elems (Offset 0 `offsetPlusE` nbBytes)
             freeze dest
   where
-    !srcSz = C.length srcBa
+    !srcSz = size src
+    end    = azero `offsetPlusE` srcSz
 
-    allocateAndFill :: [(String, Int)]
-                    -> Int
-                    -> Int
-                    -> ([(String,Int)], Int)
+    allocateAndFill :: [(String, Size8)]
+                    -> Offset8
+                    -> Size8
+                    -> ([(String,Size8)], Size8)
     allocateAndFill acc idx bytesWritten
-        | idx == srcSz = (acc, bytesWritten)
-        | otherwise    =
+        | idx == end = (acc, bytesWritten)
+        | otherwise  =
             let (el@(_,addBytes), idx') = runST $ do
                     -- make sure we allocate at least 4 bytes for the destination for the last few bytes
                     -- otherwise allocating less would bring the danger of spinning endlessly
                     -- and never succeeding.
-                    let !diffBytes = srcSz - idx
-                        !allocatedBytes = if diffBytes <= 4 then 4 else diffBytes
+                    let !diffBytes = end - idx
+                        !allocatedBytes = if diffBytes <= Size 4 then Size 4 else diffBytes
                     ms <- new allocatedBytes
                     (dstIdx, srcIdx) <- fill ms allocatedBytes idx
                     s <- freeze ms
@@ -526,47 +535,48 @@ charMap f src@(String srcBa) =
 
     fill :: PrimMonad prim
          => MutableString (PrimState prim)
-         -> Int
-         -> Int
-         -> prim (Int, Int)
+         -> Size8
+         -> Offset8
+         -> prim (Size8, Offset8)
     fill mba dsz srcIdxOrig =
-        loop 0 srcIdxOrig
+        loop (Offset 0) srcIdxOrig
       where
+        endDst = (Offset 0) `offsetPlusE` dsz
         loop dstIdx srcIdx
-            | srcIdx == srcSz = return (dstIdx, srcIdx)
-            | dstIdx == dsz   = return (dstIdx, srcIdx)
-            | otherwise                =
+            | srcIdx == end    = return (offsetAsSize dstIdx, srcIdx)
+            | dstIdx == endDst = return (offsetAsSize dstIdx, srcIdx)
+            | otherwise        =
                 let (# c, srcIdx' #) = next src srcIdx
                     c' = f c -- the mapped char
                     !nbBytes = charToBytes (fromEnum c')
                  in -- check if we have room in the destination buffer
-                    if dstIdx + nbBytes <= dsz
+                    if dstIdx `offsetPlusE` nbBytes <= sizeAsOffset dsz
                         then do dstIdx' <- write mba dstIdx c'
                                 loop dstIdx' srcIdx'
-                        else return (dstIdx, srcIdx)
+                        else return (offsetAsSize dstIdx, srcIdx)
 
-    copyLoop _   []     0        = return ()
-    copyLoop _   []     n        = error ("charMap invalid: " <> show n)
+    copyLoop _   []     (Offset 0) = return ()
+    copyLoop _   []     n          = error ("charMap invalid: " <> show n)
     copyLoop ms@(MutableString mba) ((String ba, sz):xs) end = do
-        let start = end - sz
-        Vec.copyAtRO mba start ba 0 sz
+        let start = end `offsetMinusE` sz
+        Vec.copyAtRO mba start ba (Offset 0) sz
         copyLoop ms xs start
 
 snoc :: String -> Char -> String
-snoc (String ba) c = runST $ do
+snoc s@(String ba) c = runST $ do
     ms@(MutableString mba) <- new (len + nbBytes)
-    Vec.copyAtRO mba 0 ba 0 len
-    _ <- write ms len c
+    Vec.copyAtRO mba (Offset 0) ba (Offset 0) len
+    _ <- write ms (azero `offsetPlusE` len) c
     freeze ms
   where
-    !len     = C.length ba
+    !len     = size s
     !nbBytes = charToBytes (fromEnum c)
 
 cons :: Char -> String -> String
 cons c s@(String ba) = runST $ do
     ms@(MutableString mba) <- new (len + nbBytes)
-    idx <- write ms 0 c
-    Vec.copyAtRO mba idx ba 0 len
+    idx <- write ms (Offset 0) c
+    Vec.copyAtRO mba idx ba (Offset 0) len
     freeze ms
   where
     !len     = size s
@@ -591,11 +601,12 @@ uncons s
                 _   -> error "impossible"
 
 find :: (Char -> Bool) -> String -> Maybe Char
-find predicate s = loop 0
+find predicate s = loop (Offset 0)
   where
     !sz = size s
+    end = Offset 0 `offsetPlusE` sz
     loop idx
-        | idx == sz = Nothing
+        | idx == end = Nothing
         | otherwise =
             let (# c, idx' #) = next s idx
              in case predicate c of
@@ -611,33 +622,33 @@ filter p s = fromList $ Data.List.filter p $ toList s
 reverse :: String -> String
 reverse s@(String ba) = runST $ do
     ms <- new len
-    loop ms 0 len
+    loop ms (Offset 0) (Offset 0 `offsetPlusE` len)
   where
     !len = size s
     -- write those bytes
-    loop :: PrimMonad prim => MutableString (PrimState prim) -> Int -> Int -> prim String
-    loop ms@(MutableString mba) sidx didx
-        | didx == 0 = freeze ms
+    loop :: PrimMonad prim => MutableString (PrimState prim) -> Offset8 -> Offset8 -> prim String
+    loop ms@(MutableString mba) sidx@(Offset si) didx
+        | didx == Offset 0 = freeze ms
         | otherwise = do
-            let !h = Vec.unsafeIndex ba sidx
-                !nb = getNbBytes h + 1
-                d = didx - nb
+            let !h = Vec.unsafeIndex ba si
+                !nb = Size (getNbBytes h + 1)
+                didx'@(Offset d) = didx `offsetMinusE` nb
             case nb of
-                1 -> C.mutUnsafeWrite mba d      h
-                2 -> do
+                Size 1 -> C.mutUnsafeWrite mba d      h
+                Size 2 -> do
                     C.mutUnsafeWrite mba d       h
-                    C.mutUnsafeWrite mba (d + 1) (Vec.unsafeIndex ba (sidx + 1))
-                3 -> do
+                    C.mutUnsafeWrite mba (d + 1) (Vec.unsafeIndex ba (si + 1))
+                Size 3 -> do
                     C.mutUnsafeWrite mba d       h
-                    C.mutUnsafeWrite mba (d + 1) (Vec.unsafeIndex ba (sidx + 1))
-                    C.mutUnsafeWrite mba (d + 2) (Vec.unsafeIndex ba (sidx + 2))
-                4 -> do
+                    C.mutUnsafeWrite mba (d + 1) (Vec.unsafeIndex ba (si + 1))
+                    C.mutUnsafeWrite mba (d + 2) (Vec.unsafeIndex ba (si + 2))
+                Size 4 -> do
                     C.mutUnsafeWrite mba d       h
-                    C.mutUnsafeWrite mba (d + 1) (Vec.unsafeIndex  ba (sidx + 1))
-                    C.mutUnsafeWrite mba (d + 2) (Vec.unsafeIndex ba (sidx + 2))
-                    C.mutUnsafeWrite mba (d + 3) (Vec.unsafeIndex ba (sidx + 3))
+                    C.mutUnsafeWrite mba (d + 1) (Vec.unsafeIndex  ba (si + 1))
+                    C.mutUnsafeWrite mba (d + 2) (Vec.unsafeIndex ba (si + 2))
+                    C.mutUnsafeWrite mba (d + 3) (Vec.unsafeIndex ba (si + 3))
                 _  -> return () -- impossible
-            loop ms (sidx + nb) d
+            loop ms (sidx `offsetPlusE` nb) didx'
 
 -- | String encoding
 data Encoding = UTF8
@@ -657,9 +668,9 @@ fromBytes :: Encoding -> ByteArray -> (String, Maybe ValidationFailure, ByteArra
 fromBytes UTF8 bytes
     | C.null bytes = (mempty, Nothing, mempty)
     | otherwise    =
-        case validate bytes 0 (C.length bytes) of
+        case validate bytes (Offset 0) (Size $ C.length bytes) of
             (_, Nothing)  -> (fromBytesUnsafe bytes, Nothing, mempty)
-            (pos, Just vf) ->
+            (Offset pos, Just vf) ->
                 let (b1, b2) = C.splitAt pos bytes
                  in (fromBytesUnsafe b1, toErr vf, b2)
   where
@@ -672,13 +683,13 @@ fromChunkBytes l = loop l
   where
     loop []         = []
     loop (bytes:[]) =
-        case validate bytes 0 (C.length bytes) of
+        case validate bytes (Offset 0) (Size $ C.length bytes) of
             (_, Nothing)  -> [fromBytesUnsafe bytes]
             (_, Just err) -> doErr err
     loop (bytes:cs@(c1:c2)) =
-        case validate bytes 0 (C.length bytes) of
+        case validate bytes (Offset 0) (Size $ C.length bytes) of
             (_, Nothing) -> fromBytesUnsafe bytes : loop cs
-            (pos, Just MissingByte) ->
+            (Offset pos, Just MissingByte) ->
                 let (b1,b2) = C.splitAt pos bytes
                  in fromBytesUnsafe b1 : loop ((b2 `mappend` c1) : c2)
             (_, Just err) -> doErr err

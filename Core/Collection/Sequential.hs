@@ -10,6 +10,7 @@
 --
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Core.Collection.Sequential
     ( Sequential(..)
     ) where

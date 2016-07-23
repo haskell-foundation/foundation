@@ -25,6 +25,7 @@ import qualified System.IO as S
 import           Core
 import           Core.Collection
 import           Core.VFS
+import           Core.Internal.Types
 import qualified Core.Array.Unboxed.Mutable as V
 import qualified Core.Array.Unboxed as V
 import qualified Core.String.UTF8 as S
@@ -49,10 +50,10 @@ closeFile = S.hClose
 -- | Read some data from the handle
 hGet :: Handle -> Int -> IO ByteArray
 hGet handle n = do
-    mv <- V.newPinned n
+    mv <- V.newPinned (Size n)
     r <- V.withMutablePtr mv $ \ptr -> loop n ptr
     if r < n
-        then V.unsafeFreezeShrink mv (n - r)
+        then V.unsafeFreezeShrink mv (Size $ n - r)
         else unsafeFreeze mv
   where
     loop left dst
@@ -81,7 +82,7 @@ readFile fp = withFile fp S.ReadMode $ \h -> do
     -- TODO filesize is an integer (whyyy ?!), and transforming to Int using
     -- fromIntegral is probably the wrong thing to do here..
     sz <- S.hFileSize h
-    mv <- V.newPinned (fromIntegral sz)
+    mv <- V.newPinned (Size $ fromIntegral sz)
     V.withMutablePtr mv $ loop h (fromIntegral sz)
     unsafeFreeze mv
   where
@@ -96,7 +97,7 @@ readFile fp = withFile fp S.ReadMode $ \h -> do
 
 foldTextFile :: (String -> a -> IO a) -> a -> FilePath -> IO a
 foldTextFile chunkf ini fp = do
-    buf <- V.newPinned blockSize
+    buf <- V.newPinned (Size blockSize)
     V.withMutablePtr buf $ \ptr ->
         withFile fp S.ReadMode $ doFold buf ptr
   where

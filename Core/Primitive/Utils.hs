@@ -17,6 +17,7 @@ module Core.Primitive.Utils
     ) where
 
 import           Core.Internal.Base
+import           Core.Internal.Types
 import           Core.Internal.Primitive
 import           Core.Primitive.Monad
 import           GHC.Prim
@@ -56,12 +57,12 @@ primCopyFreezedW64 mba ba = primitive $ \st -> (# loop st 0#, () #)
     {-# INLINE loop #-}
 {-# INLINE primCopyFreezedW64 #-}
 
-primMutableByteArraySlideToStart :: PrimMonad m => MutableByteArray# (PrimState m) -> Int -> Int -> m ()
-primMutableByteArraySlideToStart mba (I# ofs) (I# end) = primitive $ \st ->
+primMutableByteArraySlideToStart :: PrimMonad m => MutableByteArray# (PrimState m) -> Offset8 -> Offset8 -> m ()
+primMutableByteArraySlideToStart mba (Offset (I# ofs)) (Offset (I# end)) = primitive $ \st ->
     (# copyMutableByteArray# mba 0# mba ofs (end -# ofs) st, () #)
 
-primMutableAddrSlideToStart :: PrimMonad m => Addr# -> Int -> Int -> m ()
-primMutableAddrSlideToStart addr (I# ofsIni) (I# end) = primitive $ \st -> (# loop st 0# ofsIni, () #)
+primMutableAddrSlideToStart :: PrimMonad m => Addr# -> Offset8 -> Offset8 -> m ()
+primMutableAddrSlideToStart addr (Offset (I# ofsIni)) (Offset (I# end)) = primitive $ \st -> (# loop st 0# ofsIni, () #)
   where
     loop !st !dst !ofs
         | bool# (ofs ==# end) = st

@@ -20,7 +20,6 @@ module Core.Collection
     , KeyedCollection(..)
     ) where
 
-import           Core.Internal.Base
 import           Core.Collection.Element
 import           Core.Collection.InnerFunctor
 import           Core.Collection.Keyed
@@ -28,5 +27,3 @@ import           Core.Collection.Foldable
 import           Core.Collection.Sequential
 import           Core.Collection.Indexed
 import           Core.Collection.Mutable
-import qualified Data.List
-import qualified Core.Array.Unboxed as UV
