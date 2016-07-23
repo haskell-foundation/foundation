@@ -10,6 +10,7 @@
 module Core.Primitive.Types
     ( PrimType(..)
     , primOffsetOfE
+    , primOffsetRecast
     , sizeRecast
     , offsetAsSize
     , sizeAsOffset
@@ -254,6 +255,15 @@ sizeRecast = doRecast Proxy Proxy
                 (Size szB)   = primSizeInBytes pb
                 (Size bytes) = sizeOfE szA sz
              in Size (bytes `Prelude.quot` szB)
+
+primOffsetRecast :: (PrimType a, PrimType b) => Offset a -> Offset b
+primOffsetRecast = doRecast Proxy Proxy
+  where doRecast :: (PrimType a, PrimType b) => Proxy a -> Proxy b -> Offset a -> Offset b
+        doRecast pa pb ofs =
+            let szA            = primSizeInBytes pa
+                (Size szB)     = primSizeInBytes pb
+                (Offset bytes) = offsetOfE szA ofs
+             in Offset (bytes `Prelude.quot` szB)
 
 primOffsetOfE :: PrimType a => Offset a -> Offset8
 primOffsetOfE = getOffset Proxy

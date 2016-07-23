@@ -75,6 +75,10 @@ instance Additive (Size ty) where
     azero = Size 0
     (+) (Size a) (Size b) = Size (a+b)
 
+instance Subtractive (Size ty) where
+    type Difference (Size ty) = Size ty
+    (Size a) - (Size b) = Size (a-b)
+
 -- | Size in element
 newtype Size ty = Size Int
     deriving (Show,Eq,Ord)
