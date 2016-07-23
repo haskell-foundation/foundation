@@ -9,6 +9,7 @@
 -- an API to rules them all, and in the darkness bind them.
 --
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Core.Collection.Sequential
     ( Sequential(..)
     ) where
