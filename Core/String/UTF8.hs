@@ -82,6 +82,7 @@ instance C.Sequential String where
     revSplitAt = revSplitAt
     splitOn = splitOn
     break = break
+    intersperse = intersperse
     span = span
     filter = filter
     reverse = reverse
@@ -403,6 +404,40 @@ break predicate s@(String ba) = loop 0
              in case predicate c of
                     True  -> splitIndex idx s
                     False -> loop idx'
+
+intersperse :: Char -> String -> String
+intersperse sep src
+    | srcLen <= 1 = src
+    | otherwise   = runST $ unsafeCopyFrom src dstBytes (go sep)
+  where
+    !srcBytes = size src
+    !srcLen   = length src
+    !dstBytes = srcBytes + ((srcLen - 1) * charToBytes (fromEnum sep))
+    go :: Char -> String -> Int -> Int -> MutableString s -> Int -> ST s (Int, Int)
+    go sep' src' srcI srcIdx dst dstIdx
+        | srcI == srcLen - 1 = do
+            nextDstIdx <- write dst dstIdx c
+            return (nextSrcIdx, nextDstIdx)
+        | otherwise          = do
+            nextDstIdx  <- write dst dstIdx c
+            nextDstIdx' <- write dst nextDstIdx sep'
+            return (nextSrcIdx, nextDstIdx')
+      where
+        (# c, nextSrcIdx #) = next src' srcIdx
+
+-- | Allocate a new @String@ with a fill function that has access to the characters of
+--   the source @String@.
+unsafeCopyFrom :: String -- ^ Source string
+               -> Int -- ^ Length of the destination string in bytes
+               -> (String -> Int -> Int -> MutableString s -> Int -> ST s (Int, Int))
+               -- ^ Function called for each character in the source String
+               -> ST s String -- ^ Returns the filled new string
+unsafeCopyFrom src dstBytes f = new dstBytes >>= fill 0 0 0 f >>= freeze
+  where srcLen = length src
+        fill srcI srcIdx dstIdx f' dst'
+            | srcI == srcLen = return dst'
+            | otherwise = do (nextSrcIdx, nextDstIdx) <- f' src srcI srcIdx dst' dstIdx
+                             fill (srcI + 1) nextSrcIdx nextDstIdx f' dst'
 
 span :: (Char -> Bool) -> String -> (String, String)
 span predicate s = break (not . predicate) s

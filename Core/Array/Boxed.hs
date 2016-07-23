@@ -23,7 +23,7 @@ import           Core.Primitive.Monad
 import           Core.Array.Common
 import qualified Core.Collection as C
 import qualified Prelude
-import           Prelude ((-), (+))
+import           Prelude ((-), (+), (*))
 
 -- | Array of a
 data Array a = Array (Array# a)
@@ -68,6 +68,7 @@ instance C.Sequential (Array ty) where
     revSplitAt = revSplitAt
     splitOn = splitOn
     break = break
+    intersperse = intersperse
     span = span
     reverse = reverse
     filter = filter
@@ -223,6 +224,20 @@ copyAtRO dst od src os n = loop od os
         loop d i
             | i == endIndex = return ()
             | otherwise     = unsafeWrite dst d (unsafeIndex src i) >> loop (d+1) (i+1)
+
+-- | Allocate a new array with a fill function that has access to the elements of
+--   the source array.
+unsafeCopyFrom :: Array ty -- ^ Source array
+               -> Int -- ^ Length of the destination array
+               -> (Array ty -> Int -> MArray ty s -> ST s ())
+               -- ^ Function called for each element in the source array
+               -> ST s (Array ty) -- ^ Returns the filled new array
+unsafeCopyFrom v' newLen f = new newLen >>= fill 0 f >>= unsafeFreeze
+  where len = length v'
+        fill i f' r'
+            | i == len  = return r'
+            | otherwise = do f' v' i r'
+                             fill (i + 1) f' r'
 
 -- | Create a new mutable array of size @n.
 --
@@ -421,6 +436,21 @@ break predicate v = findBreak 0
             if predicate (unsafeIndex v i)
                 then splitAt i v
                 else findBreak (i+1)
+
+intersperse :: ty -> Array ty -> Array ty
+intersperse sep v
+    | len <= 1  = v
+    | otherwise = runST $ unsafeCopyFrom v (len * 2 - 1) (go sep)
+  where len = length v
+        go :: ty -> Array ty -> Int -> MArray ty s -> ST s ()
+        go sep' oldV oldI newV
+            | oldI == len - 1 = unsafeWrite newV newI e
+            | otherwise       = do
+                unsafeWrite newV newI e
+                unsafeWrite newV (newI + 1) sep'
+          where
+            e = unsafeIndex oldV oldI
+            newI = oldI * 2
 
 span ::  (ty -> Bool) -> Array ty -> (Array ty, Array ty)
 span p = break (not . p)
