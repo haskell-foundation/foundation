@@ -102,6 +102,7 @@ Library
     CPP-options: -DARCH_IS_LITTLE_ENDIAN
   else
     CPP-options: -DARCH_IS_UNKNOWN_ENDIAN
+    C-sources: cbits/endian.c
   if os(windows)
     Build-depends:    Win32
   ghc-options:       -Wall -fwarn-tabs

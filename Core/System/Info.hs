@@ -7,6 +7,7 @@
 --
 
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE ForeignFunctionInterface #-}
 
 module Core.System.Info
     (
@@ -28,6 +29,13 @@ import qualified GHC.Conc
 import Core.String
 import Core.Internal.Base
 
+#ifdef ARCH_IS_UNKNOWN_ENDIAN
+import qualified Foreign.C.Types as C
+import System.IO.Unsafe (unsafePerformIO)
+
+foreign import ccall safe "is_little_endian" c_is_little_endian :: IO C.CInt
+
+#endif
 data OS
     = Windows
     | OSX
@@ -91,6 +99,11 @@ data Endianness
 endianness :: Endianness
 #ifdef ARCH_IS_LITTLE_ENDIAN
 endianness = LittleEndian
-#else
+#elif ARCH_IS_BIG_ENDIAN
 endianness = BigEndian
+#else
+-- ! ARCH_IS_UNKNOWN_ENDIAN
+endianness = if littleEndian then LittleEndian else BigEndian
+littleEndian :: Bool
+littleEndian = unsafePerformIO c_is_little_endian == 1
 #endif
