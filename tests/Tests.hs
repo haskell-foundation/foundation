@@ -227,6 +227,12 @@ testCollection proxy genElement =
     , testProperty "uncons" $ withElements $ \l -> fmap toListSecond (uncons (fromListP proxy l)) == uncons l
     , testProperty "splitOn" $ withElements2E $ \(l, ch) ->
          fmap toList (splitOn (== ch) (fromListP proxy l)) == splitOn (== ch) l
+    , testProperty "intersperse" $ withElements2E $ \(l, c) ->
+        toList (intersperse c (fromListP proxy l)) == intersperse c l
+    , testProperty "intercalate" $ withElements2E $ \(l, c) ->
+        let ls = Prelude.replicate 5 l
+            cs = Prelude.replicate 5 c
+        in toList (intercalate (fromListP proxy cs) (fromListP proxy <$> ls)) == intercalate cs ls
     , testProperty "sortBy" $ withElements $ \l ->
         (sortBy compare $ fromListP proxy l) == fromListP proxy (sortBy compare l)
     , testProperty "reverse" $ withElements $ \l ->

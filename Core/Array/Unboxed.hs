@@ -55,6 +55,7 @@ module Core.Array.Unboxed
     , splitOn
     , break
     , breakElem
+    , intersperse
     , span
     , cons
     , snoc
@@ -289,6 +290,21 @@ copyAtRO dst od src os n = loop od os
         loop d i
             | i == endIndex = return ()
             | otherwise     = unsafeWrite dst d (unsafeIndex src i) >> loop (d+1) (i+1)
+
+-- | Allocate a new array with a fill function that has access to the elements of
+--   the source array.
+unsafeCopyFrom :: PrimType ty
+               => UArray ty -- ^ Source array
+               -> Int -- ^ Length of the destination array
+               -> (UArray ty -> Int -> MUArray ty s -> ST s ())
+               -- ^ Function called for each element in the source array
+               -> ST s (UArray ty) -- ^ Returns the filled new array
+unsafeCopyFrom v' newLen f = new newLen >>= fill 0 f >>= unsafeFreeze
+  where len = length v'
+        fill i f' r'
+            | i == len  = return r'
+            | otherwise = do f' v' i r'
+                             fill (i + 1) f' r'
 
 -- | Freeze a mutable array into an array.
 --
@@ -661,6 +677,21 @@ breakElem xelem xv
             | otherwise        = findBreak (i+1)
     {-# INLINE go #-}
 {-# SPECIALIZE [2] breakElem :: Word8 -> ByteArray -> (ByteArray, ByteArray) #-}
+
+intersperse :: PrimType ty => ty -> UArray ty -> UArray ty
+intersperse sep v
+    | len <= 1  = v
+    | otherwise = runST $ unsafeCopyFrom v (len * 2 - 1) (go sep)
+  where len = length v
+        go :: PrimType ty => ty -> UArray ty -> Int -> MUArray ty s -> ST s ()
+        go sep' oldV oldI newV
+            | oldI == len - 1 = unsafeWrite newV newI e
+            | otherwise       = do
+                unsafeWrite newV newI e
+                unsafeWrite newV (newI + 1) sep'
+          where
+            e = unsafeIndex oldV oldI
+            newI = oldI * 2
 
 span :: PrimType ty => (ty -> Bool) -> UArray ty -> (UArray ty, UArray ty)
 span p = break (not . p)

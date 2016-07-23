@@ -8,6 +8,7 @@
 -- Different collections (list, vector, string, ..) unified under 1 API.
 -- an API to rules them all, and in the darkness bind them.
 --
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
 module Core.Collection.Sequential
     ( Sequential(..)
@@ -25,6 +26,7 @@ class (IsList c, Item c ~ Element c, Monoid c) => Sequential c where
               , ((revTake, revDrop) | revSplitAt)
               , splitOn
               , (break | span)
+              , intersperse
               , filter, reverse
               , uncons, unsnoc, snoc, cons
               , find, sortBy, length, singleton #-}
@@ -63,6 +65,19 @@ class (IsList c, Item c ~ Element c, Monoid c) => Sequential c where
     break :: (Element c -> Bool) -> c -> (c,c)
     break predicate = span (not . predicate)
 
+    -- | The 'intersperse' function takes an element and a list and
+    -- \`intersperses\' that element between the elements of the list.
+    -- For example,
+    --
+    -- > intersperse ',' "abcde" == "a,b,c,d,e"
+    intersperse :: Element c -> c -> c
+
+    -- | 'intercalate' @xs xss@ is equivalent to @('mconcat' ('intersperse' xs xss))@.
+    -- It inserts the list @xs@ in between the lists in @xss@ and concatenates the
+    -- result.
+    intercalate :: Monoid (Item c) => Element c -> c -> Element c
+    intercalate xs xss = mconcatCollection (intersperse xs xss)
+
     -- | Split a collection while the predicate return true
     span :: (Element c -> Bool) -> c -> (c,c)
     span predicate = break (not . predicate)
@@ -99,6 +114,10 @@ class (IsList c, Item c ~ Element c, Monoid c) => Sequential c where
     -- | Create a collection with a single element
     singleton :: Element c -> c
 
+-- Temporary utility functions
+mconcatCollection :: (Monoid (Item c), Sequential c) => c -> Element c
+mconcatCollection c = mconcat (toList c)
+
 instance Sequential [a] where
     null = Data.List.null
     take = Data.List.take
@@ -109,6 +128,7 @@ instance Sequential [a] where
     revSplitAt = ListExtra.revSplitAt
     splitOn = ListExtra.wordsWhen
     break = Data.List.break
+    intersperse = Data.List.intersperse
     span = Data.List.span
     filter = Data.List.filter
     reverse = Data.List.reverse
@@ -131,6 +151,7 @@ instance UV.PrimType ty => Sequential (UV.UArray ty) where
     revSplitAt = UV.revSplitAt
     splitOn = UV.splitOn
     break = UV.break
+    intersperse = UV.intersperse
     span = UV.span
     filter = UV.filter
     reverse = UV.reverse
