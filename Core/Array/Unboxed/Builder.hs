@@ -1,7 +1,10 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ViewPatterns #-}
 module Core.Array.Unboxed.Builder
-    where
+    ( ArrayBuilder
+    , appendTy
+    , build
+    ) where
 
 import Core.Internal.Base
 import Core.Internal.Types
@@ -11,9 +14,8 @@ import Core.Primitive.Types
 import Core.Array.Unboxed.Mutable
 import Core.Array.Unboxed
 import Core.Number
-import GHC.ST
 
-import Control.Monad
+import qualified Core.Collection as C
 
 -- | A Array being built chunks by chunks
 --
@@ -24,6 +26,7 @@ data ArrayBuildingState ty st = ArrayBuildingState
     { prevBuffers   :: [UArray ty]
     , currentBuffer :: MUArray ty st
     , currentOffset :: !(Offset ty)
+    , chunkSize     :: !(Size ty)
     }
 
 newtype ArrayBuilder ty st a = ArrayBuilder { runArrayBuilder :: State (ArrayBuildingState ty (PrimState st)) st a }
@@ -31,20 +34,29 @@ newtype ArrayBuilder ty st a = ArrayBuilder { runArrayBuilder :: State (ArrayBui
 
 appendTy :: (PrimMonad st, PrimType ty, Monad st) => ty -> ArrayBuilder ty st ()
 appendTy v = ArrayBuilder $ State $ \st -> do
-    let (Offset ofs) = currentOffset st
-    write (currentBuffer st) ofs v
-    return ((), st { currentOffset = currentOffset st + Offset 1 })
+    if offsetAsSize (currentOffset st) == chunkSize st
+        then do
+            newChunk <- new (chunkSize st)
+            cur <- unsafeFreeze (currentBuffer st)
+            return ((), st { prevBuffers   = cur : prevBuffers st
+                           , currentOffset = Offset 0
+                           , currentBuffer = newChunk
+                           })
+        else do
+            let (Offset ofs) = currentOffset st
+            write (currentBuffer st) ofs v
+            return ((), st { currentOffset = currentOffset st + Offset 1 })
 
 build :: (PrimMonad prim, PrimType ty)
       => Int                     -- ^ size of chunks (elements)
       -> ArrayBuilder ty prim () -- ^ ..
       -> prim (UArray ty)
-build (Size -> sizeChunks) origab = call origab (new sizeChunks)
+build sizeChunksI origab = call origab (Size sizeChunksI)
   where
     call :: (PrimType ty, PrimMonad prim)
-         => ArrayBuilder ty prim () -> prim (MUArray ty (PrimState prim)) -> prim (UArray ty)
-    call ab allocNew = do
-        m        <- allocNew
-        ((), st) <- runState (runArrayBuilder ab) (ArrayBuildingState [] m (Offset 0))
-        -- FIXME
-        unsafeFreezeShrink (currentBuffer st) (offsetAsSize $ currentOffset st)
+         => ArrayBuilder ty prim () -> Size ty -> prim (UArray ty)
+    call ab sizeChunks = do
+        m        <- new sizeChunks
+        ((), st) <- runState (runArrayBuilder ab) (ArrayBuildingState [] m (Offset 0) sizeChunks)
+        current <- unsafeFreezeShrink (currentBuffer st) (offsetAsSize $ currentOffset st)
+        return $ mconcat $ C.reverse (current:prevBuffers st)
