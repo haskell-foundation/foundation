@@ -24,6 +24,7 @@ module Core.Array.Unboxed
     -- , copyAddr
     , unsafeRecast
     , length
+    , lengthSize
     , freeze
     , unsafeFreeze
     , thaw
@@ -272,7 +273,7 @@ unsafeCopyFrom :: PrimType ty
                -> (UArray ty -> Int -> MUArray ty s -> ST s ())
                -- ^ Function called for each element in the source array
                -> ST s (UArray ty) -- ^ Returns the filled new array
-unsafeCopyFrom v' newLen f = new newLen >>= fill 0 f >>= unsafeFreeze
+unsafeCopyFrom v' newLen f = new (Size newLen) >>= fill 0 f >>= unsafeFreeze
   where len = length v'
         fill i f' r'
             | i == len  = return r'
@@ -517,7 +518,7 @@ unsafeRecast (UVecBA start len pinStatus b) = UVecBA (primOffsetRecast start) (s
 unsafeRecast (UVecAddr start len a) = UVecAddr (primOffsetRecast start) (sizeRecast len) (castFinalPtr a)
 
 null :: UArray ty -> Bool
-null (UVecBA _ sz _ a) = sz == Size 0
+null (UVecBA _ sz _ _) = sz == Size 0
 null (UVecAddr _ l _)  = l == Size 0
 
 take :: PrimType ty => Int -> UArray ty -> UArray ty
@@ -526,8 +527,8 @@ take nbElems v
     | n == len     = v
     | otherwise    =
         case v of
-            UVecBA start _ pinned ba -> UVecBA start n pinned ba
-            UVecAddr start _ fptr    -> UVecAddr start n fptr
+            UVecBA start _ pinst ba -> UVecBA start n pinst ba
+            UVecAddr start _ fptr   -> UVecAddr start n fptr
   where
     n = min (Size nbElems) len
     len = lengthSize v
