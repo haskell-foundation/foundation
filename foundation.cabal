@@ -59,6 +59,7 @@ Library
   Other-modules:     Core.String.Internal
                      Core.String.UTF8
                      Core.String.UTF8Table
+                     Core.String.ModifiedUTF8
                      Core.Tuple
                      Core.Collection.List
                      Core.Collection.Element
