@@ -31,6 +31,7 @@ module Core.VFS.FilePath
       -- ** unsafe
     , unsafeFilePath
     , unsafeFileName
+    , extension
     ) where
 
 import Core
@@ -40,7 +41,7 @@ import Core.String (Encoding(..), ValidationFailure, toBytes, fromBytes)
 import Core.VFS.Path(Path(..))
 
 import qualified Data.List
-
+import Core.Partial
 -- ------------------------------------------------------------------------- --
 --                           System related helpers                          --
 -- ------------------------------------------------------------------------- --
@@ -148,7 +149,6 @@ instance IsString FilePath where
 --
 data FileName = FileName ByteArray
   deriving (Eq)
-
 -- | errors related to FileName manipulation
 data FileName_Invalid
     = ContainsNullByte
@@ -248,3 +248,9 @@ unsafeFilePath = FilePath
 -- this is unsafe and is mainly needed for testing purpose
 unsafeFileName :: ByteArray -> FileName
 unsafeFileName = FileName
+
+extension :: FileName -> Maybe FileName
+extension (FileName fn) = case splitOn (\c -> c == 0x2E) fn of
+                            [] -> Nothing
+                            [_] -> Nothing
+                            xs -> Just $ FileName $ fromPartial $ head $ reverse xs 
