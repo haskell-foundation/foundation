@@ -52,6 +52,7 @@ module Core.Internal.Base
     , Control.Exception.Exception
     , Control.Exception.throw
     , Control.Exception.throwIO
+    , internalError
     ) where
 
 import qualified Prelude
@@ -65,3 +66,7 @@ import qualified Data.Int
 import qualified Core.Internal.IsList
 import qualified GHC.Exts
 import qualified GHC.Generics
+
+-- | Only to use internally for internal error cases
+internalError :: [Prelude.Char] -> a
+internalError s = Prelude.error ("Internal Error: the impossible happened: " Prelude.++ s)
