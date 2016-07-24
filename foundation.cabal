@@ -54,6 +54,7 @@ Library
                      Core.Collection
                      Core.Primitive
                      Core.System.Info
+                     Core.Strict
                      -- Core.View
   Other-modules:     Core.String.Internal
                      Core.String.UTF8
