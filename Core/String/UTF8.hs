@@ -595,7 +595,7 @@ unsnoc s
         let (s1,s2) = revSplitAt 1 s
          in case toList s1 of -- TODO use index instead of toList
                 [c] -> Just (s2, c)
-                _   -> error "impossible"
+                _   -> internalError "unsnoc"
 
 uncons :: String -> Maybe (Char, String)
 uncons s
@@ -604,7 +604,7 @@ uncons s
         let (s1,s2) = splitAt 1 s
          in case toList s1 of -- TODO use index instead of ToList
                 [c] -> Just (c, s2)
-                _   -> error "impossible"
+                _   -> internalError "uncons"
 
 find :: (Char -> Bool) -> String -> Maybe Char
 find predicate s = loop (Offset 0)
