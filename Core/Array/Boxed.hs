@@ -469,20 +469,24 @@ mapIndex f a = create (length a) (\i -> f i $ unsafeIndex a i)
 -}
 
 cons ::  ty -> Array ty -> Array ty
-cons e vec = runST $ do
-    mv <- new (len + 1)
-    unsafeWrite mv 0 e
-    unsafeCopyAtRO mv 1 vec 0 len
-    unsafeFreeze mv
+cons e vec
+    | len == 0  = C.singleton e
+    | otherwise = runST $ do
+        mv <- new (len + 1)
+        unsafeWrite mv 0 e
+        unsafeCopyAtRO mv 1 vec 0 len
+        unsafeFreeze mv
   where
     !len = length vec
 
 snoc ::  Array ty -> ty -> Array ty
-snoc vec e = runST $ do
-    mv <- new (len + 1)
-    unsafeCopyAtRO mv 0 vec 0 len
-    unsafeWrite mv len e
-    unsafeFreeze mv
+snoc vec e
+    | len == 0  = C.singleton e
+    | otherwise = runST $ do
+        mv <- new (len + 1)
+        unsafeCopyAtRO mv 0 vec 0 len
+        unsafeWrite mv len e
+        unsafeFreeze mv
   where
     !len = length vec
 
