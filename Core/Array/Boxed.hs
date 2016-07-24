@@ -108,7 +108,7 @@ instance C.IndexedCollection (Array ty) where
             | otherwise =
                 if predicate (unsafeIndex c i) then Just i else Nothing
 
-instance C.Zipable (Array ty) where
+instance C.Zippable (Array ty) where
 
 -- | return the numbers of elements in a mutable array
 mutableLength :: MArray ty st -> Int

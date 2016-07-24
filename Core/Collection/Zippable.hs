@@ -1,12 +1,12 @@
-module Core.Collection.Zipable
-    ( Zipable(..)
+module Core.Collection.Zippable
+    ( Zippable(..)
     ) where
 
 import           Core.Collection.Element
 import           Core.Collection.Sequential
 import           Core.Internal.Base
 
-class Sequential col => Zipable col where
+class Sequential col => Zippable col where
 
   zip :: (Sequential a, Sequential b, Element col ~ (Element a, Element b))
       => a -> b -> col
@@ -21,4 +21,4 @@ class Sequential col => Zipable col where
               Just (hb, tbs) = uncons b
           in f ha hb `cons` zipWith f tas tbs
 
-instance Zipable [c] where
+instance Zippable [c] where

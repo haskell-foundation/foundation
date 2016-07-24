@@ -18,7 +18,7 @@ module Core.Collection
     , MutableCollection(..)
     , IndexedCollection(..)
     , KeyedCollection(..)
-    , Zipable(..)
+    , Zippable(..)
     ) where
 
 import           Core.Collection.Element
@@ -28,4 +28,4 @@ import           Core.Collection.Foldable
 import           Core.Collection.Sequential
 import           Core.Collection.Indexed
 import           Core.Collection.Mutable
-import           Core.Collection.Zipable
+import           Core.Collection.Zippable
