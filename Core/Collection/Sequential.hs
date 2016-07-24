@@ -10,7 +10,7 @@
 --
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ConstrainedClassMethods #-}
 module Core.Collection.Sequential
     ( Sequential(..)
     ) where
