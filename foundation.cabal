@@ -81,6 +81,7 @@ Library
                      Core.Primitive.FinalPtr
                      Core.Array.Common
                      Core.Array.Unboxed
+                     Core.Array.Unboxed.Builder
                      Core.Array.Unboxed.Mutable
                      Core.Array.Unboxed.ByteArray
                      Core.Array.Boxed
