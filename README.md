@@ -1,7 +1,7 @@
 Foundation
 ==========
 
-[![Build Status](https://travis-ci.org/vincenthz/hs-foundation.png?branch=master)](https://travis-ci.org/vincenthz/hs-foundation)
+[![Build Status](https://travis-ci.org/haskell-foundation/foundation.png?branch=master)](https://travis-ci.org/haskell-foundation/foundation)
 [![BSD](http://b.repl.ca/v1/license-BSD-blue.png)](http://en.wikipedia.org/wiki/BSD_licenses)
 [![Haskell](http://b.repl.ca/v1/language-haskell-lightgrey.png)](http://haskell.org)
 
