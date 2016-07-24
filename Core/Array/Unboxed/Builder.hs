@@ -1,5 +1,4 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
---{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ViewPatterns #-}
 module Core.Array.Unboxed.Builder
     where
