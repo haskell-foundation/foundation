@@ -18,15 +18,15 @@ import Core.Internal.Base
 newtype State s m a = State { runState :: s -> m (a, s) }
 
 instance Monad m => Functor (State s m) where
-    fmap f fa = State $ \st -> runState fa st >>= \(a, s2) -> pure (f a, s2)
+    fmap f fa = State $ \st -> runState fa st >>= \(a, s2) -> return (f a, s2)
 instance Monad m => Applicative (State s m) where
-    pure a = State $ \st -> pure (a,st)
+    pure a = State $ \st -> return (a,st)
     fab <*> fa = State $ \s1 -> do
         (a,s2)  <- runState fa s1
         (ab,s3) <- runState fab s2
         return (ab a, s3)
 instance Monad m => Monad (State r m) where
-    return = pure
+    return a = State $ \st -> return (a,st)
     ma >>= mb = State $ \s1 -> do
         (a,s2) <- runState ma s1
         runState (mb a) s2
