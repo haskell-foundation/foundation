@@ -52,7 +52,6 @@ Library
                      Core.VFS.URI
                      Core.Foreign
                      Core.Collection
-                     Core.Chunks
                      Core.Primitive
                      Core.System.Info
                      -- Core.View
