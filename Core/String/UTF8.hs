@@ -658,8 +658,8 @@ reverse s@(String ba) = runST $ do
             loop ms (sidx `offsetPlusE` nb) didx'
 
 -- | String encoding
-data Encoding = UTF8
-    -- UTF8_Lenient
+data Encoding =
+      UTF8
     deriving (Show,Eq)
 
 {-
