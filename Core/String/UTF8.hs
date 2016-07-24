@@ -29,6 +29,7 @@ module Core.String.UTF8
     , fromBytes
     , fromChunkBytes
     , fromBytesUnsafe
+    , fromBytesLenient
     , toBytes
     , mutableValidate
     , ValidationFailure(..)
@@ -683,6 +684,29 @@ fromBytes UTF8 bytes
     toErr MissingByte         = Nothing
     toErr InvalidHeader       = Just InvalidHeader
     toErr InvalidContinuation = Just InvalidContinuation
+
+fromBytesLenient :: ByteArray -> (String, ByteArray)
+fromBytesLenient bytes
+    | C.null bytes = (mempty, mempty)
+    | otherwise    =
+        case validate bytes (Offset 0) (Size $ C.length bytes) of
+            (_, Nothing)                   -> (fromBytesUnsafe bytes, mempty)
+            (Offset pos, Just MissingByte) ->
+                let (b1,b2) = C.splitAt pos bytes
+                 in (fromBytesUnsafe b1, b2)
+            (Offset pos, Just InvalidHeader) ->
+                let (b1,b2) = C.splitAt pos bytes
+                    (_,b3)  = C.splitAt 1 b2
+                    (s3, r) = fromBytesLenient b3
+                 in (mconcat [fromBytesUnsafe b1,replacement, s3], r)
+            (Offset pos, Just InvalidContinuation) ->
+                let (b1,b2) = C.splitAt pos bytes
+                    (_,b3)  = C.splitAt 1 b2
+                    (s3, r) = fromBytesLenient b3
+                 in (mconcat [fromBytesUnsafe b1,replacement, s3], r)
+  where
+    replacement :: String
+    !replacement = fromBytesUnsafe $ fromList [0xfe,0xfd]
 
 fromChunkBytes :: [ByteArray] -> [String]
 fromChunkBytes l = loop l

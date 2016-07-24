@@ -24,6 +24,7 @@ module Core.String
     ( String
     , Encoding(..)
     , fromBytes
+    , fromBytesLenient
     , toBytes
     , ValidationFailure(..)
     ) where
