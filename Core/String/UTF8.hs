@@ -48,6 +48,7 @@ import           Core.Primitive.Types
 import           Core.Primitive.Monad
 import           Core.String.UTF8Table
 import           Core.Array.Unboxed (ByteArray)
+import           Core.Array.Unboxed.Builder
 import           Core.Array.Unboxed.ByteArray (MutableByteArray)
 import qualified Core.Array.Unboxed as Vec
 import qualified Core.Array.Unboxed.Mutable as MVec
@@ -705,8 +706,9 @@ fromBytesLenient bytes
                     (s3, r) = fromBytesLenient b3
                  in (mconcat [fromBytesUnsafe b1,replacement, s3], r)
   where
+    -- This is the replacement character U+FFFD used for any invalid header or continuation
     replacement :: String
-    !replacement = fromBytesUnsafe $ fromList [0xfe,0xfd]
+    !replacement = fromBytesUnsafe $ fromList [0xef,0xbf,0xbd]
 
 fromChunkBytes :: [ByteArray] -> [String]
 fromChunkBytes l = loop l
