@@ -74,6 +74,7 @@ Library
                      Core.Internal.Proxy
                      Core.Internal.Types
                      Core.Internal.PrimTypes
+                     Core.Internal.MonadTrans
                      Core.Primitive.Types
                      Core.Primitive.Monad
                      Core.Primitive.Utils
