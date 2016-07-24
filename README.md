@@ -10,11 +10,11 @@ Documentation: [foundation on hackage](http://hackage.haskell.org/package/founda
 Goals
 =====
 
-* provide a base like sets of modules that provide a consistent set of features and bugfixes across multiple versions of GHC (unlike base).
+* provide a base like set of modules that provide a consistent set of features and bugfixes across multiple versions of GHC (unlike base).
 * provide a better and more efficient prelude than base's prelude.
 * be self-sufficient: no external dependencies apart from base (or ghc packages).
 * provide better data-types: packed unicode string by default, arrays.
-* Better numerical classes that better represent mathematical thing (No more all-in-one Num).
+* Better numerical classes that better represent mathematical things (No more all-in-one Num).
 
 How to use
 ==========
@@ -47,7 +47,7 @@ Any contributions is welcome, but a short list includes:
 * Fix an issue
 * Improve the documentation
 * Make tutorial on how to use foundation
-* Make your project use foundation instead of base, report the missing coverage (IO, types, etc.), or what is functionality is missing to make a succesful transition
+* Make your project use foundation instead of base, report the missing coverage (IO, types, etc.), or what functionality is missing to make a succesful transition
 
 
 Design
@@ -57,7 +57,7 @@ Foundation started on the simple idea of trying to put everything I need in one
 simple and consistent package. The amazing haskell ecosystem is extremely
 fragmented and maintained by different people with different goals, free time,
 and style. The overall scare of not trying to change anything relatively
-central (base, bytestring, text, vector ..) for a promise of stability has push
+central (base, bytestring, text, vector ..) for a promise of stability has pushed
 many people to work on their own thing, leading to unnecessary work duplication
 and further fragmentation.
 
