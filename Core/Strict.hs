@@ -9,16 +9,12 @@
 --
 
 module Core.Strict
-    ( ($!)
-    , strict2
+    ( strict2
     , strict3
     , strict4
     , strict5
     , strict6
     ) where
-
-($!) :: (a -> b) -> a -> b
-($!) f !a = f a
 
 strict2 :: (a -> b -> c) -> a -> b -> c
 strict2 f !a !b = f a b
