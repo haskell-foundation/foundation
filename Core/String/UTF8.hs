@@ -419,10 +419,14 @@ intersperse sep src
   where
     !srcBytes = size src
     !srcLen   = length src
-    !dstBytes = srcBytes + ((srcLen - 1) * charToBytes (fromEnum sep))
-    go :: Char -> String -> Int -> Int -> MutableString s -> Int -> ST s (Int, Int)
+    dstBytes = srcBytes + ((srcLen - 1) `scale` charToBytes (fromEnum sep))
+
+    lastSrc :: Offset Char
+    lastSrc = Offset 0 `offsetPlusE` Size srcLen
+
+    go :: Char -> String -> Offset Char -> Offset8 -> MutableString s -> Offset8 -> ST s (Offset8, Offset8)
     go sep' src' srcI srcIdx dst dstIdx
-        | srcI == srcLen - 1 = do
+        | srcI == lastSrc = do
             nextDstIdx <- write dst dstIdx c
             return (nextSrcIdx, nextDstIdx)
         | otherwise          = do
@@ -435,16 +439,18 @@ intersperse sep src
 -- | Allocate a new @String@ with a fill function that has access to the characters of
 --   the source @String@.
 unsafeCopyFrom :: String -- ^ Source string
-               -> Int -- ^ Length of the destination string in bytes
-               -> (String -> Int -> Int -> MutableString s -> Int -> ST s (Int, Int))
+               -> Size8  -- ^ Length of the destination string in bytes
+               -> (String -> Offset Char -> Offset8 -> MutableString s -> Offset8 -> ST s (Offset8, Offset8))
                -- ^ Function called for each character in the source String
                -> ST s String -- ^ Returns the filled new string
-unsafeCopyFrom src dstBytes f = new dstBytes >>= fill 0 0 0 f >>= freeze
-  where srcLen = length src
-        fill srcI srcIdx dstIdx f' dst'
-            | srcI == srcLen = return dst'
-            | otherwise = do (nextSrcIdx, nextDstIdx) <- f' src srcI srcIdx dst' dstIdx
-                             fill (srcI + 1) nextSrcIdx nextDstIdx f' dst'
+unsafeCopyFrom src dstBytes f = new dstBytes >>= fill (Offset 0) (Offset 0) (Offset 0) f >>= freeze
+  where
+    srcLen = length src
+    end = Offset 0 `offsetPlusE` Size srcLen
+    fill srcI srcIdx dstIdx f' dst'
+        | srcI == end = return dst'
+        | otherwise = do (nextSrcIdx, nextDstIdx) <- f' src srcI srcIdx dst' dstIdx
+                         fill (srcI + Offset 1) nextSrcIdx nextDstIdx f' dst'
 
 span :: (Char -> Bool) -> String -> (String, String)
 span predicate s = break (not . predicate) s
