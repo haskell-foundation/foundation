@@ -48,7 +48,7 @@ closeFile :: Handle -> IO ()
 closeFile = S.hClose
 
 -- | Read some data from the handle
-hGet :: Handle -> Int -> IO ByteArray
+hGet :: Handle -> Int -> IO (UArray Word8)
 hGet handle n = do
     mv <- V.newPinned (Size n)
     r <- V.withMutablePtr mv $ \ptr -> loop n ptr
@@ -77,7 +77,7 @@ withFile :: FilePath -> IOMode -> (Handle -> IO r) -> IO r
 withFile fp mode act = bracket (openFile fp mode) closeFile act
 
 -- | Read a binary file and return the whole content in one contiguous buffer.
-readFile :: FilePath -> IO ByteArray
+readFile :: FilePath -> IO (UArray Word8)
 readFile fp = withFile fp S.ReadMode $ \h -> do
     -- TODO filesize is an integer (whyyy ?!), and transforming to Int using
     -- fromIntegral is probably the wrong thing to do here..

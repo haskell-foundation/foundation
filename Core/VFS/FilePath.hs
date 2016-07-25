@@ -146,7 +146,7 @@ instance IsString FilePath where
 --   * "/file"
 --   * "file/path"
 --
-data FileName = FileName ByteArray
+data FileName = FileName (UArray Word8)
   deriving (Eq)
 
 -- | errors related to FileName manipulation
@@ -157,7 +157,7 @@ data FileName_Invalid
         -- ^ this means a path separator was found in the FileName
     | EncodingError ValidationFailure
         -- ^ encoding error
-    | UnknownTrailingBytes ByteArray
+    | UnknownTrailingBytes (UArray Word8)
         -- ^ some unknown trainling bytes found
   deriving (Typeable, Show)
 instance Exception FileName_Invalid
@@ -246,5 +246,5 @@ unsafeFilePath = FilePath
 -- | build a file name from a given ByteArray
 --
 -- this is unsafe and is mainly needed for testing purpose
-unsafeFileName :: ByteArray -> FileName
+unsafeFileName :: UArray Word8 -> FileName
 unsafeFileName = FileName

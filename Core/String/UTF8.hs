@@ -46,7 +46,7 @@ import qualified Core.Collection as C
 import           Core.Primitive.Types
 import           Core.Primitive.Monad
 import           Core.String.UTF8Table
-import           Core.Array.Unboxed (ByteArray)
+import           Core.Array.Unboxed (UArray)
 import           Core.Array.Unboxed.ByteArray (MutableByteArray)
 import qualified Core.Array.Unboxed as Vec
 import qualified Core.Array.Unboxed.Mutable as MVec
@@ -55,7 +55,7 @@ import           Core.Number
 import qualified Data.List -- temporary
 
 -- | Opaque packed array of characters in the UTF8 encoding
-newtype String = String ByteArray
+newtype String = String (UArray Word8)
     deriving (Typeable, Monoid, Eq, Ord)
 
 newtype MutableString st = MutableString (MutableByteArray st)
@@ -108,7 +108,7 @@ instance Exception ValidationFailure
 --
 -- On success Nothing is returned
 -- On Failure the position along with the failure reason
-validate :: ByteArray
+validate :: UArray Word8
          -> Offset8
          -> Size Word8
          -> (Offset8, Maybe ValidationFailure)
@@ -667,14 +667,14 @@ data Encoding =
 
 {-
 -- | Convert a Byte Array to a string and check UTF8 validity
-fromBytes :: Encoding -> ByteArray -> Maybe String
+fromBytes :: Encoding -> UArray Word8 -> Maybe String
 fromBytes UTF8 bytes =
     case validate bytes 0 (C.length bytes) of
         (_, Nothing) -> Just $ fromBytesUnsafe bytes
         (_, Just _)  -> Nothing
         -}
 
-fromBytes :: Encoding -> ByteArray -> (String, Maybe ValidationFailure, ByteArray)
+fromBytes :: Encoding -> UArray Word8 -> (String, Maybe ValidationFailure, UArray Word8)
 fromBytes UTF8 bytes
     | C.null bytes = (mempty, Nothing, mempty)
     | otherwise    =
@@ -688,7 +688,7 @@ fromBytes UTF8 bytes
     toErr InvalidHeader       = Just InvalidHeader
     toErr InvalidContinuation = Just InvalidContinuation
 
-fromBytesLenient :: ByteArray -> (String, ByteArray)
+fromBytesLenient :: UArray Word8 -> (String, UArray Word8)
 fromBytesLenient bytes
     | C.null bytes = (mempty, mempty)
     | otherwise    =
@@ -712,7 +712,7 @@ fromBytesLenient bytes
     replacement :: String
     !replacement = fromBytesUnsafe $ fromList [0xef,0xbf,0xbd]
 
-fromChunkBytes :: [ByteArray] -> [String]
+fromChunkBytes :: [UArray Word8] -> [String]
 fromChunkBytes l = loop l
   where
     loop []         = []
@@ -730,9 +730,9 @@ fromChunkBytes l = loop l
     doErr err = error ("fromChunkBytes: " <> show err)
 
 -- | Convert a Byte Array directly to a string without checking for UTF8 validity
-fromBytesUnsafe :: ByteArray -> String
+fromBytesUnsafe :: UArray Word8 -> String
 fromBytesUnsafe = String
 
 -- | Convert a String to a bytearray
-toBytes :: Encoding -> String -> ByteArray
+toBytes :: Encoding -> String -> UArray Word8
 toBytes UTF8 (String ba) = ba

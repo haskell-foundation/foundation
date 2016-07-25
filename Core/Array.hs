@@ -17,8 +17,6 @@ module Core.Array
     , UArray
     , MUArray
     , PrimType
-    , ByteArray
-    , MutableByteArray
     -- exceptions
     , OutOfBound
     ) where
@@ -27,4 +25,3 @@ import           Core.Array.Common
 import           Core.Array.Boxed
 import           Core.Array.Unboxed
 import           Core.Array.Unboxed.Mutable
-import           Core.Array.Unboxed.ByteArray

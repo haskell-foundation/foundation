@@ -15,7 +15,6 @@
 {-# LANGUAGE ViewPatterns #-}
 module Core.Array.Unboxed
     ( UArray(..)
-    , ByteArray
     , PrimType(..)
     -- * methods
     , copy
@@ -105,9 +104,6 @@ data UArray ty =
     | UVecAddr {-# UNPACK #-} !(Offset ty)
                {-# UNPACK #-} !(Size ty)
                               !(FinalPtr ty)
-
--- | Byte Array alias
-type ByteArray = UArray Word8
 
 instance (PrimType ty, Show ty) => Show (UArray ty) where
     show v = show (toList v)
@@ -643,7 +639,7 @@ break xpredicate xv
         {-# INLINE findBreak #-}
     {-# INLINE go #-}
 {-# NOINLINE [2] break #-}
-{-# SPECIALIZE [2] break :: (Word8 -> Bool) -> ByteArray -> (ByteArray, ByteArray) #-}
+{-# SPECIALIZE [2] break :: (Word8 -> Bool) -> UArray Word8 -> (UArray Word8, UArray Word8) #-}
 
 {-# RULES "break (== ty)" [3] forall (x :: forall ty . PrimType ty => ty) . break (== x) = breakElem x #-}
 {-# RULES "break (ty ==)" [3] forall (x :: forall ty . PrimType ty => ty) . break (x ==) = breakElem x #-}
@@ -663,7 +659,7 @@ breakElem xelem xv
             | getIdx i == elem = splitAt e v
             | otherwise        = findBreak (i + Offset 1)
     {-# INLINE go #-}
-{-# SPECIALIZE [2] breakElem :: Word8 -> ByteArray -> (ByteArray, ByteArray) #-}
+{-# SPECIALIZE [2] breakElem :: Word8 -> UArray Word8 -> (UArray Word8, UArray Word8) #-}
 
 intersperse :: PrimType ty => ty -> UArray ty -> UArray ty
 intersperse sep v
