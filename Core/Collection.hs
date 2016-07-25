@@ -12,6 +12,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Core.Collection
     ( Element
+    , Iterable(..)
     , InnerFunctor(..)
     , Foldable(..)
     , Sequential(..)
@@ -22,6 +23,7 @@ module Core.Collection
     ) where
 
 import           Core.Collection.Element
+import           Core.Collection.Iterable
 import           Core.Collection.InnerFunctor
 import           Core.Collection.Keyed
 import           Core.Collection.Foldable

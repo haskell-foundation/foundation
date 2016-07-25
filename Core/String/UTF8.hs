@@ -100,6 +100,31 @@ instance C.Sequential String where
     length = length
     singleton = fromList . (:[])
 
+instance C.Iterable String where
+    data State String = S String Offset8
+
+    initialState s = S s (Offset 0)
+
+    hasNext (S s (Offset idx)) = idx >= 0 && idx < len
+      where (Size len) = size s
+
+    next (S s (Offset idx))
+        | idx >= 0 && idx < len =
+          let (# c, nextIdx #) = next s (Offset idx)
+          in Just (S s nextIdx, c)
+        | otherwise             = Nothing
+      where (Size len) = size s
+
+instance C.Zippable String where
+  zipWith f a b = sFromList $ go [] f (C.initialState a) (C.initialState b)
+    where
+      go acc f' sa sb
+          | C.hasNext sa && C.hasNext sb = do
+              let Just (nextSa, elemA) = C.next sa
+                  Just (nextSb, elemB) = C.next sb
+              go (f' elemA elemB : acc) f' nextSa nextSb
+          | otherwise                    = acc
+
 data ValidationFailure = InvalidHeader
                        | InvalidContinuation
                        | MissingByte
