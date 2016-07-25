@@ -57,6 +57,7 @@ Library
                      -- Core.View
   Other-modules:     Core.String.Internal
                      Core.String.UTF8
+                     Core.String.Encoding.Encoding
                      Core.String.Encoding.UTF16
                      Core.String.Encoding.ASCII7
                      Core.String.Encoding.ISO_8859_1

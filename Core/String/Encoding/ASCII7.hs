@@ -9,8 +9,8 @@
 {-# LANGUAGE MagicHash #-}
 
 module Core.String.Encoding.ASCII7
-    ( next
-    , write
+    ( ASCII7(..)
+    , ASCII7_Invalid(..)
     ) where
 
 import Core.Internal.Base
@@ -23,6 +23,8 @@ import GHC.Prim
 import GHC.Word
 import GHC.Types
 import Core.Array.Unboxed.Builder
+
+import Core.String.Encoding.Encoding
 
 -- | validate a given byte is within ASCII characters encoring size
 --
@@ -44,17 +46,25 @@ data ASCII7_Invalid
   deriving (Typeable, Show, Eq)
 instance Exception ASCII7_Invalid
 
+data ASCII7 = ASCII7
+
+instance Encoding ASCII7 where
+    type Unit ASCII7 = Word8
+    type Error ASCII7 = ASCII7_Invalid
+    next _ = next_
+    write _ = write_
+
 -- | consume an Ascii7 char and return the Unicode point and the position
 -- of the next possible Ascii7 char
 --
-next :: (Offset Word8 -> Word8)
+next_ :: (Offset Word8 -> Word8)
           -- ^ method to access a given byte
-     -> Offset Word8
+      -> Offset Word8
           -- ^ index of the byte
-     -> Either ASCII7_Invalid (Char, Offset Word8)
+      -> Either ASCII7_Invalid (Char, Offset Word8)
           -- ^ either successfully validated the ASCII char and returned the
           -- next index or fail with an error
-next getter off
+next_ getter off
     | isAscii w8 = Right (toChar w, off + aone)
     | otherwise  = Left $ ByteOutOfBound w8
   where
@@ -66,12 +76,12 @@ next getter off
 --
 -- > build 64 $ sequence_ write "this is a simple list of char..."
 --
-write :: (PrimMonad st, Monad st)
-      => Char
-          -- ^ expecting it to be a valid Ascii character.
-          -- otherwise this function will throw an exception
-      -> ArrayBuilder Word8 st ()
-write c
+write_ :: (PrimMonad st, Monad st)
+       => Char
+           -- ^ expecting it to be a valid Ascii character.
+           -- otherwise this function will throw an exception
+       -> ArrayBuilder Word8 st ()
+write_ c
     | c < toEnum 0x80 = appendTy $ w8 c
     | otherwise       = throw $ CharNotAscii c
   where
