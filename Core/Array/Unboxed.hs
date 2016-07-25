@@ -529,40 +529,40 @@ null (UVecAddr _ l _)  = l == Size 0
 take :: PrimType ty => Int -> UArray ty -> UArray ty
 take nbElems v
     | nbElems <= 0 = empty
-    | n == len     = v
+    | n == vlen    = v
     | otherwise    =
         case v of
             UVecBA start _ pinst ba -> UVecBA start n pinst ba
             UVecAddr start _ fptr   -> UVecAddr start n fptr
   where
-    n = min (Size nbElems) len
-    len = lengthSize v
+    n = min (Size nbElems) vlen
+    vlen = lengthSize v
 
 drop :: PrimType ty => Int -> UArray ty -> UArray ty
 drop nbElems v
     | nbElems <= 0 = v
-    | n == len     = empty
+    | n == vlen    = empty
     | otherwise    =
         case v of
-            UVecBA start len pinned ba -> UVecBA (start `offsetPlusE` n) (len - n) pinned ba
-            UVecAddr start len fptr    -> UVecAddr (start `offsetPlusE` n) (len - n) fptr
+            UVecBA start len pinst ba -> UVecBA (start `offsetPlusE` n) (len - n) pinst ba
+            UVecAddr start len fptr   -> UVecAddr (start `offsetPlusE` n) (len - n) fptr
   where
-    n = min (Size nbElems) len
-    len = lengthSize v
+    n = min (Size nbElems) vlen
+    vlen = lengthSize v
 
 splitAt :: PrimType ty => Int -> UArray ty -> (UArray ty, UArray ty)
 splitAt nbElems v
     | nbElems <= 0   = (empty, v)
-    | n == Size len = (v, empty)
+    | n == Size vlen = (v, empty)
     | otherwise      =
         case v of
-            UVecBA start len pinned ba -> ( UVecBA start                   n         pinned ba
-                                          , UVecBA (start `offsetPlusE` n) (len - n) pinned ba)
+            UVecBA start len pinst ba -> ( UVecBA start                   n         pinst ba
+                                         , UVecBA (start `offsetPlusE` n) (len - n) pinst ba)
             UVecAddr start len fptr    -> ( UVecAddr start                   n         fptr
                                           , UVecAddr (start `offsetPlusE` n) (len - n) fptr)
   where
-    n@(Size nOfs) = Size $ min nbElems (length v)
-    len = length v
+    n    = Size $ min nbElems vlen
+    vlen = length v
 
 revTake :: PrimType ty => Int -> UArray ty -> UArray ty
 revTake nbElems v = drop (length v - nbElems) v
@@ -598,8 +598,8 @@ sub vec startIdx expectedEndIdx
     | startIdx >= endIdx = empty
     | otherwise          =
         case vec of
-            UVecBA start _ pinned ba -> UVecBA (start + Offset startIdx) newLen pinned ba
-            UVecAddr start _ fptr    -> UVecAddr (start + Offset startIdx) newLen fptr
+            UVecBA start _ pinst ba -> UVecBA (start + Offset startIdx) newLen pinst ba
+            UVecAddr start _ fptr   -> UVecAddr (start + Offset startIdx) newLen fptr
   where
     newLen = Offset endIdx - Offset startIdx
     endIdx = min expectedEndIdx len
