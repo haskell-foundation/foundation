@@ -395,7 +395,7 @@ tests =
             ]
         ]
     , testGroup "ModifiedUTF8"
-        [ testCase "基地系列" $ testCaseModifiedUTF8 ("基地系列", 1, 0x9F)
+        [ testCase "The foundation Serie" $ testCaseModifiedUTF8 ("\x57fa\x5730\x7CFB\x5217", 1, 0x9F)
         , testCase "has null byte" $ testCaseModifiedUTF8 ("let's\0 do \0 it", 5, 0)
         ]
     ]

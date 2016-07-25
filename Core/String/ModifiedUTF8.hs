@@ -19,21 +19,19 @@ module Core.String.ModifiedUTF8
     ( fromModified
     ) where
 
-import           GHC.ST
-import           GHC.Word
+import           GHC.ST (runST, ST)
+import           GHC.Prim (Addr#)
+import           GHC.Ptr (Ptr(..))
+import qualified Control.Monad (mapM)
+
 import           Core.Internal.Base
 import           Core.Internal.Types
-import           Core.Array.Unboxed (ByteArray)
 import qualified Core.Array.Unboxed as Vec
+import           Core.Array.Unboxed (UArray)
 import           Core.Number
-
-import Core.String.UTF8Table
-import GHC.Prim
-import Core.Array.Unboxed.Builder
-import GHC.Ptr
-import Core.Primitive.FinalPtr
-
-import qualified Control.Monad (mapM)
+import           Core.Array.Unboxed.Builder
+import           Core.Primitive.FinalPtr
+import           Core.String.UTF8Table
 
 -- offset of size one
 aone :: Offset Word8
@@ -52,7 +50,7 @@ accessBytes offset getAtIdx = (loop offset, pastEnd)
         | off == pastEnd = []
         | otherwise      = getAtIdx off : loop (off + aone)
 
-buildByteArray :: Addr# -> ST st ByteArray
+buildByteArray :: Addr# -> ST st (UArray Word8)
 buildByteArray addr = Vec.UVecAddr (Offset 0) (Size 100000) `fmap`
     toFinalPtr (Ptr addr) (\_ -> return ())
 
@@ -63,7 +61,7 @@ buildByteArray addr = Vec.UVecAddr (Offset 0) (Size 100000) `fmap`
 -- FIXME: need to evaluate the kind of modified UTF8 GHC is actually expecting
 -- it is plausible they only handle the Null Bytes, which this function actually
 -- does.
-fromModified :: Addr# -> ByteArray
+fromModified :: Addr# -> UArray Word8
 fromModified addr = runST $ do
     ba <- buildByteArray addr
     Vec.unsafeIndexer ba buildWithBytes
