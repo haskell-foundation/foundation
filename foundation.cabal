@@ -57,6 +57,7 @@ Library
                      -- Core.View
   Other-modules:     Core.String.Internal
                      Core.String.UTF8
+                     Core.String.Encoding.UTF16
                      Core.String.UTF8Table
                      Core.Tuple
                      Core.Collection.List
