@@ -27,7 +27,6 @@ import qualified System.Info
 import qualified GHC.Conc
 import Core.String
 import Core.Internal.Base
-import Core
 
 #ifdef ARCH_IS_UNKNOWN_ENDIAN
 import Foreign.Marshal.Alloc (alloca)
