@@ -224,7 +224,7 @@ memoryProtect ptr sz prots = throwErrnoIfMinus1_ "mprotect" (c_mprotect ptr sz c
 
 -- | memorySync synchronize memory with physical storage.
 --
--- On an anonymous mapping this function doesn't have any effect.
+-- On an anonymous mapping this function does not have any effect.
 -- call 'msync'
 memorySync :: Ptr a -> CSize -> [MemorySyncFlag] -> IO ()
 memorySync ptr sz flags = throwErrnoIfMinus1_ "msync" (c_msync ptr sz cflags)
