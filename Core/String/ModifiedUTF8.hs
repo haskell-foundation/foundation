@@ -46,7 +46,7 @@ accessBytes offset getAtIdx = (loop offset, pastEnd)
     nbytes :: Size Word8
     nbytes = Size $ getNbBytes $ getAtIdx offset
     pastEnd :: Offset Word8
-    pastEnd = offset `offsetPlusE` nbytes
+    pastEnd = aone + (offset `offsetPlusE` nbytes)
     loop :: Offset Word8 -> [Word8]
     loop off
         | off == pastEnd = []
@@ -54,7 +54,7 @@ accessBytes offset getAtIdx = (loop offset, pastEnd)
 
 buildByteArray :: Addr# -> ST st ByteArray
 buildByteArray addr = Vec.UVecAddr (Offset 0) (Size 100000) `fmap`
-    (toFinalPtr (Ptr addr) $ \_ -> return ())
+    toFinalPtr (Ptr addr) (\_ -> return ())
 
 -- | assuming the given ByteArray is a valid modified UTF-8 sequence of bytes
 --
@@ -72,7 +72,8 @@ fromModified addr = runST $ do
     loopBuilder getAt offset =
         let (bs, noffset) = accessBytes offset getAt
          in case bs of
-              [] -> return ()
+              [] -> internalError "ModifiedUTF8.fromModified"
+              [0x00] -> return ()
               [b1,b2] | b1 == 0xC0 && b2 == 0x80 -> appendTy 0x00 >> loopBuilder getAt noffset
               _ -> Control.Monad.mapM appendTy bs >> loopBuilder getAt noffset
 

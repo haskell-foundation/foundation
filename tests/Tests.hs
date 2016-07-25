@@ -394,7 +394,22 @@ tests =
             , testProperty "* and ^ (2)" $ \a (b :: Int) (Positive c :: Positive Int) -> (a * b ^ c) === (a * (b ^ c))
             ]
         ]
+    , testGroup "ModifiedUTF8"
+        [ testCase "基地系列" $ testCaseModifiedUTF8 ("基地系列", 1, 0x9F)
+        , testCase "has null byte" $ testCaseModifiedUTF8 ("let's\0 do \0 it", 5, 0)
+        ]
     ]
+
+testCaseModifiedUTF8 :: (String, Int, Word8) -> Assertion
+testCaseModifiedUTF8 (str, off, expected)
+    | c == expected = return ()
+    | otherwise = assertFailure $ "test case error, expecting " <> show expected <> " at " <> show off <> " : " <> show c
+  where
+    ba = toBytes UTF8 str
+    c :: Word8
+    c = case (!) ba off of
+            Nothing -> error $ "cannot get : " <> show str
+            Just c  -> c
 
 main :: IO ()
 main = defaultMain $ testGroup "foundation" tests
