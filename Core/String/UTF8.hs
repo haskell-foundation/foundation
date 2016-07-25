@@ -39,7 +39,6 @@ import           GHC.Prim
 import           GHC.Types
 import           GHC.ST
 import           GHC.Word
-import qualified Prelude
 import           Core.Internal.Base
 import           Core.Internal.Types
 import           Core.Internal.Primitive
@@ -48,7 +47,6 @@ import           Core.Primitive.Types
 import           Core.Primitive.Monad
 import           Core.String.UTF8Table
 import           Core.Array.Unboxed (ByteArray)
-import           Core.Array.Unboxed.Builder
 import           Core.Array.Unboxed.ByteArray (MutableByteArray)
 import qualified Core.Array.Unboxed as Vec
 import qualified Core.Array.Unboxed.Mutable as MVec
@@ -215,7 +213,7 @@ skipNext (String ba) n = n + 1 + getNbBytes h
     !h = Vec.unsafeIndex ba n
 
 next :: String -> Offset8 -> (# Char, Offset8 #)
-next (String ba) ofs@(Offset n) =
+next (String ba) (Offset n) =
     case getNbBytes# h of
         0# -> (# toChar h, Offset $ n + 1 #)
         1# -> (# toChar (decode2 (Vec.unsafeIndex ba (n + 1))) , Offset $ n + 2 #)
@@ -251,7 +249,7 @@ next (String ba) ofs@(Offset n) =
             )
 
 write :: PrimMonad prim => MutableString (PrimState prim) -> Offset8 -> Char -> prim Offset8
-write (MutableString mba) idx@(Offset i) c =
+write (MutableString mba) (Offset i) c =
     if      bool# (ltWord# x 0x80##   ) then encode1
     else if bool# (ltWord# x 0x800##  ) then encode2
     else if bool# (ltWord# x 0x10000##) then encode3
@@ -402,7 +400,7 @@ splitIndex (Offset idx) (String ba) = (String v1, String v2)
   where (v1,v2) = C.splitAt idx ba
 
 break :: (Char -> Bool) -> String -> (String, String)
-break predicate s@(String ba) = loop (Offset 0)
+break predicate s = loop (Offset 0)
   where
     !sz = size s
     end = azero `offsetPlusE` sz
@@ -512,7 +510,7 @@ charToBytes c
     | otherwise    = error ("invalid code point: " `mappend` show c)
 
 charMap :: (Char -> Char) -> String -> String
-charMap f src@(String srcBa) =
+charMap f src =
     let !(elems, nbBytes) = allocateAndFill [] (Offset 0) (Size 0)
      in runST $ do
             dest <- new nbBytes
@@ -520,20 +518,20 @@ charMap f src@(String srcBa) =
             freeze dest
   where
     !srcSz = size src
-    end    = azero `offsetPlusE` srcSz
+    srcEnd = azero `offsetPlusE` srcSz
 
     allocateAndFill :: [(String, Size8)]
                     -> Offset8
                     -> Size8
                     -> ([(String,Size8)], Size8)
     allocateAndFill acc idx bytesWritten
-        | idx == end = (acc, bytesWritten)
-        | otherwise  =
+        | idx == srcEnd = (acc, bytesWritten)
+        | otherwise     =
             let (el@(_,addBytes), idx') = runST $ do
                     -- make sure we allocate at least 4 bytes for the destination for the last few bytes
                     -- otherwise allocating less would bring the danger of spinning endlessly
                     -- and never succeeding.
-                    let !diffBytes = end - idx
+                    let !diffBytes = srcEnd - idx
                         !allocatedBytes = if diffBytes <= Size 4 then Size 4 else diffBytes
                     ms <- new allocatedBytes
                     (dstIdx, srcIdx) <- fill ms allocatedBytes idx
@@ -551,7 +549,7 @@ charMap f src@(String srcBa) =
       where
         endDst = (Offset 0) `offsetPlusE` dsz
         loop dstIdx srcIdx
-            | srcIdx == end    = return (offsetAsSize dstIdx, srcIdx)
+            | srcIdx == srcEnd = return (offsetAsSize dstIdx, srcIdx)
             | dstIdx == endDst = return (offsetAsSize dstIdx, srcIdx)
             | otherwise        =
                 let (# c, srcIdx' #) = next src srcIdx

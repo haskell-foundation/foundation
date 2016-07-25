@@ -8,7 +8,6 @@ module Core.Array.Unboxed.ByteArray
 import Core.Internal.Base
 import Core.Primitive.Monad
 import Core.Array.Common
-import Core.Array.Unboxed
 import Core.Array.Unboxed.Mutable
 import Core.Number
 import Control.Monad (forM_)
@@ -35,7 +34,4 @@ mutableByteArraySetBetween mba val offset size
     len = mutableLength mba
 
 mutableByteArrayMove :: PrimMonad prim => MutableByteArray (PrimState prim) -> Int -> Int -> Int -> prim ()
-mutableByteArrayMove mba ofs sz = undefined
-
-mutableByteArrayFreezeBetween :: PrimMonad prim => MutableByteArray (PrimState prim) -> Int -> Int -> prim ByteArray
-mutableByteArrayFreezeBetween mba offset size = undefined
+mutableByteArrayMove _mba _ofs _sz = undefined
