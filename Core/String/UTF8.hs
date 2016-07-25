@@ -567,25 +567,29 @@ charMap f src@(String srcBa) =
     copyLoop _   []     n          = error ("charMap invalid: " <> show n)
     copyLoop ms@(MutableString mba) ((String ba, sz):xs) end = do
         let start = end `offsetMinusE` sz
-        Vec.copyAtRO mba start ba (Offset 0) sz
+        Vec.unsafeCopyAtRO mba start ba (Offset 0) sz
         copyLoop ms xs start
 
 snoc :: String -> Char -> String
-snoc s@(String ba) c = runST $ do
-    ms@(MutableString mba) <- new (len + nbBytes)
-    Vec.copyAtRO mba (Offset 0) ba (Offset 0) len
-    _ <- write ms (azero `offsetPlusE` len) c
-    freeze ms
+snoc s@(String ba) c
+    | len == Size 0 = C.singleton c
+    | otherwise     = runST $ do
+        ms@(MutableString mba) <- new (len + nbBytes)
+        Vec.unsafeCopyAtRO mba (Offset 0) ba (Offset 0) len
+        _ <- write ms (azero `offsetPlusE` len) c
+        freeze ms
   where
     !len     = size s
     !nbBytes = charToBytes (fromEnum c)
 
 cons :: Char -> String -> String
-cons c s@(String ba) = runST $ do
-    ms@(MutableString mba) <- new (len + nbBytes)
-    idx <- write ms (Offset 0) c
-    Vec.copyAtRO mba idx ba (Offset 0) len
-    freeze ms
+cons c s@(String ba)
+  | len == Size 0 = C.singleton c
+  | otherwise     = runST $ do
+      ms@(MutableString mba) <- new (len + nbBytes)
+      idx <- write ms (Offset 0) c
+      Vec.unsafeCopyAtRO mba idx ba (Offset 0) len
+      freeze ms
   where
     !len     = size s
     !nbBytes = charToBytes (fromEnum c)

@@ -19,7 +19,7 @@ module Core.Array.Unboxed
     , PrimType(..)
     -- * methods
     , copy
-    , copyAtRO
+    , unsafeCopyAtRO
     -- * internal methods
     -- , copyAddr
     , unsafeRecast
@@ -171,7 +171,7 @@ copy array = runST (thaw array >>= unsafeFreeze)
 thaw :: (PrimMonad prim, PrimType ty) => UArray ty -> prim (MUArray ty (PrimState prim))
 thaw array = do
     ma <- new (lengthSize array)
-    copyAtRO ma azero array (Offset 0) (lengthSize array)
+    unsafeCopyAtRO ma azero array (Offset 0) (lengthSize array)
     return ma
 {-# INLINE thaw #-}
 
@@ -235,21 +235,26 @@ lengthByteArray (UVecBA _ (Size len) _ _) = len
 lengthByteArray (UVecAddr _ (Size len) _) = len
 
 -- TODO Optimise with copyByteArray#
-copyAtRO :: (PrimMonad prim, PrimType ty)
-         => MUArray ty (PrimState prim) -- ^ destination array
-         -> Offset ty                  -- ^ offset at destination
-         -> UArray ty                   -- ^ source array
-         -> Offset ty                  -- ^ offset at source
-         -> Size ty                    -- ^ number of elements to copy
-         -> prim ()
-copyAtRO (MUVecMA dstStart _ _ dstMba) ed uvec@(UVecBA srcStart _ _ srcBa) es n =
+-- | Copy @n@ sequential elements from the specified offset in a source array
+--   to the specified position in a destination array.
+--
+--   This function does not check bounds. Accessing invalid memory can return
+--   unpredictable and invalid values.
+unsafeCopyAtRO :: (PrimMonad prim, PrimType ty)
+               => MUArray ty (PrimState prim) -- ^ destination array
+               -> Offset ty                   -- ^ offset at destination
+               -> UArray ty                   -- ^ source array
+               -> Offset ty                   -- ^ offset at source
+               -> Size ty                     -- ^ number of elements to copy
+               -> prim ()
+unsafeCopyAtRO (MUVecMA dstStart _ _ dstMba) ed uvec@(UVecBA srcStart _ _ srcBa) es n =
     primitive $ \st -> (# copyByteArray# srcBa os dstMba od nBytes st, () #)
   where
     sz = primSizeInBytes (vectorProxyTy uvec)
     !(Offset (I# os))   = offsetOfE sz (srcStart+es)
     !(Offset (I# od))   = offsetOfE sz (dstStart+ed)
     !(Size (I# nBytes)) = sizeOfE sz n
-copyAtRO (MUVecMA dstStart _ _ dstMba) ed uvec@(UVecAddr srcStart _ srcFptr) es n =
+unsafeCopyAtRO (MUVecMA dstStart _ _ dstMba) ed uvec@(UVecAddr srcStart _ srcFptr) es n =
     withFinalPtr srcFptr $ \srcPtr ->
         let !(Ptr srcAddr) = srcPtr `plusPtr` os
          in primitive $ \s -> (# compatCopyAddrToByteArray# srcAddr dstMba od nBytes s, () #)
@@ -258,7 +263,7 @@ copyAtRO (MUVecMA dstStart _ _ dstMba) ed uvec@(UVecAddr srcStart _ srcFptr) es 
     !(Offset os)        = offsetOfE sz (srcStart+es)
     !(Offset (I# od))   = offsetOfE sz (dstStart+ed)
     !(Size (I# nBytes)) = sizeOfE sz n
-copyAtRO dst od src os n = loop od os
+unsafeCopyAtRO dst od src os n = loop od os
   where
     !(Offset endIndex) = os `offsetPlusE` n
     loop (Offset d) (Offset i)
@@ -452,7 +457,7 @@ concat l  =
 
     doCopy _ _ []     = return ()
     doCopy r i (x:xs) = do
-        copyAtRO r i x (Offset 0) lx
+        unsafeCopyAtRO r i x (Offset 0) lx
         doCopy r (i `offsetPlusE` lx) xs
       where lx = lengthSize x
 
@@ -613,7 +618,7 @@ sub vec startIdx expectedEndIdx
                         (# compatCopyAddrToByteArray# addr mba 0# (end -# start) s, () #)
                 UVecSlice startSlice _ parent ->
                     -- copy from parent at index start+startIdx until index end-endIdx
-                    copyAtRO (MUVecMA unpinned mba) 0 parent (startIdx + startSlice) (endIdx - startIdx)
+                    unsafeCopyAtRO (MUVecMA unpinned mba) 0 parent (startIdx + startSlice) (endIdx - startIdx)
         unsafeFreeze muv
   where
     endIdx = min expectedEndIdx (length vec)
@@ -689,7 +694,7 @@ cons e vec
     | len == Size 0 = singleton e
     | otherwise     = runST $ do
         muv <- new (len + Size 1)
-        copyAtRO muv (Offset 1) vec (Offset 0) len
+        unsafeCopyAtRO muv (Offset 1) vec (Offset 0) len
         unsafeWrite muv 0 e
         unsafeFreeze muv
   where
@@ -700,7 +705,7 @@ snoc vec e
     | len == Size 0 = singleton e
     | otherwise     = runST $ do
         muv <- new (len + Size 1)
-        copyAtRO muv (Offset 0) vec (Offset 0) len
+        unsafeCopyAtRO muv (Offset 0) vec (Offset 0) len
         unsafeWrite muv (length vec) e
         unsafeFreeze muv
   where

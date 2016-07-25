@@ -191,7 +191,7 @@ unsafeThaw (Array a) = primitive $ \st -> (# st, MArray (unsafeCoerce# a) #)
 thaw :: PrimMonad prim => Array ty -> prim (MArray ty (PrimState prim))
 thaw array = do
     m <- new (length array)
-    copyAtRO m 0 array 0 (length array)
+    unsafeCopyAtRO m 0 array 0 (length array)
     return m
 {-# INLINE thaw #-}
 
@@ -212,14 +212,19 @@ copyAt dst od src os n = loop od os
             | i == endIndex = return ()
             | otherwise     = unsafeRead src i >>= unsafeWrite dst d >> loop (d+1) (i+1)
 
-copyAtRO :: PrimMonad prim
-         => MArray ty (PrimState prim) -- ^ destination array
-         -> Int                -- ^ offset at destination
-         -> Array ty         -- ^ source array
-         -> Int                -- ^ offset at source
-         -> Int                -- ^ number of elements to copy
-         -> prim ()
-copyAtRO dst od src os n = loop od os
+-- | Copy @n@ sequential elements from the specified offset in a source array
+--   to the specified position in a destination array.
+--
+--   This function does not check bounds. Accessing invalid memory can return
+--   unpredictable and invalid values.
+unsafeCopyAtRO :: PrimMonad prim
+               => MArray ty (PrimState prim) -- ^ destination array
+               -> Int                        -- ^ offset at destination
+               -> Array ty                   -- ^ source array
+               -> Int                        -- ^ offset at source
+               -> Int                        -- ^ number of elements to copy
+               -> prim ()
+unsafeCopyAtRO dst od src os n = loop od os
   where endIndex = os + n
         loop d i
             | i == endIndex = return ()
@@ -371,7 +376,7 @@ take nbElems v
     | nbElems <= 0 = empty
     | otherwise    = runST $ do
         muv <- new n
-        copyAtRO muv 0 v 0 n
+        unsafeCopyAtRO muv 0 v 0 n
         unsafeFreeze muv
   where
     n = min nbElems (length v)
@@ -381,7 +386,7 @@ drop nbElems v
     | nbElems <= 0 = v
     | otherwise    = runST $ do
         muv <- new n
-        copyAtRO muv 0 v offset n
+        unsafeCopyAtRO muv 0 v offset n
         unsafeFreeze muv
   where
     offset = min nbElems (length v)
@@ -464,20 +469,24 @@ mapIndex f a = create (length a) (\i -> f i $ unsafeIndex a i)
 -}
 
 cons ::  ty -> Array ty -> Array ty
-cons e vec = runST $ do
-    mv <- new (len + 1)
-    unsafeWrite mv 0 e
-    copyAtRO mv 1 vec 0 len
-    unsafeFreeze mv
+cons e vec
+    | len == 0  = C.singleton e
+    | otherwise = runST $ do
+        mv <- new (len + 1)
+        unsafeWrite mv 0 e
+        unsafeCopyAtRO mv 1 vec 0 len
+        unsafeFreeze mv
   where
     !len = length vec
 
 snoc ::  Array ty -> ty -> Array ty
-snoc vec e = runST $ do
-    mv <- new (len + 1)
-    copyAtRO mv 0 vec 0 len
-    unsafeWrite mv len e
-    unsafeFreeze mv
+snoc vec e
+    | len == 0  = C.singleton e
+    | otherwise = runST $ do
+        mv <- new (len + 1)
+        unsafeCopyAtRO mv 0 vec 0 len
+        unsafeWrite mv len e
+        unsafeFreeze mv
   where
     !len = length vec
 
