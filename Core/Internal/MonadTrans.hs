@@ -35,15 +35,15 @@ instance Monad m => Monad (State r m) where
 newtype Reader r m a = Reader { runReader :: r -> m a }
 
 instance Monad m => Functor (Reader r m) where
-    fmap f (Reader x) = Reader $ \r -> f `fmap` x r
+    fmap f fa = Reader $ \r -> runReader fa r >>= \a -> return (f a)
 instance Monad m => Applicative (Reader r m) where
-    pure a = Reader $ \_ -> pure a
+    pure a = Reader $ \_ -> return a
     fab <*> fa = Reader $ \r -> do
         a  <- runReader fa r
         ab <- runReader fab r
         return $ ab a
 instance Monad m => Monad (Reader r m) where
-    return = pure
+    return a = Reader $ \_ -> return a
     ma >>= mb = Reader $ \r -> do
         a <- runReader ma r
         runReader (mb a) r
