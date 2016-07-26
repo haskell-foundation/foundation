@@ -108,31 +108,19 @@ instance C.IndexedCollection (Array ty) where
             | otherwise =
                 if predicate (unsafeIndex c i) then Just i else Nothing
 
-instance C.Iterable (Array ty) where
-    data State (Array ty) = S (Array ty) Int
-
-    initialState vec = S vec 0
-
-    hasNext (S vec i) = i >= 0 && i < length vec
-
-    next (S vec i)
-        | i >= 0 && i < length vec = Just (S vec (i + 1), vec `unsafeIndex` i)
-        | otherwise                = Nothing
-
 instance C.Zippable (Array ty) where
+    -- TODO Use an array builder once available
     zipWith f a b = runST $ do
         mv <- new len
-        go mv 0 f (C.initialState a) (C.initialState b)
+        go mv 0 f (toList a) (toList b)
         unsafeFreeze mv
       where
         !len = min (C.length a) (C.length b)
-        go mv i f' sa sb
-            | C.hasNext sa && C.hasNext sb = do
-                let Just (nextSa, elemA) = C.next sa
-                    Just (nextSb, elemB) = C.next sb
-                write mv i (f' elemA elemB)
-                go mv (i + 1) f' nextSa nextSb
-            | otherwise                    = return ()
+        go _  _  _ []       _        = return ()
+        go _  _  _ _        []       = return ()
+        go mv i f' (a':as') (b':bs') = do
+            write mv i (f' a' b')
+            go mv (i + 1) f' as' bs'
 
 -- | return the numbers of elements in a mutable array
 mutableLength :: MArray ty st -> Int

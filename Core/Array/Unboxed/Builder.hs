@@ -1,21 +1,19 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE ViewPatterns #-}
 module Core.Array.Unboxed.Builder
     ( ArrayBuilder
     , appendTy
     , build
     ) where
 
-import Core.Internal.Base
-import Core.Internal.Types
-import Core.Internal.MonadTrans
-import Core.Primitive.Monad
-import Core.Primitive.Types
-import Core.Array.Unboxed.Mutable
-import Core.Array.Unboxed
-import Core.Number
-
-import qualified Core.Collection as C
+import           Core.Array.Unboxed
+import           Core.Array.Unboxed.Mutable
+import           Core.Internal.Base
+import           Core.Internal.MonadTrans
+import           Core.Internal.Types
+import           Core.Number
+import           Core.Primitive.Monad
+import           Core.Primitive.Types
+import qualified Data.List
 
 -- | A Array being built chunks by chunks
 --
@@ -33,7 +31,7 @@ newtype ArrayBuilder ty st a = ArrayBuilder { runArrayBuilder :: State (ArrayBui
     deriving (Functor,Applicative,Monad)
 
 appendTy :: (PrimMonad st, PrimType ty, Monad st) => ty -> ArrayBuilder ty st ()
-appendTy v = ArrayBuilder $ State $ \st -> do
+appendTy v = ArrayBuilder $ State $ \st ->
     if offsetAsSize (currentOffset st) == chunkSize st
         then do
             newChunk <- new (chunkSize st)
@@ -59,4 +57,4 @@ build sizeChunksI origab = call origab (Size sizeChunksI)
         m        <- new sizeChunks
         ((), st) <- runState (runArrayBuilder ab) (ArrayBuildingState [] m (Offset 0) sizeChunks)
         current <- unsafeFreezeShrink (currentBuffer st) (offsetAsSize $ currentOffset st)
-        return $ mconcat $ C.reverse (current:prevBuffers st)
+        return $ mconcat $ Data.List.reverse (current:prevBuffers st)
