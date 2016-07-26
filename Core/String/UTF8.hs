@@ -54,6 +54,9 @@ import           Core.Number
 
 import qualified Data.List -- temporary
 
+import GHC.CString (unpackCString#, unpackCStringUtf8#)
+import Core.String.ModifiedUTF8 (fromModified)
+
 -- | Opaque packed array of characters in the UTF8 encoding
 newtype String = String (UArray Word8)
     deriving (Typeable, Monoid, Eq, Ord)
@@ -307,6 +310,16 @@ sToList s = loop azero
         | otherwise  =
             let (# c , idx' #) = next s idx in c : loop idx'
 
+
+{-# RULES
+"String sFromList" forall s .
+  sFromList (unpackCString# s) = String $ fromModified s
+  #-}
+{-# RULES
+"String sFromList" forall s .
+  sFromList (unpackCStringUtf8# s) = String $ fromModified s
+  #-}
+
 sFromList :: [Char] -> String
 sFromList l = runST (new bytes >>= copy)
   where
@@ -320,6 +333,7 @@ sFromList l = runST (new bytes >>= copy)
         loop idx (c:xs) = write ms idx c >>= \idx' -> loop idx' xs
     -- write those bytes
     --loop :: MutableByteArray# st -> Int# -> State# st -> [Char] -> (# State# st, String #)
+{-# INLINE [0] sFromList #-}
 
 null :: String -> Bool
 null (String ba) = C.length ba == 0
