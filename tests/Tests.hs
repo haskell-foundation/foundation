@@ -395,21 +395,20 @@ tests =
             ]
         ]
     , testGroup "ModifiedUTF8"
-        [ testCase "The foundation Serie" $ testCaseModifiedUTF8 ("\x57fa\x5730\x7CFB\x5217", 1, 0x9F)
-        , testCase "has null bytes" $ testCaseModifiedUTF8 ("let's\0 do \0 it", 10, 0)
+        [ testCase "The foundation Serie" $ testCaseModifiedUTF8 "基地系列" "基地系列"
+        , testCase "has null bytes" $ testCaseModifiedUTF8 "let's\0 do \0 it" "let's\0 do \0 it"
+        , testCase "Vincent's special" $ testCaseModifiedUTF8 "abc\0안, 蠀\0, ☃" "abc\0안, 蠀\0, ☃"
         ]
     ]
 
-testCaseModifiedUTF8 :: (String, Int, Word8) -> Assertion
-testCaseModifiedUTF8 (str, off, expected)
-    | c == expected = return ()
-    | otherwise = assertFailure $ "test case error, expecting " <> show expected <> " at " <> show off <> " : " <> show c
+testCaseModifiedUTF8 :: [Char] -> String -> Assertion
+testCaseModifiedUTF8 ghcStr str
+    | ghcStr == fStr = return ()
+    | otherwise      = assertFailure $
+        "expecting: " <> show ghcStr <> " received: " <> show fStr
   where
-    ba = toBytes UTF8 str
-    c :: Word8
-    c = case (!) ba off of
-            Nothing -> error $ "cannot get : " <> show str
-            Just c  -> c
+    fStr :: [Char]
+    fStr = toList str
 
 main :: IO ()
 main = defaultMain $ testGroup "foundation" tests
