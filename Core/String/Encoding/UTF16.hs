@@ -19,12 +19,13 @@ import Core.Primitive.Types
 import Core.Primitive.Monad
 import Core.Array.Unboxed
 import qualified Core.Array.Unboxed as Vec
-import Core.Array.Unboxed.Mutable (MUArray)
+import Core.Array.Unboxed.Mutable (MUArray, unsafeWrite)
 import GHC.Prim
 import GHC.Word
 import GHC.Types
 import Core.Number
 import Data.Bits
+import qualified Prelude
 
 --
 -- U+0000 to U+D7FF and U+E000 to U+FFFF : 1 bytes
@@ -53,14 +54,26 @@ next ba ofs@(Offset n) =
     !h@(W16# hh) = Vec.unsafeIndex ba n
 
     to32 :: Word16 -> Word32
-    to32 = undefined
+    to32 (W16# w) = W32# w
 
     toChar :: Word# -> Char
     toChar w = C# (chr# (word2Int# w))
 
 write :: PrimMonad prim => MUArray Word16 (PrimState prim) -> Offset Word16 -> Char -> prim (Offset Word16)
 write mba idx@(Offset i) c
-    | c < toEnum 0xd800  = undefined
-    | c > toEnum 0x10000 = undefined
-    | c >= toEnum 0xe000 = undefined
-    | otherwise          = undefined
+    | c < toEnum 0xd800   = unsafeWrite mba i (w16 c) >> return (idx + Offset 1)
+    | c > toEnum 0x10000  = let (w1, w2) = wHigh c in unsafeWrite mba i w1 >> unsafeWrite mba (i+1) w2 >> return (idx + Offset 2)
+    | c > toEnum 0x10ffff = error "invalid codepoint"
+    | c >= toEnum 0xe000  = unsafeWrite mba i (w16 c) >> return (idx + Offset 1)
+    | otherwise           = error "cannot "
+  where
+    w16 :: Char -> Word16
+    w16 (C# ch) = W16# (int2Word# (ord# ch))
+
+    to16 :: Word32 -> Word16
+    to16 = Prelude.fromIntegral
+
+    wHigh :: Char -> (Word16, Word16)
+    wHigh (C# ch) =
+        let v = W32# (minusWord# (int2Word# (ord# ch)) 0x10000##)
+         in (0xdc00 .|. to16 (v `shiftR` 10), 0xd800 .|. to16 (v .&. 0x3ff))
