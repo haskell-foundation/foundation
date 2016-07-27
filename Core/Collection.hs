@@ -11,7 +11,8 @@
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE FlexibleInstances #-}
 module Core.Collection
-    ( Element
+    ( BoxedZippable(..)
+    , Element
     , InnerFunctor(..)
     , Foldable(..)
     , Sequential(..)

@@ -1,5 +1,19 @@
+-- |
+-- Module      : Core.Collection.Zippable
+-- License     : BSD-style
+-- Maintainer  : foundation
+-- Stability   : experimental
+-- Portability : portable
+--
+-- Common functions (e. g. 'zip', 'zipWith') that are useful for combining
+-- multiple collections.
+--
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+
 module Core.Collection.Zippable
-    ( Zippable(..)
+    ( BoxedZippable(..)
+    , Zippable(..)
     ) where
 
 import qualified Core.Array.Unboxed as UV
@@ -12,14 +26,6 @@ import qualified Prelude
 import           GHC.ST
 
 class Sequential col => Zippable col where
-
-  -- | 'zip' takes two collections and returns a collections of corresponding
-  --   pairs. If one input collection is short, excess elements of the longer
-  --   collection are discarded.
-  zip :: ( Sequential a, Sequential b
-         , Element col ~ (Element a, Element b) )
-      => a -> b -> col
-  zip = zipWith (,)
 
   -- | 'zipWith' generalises 'zip' by zipping with the function given as the
   --   first argument, instead of a tupling function. For example, @'zipWith' (+)@
@@ -34,10 +40,10 @@ class Sequential col => Zippable col where
       go _  _        []       = mempty
       go f' (a':as') (b':bs') = f' a' b' `cons` go f' as' bs'
 
-  -- | @unzip@ transforms a collection of pairs into a collection of first
+  -- | 'unzip' transforms a collection of pairs into a collection of first
   --   components and a collection of second components.
-  unzip :: (Sequential a, Element a ~ (Element col, Element col2), col ~ col2)
-        => a -> (col, col2)
+  unzip :: (Sequential a, Sequential b, Element col ~ (Element a, Element b))
+        => col -> (a, b)
   unzip = go . toList
     where
       go []          = (mempty, mempty)
@@ -56,3 +62,17 @@ instance UV.PrimType ty => Zippable (UV.UArray ty) where
       go f' (a':as') (b':bs') =
           let (i, builder) = go f' as' bs'
           in (i + 1, UVB.appendTy (f' a' b') >> builder)
+
+class Zippable col => BoxedZippable col a b where
+
+  -- | 'zip' takes two collections and returns a collections of corresponding
+  --   pairs. If one input collection is short, excess elements of the longer
+  --   collection are discarded.
+  zip :: ( Sequential a, Sequential b
+         , Element col ~ (Element a, Element b) )
+        => a -> b -> col
+  zip = zipWith (,)
+
+instance ( Sequential a, Sequential b
+         , Zippable col, Element col ~ (Element a, Element b))
+        => BoxedZippable col a b
