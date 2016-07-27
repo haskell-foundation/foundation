@@ -27,15 +27,15 @@ Maintainer:          vincent@snarc.org
 Category:            foundation
 Stability:           experimental
 Build-Type:          Simple
-Homepage:            https://github.com/vincenthz/hs-foundation
-Bug-Reports:         https://github.com/vincenthz/hs-foundation/issues
+Homepage:            https://github.com/haskell-foundation/foundation
+Bug-Reports:         https://github.com/haskell-foundation/foundation/issues
 Cabal-Version:       >=1.10
 tested-with:         GHC == 7.4.2, GHC == 7.6.3, GHC == 7.8.4, GHC == 7.10.3, GHC == 8.0.1
 extra-source-files:  README.md
 
 source-repository head
   type: git
-  location: https://github.com/vincenthz/hs-foundation
+  location: https://github.com/haskell-foundation/foundation
 
 Library
   Exposed-modules:   Core
