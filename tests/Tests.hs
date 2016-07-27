@@ -1,25 +1,25 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE NoImplicitPrelude   #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies        #-}
 module Main where
 
 import           Test.Tasty
 --import           Test.Tasty.Options
+import           Control.Monad
+import           Test.QuickCheck.Monadic
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
-import           Test.QuickCheck.Monadic
-import           Control.Monad
 
-import           Core.String
-import           Core.Array
-import           Core.Foreign
-import           Core.Collection
-import           Core.VFS (Path(..), parent, filename)
-import           Core.VFS.FilePath
 import           Core
-import qualified Data.List as L
+import           Core.Array
+import           Core.Collection
+import           Core.Foreign
+import           Core.String
+import           Core.VFS                (Path (..), filename, parent)
+import           Core.VFS.FilePath
+import qualified Data.List               as L
 import qualified Prelude
 
 import           ForeignUtils
@@ -260,6 +260,41 @@ testCollection proxy genElement =
     withElements3 f = forAll ((,,) <$> listOfElement genElement <*> arbitrary <*> arbitrary) f
     withElements2E f = forAll ((,) <$> listOfElement genElement <*> genElement) f
 
+testBoxedZippable :: ( Show col, Eq col, Eq (Element col)
+                     , Show a, Show (Item a), Eq a, Eq (Element a)
+                     , Show b, Show (Item b), Eq b, Eq (Element b)
+                     , Zippable a, Item a ~ Element a
+                     , Zippable b, Item b ~ Element b
+                     , Zippable col, Element col ~ (Item a, Item b))
+                  => Proxy a -> Proxy b -> Proxy col -> Gen (Element a) -> Gen (Element b) -> [TestTree]
+testBoxedZippable proxyA proxyB proxyCol genElementA genElementB =
+    [ testProperty "zip" $ withList2 $ \(as, bs) ->
+        toListP proxyCol (zip (fromListP proxyA as) (fromListP proxyB bs)) == zip as bs
+    , testProperty "unzip . zip == id" $ withListOfTuples $ \xs ->
+        let (as, bs) = unzip (fromListP proxyCol xs)
+        in toListP proxyCol (zip (as `asProxyTypeOf` proxyA) (bs `asProxyTypeOf` proxyB)) == xs
+    ]
+  where
+    withList2 = forAll ((,) <$> listOfElement genElementA <*> listOfElement genElementB)
+    withListOfTuples = forAll (listOfElement ((,) <$> genElementA <*> genElementB))
+
+testZippable :: ( Show col, Show (Item col), Eq col, Eq (Element col)
+                , Show a, Show (Item a), Eq a, Eq (Element a)
+                , Show b, Show (Item b), Eq b, Eq (Element b)
+                , Zippable a, Item a ~ Element a
+                , Zippable b, Item b ~ Element b
+                , Zippable col, Item col ~ Element col)
+             => Proxy a -> Proxy b -> Proxy col -> Gen (Element a) -> Gen (Element b) -> Gen (Element col) -> [TestTree]
+testZippable proxyA proxyB proxyCol genElementA genElementB genElementCol =
+    [ testProperty "zipWith" $ withList2AndE $ \(as, bs, c) ->
+        let f _ _ = c
+        in toListP proxyCol (zipWith f (fromListP proxyA as) (fromListP proxyB bs)) == zipWith f as bs
+    ]
+  where
+    withList2AndE = forAll ( (,,) <$> listOfElement genElementA
+                                  <*> listOfElement genElementB
+                                  <*> genElementCol )
+
 testUnboxedForeign :: (PrimType e, Show e, Eq a, Eq e, Ord a, Ord e, Arbitrary e, Sequential a, Item a ~ Element a, Element a ~ e, Storable e)
                    => Proxy a -> Gen e -> [TestTree]
 testUnboxedForeign proxy genElement =
@@ -279,6 +314,9 @@ testUnboxedForeign proxy genElement =
 
 fromListP :: (IsList c, Item c ~ Element c) => Proxy c -> [Element c] -> c
 fromListP p = \x -> asProxyTypeOf (fromList x) p
+
+toListP :: (IsList c, Item c ~ Element c) => Proxy c -> c -> [Element c]
+toListP p x = toList (asProxyTypeOf x p)
 
 data RandomList = RandomList [Int]
     deriving (Show,Eq)
@@ -398,6 +436,70 @@ tests =
         [ testCase "The foundation Serie" $ testCaseModifiedUTF8 "基地系列" "基地系列"
         , testCase "has null bytes" $ testCaseModifiedUTF8 "let's\0 do \0 it" "let's\0 do \0 it"
         , testCase "Vincent's special" $ testCaseModifiedUTF8 "abc\0안, 蠀\0, ☃" "abc\0안, 蠀\0, ☃"
+        ]
+    , testGroup "BoxedZippable"
+        [ testGroup "Array"
+            [ testGroup "from Array Int"
+                ( testBoxedZippable
+                    (Proxy :: Proxy (Array Int)) (Proxy :: Proxy (Array Int))
+                    (Proxy :: Proxy (Array (Int, Int))) arbitrary arbitrary )
+            , testGroup "from String"
+                ( testBoxedZippable
+                    (Proxy :: Proxy String) (Proxy :: Proxy String)
+                    (Proxy :: Proxy (Array (Char, Char))) arbitrary arbitrary )
+            , testGroup "from String and Array Char"
+                ( testBoxedZippable
+                    (Proxy :: Proxy String) (Proxy :: Proxy (Array Char))
+                    (Proxy :: Proxy (Array (Char, Char))) arbitrary arbitrary )
+            , testGroup "from Array Int and Array Char"
+                ( testBoxedZippable
+                    (Proxy :: Proxy (Array Int)) (Proxy :: Proxy (Array Char))
+                    (Proxy :: Proxy (Array (Int, Char))) arbitrary arbitrary )
+            ]
+        ]
+    , testGroup "Zippable"
+        [ testGroup "String"
+            [ testGroup "from String"
+                ( testZippable
+                    (Proxy :: Proxy String) (Proxy :: Proxy String)
+                    (Proxy :: Proxy String) arbitrary arbitrary arbitrary )
+            , testGroup "from Array Char"
+                ( testZippable
+                    (Proxy :: Proxy (Array Char)) (Proxy :: Proxy (Array Char))
+                    (Proxy :: Proxy String) arbitrary arbitrary arbitrary )
+            , testGroup "from UArray Word8 and Array Int"
+                ( testZippable
+                    (Proxy :: Proxy (UArray Word8)) (Proxy :: Proxy (Array Int))
+                    (Proxy :: Proxy String) arbitrary arbitrary arbitrary )
+            ]
+        , testGroup "Array"
+            [ testGroup "from String"
+                ( testZippable
+                    (Proxy :: Proxy String) (Proxy :: Proxy String)
+                    (Proxy :: Proxy (Array Int)) arbitrary arbitrary arbitrary )
+            , testGroup "from Array Char"
+                ( testZippable
+                    (Proxy :: Proxy (Array Char)) (Proxy :: Proxy (Array Char))
+                    (Proxy :: Proxy (Array Char)) arbitrary arbitrary arbitrary )
+            , testGroup "from UArray Word8 and Array Int"
+                ( testZippable
+                    (Proxy :: Proxy (UArray Word8)) (Proxy :: Proxy (Array Int))
+                    (Proxy :: Proxy (Array Int)) arbitrary arbitrary arbitrary )
+            ]
+        , testGroup "UArray"
+            [ testGroup "from String"
+                ( testZippable
+                    (Proxy :: Proxy String) (Proxy :: Proxy String)
+                    (Proxy :: Proxy (UArray Word8)) arbitrary arbitrary arbitrary )
+            , testGroup "from Array Char"
+                ( testZippable
+                    (Proxy :: Proxy (Array Char)) (Proxy :: Proxy (Array Char))
+                    (Proxy :: Proxy (UArray Word16)) arbitrary arbitrary arbitrary )
+            , testGroup "from UArray Word8 and Array Int"
+                ( testZippable
+                    (Proxy :: Proxy (UArray Word8)) (Proxy :: Proxy (Array Int))
+                    (Proxy :: Proxy (UArray Word32)) arbitrary arbitrary arbitrary )
+            ]
         ]
     ]
 
