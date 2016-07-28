@@ -106,9 +106,8 @@ module Core
     , Data.Either.partitionEithers
     , Data.Either.lefts
     , Data.Either.rights
-      -- ** Ord
+      -- ** Function
     , Data.Function.on
-    , Data.Ord.comparing
       -- ** Applicative
     , (Control.Applicative.<$>)
     , (Control.Applicative.<|>)
