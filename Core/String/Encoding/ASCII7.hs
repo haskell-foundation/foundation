@@ -32,7 +32,7 @@ import           Core.Array.Unboxed.Builder
 -- > \w -> (0x10 .&. w) == 0x10
 --
 isAscii :: Word8 -> Bool
-isAscii = (==) 0x10 . (.&.) 0x10
+isAscii = (==) 0x10 . (.&.) 0x80
 {-# INLINE isAscii #-}
 
 -- offset of size one
