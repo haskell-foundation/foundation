@@ -13,7 +13,6 @@ import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 
 import           Core
-import           Core.Array
 import           Core.Collection
 import           Core.Foreign
 import           Core.String
@@ -65,7 +64,7 @@ instance Arbitrary Split where
         return (Split (Unicode $ L.intercalate [ch] l) ch)
 
 instance Arbitrary CharMap where
-    arbitrary = do
+    arbitrary =
         CharMap <$> arbitrary <*> choose (1,12)
 
 instance Arbitrary FileName where
@@ -124,7 +123,7 @@ qcnSet n = adjustOption (\(QuickCheckTests _) -> QuickCheckTests n)
 qcnScale :: Int -> TestTree -> TestTree
 qcnScale n = adjustOption (\(QuickCheckTests actual) -> QuickCheckTests (actual * n))
 
-testEq :: (Show e, Eq e, Eq a, Monoid a, Element a ~ e, IsList a, Item a ~ Element a) => Proxy a -> Gen e -> [TestTree]
+testEq :: (Show e, Eq e, Eq a, Element a ~ e, IsList a, Item a ~ Element a) => Proxy a -> Gen e -> [TestTree]
 testEq proxy genElement =
     [ testProperty "x == x" $ withElements $ \l -> let col = fromListP proxy l in col == col
     , testProperty "x == y" $ with2Elements $ \(l1, l2) ->
@@ -134,7 +133,7 @@ testEq proxy genElement =
     withElements f = forAll (listOfElement genElement) f
     with2Elements f = forAll ((,) <$> listOfElement genElement <*> listOfElement genElement) f
 
-testOrd :: (Show e, Eq e, Eq a, Ord a, Ord e, Monoid a, Element a ~ e, IsList a, Item a ~ Element a) => Proxy a -> Gen e -> [TestTree]
+testOrd :: (Show e, Ord a, Ord e, Element a ~ e, IsList a, Item a ~ Element a) => Proxy a -> Gen e -> [TestTree]
 testOrd proxy genElement =
     [ testProperty "x `compare` y" $ with2Elements $ \(l1, l2) ->
         (fromListP proxy l1 `compare` fromListP proxy l2) == (l1 `compare` l2)
@@ -142,7 +141,7 @@ testOrd proxy genElement =
   where
     with2Elements f = forAll ((,) <$> listOfElement genElement <*> listOfElement genElement) f
 
-testMonoid :: (Show e, Eq a, Eq e, Ord a, Ord e, Monoid a, Element a ~ e, IsList a, Item a ~ Element a) => Proxy a -> Gen e -> [TestTree]
+testMonoid :: (Show e, Ord a, Ord e, Monoid a, Element a ~ e, IsList a, Item a ~ Element a) => Proxy a -> Gen e -> [TestTree]
 testMonoid proxy genElement =
     testEq proxy genElement <>
     testOrd proxy genElement <>
@@ -207,10 +206,8 @@ testPath genElement =
   where
     withElements f = forAll genElement f
 
-testCollection :: ( Show a, Show (Element a)
-                  , Eq a, Eq (Element a)
-                  , Ord a, Ord (Item a)
-                  , Sequential a, Item a ~ Element a) => Proxy a -> Gen (Element a) -> [TestTree]
+testCollection :: (Sequential a, Show a, Show (Element a), Eq (Element a), Ord a, Ord (Item a))
+               => Proxy a -> Gen (Element a) -> [TestTree]
 testCollection proxy genElement =
     testMonoid proxy genElement <>
     [ testProperty "LString-convert" $ withElements $ isIdemPotent (toList . fromListP proxy)
@@ -260,12 +257,9 @@ testCollection proxy genElement =
     withElements3 f = forAll ((,,) <$> listOfElement genElement <*> arbitrary <*> arbitrary) f
     withElements2E f = forAll ((,) <$> listOfElement genElement <*> genElement) f
 
-testBoxedZippable :: ( Show col, Eq col, Eq (Element col)
-                     , Show a, Show (Item a), Eq a, Eq (Element a)
-                     , Show b, Show (Item b), Eq b, Eq (Element b)
-                     , Zippable a, Item a ~ Element a
-                     , Zippable b, Item b ~ Element b
-                     , BoxedZippable col, Element col ~ (Item a, Item b))
+testBoxedZippable :: ( Eq (Element col) , Show (Item a), Show (Item b)
+                     , BoxedZippable col, Zippable a, Zippable b
+                     , Element col ~ (Item a, Item b) )
                   => Proxy a -> Proxy b -> Proxy col -> Gen (Element a) -> Gen (Element b) -> [TestTree]
 testBoxedZippable proxyA proxyB proxyCol genElementA genElementB =
     [ testProperty "zip" $ withList2 $ \(as, bs) ->
@@ -278,12 +272,8 @@ testBoxedZippable proxyA proxyB proxyCol genElementA genElementB =
     withList2 = forAll ((,) <$> listOfElement genElementA <*> listOfElement genElementB)
     withListOfTuples = forAll (listOfElement ((,) <$> genElementA <*> genElementB))
 
-testZippable :: ( Show col, Show (Item col), Eq col, Eq (Element col)
-                , Show a, Show (Item a), Eq a, Eq (Element a)
-                , Show b, Show (Item b), Eq b, Eq (Element b)
-                , Zippable a, Item a ~ Element a
-                , Zippable b, Item b ~ Element b
-                , Zippable col, Item col ~ Element col)
+testZippable :: ( Eq (Element col), Show (Item col), Show (Item a), Show (Item b)
+                , Zippable col, Zippable a, Zippable b )
              => Proxy a -> Proxy b -> Proxy col -> Gen (Element a) -> Gen (Element b) -> Gen (Element col) -> [TestTree]
 testZippable proxyA proxyB proxyCol genElementA genElementB genElementCol =
     [ testProperty "zipWith" $ withList2AndE $ \(as, bs, c) ->
@@ -295,7 +285,7 @@ testZippable proxyA proxyB proxyCol genElementA genElementB genElementCol =
                                   <*> listOfElement genElementB
                                   <*> genElementCol )
 
-testUnboxedForeign :: (PrimType e, Show e, Eq a, Eq e, Ord a, Ord e, Arbitrary e, Sequential a, Item a ~ Element a, Element a ~ e, Storable e)
+testUnboxedForeign :: (PrimType e, Show e, Element a ~ e, Storable e)
                    => Proxy a -> Gen e -> [TestTree]
 testUnboxedForeign proxy genElement =
     [ testProperty "equal" $ withElementsM $ \fptr l ->
