@@ -122,6 +122,8 @@ instance C.Zippable (Array ty) where
             write mv i (f' a' b')
             go mv (i + 1) f' as' bs'
 
+instance C.BoxedZippable (Array ty)
+
 -- | return the numbers of elements in a mutable array
 mutableLength :: MArray ty st -> Int
 mutableLength (MArray ma) = I# (sizeofMutableArray# ma)

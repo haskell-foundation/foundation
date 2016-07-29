@@ -74,6 +74,58 @@ class Sequential col => Zippable col where
   zipWith7 fn a b c d e f g = go fn (toList a, toList b, toList c, toList d, toList e, toList f, toList g)
     where go f' = maybe mempty (\(x, xs) -> uncurry7 f' x `cons` go f' xs) . uncons7
 
+instance Zippable [c]
+
+instance UV.PrimType ty => Zippable (UV.UArray ty) where
+  zipWith f as bs = runST $
+      Prelude.uncurry UVB.build $ go f (toList as) (toList bs)
+    where
+      go _  []       _        = (0, return ())
+      go _  _        []       = (0, return ())
+      go f' (a':as') (b':bs') =
+          let (i, builder) = go f' as' bs'
+          in (i + 1, UVB.appendTy (f' a' b') >> builder)
+
+class Zippable col => BoxedZippable col where
+
+  -- | 'zip' takes two collections and returns a collections of corresponding
+  --   pairs. If one input collection is short, excess elements of the longer
+  --   collection are discarded.
+  zip :: ( Sequential a, Sequential b
+         , Element col ~ (Element a, Element b) )
+      => a -> b -> col
+  zip = zipWith (,)
+
+  -- | Like 'zip', but works with 3 collections.
+  zip3 :: ( Sequential a, Sequential b, Sequential c
+          , Element col ~ (Element a, Element b, Element c) )
+       => a -> b -> c -> col
+  zip3 = zipWith3 (,,)
+
+  -- | Like 'zip', but works with 4 collections.
+  zip4 :: ( Sequential a, Sequential b, Sequential c, Sequential d
+          , Element col ~ (Element a, Element b, Element c, Element d) )
+       => a -> b -> c -> d -> col
+  zip4 = zipWith4 (,,,)
+
+  -- | Like 'zip', but works with 5 collections.
+  zip5 :: ( Sequential a, Sequential b, Sequential c, Sequential d, Sequential e
+          , Element col ~ (Element a, Element b, Element c, Element d, Element e) )
+       => a -> b -> c -> d -> e -> col
+  zip5 = zipWith5 (,,,,)
+
+  -- | Like 'zip', but works with 6 collections.
+  zip6 :: ( Sequential a, Sequential b, Sequential c, Sequential d, Sequential e, Sequential f
+          , Element col ~ (Element a, Element b, Element c, Element d, Element e, Element f) )
+       => a -> b -> c -> d -> e -> f -> col
+  zip6 = zipWith6 (,,,,,)
+
+  -- | Like 'zip', but works with 7 collections.
+  zip7 :: ( Sequential a, Sequential b, Sequential c, Sequential d, Sequential e, Sequential f, Sequential g
+          , Element col ~ (Element a, Element b, Element c, Element d, Element e, Element f, Element g) )
+       => a -> b -> c -> d -> e -> f -> g -> col
+  zip7 = zipWith7 (,,,,,,)
+
   -- | 'unzip' transforms a collection of pairs into a collection of first
   --   components and a collection of second components.
   unzip :: (Sequential a, Sequential b, Element col ~ (Element a, Element b))
@@ -134,61 +186,7 @@ class Sequential col => Zippable col where
               let (as, bs, cs, ds, es, fs, gs) = go xs
               in (a `cons` as, b `cons` bs, c `cons` cs, d `cons` ds, e `cons` es, f `cons` fs, g `cons` gs)
 
-instance Zippable [c]
-
-instance UV.PrimType ty => Zippable (UV.UArray ty) where
-  zipWith f as bs = runST $
-      Prelude.uncurry UVB.build $ go f (toList as) (toList bs)
-    where
-      go _  []       _        = (0, return ())
-      go _  _        []       = (0, return ())
-      go f' (a':as') (b':bs') =
-          let (i, builder) = go f' as' bs'
-          in (i + 1, UVB.appendTy (f' a' b') >> builder)
-
-class Zippable col => BoxedZippable col a b where
-
-  -- | 'zip' takes two collections and returns a collections of corresponding
-  --   pairs. If one input collection is short, excess elements of the longer
-  --   collection are discarded.
-  zip :: ( Sequential a, Sequential b
-         , Element col ~ (Element a, Element b) )
-      => a -> b -> col
-  zip = zipWith (,)
-
-  -- | Like 'zip', but works with 3 collections.
-  zip3 :: ( Sequential a, Sequential b, Sequential c
-          , Element col ~ (Element a, Element b, Element c) )
-       => a -> b -> c -> col
-  zip3 = zipWith3 (,,)
-
-  -- | Like 'zip', but works with 4 collections.
-  zip4 :: ( Sequential a, Sequential b, Sequential c, Sequential d
-          , Element col ~ (Element a, Element b, Element c, Element d) )
-       => a -> b -> c -> d -> col
-  zip4 = zipWith4 (,,,)
-
-  -- | Like 'zip', but works with 5 collections.
-  zip5 :: ( Sequential a, Sequential b, Sequential c, Sequential d, Sequential e
-          , Element col ~ (Element a, Element b, Element c, Element d, Element e) )
-       => a -> b -> c -> d -> e -> col
-  zip5 = zipWith5 (,,,,)
-
-  -- | Like 'zip', but works with 6 collections.
-  zip6 :: ( Sequential a, Sequential b, Sequential c, Sequential d, Sequential e, Sequential f
-          , Element col ~ (Element a, Element b, Element c, Element d, Element e, Element f) )
-       => a -> b -> c -> d -> e -> f -> col
-  zip6 = zipWith6 (,,,,,)
-
-  -- | Like 'zip', but works with 7 collections.
-  zip7 :: ( Sequential a, Sequential b, Sequential c, Sequential d, Sequential e, Sequential f, Sequential g
-          , Element col ~ (Element a, Element b, Element c, Element d, Element e, Element f, Element g) )
-       => a -> b -> c -> d -> e -> f -> g -> col
-  zip7 = zipWith7 (,,,,,,)
-
-instance ( Sequential a, Sequential b
-         , Zippable col, Element col ~ (Element a, Element b))
-        => BoxedZippable col a b
+instance BoxedZippable [a]
 
 -- * Tuple helper functions
 

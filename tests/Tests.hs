@@ -265,7 +265,7 @@ testBoxedZippable :: ( Show col, Eq col, Eq (Element col)
                      , Show b, Show (Item b), Eq b, Eq (Element b)
                      , Zippable a, Item a ~ Element a
                      , Zippable b, Item b ~ Element b
-                     , Zippable col, Element col ~ (Item a, Item b))
+                     , BoxedZippable col, Element col ~ (Item a, Item b))
                   => Proxy a -> Proxy b -> Proxy col -> Gen (Element a) -> Gen (Element b) -> [TestTree]
 testBoxedZippable proxyA proxyB proxyCol genElementA genElementB =
     [ testProperty "zip" $ withList2 $ \(as, bs) ->
