@@ -58,6 +58,8 @@ Library
   Other-modules:     Core.String.Internal
                      Core.String.UTF8
                      Core.String.Encoding.UTF16
+                     Core.String.Encoding.ASCII7
+                     Core.String.Encoding.ISO_8859_1
                      Core.String.UTF8Table
                      Core.String.ModifiedUTF8
                      Core.Tuple

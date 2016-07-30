@@ -1,5 +1,5 @@
 -- |
--- Module      : Core.String.Encoding.ASCII7
+-- Module      : Core.String.Encoding.ISO_8859_1
 -- License     : BSD-style
 -- Maintainer  : Foundation
 -- Stability   : experimental
@@ -8,13 +8,12 @@
 
 {-# LANGUAGE MagicHash #-}
 
-module Core.String.Encoding.ASCII7
+module Core.String.Encoding.ISO_8859_1
     ( next
     , write
     ) where
 
 import Core.Internal.Base
-import Data.Bits
 import Core.Internal.Types
 import Core.Number
 import Core.Primitive.Monad
@@ -24,25 +23,14 @@ import GHC.Word
 import GHC.Types
 import Core.Array.Unboxed.Builder
 
--- | validate a given byte is within ASCII characters encoring size
---
--- This function is equivalent to
---
--- > \w -> (0x10 .&. w) == 0x10
---
-isAscii :: Word8 -> Bool
-isAscii = (==) 0x10 . (.&.) 0x80
-{-# INLINE isAscii #-}
-
 -- offset of size one
 aone :: Offset Word8
 aone = Offset 1
 
-data ASCII7_Invalid
-    = ByteOutOfBound Word8
-    | CharNotAscii   Char
+data ISO_8859_1_Invalid
+    = NotISO_8859_1 Char
   deriving (Typeable, Show, Eq)
-instance Exception ASCII7_Invalid
+instance Exception ISO_8859_1_Invalid
 
 -- | consume an Ascii7 char and return the Unicode point and the position
 -- of the next possible Ascii7 char
@@ -51,14 +39,12 @@ next :: (Offset Word8 -> Word8)
           -- ^ method to access a given byte
      -> Offset Word8
           -- ^ index of the byte
-     -> Either ASCII7_Invalid (Char, Offset Word8)
+     -> Either ISO_8859_1_Invalid (Char, Offset Word8)
           -- ^ either successfully validated the ASCII char and returned the
           -- next index or fail with an error
-next getter off
-    | isAscii w8 = Right (toChar w, off + aone)
-    | otherwise  = Left $ ByteOutOfBound w8
+next getter off = Right (toChar w, off + aone)
   where
-    !w8@(W8# w) = getter off
+    !(W8# w) = getter off
     toChar :: Word# -> Char
     toChar a = C# (chr# (word2Int# a))
 
@@ -68,12 +54,16 @@ next getter off
 --
 write :: (PrimMonad st, Monad st)
       => Char
-          -- ^ expecting it to be a valid Ascii character.
-          -- otherwise this function will throw an exception
       -> ArrayBuilder Word8 st ()
-write c
-    | c < toEnum 0x80 = appendTy $ w8 c
-    | otherwise       = throw $ CharNotAscii c
+write c@(C# ch)
+    | c <  toEnum 0x80 = appendTy (W8# x)
+    | c <= toEnum 0xFF = do
+        appendTy $ W8# (or# (uncheckedShiftRL# x 6#) 0xC0##)
+        appendTy $ W8# (toContinuation x)
+    | otherwise       = throw $ NotISO_8859_1 c
   where
-    w8 :: Char -> Word8
-    w8 (C# ch) = W8# (int2Word# (ord# ch))
+    x :: Word#
+    !x = int2Word# (ord# ch)
+
+    toContinuation :: Word# -> Word#
+    toContinuation w = or# (and# w 0x3f##) 0x80##
