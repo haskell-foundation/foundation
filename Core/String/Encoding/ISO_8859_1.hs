@@ -38,7 +38,7 @@ data ISO_8859_1 = ISO_8859_1
 
 instance Encoding ISO_8859_1 where
     type Unit ISO_8859_1 = Word8
-    type Error ISO_8859_1 = ISO_8859_1_Invalid
+    type Error ISO_8859_1 a = Either ISO_8859_1_Invalid a
     next _ = next_
     write _ = write_
 

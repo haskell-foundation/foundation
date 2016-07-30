@@ -16,8 +16,24 @@ import Core.Primitive.Monad
 import Core.Array.Unboxed.Builder
 
 class Encoding encoding where
+    -- | the unit element use for the encoding.
+    -- i.e. Word8 for ASCII7 or UTF8, Word16 for UTF16...
+    --
     type Unit encoding
-    type Error encoding
+
+    -- | define the type of error handling you want to use for the
+    -- next function.
+    --
+    -- as example, one can use:
+    --
+    -- > type Error ASCII7 a = Maybe a
+    --
+    -- or can use:
+    --
+    -- > type Error UTF8 a = Either UTF8_Invalid a
+    --
+    type Error encoding a
+
     -- | consume an `Unit encoding` and return the Unicode point and the position
     -- of the next possible `Unit encoding`
     --
@@ -29,7 +45,7 @@ class Encoding encoding where
          -> Offset (Unit encoding)
               -- ^ offset of the `Unit encoding` where starts the encoding of
               -- a given unicode
-         -> Either (Error encoding) (Char, Offset (Unit encoding))
+         -> Error encoding (Char, Offset (Unit encoding))
               -- ^ either successfully validated the `Unit encoding` and
               -- returned the next offset or fail with an `Error encoding`
 
