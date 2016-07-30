@@ -59,6 +59,7 @@ Library
                      Core.String.UTF8
                      Core.String.Encoding.Encoding
                      Core.String.Encoding.UTF16
+                     Core.String.Encoding.UTF32
                      Core.String.Encoding.ASCII7
                      Core.String.Encoding.ISO_8859_1
                      Core.String.UTF8Table
