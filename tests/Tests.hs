@@ -264,7 +264,7 @@ testBoxedZippable :: ( Eq (Element col) , Show (Item a), Show (Item b)
 testBoxedZippable proxyA proxyB proxyCol genElementA genElementB =
     [ testProperty "zip" $ withList2 $ \(as, bs) ->
         toListP proxyCol (zip (fromListP proxyA as) (fromListP proxyB bs)) == zip as bs
-    , testProperty "unzip . zip == id" $ withListOfTuples $ \xs ->
+    , testProperty "zip . unzip == id" $ withListOfTuples $ \xs ->
         let (as, bs) = unzip (fromListP proxyCol xs)
         in toListP proxyCol (zip (as `asProxyTypeOf` proxyA) (bs `asProxyTypeOf` proxyB)) == xs
     ]
@@ -277,13 +277,65 @@ testZippable :: ( Eq (Element col), Show (Item col), Show (Item a), Show (Item b
              => Proxy a -> Proxy b -> Proxy col -> Gen (Element a) -> Gen (Element b) -> Gen (Element col) -> [TestTree]
 testZippable proxyA proxyB proxyCol genElementA genElementB genElementCol =
     [ testProperty "zipWith" $ withList2AndE $ \(as, bs, c) ->
-        let f _ _ = c
-        in toListP proxyCol (zipWith f (fromListP proxyA as) (fromListP proxyB bs)) == zipWith f as bs
+        toListP proxyCol (zipWith (const (const c)) (fromListP proxyA as) (fromListP proxyB bs)
+            ) == Prelude.replicate (Prelude.min (length as) (length bs)) c
     ]
   where
-    withList2AndE = forAll ( (,,) <$> listOfElement genElementA
-                                  <*> listOfElement genElementB
+    withList2AndE = forAll ( (,,) <$> listOfElement genElementA <*> listOfElement genElementB
                                   <*> genElementCol )
+
+testZippableProps :: (Eq (Item a), Eq (Item b), Show (Item a), Show (Item b), Zippable a, Zippable b)
+                  => Proxy a -> Proxy b -> Gen (Element a) -> Gen (Element b) -> [TestTree]
+testZippableProps proxyA proxyB genElementA genElementB =
+    [ testProperty "zipWith ⊥ [] xs == []" $ withList $ \as ->
+        toListP proxyA (zipWith undefined [] (fromListP proxyA as)) == []
+    , testProperty "zipWith f a b == zipWith (flip f) b a" $ withList2 $ \(as, bs) ->
+        let f = ignore1
+            as' = fromListP proxyA as
+            bs' = fromListP proxyB bs
+        in toListP proxyB (zipWith f as' bs')
+            == toListP proxyB (zipWith (flip f) bs' as')
+    , testProperty "zipWith3 f […] xs == zipWith id (zipWith f […]) xs)" $ withList2 $ \(as, bs) ->
+        let f = ignore2
+            as' = fromListP proxyA as
+            bs' = fromListP proxyB bs
+        in toListP proxyB (zipWith3 f as' as' bs')
+            == Prelude.zipWith id (zipWith f as as) bs
+    , testProperty "zipWith4 f […] xs == zipWith id (zipWith3 f […]) xs)" $ withList2 $ \(as, bs) ->
+        let f = ignore3
+            as' = fromListP proxyA as
+            bs' = fromListP proxyB bs
+        in toListP proxyB (zipWith4 f as' as' as' bs')
+            == Prelude.zipWith id (zipWith3 f as as as) bs
+    , testProperty "zipWith5 f […] xs == zipWith id (zipWith4 f […]) xs)" $ withList2 $ \(as, bs) ->
+        let f = ignore4
+            as' = fromListP proxyA as
+            bs' = fromListP proxyB bs
+        in toListP proxyB (zipWith5 f as' as' as' as' bs')
+            == Prelude.zipWith id (zipWith4 f as as as as) bs
+    , testProperty "zipWith6 f […] xs == zipWith id (zipWith5 f […]) xs)" $ withList2 $ \(as, bs) ->
+        let f = ignore5
+            as' = fromListP proxyA as
+            bs' = fromListP proxyB bs
+        in toListP proxyB (zipWith6 f as' as' as' as' as' bs')
+            == Prelude.zipWith id (zipWith5 f as as as as as) bs
+    , testProperty "zipWith7 f […] xs == zipWith id (zipWith6 f […]) xs)" $ withList2 $ \(as, bs) ->
+        let f = ignore6
+            as' = fromListP proxyA as
+            bs' = fromListP proxyB bs
+        in toListP proxyB (zipWith7 f as' as' as' as' as' as' bs')
+            == Prelude.zipWith id (zipWith6 f as as as as as as) bs
+    ]
+  where
+    -- ignore the first n arguments
+    ignore1 = flip const
+    ignore2 = const . ignore1
+    ignore3 = const . ignore2
+    ignore4 = const . ignore3
+    ignore5 = const . ignore4
+    ignore6 = const . ignore5
+    withList  = forAll (listOfElement genElementA)
+    withList2 = forAll ((,) <$> listOfElement genElementA <*> listOfElement genElementB)
 
 testUnboxedForeign :: (PrimType e, Show e, Element a ~ e, Storable e)
                    => Proxy a -> Gen e -> [TestTree]
@@ -490,6 +542,9 @@ tests =
                     (Proxy :: Proxy (UArray Word8)) (Proxy :: Proxy (Array Int))
                     (Proxy :: Proxy (UArray Word32)) arbitrary arbitrary arbitrary )
             ]
+        , testGroup "Properties"
+            ( testZippableProps (Proxy :: Proxy (Array Int)) (Proxy :: Proxy (Array Char))
+                arbitrary arbitrary )
         ]
     ]
 
