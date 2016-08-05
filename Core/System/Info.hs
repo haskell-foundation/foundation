@@ -65,10 +65,14 @@ instance IsString OS where
 os :: OS
 os = fromString System.Info.os
 
--- | get the architecture info
+-- | get the machine architecture on which the program is running
 --
--- get the `arch` from base package but convert
--- it into a strict String
+-- This function uses base implementation:
+--
+-- > fromList System.Info.arch
+--
+-- Potential results are: i386, x86_64, powerpc, sparc, arm, ...
+--
 arch :: String
 arch = fromList System.Info.arch
 
