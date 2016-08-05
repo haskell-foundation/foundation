@@ -20,10 +20,12 @@ module Core.System.Info
     , endianness
       -- * Compiler info
     , compilerName
-    , compilerVersion
+    , System.Info.compilerVersion
+    , Data.Version.Version(..)
     ) where
 
 import qualified System.Info
+import qualified Data.Version
 import qualified GHC.Conc
 import Core.String
 import Core.Internal.Base
@@ -82,13 +84,6 @@ arch = fromList System.Info.arch
 -- it into a strict String
 compilerName :: String
 compilerName = fromList System.Info.compilerName
-
--- | get the compiler version
---
--- get the compilerVersion from base package but convert
--- it into a strict String
-compilerVersion :: String
-compilerVersion = fromList $ show System.Info.compilerVersion
 
 -- | returns the number of CPUs the machine has
 cpus :: IO Int
