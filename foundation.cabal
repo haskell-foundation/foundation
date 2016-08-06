@@ -70,6 +70,7 @@ Library
                      Core.Collection.Indexed
                      Core.Collection.Foldable
                      Core.Collection.Mutable
+                     Core.Collection.Zippable
                      Core.Internal.Base
                      Core.Internal.Primitive
                      Core.Internal.IsList

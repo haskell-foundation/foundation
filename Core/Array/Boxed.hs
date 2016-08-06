@@ -108,6 +108,22 @@ instance C.IndexedCollection (Array ty) where
             | otherwise =
                 if predicate (unsafeIndex c i) then Just i else Nothing
 
+instance C.Zippable (Array ty) where
+    -- TODO Use an array builder once available
+    zipWith f a b = runST $ do
+        mv <- new len
+        go mv 0 f (toList a) (toList b)
+        unsafeFreeze mv
+      where
+        !len = min (C.length a) (C.length b)
+        go _  _  _ []       _        = return ()
+        go _  _  _ _        []       = return ()
+        go mv i f' (a':as') (b':bs') = do
+            write mv i (f' a' b')
+            go mv (i + 1) f' as' bs'
+
+instance C.BoxedZippable (Array ty)
+
 -- | return the numbers of elements in a mutable array
 mutableLength :: MArray ty st -> Int
 mutableLength (MArray ma) = I# (sizeofMutableArray# ma)

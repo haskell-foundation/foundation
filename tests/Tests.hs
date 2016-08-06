@@ -1,25 +1,24 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE NoImplicitPrelude   #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies        #-}
 module Main where
 
 import           Test.Tasty
 --import           Test.Tasty.Options
+import           Control.Monad
+import           Test.QuickCheck.Monadic
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
-import           Test.QuickCheck.Monadic
-import           Control.Monad
 
-import           Core.String
-import           Core.Array
-import           Core.Foreign
-import           Core.Collection
-import           Core.VFS (Path(..), parent, filename)
-import           Core.VFS.FilePath
 import           Core
-import qualified Data.List as L
+import           Core.Collection
+import           Core.Foreign
+import           Core.String
+import           Core.VFS                (Path (..), filename, parent)
+import           Core.VFS.FilePath
+import qualified Data.List               as L
 import qualified Prelude
 
 import           ForeignUtils
@@ -65,7 +64,7 @@ instance Arbitrary Split where
         return (Split (Unicode $ L.intercalate [ch] l) ch)
 
 instance Arbitrary CharMap where
-    arbitrary = do
+    arbitrary =
         CharMap <$> arbitrary <*> choose (1,12)
 
 instance Arbitrary FileName where
@@ -124,7 +123,7 @@ qcnSet n = adjustOption (\(QuickCheckTests _) -> QuickCheckTests n)
 qcnScale :: Int -> TestTree -> TestTree
 qcnScale n = adjustOption (\(QuickCheckTests actual) -> QuickCheckTests (actual * n))
 
-testEq :: (Show e, Eq e, Eq a, Monoid a, Element a ~ e, IsList a, Item a ~ Element a) => Proxy a -> Gen e -> [TestTree]
+testEq :: (Show e, Eq e, Eq a, Element a ~ e, IsList a, Item a ~ Element a) => Proxy a -> Gen e -> [TestTree]
 testEq proxy genElement =
     [ testProperty "x == x" $ withElements $ \l -> let col = fromListP proxy l in col == col
     , testProperty "x == y" $ with2Elements $ \(l1, l2) ->
@@ -134,7 +133,7 @@ testEq proxy genElement =
     withElements f = forAll (listOfElement genElement) f
     with2Elements f = forAll ((,) <$> listOfElement genElement <*> listOfElement genElement) f
 
-testOrd :: (Show e, Eq e, Eq a, Ord a, Ord e, Monoid a, Element a ~ e, IsList a, Item a ~ Element a) => Proxy a -> Gen e -> [TestTree]
+testOrd :: (Show e, Ord a, Ord e, Element a ~ e, IsList a, Item a ~ Element a) => Proxy a -> Gen e -> [TestTree]
 testOrd proxy genElement =
     [ testProperty "x `compare` y" $ with2Elements $ \(l1, l2) ->
         (fromListP proxy l1 `compare` fromListP proxy l2) == (l1 `compare` l2)
@@ -142,7 +141,7 @@ testOrd proxy genElement =
   where
     with2Elements f = forAll ((,) <$> listOfElement genElement <*> listOfElement genElement) f
 
-testMonoid :: (Show e, Eq a, Eq e, Ord a, Ord e, Monoid a, Element a ~ e, IsList a, Item a ~ Element a) => Proxy a -> Gen e -> [TestTree]
+testMonoid :: (Show e, Ord a, Ord e, Monoid a, Element a ~ e, IsList a, Item a ~ Element a) => Proxy a -> Gen e -> [TestTree]
 testMonoid proxy genElement =
     testEq proxy genElement <>
     testOrd proxy genElement <>
@@ -207,10 +206,8 @@ testPath genElement =
   where
     withElements f = forAll genElement f
 
-testCollection :: ( Show a, Show (Element a)
-                  , Eq a, Eq (Element a)
-                  , Ord a, Ord (Item a)
-                  , Sequential a, Item a ~ Element a) => Proxy a -> Gen (Element a) -> [TestTree]
+testCollection :: (Sequential a, Show a, Show (Element a), Eq (Element a), Ord a, Ord (Item a))
+               => Proxy a -> Gen (Element a) -> [TestTree]
 testCollection proxy genElement =
     testMonoid proxy genElement <>
     [ testProperty "LString-convert" $ withElements $ isIdemPotent (toList . fromListP proxy)
@@ -260,7 +257,87 @@ testCollection proxy genElement =
     withElements3 f = forAll ((,,) <$> listOfElement genElement <*> arbitrary <*> arbitrary) f
     withElements2E f = forAll ((,) <$> listOfElement genElement <*> genElement) f
 
-testUnboxedForeign :: (PrimType e, Show e, Eq a, Eq e, Ord a, Ord e, Arbitrary e, Sequential a, Item a ~ Element a, Element a ~ e, Storable e)
+testBoxedZippable :: ( Eq (Element col) , Show (Item a), Show (Item b)
+                     , BoxedZippable col, Zippable a, Zippable b
+                     , Element col ~ (Item a, Item b) )
+                  => Proxy a -> Proxy b -> Proxy col -> Gen (Element a) -> Gen (Element b) -> [TestTree]
+testBoxedZippable proxyA proxyB proxyCol genElementA genElementB =
+    [ testProperty "zip" $ withList2 $ \(as, bs) ->
+        toListP proxyCol (zip (fromListP proxyA as) (fromListP proxyB bs)) == zip as bs
+    , testProperty "zip . unzip == id" $ withListOfTuples $ \xs ->
+        let (as, bs) = unzip (fromListP proxyCol xs)
+        in toListP proxyCol (zip (as `asProxyTypeOf` proxyA) (bs `asProxyTypeOf` proxyB)) == xs
+    ]
+  where
+    withList2 = forAll ((,) <$> listOfElement genElementA <*> listOfElement genElementB)
+    withListOfTuples = forAll (listOfElement ((,) <$> genElementA <*> genElementB))
+
+testZippable :: ( Eq (Element col), Show (Item col), Show (Item a), Show (Item b)
+                , Zippable col, Zippable a, Zippable b )
+             => Proxy a -> Proxy b -> Proxy col -> Gen (Element a) -> Gen (Element b) -> Gen (Element col) -> [TestTree]
+testZippable proxyA proxyB proxyCol genElementA genElementB genElementCol =
+    [ testProperty "zipWith" $ withList2AndE $ \(as, bs, c) ->
+        toListP proxyCol (zipWith (const (const c)) (fromListP proxyA as) (fromListP proxyB bs)
+            ) == Prelude.replicate (Prelude.min (length as) (length bs)) c
+    ]
+  where
+    withList2AndE = forAll ( (,,) <$> listOfElement genElementA <*> listOfElement genElementB
+                                  <*> genElementCol )
+
+testZippableProps :: (Eq (Item a), Eq (Item b), Show (Item a), Show (Item b), Zippable a, Zippable b)
+                  => Proxy a -> Proxy b -> Gen (Element a) -> Gen (Element b) -> [TestTree]
+testZippableProps proxyA proxyB genElementA genElementB =
+    [ testProperty "zipWith ⊥ [] xs == []" $ withList $ \as ->
+        toListP proxyA (zipWith undefined [] (fromListP proxyA as)) == []
+    , testProperty "zipWith f a b == zipWith (flip f) b a" $ withList2 $ \(as, bs) ->
+        let f = ignore1
+            as' = fromListP proxyA as
+            bs' = fromListP proxyB bs
+        in toListP proxyB (zipWith f as' bs')
+            == toListP proxyB (zipWith (flip f) bs' as')
+    , testProperty "zipWith3 f […] xs == zipWith id (zipWith f […]) xs)" $ withList2 $ \(as, bs) ->
+        let f = ignore2
+            as' = fromListP proxyA as
+            bs' = fromListP proxyB bs
+        in toListP proxyB (zipWith3 f as' as' bs')
+            == Prelude.zipWith id (zipWith f as as) bs
+    , testProperty "zipWith4 f […] xs == zipWith id (zipWith3 f […]) xs)" $ withList2 $ \(as, bs) ->
+        let f = ignore3
+            as' = fromListP proxyA as
+            bs' = fromListP proxyB bs
+        in toListP proxyB (zipWith4 f as' as' as' bs')
+            == Prelude.zipWith id (zipWith3 f as as as) bs
+    , testProperty "zipWith5 f […] xs == zipWith id (zipWith4 f […]) xs)" $ withList2 $ \(as, bs) ->
+        let f = ignore4
+            as' = fromListP proxyA as
+            bs' = fromListP proxyB bs
+        in toListP proxyB (zipWith5 f as' as' as' as' bs')
+            == Prelude.zipWith id (zipWith4 f as as as as) bs
+    , testProperty "zipWith6 f […] xs == zipWith id (zipWith5 f […]) xs)" $ withList2 $ \(as, bs) ->
+        let f = ignore5
+            as' = fromListP proxyA as
+            bs' = fromListP proxyB bs
+        in toListP proxyB (zipWith6 f as' as' as' as' as' bs')
+            == Prelude.zipWith id (zipWith5 f as as as as as) bs
+    , testProperty "zipWith7 f […] xs == zipWith id (zipWith6 f […]) xs)" $ withList2 $ \(as, bs) ->
+        let f = ignore6
+            as' = fromListP proxyA as
+            bs' = fromListP proxyB bs
+        in toListP proxyB (zipWith7 f as' as' as' as' as' as' bs')
+            == Prelude.zipWith id (zipWith6 f as as as as as as) bs
+    ]
+  where
+    -- ignore the first n arguments
+    ignore1 = flip const
+    ignore2 = const . ignore1
+    ignore3 = const . ignore2
+    ignore4 = const . ignore3
+    ignore5 = const . ignore4
+    ignore6 = const . ignore5
+    withList  = forAll (listOfElement genElementA)
+    withList2 = forAll ((,) <$> listOfElement genElementA <*> listOfElement genElementB)
+
+testUnboxedForeign :: (PrimType e, Show e, Element a ~ e, Storable e)
                    => Proxy a -> Gen e -> [TestTree]
 testUnboxedForeign proxy genElement =
     [ testProperty "equal" $ withElementsM $ \fptr l ->
@@ -279,6 +356,9 @@ testUnboxedForeign proxy genElement =
 
 fromListP :: (IsList c, Item c ~ Element c) => Proxy c -> [Element c] -> c
 fromListP p = \x -> asProxyTypeOf (fromList x) p
+
+toListP :: (IsList c, Item c ~ Element c) => Proxy c -> c -> [Element c]
+toListP p x = toList (asProxyTypeOf x p)
 
 data RandomList = RandomList [Int]
     deriving (Show,Eq)
@@ -398,6 +478,73 @@ tests =
         [ testCase "The foundation Serie" $ testCaseModifiedUTF8 "基地系列" "基地系列"
         , testCase "has null bytes" $ testCaseModifiedUTF8 "let's\0 do \0 it" "let's\0 do \0 it"
         , testCase "Vincent's special" $ testCaseModifiedUTF8 "abc\0안, 蠀\0, ☃" "abc\0안, 蠀\0, ☃"
+        ]
+    , testGroup "BoxedZippable"
+        [ testGroup "Array"
+            [ testGroup "from Array Int"
+                ( testBoxedZippable
+                    (Proxy :: Proxy (Array Int)) (Proxy :: Proxy (Array Int))
+                    (Proxy :: Proxy (Array (Int, Int))) arbitrary arbitrary )
+            , testGroup "from String"
+                ( testBoxedZippable
+                    (Proxy :: Proxy String) (Proxy :: Proxy String)
+                    (Proxy :: Proxy (Array (Char, Char))) arbitrary arbitrary )
+            , testGroup "from String and Array Char"
+                ( testBoxedZippable
+                    (Proxy :: Proxy String) (Proxy :: Proxy (Array Char))
+                    (Proxy :: Proxy (Array (Char, Char))) arbitrary arbitrary )
+            , testGroup "from Array Int and Array Char"
+                ( testBoxedZippable
+                    (Proxy :: Proxy (Array Int)) (Proxy :: Proxy (Array Char))
+                    (Proxy :: Proxy (Array (Int, Char))) arbitrary arbitrary )
+            ]
+        ]
+    , testGroup "Zippable"
+        [ testGroup "String"
+            [ testGroup "from String"
+                ( testZippable
+                    (Proxy :: Proxy String) (Proxy :: Proxy String)
+                    (Proxy :: Proxy String) arbitrary arbitrary arbitrary )
+            , testGroup "from Array Char"
+                ( testZippable
+                    (Proxy :: Proxy (Array Char)) (Proxy :: Proxy (Array Char))
+                    (Proxy :: Proxy String) arbitrary arbitrary arbitrary )
+            , testGroup "from UArray Word8 and Array Int"
+                ( testZippable
+                    (Proxy :: Proxy (UArray Word8)) (Proxy :: Proxy (Array Int))
+                    (Proxy :: Proxy String) arbitrary arbitrary arbitrary )
+            ]
+        , testGroup "Array"
+            [ testGroup "from String"
+                ( testZippable
+                    (Proxy :: Proxy String) (Proxy :: Proxy String)
+                    (Proxy :: Proxy (Array Int)) arbitrary arbitrary arbitrary )
+            , testGroup "from Array Char"
+                ( testZippable
+                    (Proxy :: Proxy (Array Char)) (Proxy :: Proxy (Array Char))
+                    (Proxy :: Proxy (Array Char)) arbitrary arbitrary arbitrary )
+            , testGroup "from UArray Word8 and Array Int"
+                ( testZippable
+                    (Proxy :: Proxy (UArray Word8)) (Proxy :: Proxy (Array Int))
+                    (Proxy :: Proxy (Array Int)) arbitrary arbitrary arbitrary )
+            ]
+        , testGroup "UArray"
+            [ testGroup "from String"
+                ( testZippable
+                    (Proxy :: Proxy String) (Proxy :: Proxy String)
+                    (Proxy :: Proxy (UArray Word8)) arbitrary arbitrary arbitrary )
+            , testGroup "from Array Char"
+                ( testZippable
+                    (Proxy :: Proxy (Array Char)) (Proxy :: Proxy (Array Char))
+                    (Proxy :: Proxy (UArray Word16)) arbitrary arbitrary arbitrary )
+            , testGroup "from UArray Word8 and Array Int"
+                ( testZippable
+                    (Proxy :: Proxy (UArray Word8)) (Proxy :: Proxy (Array Int))
+                    (Proxy :: Proxy (UArray Word32)) arbitrary arbitrary arbitrary )
+            ]
+        , testGroup "Properties"
+            ( testZippableProps (Proxy :: Proxy (Array Int)) (Proxy :: Proxy (Array Char))
+                arbitrary arbitrary )
         ]
     ]
 

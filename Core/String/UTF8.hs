@@ -13,12 +13,12 @@
 --
 -- The String data must contain UTF8 valid data.
 --
-{-# LANGUAGE MagicHash #-}
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE UnboxedTuples #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MagicHash                  #-}
+{-# LANGUAGE NoImplicitPrelude          #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE UnboxedTuples              #-}
 module Core.String.UTF8
     ( String(..)
     --, Buffer
@@ -35,27 +35,29 @@ module Core.String.UTF8
     , ValidationFailure(..)
     ) where
 
-import           GHC.Prim
-import           GHC.Types
-import           GHC.ST
-import           GHC.Word
-import           Core.Internal.Base
-import           Core.Internal.Types
-import           Core.Internal.Primitive
-import qualified Core.Collection as C
-import           Core.Primitive.Types
-import           Core.Primitive.Monad
-import           Core.String.UTF8Table
-import           Core.Array.Unboxed (UArray)
+import           Core.Array.Unboxed           (UArray)
+import qualified Core.Array.Unboxed           as Vec
 import           Core.Array.Unboxed.ByteArray (MutableByteArray)
-import qualified Core.Array.Unboxed as Vec
-import qualified Core.Array.Unboxed.Mutable as MVec
+import qualified Core.Array.Unboxed.Mutable   as MVec
+import qualified Core.Collection              as C
+import           Core.Internal.Base
+import           Core.Internal.Primitive
+import           Core.Internal.Types
 import           Core.Number
+import           Core.Primitive.Monad
+import           Core.Primitive.Types
+import           Core.String.UTF8Table
+import           GHC.Prim
+import           GHC.ST
+import           GHC.Types
+import           GHC.Word
 
-import qualified Data.List -- temporary
+ -- temporary
+import qualified Data.List
 
-import GHC.CString (unpackCString#, unpackCStringUtf8#)
-import Core.String.ModifiedUTF8 (fromModified)
+import           Core.String.ModifiedUTF8     (fromModified)
+import           GHC.CString                  (unpackCString#,
+                                               unpackCStringUtf8#)
 
 -- | Opaque packed array of characters in the UTF8 encoding
 newtype String = String (UArray Word8)
@@ -99,6 +101,10 @@ instance C.Sequential String where
     sortBy = sortBy
     length = length
     singleton = fromList . (:[])
+
+instance C.Zippable String where
+  -- TODO Use a string builder once available
+  zipWith f a b = sFromList (C.zipWith f a b)
 
 data ValidationFailure = InvalidHeader
                        | InvalidContinuation
