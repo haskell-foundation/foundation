@@ -44,13 +44,11 @@ data OS
     | Linux
     | Android
     | BSD
-    | Unknown
     | Other String
   deriving (Show, Eq)
 
 instance IsString OS where
     fromString str = case str of
-        []        -> Unknown
         "darwin"  -> OSX
         "mingw32" -> Windows
         "linux"   -> Linux
