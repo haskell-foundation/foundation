@@ -1,9 +1,9 @@
-module Core.Vector.Bits
+module Core.Array.Bitmap
     ( Bits
     , MutableBits
     ) where
 
-import           Core.Vector.Unboxed
+import           Core.Array.Unboxed
 import           Core.Internal.Base
 import qualified Core.Collection as C
 
