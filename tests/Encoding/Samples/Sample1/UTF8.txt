@@ -1,0 +1,11 @@
+In French:
+
+1. un robot ne peut porter atteinte à un être humain, ni, en restant passif, permettre qu'un être humain soit exposé au danger ;
+2. un robot doit obéir aux ordres qui lui sont donnés par un être humain, sauf si de tels ordres entrent en conflit avec la première loi ;
+3. un robot doit protéger son existence tant que cette protection n'entre pas en conflit avec la première ou la deuxième loi.
+
+In Danish:
+
+1. En robot må ikke gøre et menneske fortræd, eller, ved ikke at gøre noget, lade et menneske komme til skade
+2. En robot skal adlyde ordrer givet af mennesker, så længe disse ikke er i konflikt med første lov
+3. En robot skal beskytte sin egen eksistens, så længe dette ikke er i konflikt med første eller anden lov
