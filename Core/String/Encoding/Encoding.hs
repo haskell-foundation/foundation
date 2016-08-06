@@ -10,7 +10,7 @@
 
 module Core.String.Encoding.Encoding
     ( Encoding(..)
-    , convertWith
+    , convertFromTo
     ) where
 
 import Core.Internal.Base
@@ -65,19 +65,31 @@ class Encoding encoding where
 
 -- | helper to convert a given Array in a given encoding into an array
 -- with another encoding.
-convertWith :: ( PrimMonad st, Monad st
-               , Encoding input, PrimType (Unit input)
-               , Exception (Error input)
-               , Encoding output, PrimType (Unit output)
-               )
-            => input
-              -- ^ Input's encoding type
-            -> output
-              -- ^ Output's encoding type
-            -> UArray (Unit input)
-              -- ^ the input raw array
-            -> st (UArray (Unit output))
-convertWith inputEncodingTy outputEncodingTy bytes
+--
+-- This is a helper to convert from one String encoding to another.
+-- This function is (quite) slow and needs some work.
+--
+-- ```
+-- let s16 = ... -- string in UTF16
+-- -- create s8, a UTF8 String
+-- let s8  = runST $ convertWith UTF16 UTF8 (toBytes s16)
+--
+-- print s8
+-- ```
+--
+convertFromTo :: ( PrimMonad st, Monad st
+                 , Encoding input, PrimType (Unit input)
+                 , Exception (Error input)
+                 , Encoding output, PrimType (Unit output)
+                 )
+              => input
+                -- ^ Input's encoding type
+              -> output
+                -- ^ Output's encoding type
+              -> UArray (Unit input)
+                -- ^ the input raw array
+              -> st (UArray (Unit output))
+convertFromTo inputEncodingTy outputEncodingTy bytes
     | C.null bytes = return mempty
     | otherwise    = Vec.unsafeIndexer bytes $ \t -> build 64 (loop azero t)
   where
