@@ -51,20 +51,20 @@ data ASCII7 = ASCII7
 instance Encoding ASCII7 where
     type Unit ASCII7 = Word8
     type Error ASCII7 a = Either ASCII7_Invalid a
-    next _ = next_
-    write _ = write_
+    encodingNext  _ = next
+    encodingWrite _ = write
 
 -- | consume an Ascii7 char and return the Unicode point and the position
 -- of the next possible Ascii7 char
 --
-next_ :: (Offset Word8 -> Word8)
+next :: (Offset Word8 -> Word8)
           -- ^ method to access a given byte
-      -> Offset Word8
+     -> Offset Word8
           -- ^ index of the byte
-      -> Either ASCII7_Invalid (Char, Offset Word8)
+     -> Either ASCII7_Invalid (Char, Offset Word8)
           -- ^ either successfully validated the ASCII char and returned the
           -- next index or fail with an error
-next_ getter off
+next getter off
     | isAscii w8 = Right (toChar w, off + aone)
     | otherwise  = Left $ ByteOutOfBound w8
   where
@@ -76,12 +76,12 @@ next_ getter off
 --
 -- > build 64 $ sequence_ write "this is a simple list of char..."
 --
-write_ :: (PrimMonad st, Monad st)
-       => Char
+write :: (PrimMonad st, Monad st)
+      => Char
            -- ^ expecting it to be a valid Ascii character.
            -- otherwise this function will throw an exception
-       -> ArrayBuilder Word8 st ()
-write_ c
+      -> ArrayBuilder Word8 st ()
+write c
     | c < toEnum 0x80 = appendTy $ w8 c
     | otherwise       = throw $ CharNotAscii c
   where

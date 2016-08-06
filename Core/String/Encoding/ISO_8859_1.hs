@@ -39,22 +39,22 @@ data ISO_8859_1 = ISO_8859_1
 instance Encoding ISO_8859_1 where
     type Unit ISO_8859_1 = Word8
     type Error ISO_8859_1 a = Either ISO_8859_1_Invalid a
-    next _ = next_
-    write _ = write_
+    encodingNext  _ = next
+    encodingWrite _ = write
 
-next_ :: (Offset Word8 -> Word8)
-      -> Offset Word8
-      -> Either ISO_8859_1_Invalid (Char, Offset Word8)
-next_ getter off = Right (toChar w, off + aone)
+next :: (Offset Word8 -> Word8)
+     -> Offset Word8
+     -> Either ISO_8859_1_Invalid (Char, Offset Word8)
+next getter off = Right (toChar w, off + aone)
   where
     !(W8# w) = getter off
     toChar :: Word# -> Char
     toChar a = C# (chr# (word2Int# a))
 
-write_ :: (PrimMonad st, Monad st)
-       => Char
-       -> ArrayBuilder Word8 st ()
-write_ c@(C# ch)
+write :: (PrimMonad st, Monad st)
+      => Char
+      -> ArrayBuilder Word8 st ()
+write c@(C# ch)
     | c <  toEnum 0x80 = appendTy (W8# x)
     | c <= toEnum 0xFF = do
         appendTy $ W8# (or# (uncheckedShiftRL# x 6#) 0xC0##)

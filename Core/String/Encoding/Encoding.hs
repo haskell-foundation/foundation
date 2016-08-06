@@ -37,25 +37,26 @@ class Encoding encoding where
     -- | consume an `Unit encoding` and return the Unicode point and the position
     -- of the next possible `Unit encoding`
     --
-    next :: encoding
-              -- ^ only used for type deduction
-         -> (Offset (Unit encoding) -> Unit encoding)
-              -- ^ method to access a given `Unit encoding`
-              -- (see `unsafeIndexer`)
-         -> Offset (Unit encoding)
-              -- ^ offset of the `Unit encoding` where starts the encoding of
-              -- a given unicode
-         -> Error encoding (Char, Offset (Unit encoding))
-              -- ^ either successfully validated the `Unit encoding` and
-              -- returned the next offset or fail with an `Error encoding`
+    encodingNext :: encoding
+                      -- ^ only used for type deduction
+                -> (Offset (Unit encoding) -> Unit encoding)
+                      -- ^ method to access a given `Unit encoding`
+                      -- (see `unsafeIndexer`)
+                -> Offset (Unit encoding)
+                      -- ^ offset of the `Unit encoding` where starts the
+                      -- encoding of a given unicode
+                -> Error encoding (Char, Offset (Unit encoding))
+                      -- ^ either successfully validated the `Unit encoding`
+                      -- and returned the next offset or fail with an
+                      -- `Error encoding`
 
     -- Write a unicode point encoded into one or multiple `Unit encoding`
     --
     -- > build 64 $ sequence_ (write UTF8) "this is a simple list of char..."
     --
-    write :: (PrimMonad st, Monad st)
-          => encoding
-              -- ^ only used for type deduction
-          -> Char
-              -- ^ the unicode character to encode
-          -> ArrayBuilder (Unit encoding) st ()
+    encodingWrite :: (PrimMonad st, Monad st)
+                  => encoding
+                      -- ^ only used for type deduction
+                  -> Char
+                      -- ^ the unicode character to encode
+                  -> ArrayBuilder (Unit encoding) st ()

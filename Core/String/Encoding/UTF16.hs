@@ -35,8 +35,8 @@ data UTF16 = UTF16
 instance Encoding UTF16 where
     type Unit UTF16 = Word16
     type Error UTF16 a = Either UTF16_Invalid a
-    next _ = next_
-    write _ = write_
+    encodingNext  _ = next
+    encodingWrite _ = write
 
 
 --
@@ -48,10 +48,10 @@ instance Encoding UTF16 where
 --    * The low ten bits (also in the range 0..0x03FF) are added to 0xDC00 to give the second 16-bit code unit
 --      or low surrogate, which will be in the range 0xDC00..0xDFFF.
 
-next_ :: (Offset Word16 -> Word16)
-      -> Offset Word16
-      -> Either UTF16_Invalid (Char, Offset Word16)
-next_ getter off
+next :: (Offset Word16 -> Word16)
+     -> Offset Word16
+     -> Either UTF16_Invalid (Char, Offset Word16)
+next getter off
     | h <  0xd800 = Right (toChar hh, off + Offset 1)
     | h >= 0xe000 = Right (toChar hh, off + Offset 1)
     | otherwise   = nextContinuation
@@ -73,10 +73,10 @@ next_ getter off
         cont :: Word16
         !cont = getter $ off + Offset 1
 
-write_ :: (PrimMonad st, Monad st)
-       => Char
-       -> ArrayBuilder Word16 st ()
-write_ c
+write :: (PrimMonad st, Monad st)
+      => Char
+      -> ArrayBuilder Word16 st ()
+write c
     | c < toEnum 0xd800   = appendTy $ w16 c
     | c > toEnum 0x10000  = let (w1, w2) = wHigh c in appendTy w1 >> appendTy w2
     | c > toEnum 0x10ffff = throw $ InvalidUnicode c
