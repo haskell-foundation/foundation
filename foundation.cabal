@@ -88,6 +88,7 @@ Library
                      Core.Array.Unboxed.Mutable
                      Core.Array.Unboxed.ByteArray
                      Core.Array.Boxed
+                     Core.Array.Bitmap
                      Core.Foreign.MemoryMap
                      Core.Foreign.MemoryMap.Types
                      Core.Partial
