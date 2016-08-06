@@ -26,6 +26,7 @@ module Core.System.Info
 
 import qualified System.Info
 import qualified Data.Version
+import           Data.Data
 import qualified GHC.Conc
 import Core.String
 import Core.Internal.Base
@@ -44,39 +45,57 @@ data OS
     | Linux
     | Android
     | BSD
-    | Unknown
-    | Other String
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord, Enum, Bounded, Data, Typeable)
 
-instance IsString OS where
-    fromString str = case str of
-        []        -> Unknown
-        "darwin"  -> OSX
-        "mingw32" -> Windows
-        "linux"   -> Linux
-        "linux-android" -> Android
-        "openbsd" -> BSD
-        "netbsd"  -> BSD
-        "freebsd" -> BSD
-        _ -> Other $ fromList str
-
--- | get the OS name
+-- | get the operating system on which the program is running.
 --
--- get the `os` from base package but convert
--- it into a strict String
-os :: OS
-os = fromString System.Info.os
+-- Either return the known `OS` or a strict `String` of the OS name.
+--
+-- This function uses the `base`'s `System.Info.os` function.
+--
+os :: Either String OS
+os = case System.Info.os of
+    "darwin"  -> Right OSX
+    "mingw32" -> Right Windows
+    "linux"   -> Right Linux
+    "linux-android" -> Right Android
+    "openbsd" -> Right BSD
+    "netbsd"  -> Right BSD
+    "freebsd" -> Right BSD
+    str       -> Left $ fromList str
+
+-- | Enumeration of the known GHC supported architecture.
+--
+data Arch
+    = I386
+    | X86_64
+    | PowerPC
+    | PowerPC64
+    | Sparc
+    | Sparc64
+    | ARM
+    | ARM64
+  deriving (Show, Eq, Ord, Enum, Bounded, Data, Typeable)
 
 -- | get the machine architecture on which the program is running
 --
--- This function uses base implementation:
+-- Either return the known architecture or a Strict `String` of the
+-- architecture name.
 --
--- > fromList System.Info.arch
+-- This function uses the `base`'s `System.Info.arch` function.
 --
--- Potential results are: i386, x86_64, powerpc, sparc, arm, ...
---
-arch :: String
-arch = fromList System.Info.arch
+arch :: Either String Arch
+arch = case System.Info.arch of
+    "i386"          -> Right I386
+    "x86_64"        -> Right X86_64
+    "powerpc"       -> Right PowerPC
+    "powerpc64"     -> Right PowerPC64
+    "powerpc64le"   -> Right PowerPC64
+    "sparc"         -> Right Sparc
+    "sparc64"       -> Right Sparc64
+    "arm"           -> Right ARM
+    "aarch64"       -> Right ARM64
+    str             -> Left $ fromList str
 
 -- | get the compiler name
 --
