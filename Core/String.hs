@@ -22,11 +22,24 @@
 --
 module Core.String
     ( String
-    , Encoding(..)
     , fromBytes
     , fromBytesLenient
     , toBytes
     , ValidationFailure(..)
+
+      -- * encoding support
+    , Encoding
+    , convertFromTo
+    , ASCII7(..)
+    , UTF8(..)
+    , UTF16(..)
+    , UTF32(..)
+    , ISO_8859_1(..)
     ) where
 
 import Core.String.UTF8
+import Core.String.Encoding.Encoding (Encoding, convertFromTo)
+import Core.String.Encoding.UTF16
+import Core.String.Encoding.UTF32
+import Core.String.Encoding.ASCII7
+import Core.String.Encoding.ISO_8859_1

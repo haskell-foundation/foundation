@@ -25,7 +25,7 @@ module Core.String.UTF8
     , create
     , replicate
     -- * Binary conversion
-    , Encoding(..)
+    , UTF8(..)
     , fromBytes
     , fromChunkBytes
     , fromBytesUnsafe
@@ -51,6 +51,12 @@ import           GHC.Prim
 import           GHC.ST
 import           GHC.Types
 import           GHC.Word
+import           Core.Array.Unboxed (UArray)
+import           Core.Array.Unboxed.ByteArray (MutableByteArray)
+import qualified Core.Array.Unboxed as Vec
+import qualified Core.Array.Unboxed.Mutable as MVec
+import           Core.Array.Unboxed.Builder (ArrayBuilder, appendTy)
+import           Core.Number
 
  -- temporary
 import qualified Data.List
@@ -58,6 +64,8 @@ import qualified Data.List
 import           Core.String.ModifiedUTF8     (fromModified)
 import           GHC.CString                  (unpackCString#,
                                                unpackCStringUtf8#)
+
+import Core.String.Encoding.Encoding (Encoding(..))
 
 -- | Opaque packed array of characters in the UTF8 encoding
 newtype String = String (UArray Word8)
@@ -112,6 +120,14 @@ data ValidationFailure = InvalidHeader
                        deriving (Show,Eq,Typeable)
 
 instance Exception ValidationFailure
+
+data UTF8 = UTF8
+
+instance Encoding UTF8 where
+    type Unit UTF8 = Word8
+    type Error UTF8 = ValidationFailure
+    encodingNext  _ = nextWithIndexer
+    encodingWrite _ = writeWithBuilder
 
 -- | Validate a bytearray for UTF8'ness
 --
@@ -220,6 +236,89 @@ skipNext :: String -> Int -> Int
 skipNext (String ba) n = n + 1 + getNbBytes h
   where
     !h = Vec.unsafeIndex ba n
+
+nextWithIndexer :: (Offset Word8 -> Word8)
+                -> Offset Word8
+                -> Either ValidationFailure (Char, Offset Word8)
+nextWithIndexer getter off =
+    case getNbBytes# h of
+        0# -> Right ( toChar h
+                    , off + aone
+                    )
+        1# -> Right ( toChar (decode2 (getter $ off + aone))
+                    , off + atwo
+                    )
+        2# -> Right ( toChar (decode3 (getter $ off + aone) (getter $ off + atwo))
+                    , off + athree
+                    )
+        3# -> Right ( toChar (decode4 (getter $ off + aone) (getter $ off + atwo) (getter $ off + athree))
+                    , off + afour
+                    )
+        r -> error ("next: internal error: invalid input: " <> show (I# r) <> " " <> show (W# h))
+  where
+    aone = Offset 1
+    atwo = Offset 2
+    athree = Offset 3
+    afour = Offset 4
+    !(W8# h) = getter off
+
+    toChar :: Word# -> Char
+    toChar w = C# (chr# (word2Int# w))
+
+    decode2 :: Word8 -> Word#
+    decode2 (W8# c1) =
+        or# (uncheckedShiftL# (and# h 0x1f##) 6#)
+            (and# c1 0x3f##)
+
+    decode3 :: Word8 -> Word8 -> Word#
+    decode3 (W8# c1) (W8# c2) =
+        or# (uncheckedShiftL# (and# h 0xf##) 12#)
+            (or# (uncheckedShiftL# (and# c1 0x3f##) 6#)
+                 (and# c2 0x3f##))
+
+    decode4 :: Word8 -> Word8 -> Word8 -> Word#
+    decode4 (W8# c1) (W8# c2) (W8# c3) =
+        or# (uncheckedShiftL# (and# h 0x7##) 18#)
+            (or# (uncheckedShiftL# (and# c1 0x3f##) 12#)
+                (or# (uncheckedShiftL# (and# c2 0x3f##) 6#)
+                    (and# c3 0x3f##))
+            )
+
+writeWithBuilder :: (PrimMonad st, Monad st)
+                 => Char
+                 ->  ArrayBuilder Word8 st ()
+writeWithBuilder c =
+    if      bool# (ltWord# x 0x80##   ) then encode1
+    else if bool# (ltWord# x 0x800##  ) then encode2
+    else if bool# (ltWord# x 0x10000##) then encode3
+    else                                     encode4
+  where
+    !(I# xi) = fromEnum c
+    !x       = int2Word# xi
+
+    encode1 = appendTy (W8# x)
+
+    encode2 = do
+        let x1  = or# (uncheckedShiftRL# x 6#) 0xc0##
+            x2  = toContinuation x
+        appendTy (W8# x1) >> appendTy (W8# x2)
+
+    encode3 = do
+        let x1  = or# (uncheckedShiftRL# x 12#) 0xe0##
+            x2  = toContinuation (uncheckedShiftRL# x 6#)
+            x3  = toContinuation x
+        appendTy (W8# x1) >> appendTy (W8# x2) >> appendTy (W8# x3)
+
+    encode4 = do
+        let x1  = or# (uncheckedShiftRL# x 18#) 0xf0##
+            x2  = toContinuation (uncheckedShiftRL# x 12#)
+            x3  = toContinuation (uncheckedShiftRL# x 6#)
+            x4  = toContinuation x
+        appendTy (W8# x1) >> appendTy (W8# x2) >> appendTy (W8# x3) >> appendTy (W8# x4)
+
+    toContinuation :: Word# -> Word#
+    toContinuation w = or# (and# w 0x3f##) 0x80##
+
 
 next :: String -> Offset8 -> (# Char, Offset8 #)
 next (String ba) (Offset n) =
@@ -680,11 +779,6 @@ reverse s@(String ba) = runST $ do
                 _  -> return () -- impossible
             loop ms (sidx `offsetPlusE` nb) didx'
 
--- | String encoding
-data Encoding =
-      UTF8
-    deriving (Show,Eq)
-
 {-
 -- | Convert a Byte Array to a string and check UTF8 validity
 fromBytes :: Encoding -> UArray Word8 -> Maybe String
@@ -694,7 +788,7 @@ fromBytes UTF8 bytes =
         (_, Just _)  -> Nothing
         -}
 
-fromBytes :: Encoding -> UArray Word8 -> (String, Maybe ValidationFailure, UArray Word8)
+fromBytes :: UTF8 -> UArray Word8 -> (String, Maybe ValidationFailure, UArray Word8)
 fromBytes UTF8 bytes
     | C.null bytes = (mempty, Nothing, mempty)
     | otherwise    =
@@ -754,5 +848,5 @@ fromBytesUnsafe :: UArray Word8 -> String
 fromBytesUnsafe = String
 
 -- | Convert a String to a bytearray
-toBytes :: Encoding -> String -> UArray Word8
+toBytes :: UTF8 -> String -> UArray Word8
 toBytes UTF8 (String ba) = ba
