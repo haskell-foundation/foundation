@@ -29,6 +29,7 @@ module Core.Array.Unboxed
     , thaw
     , unsafeThaw
     -- * Creation
+    , empty
     , create
     , sub
     , withPtr
