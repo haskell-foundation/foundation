@@ -13,9 +13,7 @@ module Core.String.Encoding.UTF16
     ) where
 
 import Core.Internal.Base
-import Core.Internal.Primitive
 import Core.Internal.Types
-import Core.Primitive.Types
 import Core.Primitive.Monad
 import Core.Array.Unboxed
 import qualified Core.Array.Unboxed as Vec

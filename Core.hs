@@ -161,7 +161,6 @@ import           Core.Tuple
 
 import qualified Data.Maybe
 import qualified Data.Either
-import qualified Data.Ord
 import qualified Data.Function
 import qualified Data.Tuple
 
