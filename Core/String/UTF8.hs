@@ -51,12 +51,7 @@ import           GHC.Prim
 import           GHC.ST
 import           GHC.Types
 import           GHC.Word
-import           Core.Array.Unboxed (UArray)
-import           Core.Array.Unboxed.ByteArray (MutableByteArray)
-import qualified Core.Array.Unboxed as Vec
-import qualified Core.Array.Unboxed.Mutable as MVec
 import           Core.Array.Unboxed.Builder (ArrayBuilder, appendTy)
-import           Core.Number
 
  -- temporary
 import qualified Data.List
