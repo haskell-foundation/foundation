@@ -44,26 +44,24 @@ data OS
     | Linux
     | Android
     | BSD
-    | Other String
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord, Enum)
 
-instance IsString OS where
-    fromString str = case str of
-        "darwin"  -> OSX
-        "mingw32" -> Windows
-        "linux"   -> Linux
-        "linux-android" -> Android
-        "openbsd" -> BSD
-        "netbsd"  -> BSD
-        "freebsd" -> BSD
-        _ -> Other $ fromList str
-
--- | get the OS name
+-- | get the operating system on which the program is running.
 --
--- get the `os` from base package but convert
--- it into a strict String
-os :: OS
-os = fromString System.Info.os
+-- Either return the known `OS` or a strict `String` of the OS name.
+--
+-- This function uses the `base`'s `System.Info.os` function.
+--
+os :: Either String OS
+os = case System.Info.os of
+    "darwin"  -> Right OSX
+    "mingw32" -> Right Windows
+    "linux"   -> Right Linux
+    "linux-android" -> Right Android
+    "openbsd" -> Right BSD
+    "netbsd"  -> Right BSD
+    "freebsd" -> Right BSD
+    str       -> Left $ fromList str
 
 -- | Enumeration of the known GHC supported architecture.
 --
@@ -72,39 +70,31 @@ data Arch
     | X86_64
     | PowerPC
     | PowerPC64
-    | PowerPC64LE
     | Sparc
     | Sparc64
     | ARM
-    | AArch64
-    | Unknown String
-  deriving (Show, Eq, Ord)
-
--- based on the `ghc` and `base` source as documented in:
---
--- https://github.com/haskell-foundation/foundation/pull/67
---
-instance IsString Arch where
-    fromString str = case str of
-        "i386"          -> I386
-        "x86_64"        -> X86_64
-        "powerpc"       -> PowerPC
-        "powerpc64"     -> PowerPC64
-        "powerpc64le"   -> PowerPC64LE
-        "sparc"         -> Sparc
-        "sparc64"       -> Sparc64
-        "arm"           -> ARM
-        "aarch64"       -> AArch64
-        _               -> Unknown $ fromList str
+    | ARM64
+  deriving (Show, Eq, Ord, Enum)
 
 -- | get the machine architecture on which the program is running
 --
--- This function uses base implementation:
+-- Either return the known architecture or a Strict `String` of the
+-- architecture name.
 --
--- > fromString System.Info.arch
+-- This function uses the `base`'s `System.Info.arch` function.
 --
-arch :: Arch
-arch = fromString System.Info.arch
+arch :: Either String Arch
+arch = case System.Info.arch of
+    "i386"          -> Right I386
+    "x86_64"        -> Right X86_64
+    "powerpc"       -> Right PowerPC
+    "powerpc64"     -> Right PowerPC64
+    "powerpc64le"   -> Right PowerPC64
+    "sparc"         -> Right Sparc
+    "sparc64"       -> Right Sparc64
+    "arm"           -> Right ARM
+    "aarch64"       -> Right ARM64
+    str             -> Left $ fromList str
 
 -- | get the compiler name
 --
