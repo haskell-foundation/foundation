@@ -26,6 +26,7 @@ module Core.System.Info
 
 import qualified System.Info
 import qualified Data.Version
+import           Data.Data
 import qualified GHC.Conc
 import Core.String
 import Core.Internal.Base
@@ -44,7 +45,7 @@ data OS
     | Linux
     | Android
     | BSD
-  deriving (Show, Eq, Ord, Enum)
+  deriving (Show, Eq, Ord, Enum, Bounded, Data, Typeable)
 
 -- | get the operating system on which the program is running.
 --
@@ -74,7 +75,7 @@ data Arch
     | Sparc64
     | ARM
     | ARM64
-  deriving (Show, Eq, Ord, Enum)
+  deriving (Show, Eq, Ord, Enum, Bounded, Data, Typeable)
 
 -- | get the machine architecture on which the program is running
 --
