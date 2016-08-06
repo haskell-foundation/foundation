@@ -25,14 +25,14 @@ data UTF32 = UTF32
 
 instance Encoding UTF32 where
     type Unit UTF32 = Word32
-    type Error UTF32 a = a
+    type Error UTF32 = ()
     encodingNext  _ = next
     encodingWrite _ = write
 
 next :: (Offset Word32 -> Word32)
      -> Offset Word32
-     -> (Char, Offset Word32)
-next getter off = (char, off + Offset 1)
+     -> Either () (Char, Offset Word32)
+next getter off = Right (char, off + Offset 1)
   where
     !(W32# hh) = getter off
     char :: Char

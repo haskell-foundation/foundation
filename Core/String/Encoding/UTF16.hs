@@ -34,7 +34,7 @@ data UTF16 = UTF16
 
 instance Encoding UTF16 where
     type Unit UTF16 = Word16
-    type Error UTF16 a = Either UTF16_Invalid a
+    type Error UTF16 = UTF16_Invalid
     encodingNext  _ = next
     encodingWrite _ = write
 

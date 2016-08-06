@@ -50,7 +50,7 @@ data ASCII7 = ASCII7
 
 instance Encoding ASCII7 where
     type Unit ASCII7 = Word8
-    type Error ASCII7 a = Either ASCII7_Invalid a
+    type Error ASCII7 = ASCII7_Invalid
     encodingNext  _ = next
     encodingWrite _ = write
 

@@ -6,14 +6,22 @@
 -- Portability : portable
 --
 
+{-# LANGUAGE FlexibleContexts #-}
+
 module Core.String.Encoding.Encoding
     ( Encoding(..)
+    , convertWith
     ) where
 
 import Core.Internal.Base
 import Core.Internal.Types
 import Core.Primitive.Monad
+import Core.Primitive.Types
 import Core.Array.Unboxed.Builder
+import Core.Number
+import qualified Core.Collection as C
+import           Core.Array.Unboxed (UArray)
+import qualified Core.Array.Unboxed as Vec
 
 class Encoding encoding where
     -- | the unit element use for the encoding.
@@ -24,15 +32,9 @@ class Encoding encoding where
     -- | define the type of error handling you want to use for the
     -- next function.
     --
-    -- as example, one can use:
+    -- > type Error UTF8 = Either UTF8_Invalid
     --
-    -- > type Error ASCII7 a = Maybe a
-    --
-    -- or can use:
-    --
-    -- > type Error UTF8 a = Either UTF8_Invalid a
-    --
-    type Error encoding a
+    type Error encoding
 
     -- | consume an `Unit encoding` and return the Unicode point and the position
     -- of the next possible `Unit encoding`
@@ -45,7 +47,7 @@ class Encoding encoding where
                 -> Offset (Unit encoding)
                       -- ^ offset of the `Unit encoding` where starts the
                       -- encoding of a given unicode
-                -> Error encoding (Char, Offset (Unit encoding))
+                -> Either (Error encoding) (Char, Offset (Unit encoding))
                       -- ^ either successfully validated the `Unit encoding`
                       -- and returned the next offset or fail with an
                       -- `Error encoding`
@@ -60,3 +62,29 @@ class Encoding encoding where
                   -> Char
                       -- ^ the unicode character to encode
                   -> ArrayBuilder (Unit encoding) st ()
+
+-- | helper to convert a given Array in a given encoding into an array
+-- with another encoding.
+convertWith :: ( PrimMonad st, Monad st
+               , Encoding input, PrimType (Unit input)
+               , Exception (Error input)
+               , Encoding output, PrimType (Unit output)
+               )
+            => input
+              -- ^ Input's encoding type
+            -> output
+              -- ^ Output's encoding type
+            -> UArray (Unit input)
+              -- ^ the input raw array
+            -> st (UArray (Unit output))
+convertWith inputEncodingTy outputEncodingTy bytes
+    | C.null bytes = return mempty
+    | otherwise    = Vec.unsafeIndexer bytes $ \t -> build 64 (loop azero t)
+  where
+    lastUnit = Offset $ C.length bytes
+
+    loop off getter
+      | off >= lastUnit = return ()
+      | otherwise = case encodingNext inputEncodingTy getter off of
+          Left err -> throw err
+          Right (c, noff) -> encodingWrite outputEncodingTy c >> loop noff getter
