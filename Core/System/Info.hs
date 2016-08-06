@@ -65,16 +65,46 @@ instance IsString OS where
 os :: OS
 os = fromString System.Info.os
 
+-- | Enumeration of the known GHC supported architecture.
+--
+data Arch
+    = I386
+    | X86_64
+    | PowerPC
+    | PowerPC64
+    | PowerPC64LE
+    | Sparc
+    | Sparc64
+    | ARM
+    | AArch64
+    | Unknown String
+  deriving (Show, Eq, Ord)
+
+-- based on the `ghc` and `base` source as documented in:
+--
+-- https://github.com/haskell-foundation/foundation/pull/67
+--
+instance IsString Arch where
+    fromString str = case str of
+        "i386"          -> I386
+        "x86_64"        -> X86_64
+        "powerpc"       -> PowerPC
+        "powerpc64"     -> PowerPC64
+        "powerpc64le"   -> PowerPC64LE
+        "sparc"         -> Sparc
+        "sparc64"       -> Sparc64
+        "arm"           -> ARM
+        "aarch64"       -> AArch64
+        _               -> Unknown $ fromList str
+
 -- | get the machine architecture on which the program is running
 --
 -- This function uses base implementation:
 --
--- > fromList System.Info.arch
+-- > fromString System.Info.arch
 --
--- Potential results are: i386, x86_64, powerpc, sparc, arm, ...
---
-arch :: String
-arch = fromList System.Info.arch
+arch :: Arch
+arch = fromString System.Info.arch
 
 -- | get the compiler name
 --
