@@ -1,7 +1,7 @@
 module Main where
 
-import Core
-import Core.Collection
+import Foundation
+import Foundation.Collection
 
 main = do
     let v = fromList [1..255] :: UArray Word8

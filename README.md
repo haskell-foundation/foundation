@@ -34,7 +34,7 @@ Default-Extensions: NoImplicitPrelude
 Then in your modules:
 
 ```haskell
-import Core
+import Foundation
 ```
 
 How to contribute

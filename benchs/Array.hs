@@ -1,7 +1,7 @@
 module Main where
 
-import Core
-import Core.Collection
+import Foundation
+import Foundation.Collection
 import Criterion.Main
 
 main = defaultMain

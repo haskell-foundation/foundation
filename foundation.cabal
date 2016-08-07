@@ -38,70 +38,69 @@ source-repository head
   location: https://github.com/haskell-foundation/foundation
 
 Library
-  Exposed-modules:   Core
-                     Core.Number
-                     Core.Array
-                     Core.Array.Internal
-                     Core.Convertible
-                     Core.String
-                     Core.IO
-                     Core.VFS
-                     Core.VFS.Path
-                     Core.VFS.FilePath
-                     Core.VFS.URI
-                     Core.Foreign
-                     Core.Collection
-                     Core.Primitive
-                     Core.System.Info
-                     Core.Strict
-                     -- Core.View
-  Other-modules:     Core.String.Internal
-                     Core.String.UTF8
-                     Core.String.Encoding.Encoding
-                     Core.String.Encoding.UTF16
-                     Core.String.Encoding.UTF32
-                     Core.String.Encoding.ASCII7
-                     Core.String.Encoding.ISO_8859_1
-                     Core.String.UTF8Table
-                     Core.String.ModifiedUTF8
-                     Core.Tuple
-                     Core.Collection.List
-                     Core.Collection.Element
-                     Core.Collection.InnerFunctor
-                     Core.Collection.Sequential
-                     Core.Collection.Keyed
-                     Core.Collection.Indexed
-                     Core.Collection.Foldable
-                     Core.Collection.Mutable
-                     Core.Collection.Zippable
-                     Core.Internal.Base
-                     Core.Internal.Primitive
-                     Core.Internal.IsList
-                     Core.Internal.Identity
-                     Core.Internal.Proxy
-                     Core.Internal.Types
-                     Core.Internal.PrimTypes
-                     Core.Internal.MonadTrans
-                     Core.IO.File
-                     Core.IO.Terminal
-                     Core.Primitive.Types
-                     Core.Primitive.Monad
-                     Core.Primitive.Utils
-                     Core.Primitive.FinalPtr
-                     Core.Array.Common
-                     Core.Array.Unboxed
-                     Core.Array.Unboxed.Builder
-                     Core.Array.Unboxed.Mutable
-                     Core.Array.Unboxed.ByteArray
-                     Core.Array.Boxed
-                     Core.Array.Bitmap
-                     Core.Foreign.MemoryMap
-                     Core.Foreign.MemoryMap.Types
-                     Core.Partial
+  Exposed-modules:   Foundation
+                     Foundation.Number
+                     Foundation.Array
+                     Foundation.Array.Internal
+                     Foundation.Convertible
+                     Foundation.String
+                     Foundation.IO
+                     Foundation.VFS
+                     Foundation.VFS.Path
+                     Foundation.VFS.FilePath
+                     Foundation.VFS.URI
+                     Foundation.Foreign
+                     Foundation.Collection
+                     Foundation.Primitive
+                     Foundation.System.Info
+                     Foundation.Strict
+  Other-modules:     Foundation.String.Internal
+                     Foundation.String.UTF8
+                     Foundation.String.Encoding.Encoding
+                     Foundation.String.Encoding.UTF16
+                     Foundation.String.Encoding.UTF32
+                     Foundation.String.Encoding.ASCII7
+                     Foundation.String.Encoding.ISO_8859_1
+                     Foundation.String.UTF8Table
+                     Foundation.String.ModifiedUTF8
+                     Foundation.Tuple
+                     Foundation.Collection.List
+                     Foundation.Collection.Element
+                     Foundation.Collection.InnerFunctor
+                     Foundation.Collection.Sequential
+                     Foundation.Collection.Keyed
+                     Foundation.Collection.Indexed
+                     Foundation.Collection.Foldable
+                     Foundation.Collection.Mutable
+                     Foundation.Collection.Zippable
+                     Foundation.Internal.Base
+                     Foundation.Internal.Primitive
+                     Foundation.Internal.IsList
+                     Foundation.Internal.Identity
+                     Foundation.Internal.Proxy
+                     Foundation.Internal.Types
+                     Foundation.Internal.PrimTypes
+                     Foundation.Internal.MonadTrans
+                     Foundation.IO.File
+                     Foundation.IO.Terminal
+                     Foundation.Primitive.Types
+                     Foundation.Primitive.Monad
+                     Foundation.Primitive.Utils
+                     Foundation.Primitive.FinalPtr
+                     Foundation.Array.Common
+                     Foundation.Array.Unboxed
+                     Foundation.Array.Unboxed.Builder
+                     Foundation.Array.Unboxed.Mutable
+                     Foundation.Array.Unboxed.ByteArray
+                     Foundation.Array.Boxed
+                     Foundation.Array.Bitmap
+                     Foundation.Foreign.MemoryMap
+                     Foundation.Foreign.MemoryMap.Types
+                     Foundation.Partial
   if os(windows)
-    Other-modules:   Core.Foreign.MemoryMap.Windows
+    Other-modules:   Foundation.Foreign.MemoryMap.Windows
   else
-    Other-modules:   Core.Foreign.MemoryMap.Posix
+    Other-modules:   Foundation.Foreign.MemoryMap.Posix
   Default-Extensions: NoImplicitPrelude
                       TypeFamilies
                       BangPatterns

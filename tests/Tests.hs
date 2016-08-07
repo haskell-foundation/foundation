@@ -12,13 +12,13 @@ import           Test.QuickCheck.Monadic
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 
-import           Core
-import           Core.Array
-import           Core.Collection
-import           Core.Foreign
-import           Core.String
-import           Core.VFS                (Path (..), filename, parent)
-import           Core.VFS.FilePath
+import           Foundation
+import           Foundation.Array
+import           Foundation.Collection
+import           Foundation.Foreign
+import           Foundation.String
+import           Foundation.VFS                (Path (..), filename, parent)
+import           Foundation.VFS.FilePath
 import qualified Data.List               as L
 import qualified Prelude
 

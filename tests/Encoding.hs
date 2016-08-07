@@ -10,9 +10,9 @@ module Encoding
   , testEncodings
   ) where
 
-import Core
-import Core.String (Encoding(..), fromBytes, toBytes)
-import Core.Array.Internal (recast)
+import Foundation
+import Foundation.String (Encoding(..), fromBytes, toBytes)
+import Foundation.Array.Internal (recast)
 
 import Test.Tasty
 import Test.Tasty.HUnit

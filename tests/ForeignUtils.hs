@@ -9,11 +9,11 @@ import           Foreign.Marshal.Alloc
 
 import           Foreign.Ptr
 import           Foreign.Storable
-import           Core
+import           Foundation
 import           Prelude (length, head, zip, null)
 import           Control.Monad (forM_)
 
-import           Core.Foreign
+import           Foundation.Foreign
 
 createPtr :: Storable e => [e] -> IO (FinalPtr e)
 createPtr l
