@@ -28,12 +28,10 @@ import Core.String.Encoding.Encoding
 
 -- | validate a given byte is within ASCII characters encoring size
 --
--- This function is equivalent to
---
--- > \w -> (0x10 .&. w) == 0x10
+-- This function check the 8th bit is set to 0
 --
 isAscii :: Word8 -> Bool
-isAscii = (==) 0x10 . (.&.) 0x80
+isAscii (W8# w) = W8# (and# w 0x80## ) == 0
 {-# INLINE isAscii #-}
 
 -- offset of size one

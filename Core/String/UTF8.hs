@@ -812,8 +812,8 @@ fromEncoderBytes enc bytes =
 
 
 fromBytes :: Encoding -> UArray Word8 -> (String, Maybe ValidationFailure, UArray Word8)
-fromBytes ASCII7     bytes = fromEncoderBytes Encoder.ISO_8859_1 bytes
-fromBytes ISO_8859_1 bytes = fromEncoderBytes Encoder.ASCII7     bytes
+fromBytes ASCII7     bytes = fromEncoderBytes Encoder.ASCII7     bytes
+fromBytes ISO_8859_1 bytes = fromEncoderBytes Encoder.ISO_8859_1 bytes
 fromBytes UTF16      bytes = fromEncoderBytes Encoder.UTF16      bytes
 fromBytes UTF32      bytes = fromEncoderBytes Encoder.UTF32      bytes
 fromBytes UTF8       bytes
@@ -886,7 +886,7 @@ toEncoderBytes enc bytes = runST $ Encoder.convertFromTo EncoderUTF8 enc bytes >
 -- | Convert a String to a bytearray
 toBytes :: Encoding -> String -> UArray Word8
 toBytes UTF8       (String bytes) = bytes
-toBytes ASCII7     (String bytes) = toEncoderBytes Encoder.ISO_8859_1 bytes
-toBytes ISO_8859_1 (String bytes) = toEncoderBytes Encoder.ASCII7     bytes
+toBytes ASCII7     (String bytes) = toEncoderBytes Encoder.ASCII7     bytes
+toBytes ISO_8859_1 (String bytes) = toEncoderBytes Encoder.ISO_8859_1 bytes
 toBytes UTF16      (String bytes) = toEncoderBytes Encoder.UTF16      bytes
 toBytes UTF32      (String bytes) = toEncoderBytes Encoder.UTF32      bytes
