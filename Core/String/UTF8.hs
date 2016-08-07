@@ -19,13 +19,14 @@
 {-# LANGUAGE NoImplicitPrelude          #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UnboxedTuples              #-}
+{-# LANGUAGE FlexibleContexts           #-}
 module Core.String.UTF8
     ( String(..)
     --, Buffer
     , create
     , replicate
     -- * Binary conversion
-    , UTF8(..)
+    , Encoding(..)
     , fromBytes
     , fromChunkBytes
     , fromBytesUnsafe
@@ -55,12 +56,17 @@ import           Core.Array.Unboxed.Builder (ArrayBuilder, appendTy)
 
  -- temporary
 import qualified Data.List
+import           Data.Data
 
 import           Core.String.ModifiedUTF8     (fromModified)
 import           GHC.CString                  (unpackCString#,
                                                unpackCStringUtf8#)
 
-import Core.String.Encoding.Encoding (Encoding(..))
+import qualified Core.String.Encoding.Encoding   as Encoder
+import qualified Core.String.Encoding.ASCII7     as Encoder
+import qualified Core.String.Encoding.UTF16      as Encoder
+import qualified Core.String.Encoding.UTF32      as Encoder
+import qualified Core.String.Encoding.ISO_8859_1 as Encoder
 
 -- | Opaque packed array of characters in the UTF8 encoding
 newtype String = String (UArray Word8)
@@ -116,11 +122,11 @@ data ValidationFailure = InvalidHeader
 
 instance Exception ValidationFailure
 
-data UTF8 = UTF8
+data EncoderUTF8 = EncoderUTF8
 
-instance Encoding UTF8 where
-    type Unit UTF8 = Word8
-    type Error UTF8 = ValidationFailure
+instance Encoder.Encoding EncoderUTF8 where
+    type Unit EncoderUTF8 = Word8
+    type Error EncoderUTF8 = ValidationFailure
     encodingNext  _ = nextWithIndexer
     encodingWrite _ = writeWithBuilder
 
@@ -783,8 +789,33 @@ fromBytes UTF8 bytes =
         (_, Just _)  -> Nothing
         -}
 
-fromBytes :: UTF8 -> UArray Word8 -> (String, Maybe ValidationFailure, UArray Word8)
-fromBytes UTF8 bytes
+data Encoding
+    = ASCII7
+    | UTF8
+    | UTF16
+    | UTF32
+    | ISO_8859_1
+  deriving (Typeable, Data, Eq, Ord, Show, Enum, Bounded)
+
+fromEncoderBytes :: ( Encoder.Encoding encoding
+                    , Exception (Encoder.Error encoding)
+                    , PrimType (Encoder.Unit encoding)
+                    )
+                 => encoding
+                 -> UArray Word8
+                 -> (String, Maybe ValidationFailure, UArray Word8)
+fromEncoderBytes enc bytes =
+    ( String $ runST $ Encoder.convertFromTo enc EncoderUTF8 $ Vec.unsafeRecast bytes
+    , Nothing
+    , mempty
+    )
+
+fromBytes :: Encoding -> UArray Word8 -> (String, Maybe ValidationFailure, UArray Word8)
+fromBytes ASCII7     bytes = fromEncoderBytes Encoder.ISO_8859_1 bytes
+fromBytes ISO_8859_1 bytes = fromEncoderBytes Encoder.ASCII7     bytes
+fromBytes UTF16      bytes = fromEncoderBytes Encoder.UTF16      bytes
+fromBytes UTF32      bytes = fromEncoderBytes Encoder.UTF32      bytes
+fromBytes UTF8       bytes
     | C.null bytes = (mempty, Nothing, mempty)
     | otherwise    =
         case validate bytes (Offset 0) (Size $ C.length bytes) of
@@ -842,6 +873,20 @@ fromChunkBytes l = loop l
 fromBytesUnsafe :: UArray Word8 -> String
 fromBytesUnsafe = String
 
+toEncoderBytes :: ( Encoder.Encoding encoding
+                  , PrimType (Encoder.Unit encoding)
+                  , Exception (Encoder.Error encoding)
+                  )
+               => encoding
+               -> UArray Word8
+               -> UArray Word8
+toEncoderBytes enc bytes = Vec.unsafeRecast $
+    runST $ Encoder.convertFromTo EncoderUTF8 enc $ Vec.unsafeRecast bytes
+
 -- | Convert a String to a bytearray
-toBytes :: UTF8 -> String -> UArray Word8
-toBytes UTF8 (String ba) = ba
+toBytes :: Encoding -> String -> UArray Word8
+toBytes UTF8       (String bytes) = bytes
+toBytes ASCII7     (String bytes) = toEncoderBytes Encoder.ISO_8859_1 bytes
+toBytes ISO_8859_1 (String bytes) = toEncoderBytes Encoder.ASCII7     bytes
+toBytes UTF16      (String bytes) = toEncoderBytes Encoder.UTF16      bytes
+toBytes UTF32      (String bytes) = toEncoderBytes Encoder.UTF32      bytes
