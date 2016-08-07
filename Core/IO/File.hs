@@ -29,7 +29,6 @@ import qualified Core.Array.Unboxed as V
 import qualified Core.String.UTF8 as S
 import           Control.Exception (bracket)
 import           Foreign.Ptr (plusPtr)
---import qualified Prelude
 
 -- | list the file name in the given FilePath directory
 --
