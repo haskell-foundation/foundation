@@ -55,14 +55,8 @@ write :: (PrimMonad st, Monad st)
       => Char
       -> ArrayBuilder Word8 st ()
 write c@(C# ch)
-    | c <  toEnum 0x80 = appendTy (W8# x)
-    | c <= toEnum 0xFF = do
-        appendTy $ W8# (or# (uncheckedShiftRL# x 6#) 0xC0##)
-        appendTy $ W8# (toContinuation x)
+    | c <= toEnum 0xFF = appendTy (W8# x)
     | otherwise       = throw $ NotISO_8859_1 c
   where
     x :: Word#
     !x = int2Word# (ord# ch)
-
-    toContinuation :: Word# -> Word#
-    toContinuation w = or# (and# w 0x3f##) 0x80##
