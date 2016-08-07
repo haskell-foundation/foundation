@@ -44,7 +44,6 @@ Library
                      Core.Array.Internal
                      Core.Convertible
                      Core.String
-                     Core.String.IO
                      Core.IO
                      Core.VFS
                      Core.VFS.Path
@@ -79,6 +78,8 @@ Library
                      Core.Internal.Types
                      Core.Internal.PrimTypes
                      Core.Internal.MonadTrans
+                     Core.IO.File
+                     Core.IO.Terminal
                      Core.Primitive.Types
                      Core.Primitive.Monad
                      Core.Primitive.Utils

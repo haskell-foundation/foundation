@@ -29,8 +29,8 @@ module Core
     , Prelude.flip
     , Prelude.const
     , Prelude.error
-    , Core.String.IO.putStr
-    , Core.String.IO.putStrLn
+    , Core.IO.Terminal.putStr
+    , Core.IO.Terminal.putStrLn
     --, print
     , getArgs
     , Prelude.uncurry
@@ -149,7 +149,7 @@ import           Data.Int (Int8, Int16, Int32, Int64)
 import           Core.String (String)
 import           Core.Array (UArray, Array, PrimType)
 --import           Core.Collection
-import qualified Core.String.IO
+import qualified Core.IO.Terminal
 
 import           GHC.Exts (IsString(..))
 import           Core.Internal.IsList

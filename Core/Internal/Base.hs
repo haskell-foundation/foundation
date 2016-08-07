@@ -12,6 +12,7 @@ module Core.Internal.Base
     , (Prelude.&&)
     , (Prelude.||)
     , (Control.Category..)
+    , (Control.Applicative.<$>)
     , Prelude.not
     , Prelude.otherwise
     , Prelude.fst

@@ -34,10 +34,10 @@ module Core.VFS.FilePath
     , extension
     ) where
 
-import Core
 import Core.Internal.Base
 import Core.Collection
-import Core.String (Encoding(..), ValidationFailure, toBytes, fromBytes)
+import Core.Array
+import Core.String (Encoding(..), ValidationFailure, toBytes, fromBytes, String)
 import Core.VFS.Path(Path(..))
 
 import qualified Data.List
@@ -253,4 +253,4 @@ extension :: FileName -> Maybe FileName
 extension (FileName fn) = case splitOn (\c -> c == 0x2E) fn of
                             [] -> Nothing
                             [_] -> Nothing
-                            xs -> Just $ FileName $ fromPartial $ head $ reverse xs 
+                            xs -> Just $ FileName $ fromPartial $ head $ reverse xs
