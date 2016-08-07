@@ -55,7 +55,6 @@ module Core.Internal.Base
     , Control.Exception.throwIO
     -- * Errors
     , internalError
-    , partialError
     ) where
 
 import qualified Prelude
@@ -73,11 +72,3 @@ import qualified GHC.Generics
 -- | Only to use internally for internal error cases
 internalError :: [Prelude.Char] -> a
 internalError s = Prelude.error ("Internal Error: the impossible happened: " Prelude.++ s)
-
-data PartialError = PartialError [Prelude.Char] [Prelude.Char]
-    deriving (Prelude.Show,Prelude.Eq,Data.Typeable.Typeable)
-
-instance Control.Exception.Exception PartialError
-
-partialError :: [Prelude.Char] -> [Prelude.Char] -> a
-partialError lbl exp = Control.Exception.throw (PartialError lbl exp)

@@ -13,6 +13,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Core.Partial
     ( Partial
+    , PartialError
+    , partialError
     , partial
     , fromPartial
     , head
@@ -25,6 +27,15 @@ import Core.Internal.Identity
 -- | Partialiality wrapper.
 newtype Partial a = Partial (Identity a)
     deriving (Functor, Applicative, Monad)
+
+data PartialError = PartialError [Char] [Char]
+    deriving (Show,Eq,Typeable)
+
+instance Exception PartialError
+
+-- | Throw an asynchronous PartialError
+partialError :: [Char] -> [Char] -> a
+partialError lbl exp = throw (PartialError lbl exp)
 
 -- | Create a value that is partial. this can only be
 -- unwrap using the 'fromPartial' function

@@ -125,6 +125,7 @@ module Core
       -- ** Partial
     , Core.Partial.Partial
     , Core.Partial.partial
+    , Core.Partial.PartialError
     , Core.Partial.fromPartial
       -- ** Old Prelude Strings as [Char] with bridge back and forth
     , LString
