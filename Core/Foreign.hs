@@ -10,6 +10,7 @@ module Core.Foreign
     , V.foreignMem
     , V.mutableForeignMem
     , fileMapRead
+    , fileMapReadWith
     ) where
 
 import           Core.Internal.Types
@@ -38,3 +39,8 @@ fileMapRead :: FilePath -> IO (V.UArray Word8)
 fileMapRead fp = do
     (fptr, FileSize sz) <- I.fileMapRead fp
     return $ V.foreignMem fptr (Prelude.fromIntegral sz)
+
+fileMapReadWith :: FilePath -> (UArray Word8 -> IO a) -> IO a
+fileMapReadWith fp f = do
+    (fptr, FileSize sz) <- I.fileMapRead fp
+    f (V.foreignMem fptr (Prelude.fromIntegral sz))
