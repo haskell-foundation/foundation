@@ -19,6 +19,7 @@
 {-# LANGUAGE NoImplicitPrelude          #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UnboxedTuples              #-}
+{-# LANGUAGE FlexibleContexts           #-}
 module Core.String.UTF8
     ( String(..)
     --, Buffer
@@ -51,13 +52,21 @@ import           GHC.Prim
 import           GHC.ST
 import           GHC.Types
 import           GHC.Word
+import           Core.Array.Unboxed.Builder (ArrayBuilder, appendTy)
 
  -- temporary
 import qualified Data.List
+import           Data.Data
 
 import           Core.String.ModifiedUTF8     (fromModified)
 import           GHC.CString                  (unpackCString#,
                                                unpackCStringUtf8#)
+
+import qualified Core.String.Encoding.Encoding   as Encoder
+import qualified Core.String.Encoding.ASCII7     as Encoder
+import qualified Core.String.Encoding.UTF16      as Encoder
+import qualified Core.String.Encoding.UTF32      as Encoder
+import qualified Core.String.Encoding.ISO_8859_1 as Encoder
 
 -- | Opaque packed array of characters in the UTF8 encoding
 newtype String = String (UArray Word8)
@@ -112,6 +121,14 @@ data ValidationFailure = InvalidHeader
                        deriving (Show,Eq,Typeable)
 
 instance Exception ValidationFailure
+
+data EncoderUTF8 = EncoderUTF8
+
+instance Encoder.Encoding EncoderUTF8 where
+    type Unit EncoderUTF8 = Word8
+    type Error EncoderUTF8 = ValidationFailure
+    encodingNext  _ = nextWithIndexer
+    encodingWrite _ = writeWithBuilder
 
 -- | Validate a bytearray for UTF8'ness
 --
@@ -220,6 +237,89 @@ skipNext :: String -> Int -> Int
 skipNext (String ba) n = n + 1 + getNbBytes h
   where
     !h = Vec.unsafeIndex ba n
+
+nextWithIndexer :: (Offset Word8 -> Word8)
+                -> Offset Word8
+                -> Either ValidationFailure (Char, Offset Word8)
+nextWithIndexer getter off =
+    case getNbBytes# h of
+        0# -> Right ( toChar h
+                    , off + aone
+                    )
+        1# -> Right ( toChar (decode2 (getter $ off + aone))
+                    , off + atwo
+                    )
+        2# -> Right ( toChar (decode3 (getter $ off + aone) (getter $ off + atwo))
+                    , off + athree
+                    )
+        3# -> Right ( toChar (decode4 (getter $ off + aone) (getter $ off + atwo) (getter $ off + athree))
+                    , off + afour
+                    )
+        r -> error ("next: internal error: invalid input: " <> show (I# r) <> " " <> show (W# h))
+  where
+    aone = Offset 1
+    atwo = Offset 2
+    athree = Offset 3
+    afour = Offset 4
+    !(W8# h) = getter off
+
+    toChar :: Word# -> Char
+    toChar w = C# (chr# (word2Int# w))
+
+    decode2 :: Word8 -> Word#
+    decode2 (W8# c1) =
+        or# (uncheckedShiftL# (and# h 0x1f##) 6#)
+            (and# c1 0x3f##)
+
+    decode3 :: Word8 -> Word8 -> Word#
+    decode3 (W8# c1) (W8# c2) =
+        or# (uncheckedShiftL# (and# h 0xf##) 12#)
+            (or# (uncheckedShiftL# (and# c1 0x3f##) 6#)
+                 (and# c2 0x3f##))
+
+    decode4 :: Word8 -> Word8 -> Word8 -> Word#
+    decode4 (W8# c1) (W8# c2) (W8# c3) =
+        or# (uncheckedShiftL# (and# h 0x7##) 18#)
+            (or# (uncheckedShiftL# (and# c1 0x3f##) 12#)
+                (or# (uncheckedShiftL# (and# c2 0x3f##) 6#)
+                    (and# c3 0x3f##))
+            )
+
+writeWithBuilder :: (PrimMonad st, Monad st)
+                 => Char
+                 ->  ArrayBuilder Word8 st ()
+writeWithBuilder c =
+    if      bool# (ltWord# x 0x80##   ) then encode1
+    else if bool# (ltWord# x 0x800##  ) then encode2
+    else if bool# (ltWord# x 0x10000##) then encode3
+    else                                     encode4
+  where
+    !(I# xi) = fromEnum c
+    !x       = int2Word# xi
+
+    encode1 = appendTy (W8# x)
+
+    encode2 = do
+        let x1  = or# (uncheckedShiftRL# x 6#) 0xc0##
+            x2  = toContinuation x
+        appendTy (W8# x1) >> appendTy (W8# x2)
+
+    encode3 = do
+        let x1  = or# (uncheckedShiftRL# x 12#) 0xe0##
+            x2  = toContinuation (uncheckedShiftRL# x 6#)
+            x3  = toContinuation x
+        appendTy (W8# x1) >> appendTy (W8# x2) >> appendTy (W8# x3)
+
+    encode4 = do
+        let x1  = or# (uncheckedShiftRL# x 18#) 0xf0##
+            x2  = toContinuation (uncheckedShiftRL# x 12#)
+            x3  = toContinuation (uncheckedShiftRL# x 6#)
+            x4  = toContinuation x
+        appendTy (W8# x1) >> appendTy (W8# x2) >> appendTy (W8# x3) >> appendTy (W8# x4)
+
+    toContinuation :: Word# -> Word#
+    toContinuation w = or# (and# w 0x3f##) 0x80##
+
 
 next :: String -> Offset8 -> (# Char, Offset8 #)
 next (String ba) (Offset n) =
@@ -680,11 +780,6 @@ reverse s@(String ba) = runST $ do
                 _  -> return () -- impossible
             loop ms (sidx `offsetPlusE` nb) didx'
 
--- | String encoding
-data Encoding =
-      UTF8
-    deriving (Show,Eq)
-
 {-
 -- | Convert a Byte Array to a string and check UTF8 validity
 fromBytes :: Encoding -> UArray Word8 -> Maybe String
@@ -694,8 +789,34 @@ fromBytes UTF8 bytes =
         (_, Just _)  -> Nothing
         -}
 
+data Encoding
+    = ASCII7
+    | UTF8
+    | UTF16
+    | UTF32
+    | ISO_8859_1
+  deriving (Typeable, Data, Eq, Ord, Show, Enum, Bounded)
+
+fromEncoderBytes :: ( Encoder.Encoding encoding
+                    , Exception (Encoder.Error encoding)
+                    , PrimType (Encoder.Unit encoding)
+                    )
+                 => encoding
+                 -> UArray Word8
+                 -> (String, Maybe ValidationFailure, UArray Word8)
+fromEncoderBytes enc bytes =
+    ( String $ runST $ Vec.recast bytes >>= Encoder.convertFromTo enc EncoderUTF8
+    , Nothing
+    , mempty
+    )
+
+
 fromBytes :: Encoding -> UArray Word8 -> (String, Maybe ValidationFailure, UArray Word8)
-fromBytes UTF8 bytes
+fromBytes ASCII7     bytes = fromEncoderBytes Encoder.ASCII7     bytes
+fromBytes ISO_8859_1 bytes = fromEncoderBytes Encoder.ISO_8859_1 bytes
+fromBytes UTF16      bytes = fromEncoderBytes Encoder.UTF16      bytes
+fromBytes UTF32      bytes = fromEncoderBytes Encoder.UTF32      bytes
+fromBytes UTF8       bytes
     | C.null bytes = (mempty, Nothing, mempty)
     | otherwise    =
         case validate bytes (Offset 0) (Size $ C.length bytes) of
@@ -753,6 +874,19 @@ fromChunkBytes l = loop l
 fromBytesUnsafe :: UArray Word8 -> String
 fromBytesUnsafe = String
 
+toEncoderBytes :: ( Encoder.Encoding encoding
+                  , PrimType (Encoder.Unit encoding)
+                  , Exception (Encoder.Error encoding)
+                  )
+               => encoding
+               -> UArray Word8
+               -> UArray Word8
+toEncoderBytes enc bytes = runST $ Encoder.convertFromTo EncoderUTF8 enc bytes >>= Vec.recast
+
 -- | Convert a String to a bytearray
 toBytes :: Encoding -> String -> UArray Word8
-toBytes UTF8 (String ba) = ba
+toBytes UTF8       (String bytes) = bytes
+toBytes ASCII7     (String bytes) = toEncoderBytes Encoder.ASCII7     bytes
+toBytes ISO_8859_1 (String bytes) = toEncoderBytes Encoder.ISO_8859_1 bytes
+toBytes UTF16      (String bytes) = toEncoderBytes Encoder.UTF16      bytes
+toBytes UTF32      (String bytes) = toEncoderBytes Encoder.UTF32      bytes

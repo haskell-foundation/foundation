@@ -21,6 +21,7 @@ module Core.Array.Unboxed
     , unsafeCopyAtRO
     -- * internal methods
     -- , copyAddr
+    , recast
     , unsafeRecast
     , length
     , lengthSize
@@ -517,6 +518,27 @@ withMutablePtr :: PrimType ty
 withMutablePtr muvec f = do
     v <- unsafeFreeze muvec
     withPtr v f
+
+recast :: ( PrimMonad prim
+          , PrimType a, PrimType b
+          )
+       => UArray a
+       -> prim (UArray b)
+recast = recast_ Proxy Proxy
+  where
+    recast_ :: (PrimMonad prim, PrimType a, PrimType b)
+            => Proxy a -> Proxy b -> UArray a -> prim (UArray b)
+    recast_ pa pb array
+        | aTypeSize == bTypeSize = return (unsafeRecast array)
+        | missing   == 0         = return (unsafeRecast array)
+        | otherwise = primThrow $ InvalidRecast
+                          (RecastSourceSize      alen)
+                          (RecastDestinationSize $ alen + missing)
+      where
+        aTypeSize@(Size as) = primSizeInBytes pa
+        bTypeSize@(Size bs) = primSizeInBytes pb
+        alen = length array * as
+        missing = alen `mod` bs
 
 unsafeRecast :: (PrimType a, PrimType b) => UArray a -> UArray b
 unsafeRecast (UVecBA start len pinStatus b) = UVecBA (primOffsetRecast start) (sizeRecast len) pinStatus b

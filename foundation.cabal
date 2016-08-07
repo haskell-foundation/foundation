@@ -57,7 +57,11 @@ Library
                      -- Core.View
   Other-modules:     Core.String.Internal
                      Core.String.UTF8
+                     Core.String.Encoding.Encoding
                      Core.String.Encoding.UTF16
+                     Core.String.Encoding.UTF32
+                     Core.String.Encoding.ASCII7
+                     Core.String.Encoding.ISO_8859_1
                      Core.String.UTF8Table
                      Core.String.ModifiedUTF8
                      Core.Tuple
@@ -122,6 +126,7 @@ Test-Suite test-foundation
   hs-source-dirs:    tests
   Main-is:           Tests.hs
   Other-modules:     ForeignUtils
+                     Encoding
   Build-Depends:     base >= 3 && < 5
                    , mtl
                    , QuickCheck
