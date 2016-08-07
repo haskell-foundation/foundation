@@ -29,6 +29,7 @@ module Core.Array.Unboxed
     , thaw
     , unsafeThaw
     -- * Creation
+    , new
     , empty
     , create
     , sub
@@ -42,6 +43,8 @@ module Core.Array.Unboxed
     , unsafeUpdate
     , unsafeIndex
     , unsafeIndexer
+    , unsafeRead
+    , unsafeWrite
     -- * Functions
     , map
     , mapIndex

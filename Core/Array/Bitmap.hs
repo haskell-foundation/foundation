@@ -1,63 +1,89 @@
-{-# LANGUAGE UnboxedTuples #-}
+-- |
+-- Module      : Core.Array.Bitmap
+-- License     : BSD-style
+-- Maintainer  : Vincent Hanquez <vincent@snarc.org>
+-- Stability   : experimental
+-- Portability : portable
+--
+-- A simple abstraction to a set of Bitmap (Bitmap)
+--
+-- Largely a placeholder for a more performant implementation,
+-- most operation goes through the List representation (e.g. [Bool])
+-- to conduct even the most trivial operation, leading to a lots of
+-- unnecessary churn.
+--
 {-# LANGUAGE BangPatterns #-}
 module Core.Array.Bitmap
-    ( Bits
-    , MutableBits
+    ( Bitmap
+    , MutableBitmap
+    , empty
+    , append
+    , concat
+    , unsafeIndex
+    , index
+    , read
+    , unsafeRead
+    , write
+    , unsafeWrite
+    , snoc
+    , cons
     ) where
 
 import           Core.Array.Unboxed (UArray)
 import qualified Core.Array.Unboxed as A
 import           Core.Array.Unboxed.Mutable (MUArray)
---import qualified Core.Array.Unboxed.Mutable as MA
 import           Core.Array.Common
 import           Core.Internal.Base
+import           Core.Internal.Types
 import           Core.Primitive.Monad
 import qualified Core.Collection as C
 import           Core.Number
-import           Data.Bits hiding (Bits)
---import           GHC.ST
---import qualified Prelude
+import           Data.Bits -- hiding (Bits)
+import           GHC.ST
+import qualified Prelude
 import qualified Data.List
 
-data Bits = Bits Int (UArray Word32)
+data Bitmap = Bitmap Int (UArray Word32)
 
-data MutableBits st = MutableBits Int (MUArray Word32 st)
+data MutableBitmap st = MutableBitmap Int (MUArray Word32 st)
 
 bitsPerTy :: Int
 bitsPerTy = 32
 
-instance Show Bits where
+instance Show Bitmap where
     show v = show (toList v)
-instance Eq Bits where
+instance Eq Bitmap where
     (==) = equal
-instance Ord Bits where
+instance Ord Bitmap where
     compare = vCompare
-instance Monoid Bits where
+instance Monoid Bitmap where
     mempty  = empty
     mappend = append
     mconcat = concat
 
-type instance C.Element Bits = Bool
+type instance C.Element Bitmap = Bool
 
-instance IsList Bits where
-    type Item Bits = Bool
+instance IsList Bitmap where
+    type Item Bitmap = Bool
     fromList = vFromList
     toList = vToList
 
-instance C.InnerFunctor Bits where
+instance C.InnerFunctor Bitmap where
     imap = map
 
-instance C.Foldable Bits where
+instance C.Foldable Bitmap where
     foldl = foldl
     foldr = foldr
     foldl' = foldl'
     foldr' = foldr'
 
-instance C.Sequential Bits where
+instance C.Sequential Bitmap where
     null = null
     take = take
     drop = drop
     splitAt = splitAt
+    revTake n = unoptimised (C.revTake n)
+    revDrop n = unoptimised (C.revDrop n)
     splitOn = splitOn
     break = break
     span = span
@@ -65,12 +91,15 @@ instance C.Sequential Bits where
     reverse = reverse
     snoc = snoc
     cons = cons
+    unsnoc = unsnoc
+    uncons = uncons
+    intersperse = intersperse
     find = find
     sortBy = sortBy
     length = length
     singleton = fromList . (:[])
 
-instance C.IndexedCollection Bits where
+instance C.IndexedCollection Bitmap where
     (!) l n
         | n < 0 || n >= length l = Nothing
         | otherwise              = Just $ index l n
@@ -82,10 +111,10 @@ instance C.IndexedCollection Bits where
             | predicate (unsafeIndex c i) = Just i
             | otherwise                   = Nothing
 
-instance C.MutableCollection MutableBits where
-    type Collection MutableBits = Bits
-    type MutableKey MutableBits = Int
-    type MutableValue MutableBits = Bool
+instance C.MutableCollection MutableBitmap where
+    type Collection MutableBitmap = Bitmap
+    type MutableKey MutableBitmap = Int
+    type MutableValue MutableBitmap = Bool
 
     thaw = thaw
     freeze = freeze
@@ -102,10 +131,11 @@ bitmapIndex !i = i `divMod` bitsPerTy
 {-# INLINE bitmapIndex #-}
 
 -- return the index in word32 quantity and mask to a bit in a bitmap
+{-
 bitmapAddr :: Int -> (# Int , Word #)
 bitmapAddr !i = (# idx, mask #)
-  where (!idx, !bit) = bitmapIndex i
-        !mask = case bit of
+  where (!idx, !bitIdx) = bitmapIndex i
+        !mask = case bitIdx of
                     0  -> 0x1
                     1  -> 0x2
                     2  -> 0x4
@@ -138,47 +168,65 @@ bitmapAddr !i = (# idx, mask #)
                     29 -> 0x20000000
                     30 -> 0x40000000
                     _  -> 0x80000000
+-}
 
-thaw :: PrimMonad prim => Bits -> prim (MutableBits (PrimState prim))
-thaw = undefined
+thaw :: PrimMonad prim => Bitmap -> prim (MutableBitmap (PrimState prim))
+thaw (Bitmap len ba) = MutableBitmap len `fmap` C.thaw ba
 
-freeze :: PrimMonad prim => MutableBits (PrimState prim) -> prim Bits
-freeze = undefined
+freeze :: PrimMonad prim => MutableBitmap (PrimState prim) -> prim Bitmap
+freeze (MutableBitmap len mba) = Bitmap len `fmap` C.freeze mba
 
-unsafeThaw :: PrimMonad prim => Bits -> prim (MutableBits (PrimState prim))
-unsafeThaw = undefined
+unsafeThaw :: PrimMonad prim => Bitmap -> prim (MutableBitmap (PrimState prim))
+unsafeThaw (Bitmap len ba) = MutableBitmap len `fmap` C.unsafeThaw ba
 
-unsafeFreeze :: PrimMonad prim => MutableBits (PrimState prim) -> prim Bits
-unsafeFreeze = undefined
+unsafeFreeze :: PrimMonad prim => MutableBitmap (PrimState prim) -> prim Bitmap
+unsafeFreeze (MutableBitmap len mba) = Bitmap len `fmap` C.unsafeFreeze mba
 
-unsafeWrite :: MutableBits (PrimState prim) -> Int -> Bool -> prim ()
-unsafeWrite = undefined
+unsafeWrite :: PrimMonad prim => MutableBitmap (PrimState prim) -> Int -> Bool -> prim ()
+unsafeWrite (MutableBitmap _ ma) i v = do
+    let (idx, bitIdx) = bitmapIndex i
+    w <- A.unsafeRead ma idx
+    let w' = if v then setBit w bitIdx else clearBit w bitIdx
+    A.unsafeWrite ma idx w'
+{-# INLINE unsafeWrite #-}
 
-unsafeRead :: MutableBits (PrimState prim) -> Int -> prim Bool
-unsafeRead = undefined
+unsafeRead :: PrimMonad prim => MutableBitmap (PrimState prim) -> Int -> prim Bool
+unsafeRead (MutableBitmap _ ma) i = do
+    let (idx, bitIdx) = bitmapIndex i
+    flip testBit bitIdx `fmap` A.unsafeRead ma idx
+{-# INLINE unsafeRead #-}
 
-write :: MutableBits (PrimState prim) -> Int -> Bool -> prim ()
-write = undefined
+write :: PrimMonad prim => MutableBitmap (PrimState prim) -> Int -> Bool -> prim ()
+write mb n val
+    | n < 0 || n >= len = primThrow (OutOfBound OOB_Write n len)
+    | otherwise         = unsafeWrite mb n val
+  where
+    len = mutableLength mb
+{-# INLINE write #-}
 
-read :: MutableBits (PrimState prim) -> Int -> prim Bool
-read = undefined
+read :: PrimMonad prim => MutableBitmap (PrimState prim) -> Int -> prim Bool
+read mb n
+    | n < 0 || n >= len = primThrow (OutOfBound OOB_Read n len)
+    | otherwise         = unsafeRead mb n
+  where len = mutableLength mb
+{-# INLINE read #-}
 
--- | Return the element at a specific index from a Bits.
+-- | Return the element at a specific index from a Bitmap.
 --
 -- If the index @n is out of bounds, an error is raised.
-index :: Bits -> Int -> Bool
-index array n
+index :: Bitmap -> Int -> Bool
+index bits n
     | n < 0 || n >= len = throw (OutOfBound OOB_Index n len)
-    | otherwise         = unsafeIndex array n
-  where len = length array
+    | otherwise         = unsafeIndex bits n
+  where len = length bits
 {-# INLINE index #-}
 
 -- | Return the element at a specific index from an array without bounds checking.
 --
 -- Reading from invalid memory can return unpredictable and invalid values.
 -- use 'index' if unsure.
-unsafeIndex :: Bits -> Int -> Bool
-unsafeIndex (Bits _ ba) n =
+unsafeIndex :: Bitmap -> Int -> Bool
+unsafeIndex (Bitmap _ ba) n =
     let (idx, bitIdx) = bitmapIndex n
      in testBit (A.unsafeIndex ba idx) bitIdx
 
@@ -187,25 +235,47 @@ unsafeIndex (Bits _ ba) n =
 -----------------------------------------------------------------------
 -- higher level collection implementation
 -----------------------------------------------------------------------
-length :: Bits -> Int
-length (Bits len _) = len
+length :: Bitmap -> Int
+length (Bitmap len _) = len
 
-empty :: Bits
-empty = Bits 0 A.empty
+mutableLength :: MutableBitmap st -> Int
+mutableLength (MutableBitmap len _) = len
+
+empty :: Bitmap
+empty = Bitmap 0 A.empty
 
 -- | make an array from a list of elements.
-vFromList :: [Bool] -> Bits
-vFromList l = undefined
+vFromList :: [Bool] -> Bitmap
+vFromList allBools = runST $ do
+    mba <- A.new nbElements
+    ba  <- loop mba (0 :: Int) allBools
+    return (Bitmap len ba)
+  where
+    loop mba _ [] = A.unsafeFreeze mba
+    loop mba i l  = do
+        let (l1, l2) = C.splitAt bitsPerTy l
+            w = toPacked l1
+        A.unsafeWrite mba i w
+        loop mba (i+1) l2
+
+    toPacked :: [Bool] -> Word32
+    toPacked l =
+        C.foldl (.|.) 0 $ Prelude.zipWith (\b w -> if b then (1 `shiftL` w) else 0) l (C.reverse [0..31])
+
+    nbElements :: Size Word32
+    nbElements = Size (len `div` bitsPerTy)
+
+    len        = C.length allBools
 
 -- | transform an array to a list.
-vToList :: Bits -> [Bool]
+vToList :: Bitmap -> [Bool]
 vToList a = loop 0
   where len = length a
         loop i | i == len  = []
                | otherwise = unsafeIndex a i : loop (i+1)
 
 -- | Check if two vectors are identical
-equal :: Bits -> Bits -> Bool
+equal :: Bitmap -> Bitmap -> Bool
 equal a b
     | la /= lb  = False
     | otherwise = loop 0
@@ -216,7 +286,7 @@ equal a b
            | otherwise = (unsafeIndex a n == unsafeIndex b n) && loop (n+1)
 
 -- | Compare 2 vectors
-vCompare :: Bits -> Bits -> Ordering
+vCompare :: Bitmap -> Bitmap -> Ordering
 vCompare a b = loop 0
   where
     !la = length a
@@ -232,49 +302,39 @@ vCompare a b = loop 0
 -- | Append 2 arrays together by creating a new bigger array
 --
 -- TODO completely non optimized
-append :: Bits -> Bits -> Bits
+append :: Bitmap -> Bitmap -> Bitmap
 append a b = fromList $ toList a `mappend` toList b
 
 -- TODO completely non optimized
-concat :: [Bits] -> Bits
+concat :: [Bitmap] -> Bitmap
 concat l = fromList $ mconcat $ fmap toList l
 
--- | update an array by creating a new array with the updates.
---
--- the operation copy the previous array, modify it in place, then freeze it.
-update :: Bits
-       -> [(Int, Bool)]
-       -> Bits
-update array modifiers = undefined
+null :: Bitmap -> Bool
+null (Bitmap nbBits _) = nbBits == 0
 
-unsafeUpdate :: Bits
-             -> [(Int, Bool)]
-             -> Bits
-unsafeUpdate array modifiers = undefined
-
-null :: Bits -> Bool
-null (Bits nbBits _) = nbBits == 0
-
-take :: Int -> Bits -> Bits
-take nbElems bits@(Bits nbBits ba)
+take :: Int -> Bitmap -> Bitmap
+take nbElems bits@(Bitmap nbBits ba)
     | nbElems <= 0     = empty
     | nbElems >= nbBits = bits
-    | otherwise        = Bits nbElems ba -- TODO : although it work right now, take on the underlaying ba too
+    | otherwise        = Bitmap nbElems ba -- TODO : although it work right now, take on the underlaying ba too
 
-drop :: Int -> Bits -> Bits
-drop nbElems bits@(Bits nbBits ba)
+drop :: Int -> Bitmap -> Bitmap
+drop nbElems bits@(Bitmap nbBits _)
     | nbElems <= 0      = bits
     | nbElems >= nbBits = empty
-    | otherwise         = undefined -- TODO: decide if we have drop easy by having a bit offset in the data structure
-                                    -- or if we need to shift stuff around making all the indexing slighlty more complicated
+    | otherwise         = unoptimised (C.drop nbElems) bits
+        -- TODO: decide if we have drop easy by having a bit offset in the data structure
+        -- or if we need to shift stuff around making all the indexing slighlty more complicated
 
-splitAt :: Int -> Bits -> (Bits, Bits)
+splitAt :: Int -> Bitmap -> (Bitmap, Bitmap)
 splitAt n v = (take n v, drop n v)
 
-splitOn :: (ty -> Bool) -> Bits -> [Bits]
-splitOn _ _ = undefined
+-- unoptimised
+splitOn :: (Bool -> Bool) -> Bitmap -> [Bitmap]
+splitOn f bits = fmap fromList $ C.splitOn f $ toList bits
 
-break :: (Bool -> Bool) -> Bits -> (Bits, Bits)
+-- unoptimised
+break :: (Bool -> Bool) -> Bitmap -> (Bitmap, Bitmap)
 break predicate v = findBreak 0
   where
     findBreak i
@@ -284,22 +344,33 @@ break predicate v = findBreak 0
                 then splitAt i v
                 else findBreak (i+1)
 
-span :: (Bool -> Bool) -> Bits -> (Bits, Bits)
+span :: (Bool -> Bool) -> Bitmap -> (Bitmap, Bitmap)
 span p = break (not . p)
 
-map :: (Bool -> Bool) -> Bits -> Bits
-map _ _ = undefined
+map :: (Bool -> Bool) -> Bitmap -> Bitmap
+map f bits = unoptimised (fmap f) bits
 
-mapIndex :: (Int -> Bool -> Bool) -> Bool -> Bool
-mapIndex _ _ = undefined
+--mapIndex :: (Int -> Bool -> Bool) -> Bitmap -> Bitmap
+--mapIndex f Bitmap =
 
-cons :: Bool -> Bits -> Bits
-cons _ _ = undefined
+cons :: Bool -> Bitmap -> Bitmap
+cons v l = unoptimised (C.cons v) l
 
-snoc :: Bits -> Bool -> Bits
-snoc _ _ = undefined
+snoc :: Bitmap -> Bool -> Bitmap
+snoc l v = unoptimised (flip C.snoc v) l
 
-find :: (Bool -> Bool) -> Bits -> Maybe Bool
+-- unoptimised
+uncons :: Bitmap -> Maybe (Bool, Bitmap)
+uncons b = fmap (\(v, l) -> (v, fromList l)) $ C.uncons $ toList b
+
+-- unoptimised
+unsnoc :: Bitmap -> Maybe (Bitmap, Bool)
+unsnoc b = fmap (\(l, v) -> (fromList l, v)) $ C.unsnoc $ toList b
+
+intersperse :: Bool -> Bitmap -> Bitmap
+intersperse b = unoptimised (C.intersperse b)
+
+find :: (Bool -> Bool) -> Bitmap -> Maybe Bool
 find predicate vec = loop 0
   where
     !len = length vec
@@ -309,16 +380,16 @@ find predicate vec = loop 0
             let e = unsafeIndex vec i
              in if predicate e then Just e else loop (i+1)
 
-sortBy :: (Bool -> Bool -> Ordering) -> Bits -> Bits
-sortBy _ _ = undefined
+sortBy :: (Bool -> Bool -> Ordering) -> Bitmap -> Bitmap
+sortBy by bits = unoptimised (C.sortBy by) bits
 
-filter :: (Bool -> Bool) -> Bits -> Bits
-filter predicate vec = vFromList $ Data.List.filter predicate $ vToList vec
+filter :: (Bool -> Bool) -> Bitmap -> Bitmap
+filter predicate vec = unoptimised (Data.List.filter predicate) vec
 
-reverse :: Bits -> Bits
-reverse _ = undefined
+reverse :: Bitmap -> Bitmap
+reverse bits = unoptimised C.reverse bits
 
-foldl :: (a -> Bool -> a) -> a -> Bits -> a
+foldl :: (a -> Bool -> a) -> a -> Bitmap -> a
 foldl f initialAcc vec = loop 0 initialAcc
   where
     len = length vec
@@ -326,7 +397,7 @@ foldl f initialAcc vec = loop 0 initialAcc
         | i == len  = acc
         | otherwise = loop (i+1) (f acc (unsafeIndex vec i))
 
-foldr :: (Bool -> a -> a) -> a -> Bits -> a
+foldr :: (Bool -> a -> a) -> a -> Bitmap -> a
 foldr f initialAcc vec = loop 0
   where
     len = length vec
@@ -334,13 +405,16 @@ foldr f initialAcc vec = loop 0
         | i == len  = initialAcc
         | otherwise = unsafeIndex vec i `f` loop (i+1)
 
-foldr' :: (Bool -> a -> a) -> a -> Bits -> a
+foldr' :: (Bool -> a -> a) -> a -> Bitmap -> a
 foldr' = foldr
 
-foldl' :: (a -> Bool -> a) -> a -> Bits -> a
+foldl' :: (a -> Bool -> a) -> a -> Bitmap -> a
 foldl' f initialAcc vec = loop 0 initialAcc
   where
     len = length vec
     loop i !acc
         | i == len  = acc
         | otherwise = loop (i+1) (f acc (unsafeIndex vec i))
+
+unoptimised :: ([Bool] -> [Bool]) -> Bitmap -> Bitmap
+unoptimised f = vFromList . f . vToList
