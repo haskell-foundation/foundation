@@ -522,20 +522,23 @@ withMutablePtr muvec f = do
 recast :: ( PrimMonad prim
           , PrimType a, PrimType b
           )
-       => Proxy b
-       -> UArray a
+       => UArray a
        -> prim (UArray b)
-recast p array
-    | aTypeSize == bTypeSize = return (unsafeRecast array)
-    | missing   == 0         = return (unsafeRecast array)
-    | otherwise = primThrow $ InvalidRecast
-                                (RecastSourceSize      alen)
-                                (RecastDestinationSize $ alen + missing)
+recast = recast_ Proxy Proxy
   where
-    aTypeSize@(Size as) = primSizeInBytes $ vectorProxyTy array
-    bTypeSize@(Size bs) = primSizeInBytes p
-    alen = length array * as
-    missing = alen `mod` bs
+    recast_ :: (PrimMonad prim, PrimType a, PrimType b)
+            => Proxy a -> Proxy b -> UArray a -> prim (UArray b)
+    recast_ pa pb array
+        | aTypeSize == bTypeSize = return (unsafeRecast array)
+        | missing   == 0         = return (unsafeRecast array)
+        | otherwise = primThrow $ InvalidRecast
+                          (RecastSourceSize      alen)
+                          (RecastDestinationSize $ alen + missing)
+      where
+        aTypeSize@(Size as) = primSizeInBytes pa
+        bTypeSize@(Size bs) = primSizeInBytes pb
+        alen = length array * as
+        missing = alen `mod` bs
 
 unsafeRecast :: (PrimType a, PrimType b) => UArray a -> UArray b
 unsafeRecast (UVecBA start len pinStatus b) = UVecBA (primOffsetRecast start) (sizeRecast len) pinStatus b

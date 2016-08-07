@@ -805,15 +805,10 @@ fromEncoderBytes :: ( Encoder.Encoding encoding
                  -> UArray Word8
                  -> (String, Maybe ValidationFailure, UArray Word8)
 fromEncoderBytes enc bytes =
-    ( String $ runST $ Vec.recast (encodingToProxy enc) bytes >>= Encoder.convertFromTo enc EncoderUTF8
+    ( String $ runST $ Vec.recast bytes >>= Encoder.convertFromTo enc EncoderUTF8
     , Nothing
     , mempty
     )
-  where
-    encodingToProxy :: (Encoder.Encoding encoding, PrimType (Encoder.Unit encoding))
-                    => encoding
-                    -> Proxy (Encoder.Unit encoding)
-    encodingToProxy _ = Proxy
 
 
 fromBytes :: Encoding -> UArray Word8 -> (String, Maybe ValidationFailure, UArray Word8)
@@ -886,9 +881,7 @@ toEncoderBytes :: ( Encoder.Encoding encoding
                => encoding
                -> UArray Word8
                -> UArray Word8
-toEncoderBytes enc bytes = runST $ do
-    res <- Encoder.convertFromTo EncoderUTF8 enc bytes
-    Vec.recast (Proxy :: Proxy Word8) res
+toEncoderBytes enc bytes = runST $ Encoder.convertFromTo EncoderUTF8 enc bytes >>= Vec.recast
 
 -- | Convert a String to a bytearray
 toBytes :: Encoding -> String -> UArray Word8
