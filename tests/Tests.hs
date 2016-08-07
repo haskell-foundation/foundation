@@ -477,6 +477,9 @@ tests =
         [ testCase "The foundation Serie" $ testCaseModifiedUTF8 "基地系列" "基地系列"
         , testCase "has null bytes" $ testCaseModifiedUTF8 "let's\0 do \0 it" "let's\0 do \0 it"
         , testCase "Vincent's special" $ testCaseModifiedUTF8 "abc\0안, 蠀\0, ☃" "abc\0안, 蠀\0, ☃"
+        , testCase "Long string" $ testCaseModifiedUTF8
+              "this is only a simple string but quite longer than the 64 bytes used in the modified UTF8 parser"
+              "this is only a simple string but quite longer than the 64 bytes used in the modified UTF8 parser"
         ]
     , testGroup "BoxedZippable"
         [ testGroup "Array"

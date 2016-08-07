@@ -36,8 +36,9 @@ appendTy v = ArrayBuilder $ State $ \st ->
         then do
             newChunk <- new (chunkSize st)
             cur <- unsafeFreeze (currentBuffer st)
+            write newChunk 0 v
             return ((), st { prevBuffers   = cur : prevBuffers st
-                           , currentOffset = Offset 0
+                           , currentOffset = Offset 1
                            , currentBuffer = newChunk
                            })
         else do
