@@ -106,7 +106,8 @@ class Multiplicative a where
 -- as the operand depending on the actual type.
 --
 -- For example:
--- e.g. (-) :: DateTime -> DateTime -> Seconds
+-- e.g. (-) :: Int -> Int -> Int
+--      (-) :: DateTime -> DateTime -> Seconds
 --      (-) :: Ptr a -> Ptr a -> PtrDiff
 class Subtractive a where
     type Difference a

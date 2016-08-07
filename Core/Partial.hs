@@ -19,6 +19,8 @@ module Core.Partial
     , fromPartial
     , head
     , fromJust
+    , fromLeft
+    , fromRight
     ) where
 
 import Core.Internal.Base
@@ -59,3 +61,15 @@ fromJust x = partial $
     case x of
         Nothing -> partialError "fromJust" "Nothing"
         Just y  -> y
+
+fromRight :: Either a b -> Partial b
+fromRight x = partial $
+    case x of
+        Left _ -> partialError "fromRight" "Left"
+        Right a -> a
+
+fromLeft :: Either a b -> Partial a
+fromLeft x = partial $
+    case x of
+        Right _ -> partialError "fromLeft" "Right"
+        Left a -> a
