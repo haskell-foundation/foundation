@@ -1,7 +1,7 @@
 -- |
 -- Module      : Core.Strict
 -- License     : BSD-style
--- Maintainer  : Foundatinon
+-- Maintainer  : Foundation
 -- Stability   : stable
 -- Portability : portable
 --
@@ -9,12 +9,16 @@
 --
 
 module Core.Strict
-    ( strict2
+    ( strict1
+    , strict2
     , strict3
     , strict4
     , strict5
     , strict6
     ) where
+
+strict1 :: (a -> b) -> a -> b
+strict1 f !a = f a
 
 strict2 :: (a -> b -> c) -> a -> b -> c
 strict2 f !a !b = f a b
