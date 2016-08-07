@@ -11,6 +11,10 @@
 module Core.Array.Common
     ( OutOfBound(..)
     , OutOfBoundOperation(..)
+
+    , InvalidRecast(..)
+    , RecastSourceSize(..)
+    , RecastDestinationSize(..)
     ) where
 
 import           Core.Internal.Base
@@ -30,3 +34,13 @@ data OutOfBound = OutOfBound OutOfBoundOperation Int Int
     deriving (Show,Typeable)
 
 instance Exception OutOfBound
+
+newtype RecastSourceSize      = RecastSourceSize Int
+    deriving (Show,Eq,Typeable)
+newtype RecastDestinationSize = RecastDestinationSize Int
+    deriving (Show,Eq,Typeable)
+
+data InvalidRecast = InvalidRecast RecastSourceSize RecastDestinationSize
+    deriving (Show,Typeable)
+
+instance Exception InvalidRecast
