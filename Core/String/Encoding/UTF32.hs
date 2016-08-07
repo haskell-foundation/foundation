@@ -25,7 +25,7 @@ import Core.String.Encoding.Encoding
 data UTF32 = UTF32
 
 data UTF32_Invalid = UTF32_Invalid
-  deriving (Show, Eq, Ord, Enum, Bounded)
+  deriving (Typeable, Show, Eq, Ord, Enum, Bounded)
 instance Exception UTF32_Invalid
 
 instance Encoding UTF32 where
