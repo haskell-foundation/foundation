@@ -39,12 +39,12 @@ fromPartial (Partial ida) = runIdentity ida
 head :: [a] -> Partial a
 head l = partial $
     case l of
-        []  -> error "head: empty list"
+        []  -> partialError "head" "empty list"
         x:_ -> x
 
 -- | Partial function to grab the value inside a Maybe
 fromJust :: Maybe a -> Partial a
 fromJust x = partial $
     case x of
-        Nothing -> error "fromJust: Nothing"
+        Nothing -> partialError "fromJust" "Nothing"
         Just y  -> y
