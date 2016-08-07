@@ -40,7 +40,7 @@ fileMapRead fp = do
     (fptr, FileSize sz) <- I.fileMapRead fp
     return $ V.foreignMem fptr (Prelude.fromIntegral sz)
 
-fileMapReadWith :: FilePath -> (UArray Word8 -> IO a) -> IO a
+fileMapReadWith :: FilePath -> (V.UArray Word8 -> IO a) -> IO a
 fileMapReadWith fp f = do
     (fptr, FileSize sz) <- I.fileMapRead fp
     f (V.foreignMem fptr (Prelude.fromIntegral sz))

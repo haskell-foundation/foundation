@@ -460,7 +460,7 @@ tests =
         (  testCollection (Proxy :: Proxy String) arbitraryChar
         <> testStringCases
         <> [ testGroup "Encoding Sample0" (testEncodings sample0)
-        -- , testGroup "Encoding Sample1" (testEncodings sample1)
+           , testGroup "Encoding Sample1" (testEncodings sample1)
            ]
         )
     , testGroup "VFS"

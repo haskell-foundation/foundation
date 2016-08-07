@@ -14,6 +14,7 @@
 module Core.Array.Internal
     ( UArray(..)
     , fromForeignPtr
+    , recast
     ) where
 
 import           Core.Array.Unboxed
