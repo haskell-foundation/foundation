@@ -461,6 +461,7 @@ tests =
         <> testStringCases
         <> [ testGroup "Encoding Sample0" (testEncodings sample0)
            , testGroup "Encoding Sample1" (testEncodings sample1)
+           , testGroup "Encoding Sample2" (testEncodings sample2)
            ]
         )
     , testGroup "VFS"
