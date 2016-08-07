@@ -13,6 +13,7 @@ import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 
 import           Core
+import           Core.Array
 import           Core.Collection
 import           Core.Foreign
 import           Core.String
@@ -90,9 +91,6 @@ instance Arbitrary FilePath where
         unsafeFilePath <$> arbitrary
                        <*> vectorOf s arbitrary
 
-isIdemPotent :: Eq a => (a -> a) -> a -> Bool
-isIdemPotent f s = f s == s
-
 transEq :: Eq a => (t -> t1) -> (t1 -> a) -> (t1 -> a) -> t -> Bool
 transEq unWrap f g s =
     let s' = unWrap s in f s' == g s'
@@ -141,17 +139,17 @@ testOrd proxy genElement =
   where
     with2Elements f = forAll ((,) <$> listOfElement genElement <*> listOfElement genElement) f
 
-testMonoid :: (Show e, Ord a, Ord e, Monoid a, Element a ~ e, IsList a, Item a ~ Element a) => Proxy a -> Gen e -> [TestTree]
+testMonoid :: (Show a, Show e, Ord a, Ord e, Monoid a, Element a ~ e, IsList a, Item a ~ Element a) => Proxy a -> Gen e -> [TestTree]
 testMonoid proxy genElement =
     testEq proxy genElement <>
     testOrd proxy genElement <>
     --[ testProperty "mempty <> mempty == mempty" $ \l ->
-    [ testProperty "mempty <> x == x" $ withElements $ \l -> let col = fromListP proxy l in (col <> mempty) == col
-    , testProperty "x <> mempty == x" $ withElements $ \l -> let col = fromListP proxy l in (mempty <> col) == col
+    [ testProperty "mempty <> x == x" $ withElements $ \l -> let col = fromListP proxy l in (col <> mempty) === col
+    , testProperty "x <> mempty == x" $ withElements $ \l -> let col = fromListP proxy l in (mempty <> col) === col
     , testProperty "x1 <> x2 == x1|x2" $ with2Elements $ \(l1,l2) ->
-        (fromListP proxy l1 <> fromListP proxy l2) == fromListP proxy (l1 <> l2)
+        (fromListP proxy l1 <> fromListP proxy l2) === fromListP proxy (l1 <> l2)
     , testProperty "mconcat [map fromList [e]] = fromList (concat [e])" $ withNElements $ \l ->
-        mconcat (fmap (fromListP proxy) l) == fromListP proxy (mconcat l)
+        mconcat (fmap (fromListP proxy) l) === fromListP proxy (mconcat l)
     ]
   where
     withElements f = forAll (listOfElement genElement) f
@@ -201,7 +199,7 @@ testPath :: (Path path, Show path, Eq path)
          => Gen path
          -> [TestTree]
 testPath genElement =
-    [ testProperty "buildPath . splitPath == id" $ withElements $ isIdemPotent (buildPath . splitPath)
+    [ testProperty "buildPath . splitPath == id" $ withElements $ \l -> (buildPath $ splitPath l) === l
     ]
   where
     withElements f = forAll genElement f
@@ -210,37 +208,37 @@ testCollection :: (Sequential a, Show a, Show (Element a), Eq (Element a), Ord a
                => Proxy a -> Gen (Element a) -> [TestTree]
 testCollection proxy genElement =
     testMonoid proxy genElement <>
-    [ testProperty "LString-convert" $ withElements $ isIdemPotent (toList . fromListP proxy)
-    , testProperty "length" $ withElements $ \l -> (length $ fromListP proxy l) == length l
-    , testProperty "take" $ withElements2 $ \(l, n) -> toList (take n $ fromListP proxy l) == (take n) l
-    , testProperty "drop" $ withElements2 $ \(l, n) -> toList (drop n $ fromListP proxy l) == (drop n) l
-    , testProperty "splitAt" $ withElements2 $ \(l, n) -> toList2 (splitAt n $ fromListP proxy l) == (splitAt n) l
-    , testProperty "revTake" $ withElements2 $ \(l, n) -> toList (revTake n $ fromListP proxy l) == (revTake n) l
-    , testProperty "revDrop" $ withElements2 $ \(l, n) -> toList (revDrop n $ fromListP proxy l) == (revDrop n) l
-    , testProperty "revSplitAt" $ withElements2 $ \(l, n) -> toList2 (revSplitAt n $ fromListP proxy l) == (revSplitAt n) l
-    , testProperty "snoc" $ withElements2E $ \(l, c) -> toList (snoc (fromListP proxy l) c) == (l <> [c])
-    , testProperty "cons" $ withElements2E $ \(l, c) -> toList (cons c (fromListP proxy l)) == (c : l)
-    , testProperty "unsnoc" $ withElements $ \l -> fmap toListFirst (unsnoc (fromListP proxy l)) == unsnoc l
-    , testProperty "uncons" $ withElements $ \l -> fmap toListSecond (uncons (fromListP proxy l)) == uncons l
+    [ testProperty "c == [Element(c)]" $ withElements $ \l -> (toList $ fromListP proxy l) === l
+    , testProperty "length" $ withElements $ \l -> (length $ fromListP proxy l) === length l
+    , testProperty "take" $ withElements2 $ \(l, n) -> toList (take n $ fromListP proxy l) === (take n) l
+    , testProperty "drop" $ withElements2 $ \(l, n) -> toList (drop n $ fromListP proxy l) === (drop n) l
+    , testProperty "splitAt" $ withElements2 $ \(l, n) -> toList2 (splitAt n $ fromListP proxy l) === (splitAt n) l
+    , testProperty "revTake" $ withElements2 $ \(l, n) -> toList (revTake n $ fromListP proxy l) === (revTake n) l
+    , testProperty "revDrop" $ withElements2 $ \(l, n) -> toList (revDrop n $ fromListP proxy l) === (revDrop n) l
+    , testProperty "revSplitAt" $ withElements2 $ \(l, n) -> toList2 (revSplitAt n $ fromListP proxy l) === (revSplitAt n) l
+    , testProperty "snoc" $ withElements2E $ \(l, c) -> toList (snoc (fromListP proxy l) c) === (l <> [c])
+    , testProperty "cons" $ withElements2E $ \(l, c) -> toList (cons c (fromListP proxy l)) === (c : l)
+    , testProperty "unsnoc" $ withElements $ \l -> fmap toListFirst (unsnoc (fromListP proxy l)) === unsnoc l
+    , testProperty "uncons" $ withElements $ \l -> fmap toListSecond (uncons (fromListP proxy l)) === uncons l
     , testProperty "splitOn" $ withElements2E $ \(l, ch) ->
-         fmap toList (splitOn (== ch) (fromListP proxy l)) == splitOn (== ch) l
+         fmap toList (splitOn (== ch) (fromListP proxy l)) === splitOn (== ch) l
     , testProperty "intersperse" $ withElements2E $ \(l, c) ->
-        toList (intersperse c (fromListP proxy l)) == intersperse c l
+        toList (intersperse c (fromListP proxy l)) === intersperse c l
     , testProperty "intercalate" $ withElements2E $ \(l, c) ->
         let ls = Prelude.replicate 5 l
             cs = Prelude.replicate 5 c
-        in toList (intercalate (fromListP proxy cs) (fromListP proxy <$> ls)) == intercalate cs ls
+        in toList (intercalate (fromListP proxy cs) (fromListP proxy <$> ls)) === intercalate cs ls
     , testProperty "sortBy" $ withElements $ \l ->
-        (sortBy compare $ fromListP proxy l) == fromListP proxy (sortBy compare l)
+        (sortBy compare $ fromListP proxy l) === fromListP proxy (sortBy compare l)
     , testProperty "reverse" $ withElements $ \l ->
-        (reverse $ fromListP proxy l) == fromListP proxy (reverse l)
+        (reverse $ fromListP proxy l) === fromListP proxy (reverse l)
     -- stress slicing
-    , testProperty "take . take" $ withElements3 $ \(l, n1, n2) -> toList (take n2 $ take n1 $ fromListP proxy l) == (take n2 $ take n1 l)
-    , testProperty "drop . take" $ withElements3 $ \(l, n1, n2) -> toList (drop n2 $ take n1 $ fromListP proxy l) == (drop n2 $ take n1 l)
-    , testProperty "drop . drop" $ withElements3 $ \(l, n1, n2) -> toList (drop n2 $ drop n1 $ fromListP proxy l) == (drop n2 $ drop n1 l)
-    , testProperty "drop . take" $ withElements3 $ \(l, n1, n2) -> toList (drop n2 $ take n1 $ fromListP proxy l) == (drop n2 $ take n1 l)
+    , testProperty "take . take" $ withElements3 $ \(l, n1, n2) -> toList (take n2 $ take n1 $ fromListP proxy l) === (take n2 $ take n1 l)
+    , testProperty "drop . take" $ withElements3 $ \(l, n1, n2) -> toList (drop n2 $ take n1 $ fromListP proxy l) === (drop n2 $ take n1 l)
+    , testProperty "drop . drop" $ withElements3 $ \(l, n1, n2) -> toList (drop n2 $ drop n1 $ fromListP proxy l) === (drop n2 $ drop n1 l)
+    , testProperty "drop . take" $ withElements3 $ \(l, n1, n2) -> toList (drop n2 $ take n1 $ fromListP proxy l) === (drop n2 $ take n1 l)
     , testProperty "second take . splitAt" $ withElements3 $ \(l, n1, n2) ->
-        (toList2 $ (second (take n1) . splitAt n2) $ fromListP proxy l) == (second (take n1) . splitAt n2) l
+        (toList2 $ (second (take n1) . splitAt n2) $ fromListP proxy l) === (second (take n1) . splitAt n2) l
     ]
     <> testCollectionProps proxy genElement
 {-
@@ -455,6 +453,7 @@ tests =
             , testGroup "Array(Int,Int)" (testCollection (Proxy :: Proxy (Array (Int,Int)))  arbitrary)
             , testGroup "Array(Integer)" (testCollection (Proxy :: Proxy (Array Integer)) arbitrary)
             ]
+        , testGroup "Bitmap"  (testCollection (Proxy :: Proxy (Bitmap))  arbitrary)
         ]
     , testGroup "String"
         (  testCollection (Proxy :: Proxy String) arbitraryChar

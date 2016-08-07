@@ -38,9 +38,8 @@ import           Core.Internal.Types
 import           Core.Primitive.Monad
 import qualified Core.Collection as C
 import           Core.Number
-import           Data.Bits -- hiding (Bits)
+import           Data.Bits
 import           GHC.ST
-import qualified Prelude
 import qualified Data.List
 
 data Bitmap = Bitmap Int (UArray Word32)
@@ -248,6 +247,15 @@ empty = Bitmap 0 A.empty
 vFromList :: [Bool] -> Bitmap
 vFromList allBools = runST $ do
     mba <- A.new nbElements
+    let mbitmap = MutableBitmap len mba
+    loop mbitmap 0 allBools
+  where
+    loop mb _ []     = unsafeFreeze mb
+    loop mb i (x:xs) = unsafeWrite mb i x >> loop mb (i+1) xs
+
+{-
+    runST $ do
+    mba <- A.new nbElements
     ba  <- loop mba (0 :: Int) allBools
     return (Bitmap len ba)
   where
@@ -261,9 +269,16 @@ vFromList allBools = runST $ do
     toPacked :: [Bool] -> Word32
     toPacked l =
         C.foldl (.|.) 0 $ Prelude.zipWith (\b w -> if b then (1 `shiftL` w) else 0) l (C.reverse [0..31])
+-}
 
     nbElements :: Size Word32
-    nbElements = Size (len `div` bitsPerTy)
+    nbElements = Size (len `divUp` bitsPerTy)
+
+    divUp a b
+        | d == 0    = c
+        | otherwise = c+1
+      where
+        (c,d) = a `divMod` b
 
     len        = C.length allBools
 

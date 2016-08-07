@@ -16,6 +16,8 @@ module Core.Array
     , MArray
     , UArray
     , MUArray
+    , Bitmap
+    , MutableBitmap
     , PrimType
     -- exceptions
     , OutOfBound
@@ -25,3 +27,4 @@ import           Core.Array.Common
 import           Core.Array.Boxed
 import           Core.Array.Unboxed
 import           Core.Array.Unboxed.Mutable
+import           Core.Array.Bitmap
