@@ -14,7 +14,6 @@ module Foundation.String.Encoding.ASCII7
     ) where
 
 import Foundation.Internal.Base
-import Data.Bits
 import Foundation.Internal.Types
 import Foundation.Number
 import Foundation.Primitive.Monad
