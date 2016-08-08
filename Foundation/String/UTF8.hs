@@ -127,7 +127,7 @@ data EncoderUTF8 = EncoderUTF8
 instance Encoder.Encoding EncoderUTF8 where
     type Unit EncoderUTF8 = Word8
     type Error EncoderUTF8 = ValidationFailure
-    encodingNext  _ = nextWithIndexer
+    encodingNext  _ = \ofs -> Right . nextWithIndexer ofs
     encodingWrite _ = writeWithBuilder
 
 -- | Validate a bytearray for UTF8'ness
@@ -240,21 +240,14 @@ skipNext (String ba) n = n + 1 + getNbBytes h
 
 nextWithIndexer :: (Offset Word8 -> Word8)
                 -> Offset Word8
-                -> Either ValidationFailure (Char, Offset Word8)
+                -> (Char, Offset Word8)
 nextWithIndexer getter off =
     case getNbBytes# h of
-        0# -> Right ( toChar h
-                    , off + aone
-                    )
-        1# -> Right ( toChar (decode2 (getter $ off + aone))
-                    , off + atwo
-                    )
-        2# -> Right ( toChar (decode3 (getter $ off + aone) (getter $ off + atwo))
-                    , off + athree
-                    )
-        3# -> Right ( toChar (decode4 (getter $ off + aone) (getter $ off + atwo) (getter $ off + athree))
-                    , off + afour
-                    )
+        0# -> (toChar h, off + aone)
+        1# -> (toChar (decode2 (getter $ off + aone)), off + atwo)
+        2# -> (toChar (decode3 (getter $ off + aone) (getter $ off + atwo)), off + athree)
+        3# -> (toChar (decode4 (getter $ off + aone) (getter $ off + atwo) (getter $ off + athree))
+              , off + afour)
         r -> error ("next: internal error: invalid input: " <> show (I# r) <> " " <> show (W# h))
   where
     aone = Offset 1
@@ -520,16 +513,21 @@ splitIndex (Offset idx) (String ba) = (String v1, String v2)
   where (v1,v2) = C.splitAt idx ba
 
 break :: (Char -> Bool) -> String -> (String, String)
-break predicate s = loop (Offset 0)
+break predicate s@(String ba) = runST $ Vec.unsafeIndexer ba go
   where
     !sz = size s
     end = azero `offsetPlusE` sz
-    loop idx
-        | idx == end = (s, mempty)
-        | otherwise  =
-            let (# c, idx' #) = next s idx
-             in case predicate c of
-                    True  -> splitIndex idx s
+
+    go :: (Offset Word8 -> Word8) -> ST st (String, String)
+    go getIdx = loop (Offset 0)
+      where
+        !nextI = nextWithIndexer getIdx
+        loop idx
+            | idx == end = return (s, mempty)
+            | otherwise  = do
+                let (c, idx') = nextI idx
+                case predicate c of
+                    True  -> return $ splitIndex idx s
                     False -> loop idx'
 
 intersperse :: Char -> String -> String
