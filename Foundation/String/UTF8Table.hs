@@ -23,17 +23,27 @@ import           Foundation.Internal.Base
 -- | Check if the byte is a continuation byte
 isContinuation :: Word8 -> Bool
 isContinuation (W8# w) = isContinuation# w
+{-# INLINE isContinuation #-}
 
 -- | Get the number of following bytes given the first byte of a UTF8 sequence.
 getNbBytes :: Word8 -> Int
 getNbBytes (W8# w) = I# (getNbBytes# w)
+{-# INLINE getNbBytes #-}
 
 -- | Check if the byte is a continuation byte
 isContinuation# :: Word# -> Bool
-isContinuation# w = W# (indexWord8OffAddr# contTable (word2Int# w)) /= W# 0##
-  where
-    {-# NOINLINE contTable #-}
-    !contTable =
+isContinuation# w = W# (indexWord8OffAddr# (unTable contTable) (word2Int# w)) /= W# 0##
+{-# INLINE isContinuation# #-}
+
+-- | Get the number of following bytes given the first byte of a UTF8 sequence.
+getNbBytes# :: Word# -> Int#
+getNbBytes# w = word2Int# (indexWord8OffAddr# (unTable headTable) (word2Int# w))
+{-# INLINE getNbBytes# #-}
+
+data Table = Table { unTable :: !Addr# }
+
+contTable :: Table
+contTable = Table
         "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\
         \\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\
         \\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\
@@ -50,14 +60,10 @@ isContinuation# w = W# (indexWord8OffAddr# contTable (word2Int# w)) /= W# 0##
         \\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\
         \\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\
         \\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"#
-{-# INLINE isContinuation# #-}
+{-# NOINLINE contTable #-}
 
--- | Get the number of following bytes given the first byte of a UTF8 sequence.
-getNbBytes# :: Word# -> Int#
-getNbBytes# w = word2Int# (indexWord8OffAddr# headTable (word2Int# w))
-  where
-    {-# NOINLINE headTable #-}
-    !headTable =
+headTable :: Table
+headTable = Table
         "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\
         \\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\
         \\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\
@@ -74,4 +80,4 @@ getNbBytes# w = word2Int# (indexWord8OffAddr# headTable (word2Int# w))
         \\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\
         \\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\
         \\x03\x03\x03\x03\x03\x03\x03\x03\xff\xff\xff\xff\xff\xff\xff\xff"#
-{-# INLINE getNbBytes# #-}
+{-# NOINLINE headTable #-}

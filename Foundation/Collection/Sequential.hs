@@ -66,6 +66,10 @@ class (IsList c, Item c ~ Element c, Monoid c) => Sequential c where
     break :: (Element c -> Bool) -> c -> (c,c)
     break predicate = span (not . predicate)
 
+    -- | Split a collection when the predicate return true
+    breakElem :: Eq (Element c) => Element c -> c -> (c,c)
+    breakElem c = break (== c)
+
     -- | The 'intersperse' function takes an element and a list and
     -- \`intersperses\' that element between the elements of the list.
     -- For example,
@@ -152,6 +156,7 @@ instance UV.PrimType ty => Sequential (UV.UArray ty) where
     revSplitAt = UV.revSplitAt
     splitOn = UV.splitOn
     break = UV.break
+    breakElem = UV.breakElem
     intersperse = UV.intersperse
     span = UV.span
     filter = UV.filter

@@ -49,6 +49,7 @@ module Foundation.Array.Unboxed
     -- * Functions
     , map
     , mapIndex
+    , findIndex
     , index
     , null
     , take
@@ -58,6 +59,7 @@ module Foundation.Array.Unboxed
     , revTake
     , revSplitAt
     , splitOn
+    , splitElem
     , break
     , breakElem
     , intersperse
@@ -79,6 +81,7 @@ module Foundation.Array.Unboxed
 
 import           GHC.Prim
 import           GHC.Types
+import           GHC.Word
 import           GHC.ST
 import           GHC.Ptr
 import           GHC.ForeignPtr (ForeignPtr)
@@ -174,7 +177,9 @@ unsafeIndexer (UVecAddr start _ fptr) f = withFinalPtr fptr (\ptr -> f (primAddr
     primAddrIndex' :: PrimType ty => Offset ty -> Ptr a -> (Offset ty -> ty)
     primAddrIndex' start' (Ptr addr) = \n -> primAddrIndex addr (start' + n)
     {-# INLINE primAddrIndex' #-}
-{-# INLINE unsafeIndexer #-}
+{-# NOINLINE unsafeIndexer #-}
+
+{-# SPECIALIZE [3] unsafeIndexer :: UArray Word8 -> ((Offset Word8 -> Word8) -> ST s a) -> ST s a #-}
 
 foreignMem :: PrimType ty
            => FinalPtr ty -- ^ the start pointer with a finalizer
@@ -546,6 +551,34 @@ splitAt nbElems v
     n    = Size $ min nbElems vlen
     vlen = length v
 
+splitElem :: PrimType ty => ty -> UArray ty -> (UArray ty, UArray ty)
+splitElem !ty r@(UVecBA start len pinst ba)
+    | k == end  = (r, empty)
+    | otherwise =
+        ( UVecBA start (offsetAsSize k) pinst ba
+        , UVecBA (start `offsetPlusE` (offsetAsSize k)) (len - offsetAsSize k) pinst ba)
+  where
+    !end = start `offsetPlusE` len
+    !k = loop start
+    loop !i | i < end && t /= ty = loop (i+Offset 1)
+            | otherwise          = i
+        where t                  = primBaIndex ba i
+splitElem tyOrig rOrig@(UVecAddr _ _ fptrOrig) = withUnsafeFinalPtr fptrOrig (go tyOrig rOrig)
+  where
+    go :: PrimType ty => ty -> UArray ty -> Ptr ty -> ST s (UArray ty, UArray ty)
+    go ty r@(UVecAddr start len fptr) (Ptr addr)
+        | k == end  = return (r, empty)
+        | otherwise = return ( UVecAddr start (offsetAsSize k) fptr
+                             , UVecAddr (start `offsetPlusE` offsetAsSize k) (len - offsetAsSize k) fptr)
+      where
+        !end = start `offsetPlusE` len
+        !k = loop start
+        loop !i | i < end && t /= ty = loop (i+Offset 1)
+                | otherwise          = i
+            where t                  = primAddrIndex addr i
+    go _ _ _ = internalError "splitElem: addr"
+{-# SPECIALIZE [3] splitElem :: Word8 -> UArray Word8 -> (UArray Word8, UArray Word8) #-}
+
 revTake :: PrimType ty => Int -> UArray ty -> UArray ty
 revTake nbElems v = drop (length v - nbElems) v
 
@@ -586,7 +619,20 @@ sub vec startIdx expectedEndIdx
     newLen = Offset endIdx - Offset startIdx
     endIdx = min expectedEndIdx len
     len = length vec
+
+findIndex :: PrimType ty => ty -> UArray ty -> Maybe Int
+findIndex tyOuter ba = runST $ unsafeIndexer ba (go tyOuter)
   where
+    !len = length ba
+
+    go :: PrimType ty => ty -> (Offset ty -> ty) -> ST s (Maybe Int)
+    go ty getIdx = loop (Offset 0)
+      where
+        loop ofs@(Offset i)
+            | ofs == Offset len = return Nothing
+            | getIdx ofs == ty  = return $ Just i
+            | otherwise         = loop (ofs + Offset 1)
+{-# SPECIALIZE [3] findIndex :: Word8 -> UArray Word8 -> Maybe Int #-}
 
 break :: PrimType ty => (ty -> Bool) -> UArray ty -> (UArray ty, UArray ty)
 break xpredicate xv

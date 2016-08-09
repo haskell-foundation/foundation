@@ -77,6 +77,8 @@ class Eq ty => PrimType ty where
                   -> ty
                   -> prim ()
 
+{-# SPECIALIZE [3] primBaIndex :: ByteArray# -> Offset Word8 -> Word8 #-}
+
 instance PrimType Word8 where
     primSizeInBytes _ = Size 1
     {-# INLINE primSizeInBytes #-}

@@ -98,6 +98,7 @@ instance C.Sequential String where
     revSplitAt = revSplitAt
     splitOn = splitOn
     break = break
+    breakElem = breakElem
     intersperse = intersperse
     span = span
     filter = filter
@@ -564,6 +565,31 @@ break predicate s@(String ba) = runST $ Vec.unsafeIndexer ba go
             | otherwise  = do
                 let (c, idx') = nextI idx
                 case predicate c of
+                    True  -> return $ splitIndex idx s
+                    False -> loop idx'
+        {-# INLINE loop #-}
+{-# INLINE [2] break #-}
+
+{-# RULES "break (== 'c')" [3] forall c . break (== c) = breakElem c #-}
+
+breakElem :: Char -> String -> (String, String)
+breakElem el s@(String ba) =
+    case writeBytes el of
+        UTF8_1 w -> let (v1,v2) = Vec.splitElem w ba in (String v1, String v2)
+        _        -> runST $ Vec.unsafeIndexer ba go
+  where
+    !sz = size s
+    end = azero `offsetPlusE` sz
+
+    go :: (Offset Word8 -> Word8) -> ST st (String, String)
+    go getIdx = loop (Offset 0)
+      where
+        !nextI = nextWithIndexer getIdx
+        loop idx
+            | idx == end = return (s, mempty)
+            | otherwise  = do
+                let (c, idx') = nextI idx
+                case el == c of
                     True  -> return $ splitIndex idx s
                     False -> loop idx'
 
