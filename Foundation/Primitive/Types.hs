@@ -272,6 +272,8 @@ primOffsetOfE = getOffset Proxy
 
 sizeAsOffset :: Size a -> Offset a
 sizeAsOffset (Size a) = Offset a
+{-# INLINE sizeAsOffset #-}
 
 offsetAsSize :: Offset a -> Size a
 offsetAsSize (Offset a) = Size a
+{-# INLINE offsetAsSize #-}
