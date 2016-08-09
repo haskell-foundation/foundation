@@ -574,7 +574,7 @@ break predicate s@(String ba) = runST $ Vec.unsafeIndexer ba go
 breakElem :: Char -> String -> (String, String)
 breakElem !el s@(String ba) =
     case writeBytes el of
-        UTF8_1 w -> let (v1,v2) = Vec.splitElem w ba in (String v1, String v2)
+        UTF8_1 w -> let (# v1,v2 #) = Vec.splitElem w ba in (String v1, String v2)
         _        -> runST $ Vec.unsafeIndexer ba go
   where
     sz = size s

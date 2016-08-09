@@ -551,33 +551,35 @@ splitAt nbElems v
     n    = Size $ min nbElems vlen
     vlen = length v
 
-splitElem :: PrimType ty => ty -> UArray ty -> (UArray ty, UArray ty)
+splitElem :: PrimType ty => ty -> UArray ty -> (# UArray ty, UArray ty #)
 splitElem !ty r@(UVecBA start len pinst ba)
-    | k == end  = (r, empty)
-    | otherwise =
-        ( UVecBA start (offsetAsSize k) pinst ba
-        , UVecBA (start `offsetPlusE` (offsetAsSize k)) (len - offsetAsSize k) pinst ba)
+    | k == end   = (# r, empty #)
+    | k == start = (# empty, r #)
+    | otherwise  =
+        (# UVecBA start (offsetAsSize k) pinst ba
+        ,  UVecBA (start `offsetPlusE` (offsetAsSize k)) (len - offsetAsSize k) pinst ba
+        #)
   where
     !end = start `offsetPlusE` len
     !k = loop start
     loop !i | i < end && t /= ty = loop (i+Offset 1)
             | otherwise          = i
-        where t                  = primBaIndex ba i
-splitElem tyOrig rOrig@(UVecAddr _ _ fptrOrig) = withUnsafeFinalPtr fptrOrig (go tyOrig rOrig)
+        where !t                 = primBaIndex ba i
+splitElem tyOrig rOrig@(UVecAddr _ _ fptrOrig) = go tyOrig rOrig (withFinalPtrNoTouch fptrOrig id)
   where
-    go :: PrimType ty => ty -> UArray ty -> Ptr ty -> ST s (UArray ty, UArray ty)
+    go :: PrimType ty => ty -> UArray ty -> Ptr ty -> (# UArray ty, UArray ty #)
     go ty r@(UVecAddr start len fptr) (Ptr addr)
-        | k == end  = return (r, empty)
-        | otherwise = return ( UVecAddr start (offsetAsSize k) fptr
-                             , UVecAddr (start `offsetPlusE` offsetAsSize k) (len - offsetAsSize k) fptr)
+        | k == end  = (# r, empty #)
+        | otherwise = (# UVecAddr start (offsetAsSize k) fptr
+                      , UVecAddr (start `offsetPlusE` offsetAsSize k) (len - offsetAsSize k) fptr #)
       where
         !end = start `offsetPlusE` len
         !k = loop start
         loop !i | i < end && t /= ty = loop (i+Offset 1)
                 | otherwise          = i
             where t                  = primAddrIndex addr i
-    go _ _ _ = internalError "splitElem: addr"
-{-# SPECIALIZE [3] splitElem :: Word8 -> UArray Word8 -> (UArray Word8, UArray Word8) #-}
+    go _ _ _ = undefined -- internalError "splitElem: addr"
+{-# SPECIALIZE [3] splitElem :: Word8 -> UArray Word8 -> (# UArray Word8, UArray Word8 #) #-}
 
 revTake :: PrimType ty => Int -> UArray ty -> UArray ty
 revTake nbElems v = drop (length v - nbElems) v

@@ -20,6 +20,7 @@ module Foundation.Primitive.FinalPtr
     , toFinalPtrForeign
     , withFinalPtr
     , withUnsafeFinalPtr
+    , withFinalPtrNoTouch
     ) where
 
 import GHC.Ptr
@@ -59,6 +60,11 @@ toFinalPtrForeign fptr = FinalForeign fptr
 castFinalPtr :: FinalPtr a -> FinalPtr b
 castFinalPtr (FinalPtr a)     = FinalPtr (castPtr a)
 castFinalPtr (FinalForeign a) = FinalForeign (castForeignPtr a)
+
+withFinalPtrNoTouch :: FinalPtr p -> (Ptr p -> a) -> a
+withFinalPtrNoTouch (FinalPtr ptr) f = f ptr
+withFinalPtrNoTouch (FinalForeign fptr) f = f (unsafeForeignPtrToPtr fptr)
+{-# INLINE withFinalPtrNoTouch #-}
 
 -- | Looks at the raw pointer inside a FinalPtr, making sure the
 -- data pointed by the pointer is not finalized during the call to 'f'
