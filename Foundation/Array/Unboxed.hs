@@ -127,39 +127,8 @@ instance PrimType ty => IsList (UArray ty) where
     fromList = vFromList
     toList = vToList
 
-{-
-fmapUVec :: (PrimType a, PrimType b) => (a -> b) -> UArray a -> UArray b
-fmapUVec mapper a = runST (new nbElems >>= copyMap (unsafeIndex a) mapper)
-  where
-    !nbElems = length a
-    copyMap :: (PrimType a, PrimType b, PrimMonad prim)
-            => (Int -> a) -> (a -> b) -> MUArray b (PrimState prim) -> prim (UArray b)
-    copyMap get f ma = iter 0
-      where
-        iter i
-            | i == nbElems = unsafeFreeze ma
-            | otherwise    = unsafeWrite ma i (f $ get i) >> iter (i+1)
-
-sizeInBytes :: PrimType ty => UArray ty -> Int
-sizeInBytes     (UVecBA _ ba)  = I# (sizeofByteArray# ba)
-sizeInBytes vec@(UVecAddr l _) = (I# l) `div` sizeInBytesOfContent vec
-
-mutableSizeInBytes :: (PrimMonad prim, PrimType ty) => MUArray ty (PrimState prim) -> prim Int
-mutableSizeInBytes (MUVecMA _ mba) = primitive $ \s ->
-    case compatGetSizeofMutableByteArray# mba s of { (# s2, i #) -> (# s2, I# i #) }
-mutableSizeInBytes muv@(MUVecAddr i _) =
-    return (I# i * sizeInMutableBytesOfContent muv)
--}
-
 vectorProxyTy :: UArray ty -> Proxy ty
 vectorProxyTy _ = Proxy
-
--- rename to sizeInBitsOfCell
-{-
-sizeInBytesOfContent :: PrimType ty => UArray ty -> Size8
-sizeInBytesOfContent = primSizeInBytes . vectorProxyTy
-{-# INLINE sizeInBytesOfContent #-}
--}
 
 -- | Copy every cells of an existing array to a new array
 copy :: PrimType ty => UArray ty -> UArray ty
@@ -299,15 +268,6 @@ unsafeFreeze (MUVecAddr start len fptr) = return $ UVecAddr start len fptr
 unsafeFreezeShrink :: (PrimType ty, PrimMonad prim) => MUArray ty (PrimState prim) -> Size ty -> prim (UArray ty)
 unsafeFreezeShrink (MUVecMA start _ pinnedState mba) n = unsafeFreeze (MUVecMA start n pinnedState mba)
 unsafeFreezeShrink (MUVecAddr start _ fptr) n = unsafeFreeze (MUVecAddr start n fptr)
-    {-
-    let !(Size (I# newSize)) = sizeOfE (sizeInMutableBytesOfContent muvec) n
-    case muvec of
-        MUVecMA start end _ mba -> do
-            muvec2 <- primitive $ \s ->
-                case compatShrinkMutableByteArray# mba newSize s of { (# s2, mba2 #) -> (# s2, MUVecMA (Offset 0) n pinned mba2 #) }
-            unsafeFreeze muvec2
-        MUVecAddr start _ addr        -> unsafeFreeze (MUVecAddr (Offset 0) n addr)
-        -}
 
 freeze :: (PrimType ty, PrimMonad prim) => MUArray ty (PrimState prim) -> prim (UArray ty)
 freeze ma = do
@@ -626,28 +586,7 @@ sub vec startIdx expectedEndIdx
     newLen = Offset endIdx - Offset startIdx
     endIdx = min expectedEndIdx len
     len = length vec
-{-
-sub :: (PrimType ty, PrimMonad prim) => UArray ty -> Int -> Int -> prim (UArray ty)
-sub vec startIdx expectedEndIdx
-    | startIdx == endIdx     = return empty
-    | startIdx >= length vec = return empty
-    | otherwise              = do
-        muv <- newNative (endIdx - startIdx) $ \mba ->
-            case vec of
-                UVecBA _ ba      -> primitive $ \s -> (# copyByteArray# ba start mba 0# (end -# start) s, () #)
-                UVecAddr _ fptr  ->
-                    withFinalPtr fptr $ \(Ptr addr) -> primitive $ \s ->
-                        (# compatCopyAddrToByteArray# addr mba 0# (end -# start) s, () #)
-                UVecSlice startSlice _ parent ->
-                    -- copy from parent at index start+startIdx until index end-endIdx
-                    unsafeCopyAtRO (MUVecMA unpinned mba) 0 parent (startIdx + startSlice) (endIdx - startIdx)
-        unsafeFreeze muv
   where
-    endIdx = min expectedEndIdx (length vec)
-    !(I# end) = endIdx * bytes
-    !(I# start) = startIdx * bytes
-    bytes = sizeInBytesOfContent vec
-    -}
 
 break :: PrimType ty => (ty -> Bool) -> UArray ty -> (UArray ty, UArray ty)
 break xpredicate xv
