@@ -350,6 +350,43 @@ next (String ba) (Offset n) =
                     (and# c3 0x3f##))
             )
 
+-- | Different way to encode a Character in UTF8 represented as an ADT
+data UTF8Char =
+      UTF8_1 {-# UNPACK #-} !Word8
+    | UTF8_2 {-# UNPACK #-} !Word8 {-# UNPACK #-} !Word8
+    | UTF8_3 {-# UNPACK #-} !Word8 {-# UNPACK #-} !Word8 {-# UNPACK #-} !Word8
+    | UTF8_4 {-# UNPACK #-} !Word8 {-# UNPACK #-} !Word8 {-# UNPACK #-} !Word8 {-# UNPACK #-} !Word8
+
+writeBytes :: Char -> UTF8Char
+writeBytes c =
+    if      bool# (ltWord# x 0x80##   ) then encode1
+    else if bool# (ltWord# x 0x800##  ) then encode2
+    else if bool# (ltWord# x 0x10000##) then encode3
+    else                                     encode4
+  where
+    !(I# xi) = fromEnum c
+    !x       = int2Word# xi
+    encode1 = UTF8_1 (W8# x)
+    encode2 =
+        let !x1  = W8# (or# (uncheckedShiftRL# x 6#) 0xc0##)
+            !x2  = toContinuation x
+         in UTF8_2 x1 x2
+    encode3 =
+        let !x1  = W8# (or# (uncheckedShiftRL# x 12#) 0xe0##)
+            !x2  = toContinuation (uncheckedShiftRL# x 6#)
+            !x3  = toContinuation x
+         in UTF8_3 x1 x2 x3
+    encode4 =
+        let !x1  = W8# (or# (uncheckedShiftRL# x 18#) 0xf0##)
+            !x2  = toContinuation (uncheckedShiftRL# x 12#)
+            !x3  = toContinuation (uncheckedShiftRL# x 6#)
+            !x4  = toContinuation x
+         in UTF8_4 x1 x2 x3 x4
+    toContinuation :: Word# -> Word8
+    toContinuation w = W8# (or# (and# w 0x3f##) 0x80##)
+    {-# INLINE toContinuation #-}
+{-# INLINE writeBytes #-}
+
 write :: PrimMonad prim => MutableString (PrimState prim) -> Offset8 -> Char -> prim Offset8
 write (MutableString mba) (Offset i) c =
     if      bool# (ltWord# x 0x80##   ) then encode1
