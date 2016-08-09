@@ -386,7 +386,6 @@ writeBytes c =
     toContinuation :: Word# -> Word8
     toContinuation w = W8# (or# (and# w 0x3f##) 0x80##)
     {-# INLINE toContinuation #-}
-{-# INLINE writeBytes #-}
 
 write :: PrimMonad prim => MutableString (PrimState prim) -> Offset8 -> Char -> prim Offset8
 write (MutableString mba) (Offset i) c =
@@ -573,12 +572,12 @@ break predicate s@(String ba) = runST $ Vec.unsafeIndexer ba go
 {-# RULES "break (== 'c')" [3] forall c . break (== c) = breakElem c #-}
 
 breakElem :: Char -> String -> (String, String)
-breakElem el s@(String ba) =
+breakElem !el s@(String ba) =
     case writeBytes el of
         UTF8_1 w -> let (v1,v2) = Vec.splitElem w ba in (String v1, String v2)
         _        -> runST $ Vec.unsafeIndexer ba go
   where
-    !sz = size s
+    sz = size s
     end = azero `offsetPlusE` sz
 
     go :: (Offset Word8 -> Word8) -> ST st (String, String)
