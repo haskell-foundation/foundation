@@ -14,7 +14,7 @@ textJapanese = "数学者ハリ・セルダンは、膨大な集団の行動を�
 main = defaultMain
     [ bgroup "break"
         [ bgroup "#english-start"
-            [ bench "foundation-begin" $ whnf (fst . F.breakElem 'S') (F.fromList textEnglish :: F.String)
+            [ bench "foundation" $ whnf (fst . F.breakElem 'S') (F.fromList textEnglish :: F.String)
             , bench "text" $ nf (fst . T.break (== 'S')) (T.pack textEnglish)
             ]
         , bgroup "#english-middle"
