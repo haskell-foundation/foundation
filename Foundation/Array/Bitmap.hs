@@ -5,7 +5,7 @@
 -- Stability   : experimental
 -- Portability : portable
 --
--- A simple abstraction to a set of Bitmap (Bitmap)
+-- A simple abstraction to a set of Bits (Bitmap)
 --
 -- Largely a placeholder for a more performant implementation,
 -- most operation goes through the List representation (e.g. [Bool])
