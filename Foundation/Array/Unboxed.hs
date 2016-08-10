@@ -571,6 +571,7 @@ splitElem ty r@(UVecAddr start len fptr)
             | otherwise          = i
         where t                  = primAddrIndex addr i
 {-# SPECIALIZE [3] splitElem :: Word8 -> UArray Word8 -> (# UArray Word8, UArray Word8 #) #-}
+{-# SPECIALIZE [3] splitElem :: Word32 -> UArray Word32 -> (# UArray Word32, UArray Word32 #) #-}
 
 revTake :: PrimType ty => Int -> UArray ty -> UArray ty
 revTake nbElems v = drop (length v - nbElems) v
@@ -650,20 +651,9 @@ break xpredicate xv
 {-# RULES "break (== ty)" [3] forall (x :: Word8) . break (== x) = breakElem x #-}
 
 breakElem :: PrimType ty => ty -> UArray ty -> (UArray ty, UArray ty)
-breakElem xelem xv
-    | len == 0  = (empty, empty)
-    | otherwise = runST $ unsafeIndexer xv (go xv xelem)
-  where
-    !len = length xv
-    go :: PrimType ty => UArray ty -> ty -> (Offset ty -> ty) -> ST s (UArray ty, UArray ty)
-    go v elem getIdx = return (findBreak $ Offset 0)
-      where
-        findBreak !i@(Offset e)
-            | i == Offset len = (v, empty)
-            | getIdx i == elem = splitAt e v
-            | otherwise        = findBreak (i + Offset 1)
-    {-# INLINE go #-}
+breakElem xelem xv = let (# v1, v2 #) = splitElem xelem xv in (v1, v2)
 {-# SPECIALIZE [2] breakElem :: Word8 -> UArray Word8 -> (UArray Word8, UArray Word8) #-}
+{-# SPECIALIZE [2] breakElem :: Word32 -> UArray Word32 -> (UArray Word32, UArray Word32) #-}
 
 intersperse :: PrimType ty => ty -> UArray ty -> UArray ty
 intersperse sep v
