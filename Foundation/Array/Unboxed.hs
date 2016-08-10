@@ -202,13 +202,6 @@ lengthSize (UVecAddr _ len _) = len
 lengthSize (UVecBA _ len _ _) = len
 {-# INLINE[1] lengthSize #-}
 
--- fast case for ByteArray
-{-# RULES "length/ByteArray"  length = lengthByteArray #-}
-
-lengthByteArray :: UArray Word8 -> Int
-lengthByteArray (UVecBA _ (Size len) _ _) = len
-lengthByteArray (UVecAddr _ (Size len) _) = len
-
 -- TODO Optimise with copyByteArray#
 -- | Copy @n@ sequential elements from the specified offset in a source array
 --   to the specified position in a destination array.
@@ -565,20 +558,18 @@ splitElem !ty r@(UVecBA start len pinst ba)
     loop !i | i < end && t /= ty = loop (i+Offset 1)
             | otherwise          = i
         where !t                 = primBaIndex ba i
-splitElem tyOrig rOrig@(UVecAddr _ _ fptrOrig) = go tyOrig rOrig (withFinalPtrNoTouch fptrOrig id)
+splitElem ty r@(UVecAddr start len fptr)
+    | k == end  = (# r, empty #)
+    | otherwise =
+        (# UVecAddr start (offsetAsSize k) fptr
+        ,  UVecAddr (start `offsetPlusE` offsetAsSize k) (len - offsetAsSize k) fptr #)
   where
-    go :: PrimType ty => ty -> UArray ty -> Ptr ty -> (# UArray ty, UArray ty #)
-    go ty r@(UVecAddr start len fptr) (Ptr addr)
-        | k == end  = (# r, empty #)
-        | otherwise = (# UVecAddr start (offsetAsSize k) fptr
-                      , UVecAddr (start `offsetPlusE` offsetAsSize k) (len - offsetAsSize k) fptr #)
-      where
-        !end = start `offsetPlusE` len
-        !k = loop start
-        loop !i | i < end && t /= ty = loop (i+Offset 1)
-                | otherwise          = i
-            where t                  = primAddrIndex addr i
-    go _ _ _ = undefined -- internalError "splitElem: addr"
+    !(Ptr addr) = withFinalPtrNoTouch fptr id
+    !end = start `offsetPlusE` len
+    !k = loop start
+    loop !i | i < end && t /= ty = loop (i+Offset 1)
+            | otherwise          = i
+        where t                  = primAddrIndex addr i
 {-# SPECIALIZE [3] splitElem :: Word8 -> UArray Word8 -> (# UArray Word8, UArray Word8 #) #-}
 
 revTake :: PrimType ty => Int -> UArray ty -> UArray ty
