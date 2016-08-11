@@ -249,5 +249,4 @@ fileMapRead fp = bracket (openFile (filePathToLString fp) ReadMode True) (IO.clo
     sz   <- fileSizeFromInteger `fmap` IO.getSize fd
     let csz = fileSizeToCSize sz
     p    <- memoryMap Nothing csz [MemoryProtectionRead] MemoryMapPrivate (Just $ Fd $ fdFD fd) 0
-    fptr <- toFinalPtr p (\c -> memoryUnmap c csz)
-    return (fptr, sz)
+    return $ FileMapping p sz (memoryUnmap p csz)

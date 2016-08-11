@@ -45,6 +45,7 @@ Library
                      Foundation.Convertible
                      Foundation.String
                      Foundation.IO
+                     Foundation.IO.FileMap
                      Foundation.VFS
                      Foundation.VFS.Path
                      Foundation.VFS.FilePath

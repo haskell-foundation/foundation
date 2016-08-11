@@ -22,7 +22,6 @@ fileMapRead path = bracket doOpen closeHandle doMapping
                                (getSizeAndMap handle)
     getSizeAndMap handle filemap = do
         fileInfo <- getFileInformationByHandle handle
-        fp <- mask_ $ do
+        mask_ $ do
             ptr <- mapViewOfFile filemap fILE_MAP_READ 0 0
-            toFinalPtr ptr unmapViewOfFile
-        return (fp, FileSize $ bhfiSize fileInfo) -- bhfiSize DDWord=Word64
+            return $ FileMapping ptr (FileSize $ bhfiSize fileInfo) (unmapViewOfFile ptr)
