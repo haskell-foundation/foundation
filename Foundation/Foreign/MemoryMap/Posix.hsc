@@ -50,7 +50,6 @@ import Foreign.C.Error
 import Data.Bits
 
 import Foundation.Collection.Foldable
-import Foundation.Primitive.FinalPtr
 import Foundation.VFS
 import qualified Prelude (fromIntegral)
 import Foundation.Foreign.MemoryMap.Types

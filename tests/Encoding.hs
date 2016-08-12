@@ -17,8 +17,6 @@ import Foundation.Array.Internal (recast)
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import GHC.ST (runST)
-
 data EncodedString = EncodedString Encoding (UArray Word8)
 
 testEncodings :: ([EncodedString], String) -> [TestTree]
@@ -192,7 +190,7 @@ sample0_UTF8 = EncodedString UTF8 $ fromList
   ]
 
 sample0_UTF16 :: EncodedString
-sample0_UTF16 = EncodedString UTF16 $ runST $ recast array
+sample0_UTF16 = EncodedString UTF16 $ recast array
   where
     array :: UArray Word16
     array = fromList
@@ -455,7 +453,7 @@ sample1_UTF8 = EncodedString UTF8 $ fromList
   ]
 
 sample1_UTF16 :: EncodedString
-sample1_UTF16 = EncodedString UTF16 $ runST $ recast array
+sample1_UTF16 = EncodedString UTF16 $ recast array
   where
     array :: UArray Word16
     array = fromList
@@ -812,7 +810,7 @@ sample2_UTF8 = EncodedString UTF8 $ fromList
 
 
 sample2_UTF16 :: EncodedString
-sample2_UTF16 = EncodedString UTF16 $ runST $ recast array
+sample2_UTF16 = EncodedString UTF16 $ recast array
   where
     array :: UArray Word16
     array = fromList

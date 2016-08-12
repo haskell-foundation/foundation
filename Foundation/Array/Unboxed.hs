@@ -477,19 +477,15 @@ withMutablePtr muvec f = do
     v <- unsafeFreeze muvec
     withPtr v f
 
-recast :: ( PrimMonad prim
-          , PrimType a, PrimType b
-          )
-       => UArray a
-       -> prim (UArray b)
+recast :: (PrimType a, PrimType b) => UArray a -> UArray b
 recast = recast_ Proxy Proxy
   where
-    recast_ :: (PrimMonad prim, PrimType a, PrimType b)
-            => Proxy a -> Proxy b -> UArray a -> prim (UArray b)
+    recast_ :: (PrimType a, PrimType b)
+            => Proxy a -> Proxy b -> UArray a -> UArray b
     recast_ pa pb array
-        | aTypeSize == bTypeSize = return (unsafeRecast array)
-        | missing   == 0         = return (unsafeRecast array)
-        | otherwise = primThrow $ InvalidRecast
+        | aTypeSize == bTypeSize = unsafeRecast array
+        | missing   == 0         = unsafeRecast array
+        | otherwise = throw $ InvalidRecast
                           (RecastSourceSize      alen)
                           (RecastDestinationSize $ alen + missing)
       where

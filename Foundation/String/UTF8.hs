@@ -865,7 +865,7 @@ fromEncoderBytes :: ( Encoder.Encoding encoding
                  -> UArray Word8
                  -> (String, Maybe ValidationFailure, UArray Word8)
 fromEncoderBytes enc bytes =
-    ( String $ runST $ Vec.recast bytes >>= Encoder.convertFromTo enc EncoderUTF8
+    ( String $ runST $ Encoder.convertFromTo enc EncoderUTF8 (Vec.recast bytes)
     , Nothing
     , mempty
     )
@@ -941,7 +941,7 @@ toEncoderBytes :: ( Encoder.Encoding encoding
                => encoding
                -> UArray Word8
                -> UArray Word8
-toEncoderBytes enc bytes = runST $ Encoder.convertFromTo EncoderUTF8 enc bytes >>= Vec.recast
+toEncoderBytes enc bytes = Vec.recast (runST $ Encoder.convertFromTo EncoderUTF8 enc bytes)
 
 -- | Convert a String to a bytearray
 toBytes :: Encoding -> String -> UArray Word8
