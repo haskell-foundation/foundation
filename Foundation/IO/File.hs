@@ -93,7 +93,12 @@ readFile fp = withFile fp S.ReadMode $ \h -> do
                 then loop h (left - r) (dst `plusPtr` r)
                 else error "readFile: " -- turn into proper error
 
-foldTextFile :: (String -> a -> IO a) -> a -> FilePath -> IO a
+-- | Fold over chunks file calling the callback function for each chunks
+-- read from the file, until the end of file.
+foldTextFile :: (String -> a -> IO a) -- ^ Fold callback function
+             -> a                     -- ^ initial accumulator
+             -> FilePath              -- ^ File to read
+             -> IO a
 foldTextFile chunkf ini fp = do
     buf <- V.newPinned (Size blockSize)
     V.withMutablePtr buf $ \ptr ->
