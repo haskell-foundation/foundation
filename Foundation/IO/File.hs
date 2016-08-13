@@ -11,11 +11,14 @@ module Foundation.IO.File
     , IOMode(..)
     , withFile
     , hGet
+    , hGetNonBlocking
+    , hGetSome
     , readFile
     , foldTextFile
     ) where
 
 import           System.IO (Handle, IOMode)
+import           System.IO.Error
 import qualified System.IO as S
 import           Foundation.Collection
 import           Foundation.VFS
@@ -45,26 +48,44 @@ openFile filepath mode = do
 closeFile :: Handle -> IO ()
 closeFile = S.hClose
 
--- | Read some data from the handle
+-- | Read binary data directly from the specified 'Handle'.
+--
+-- First argument is the Handle to read from, and the second is the number of bytes to read.
+-- It returns the bytes read, up to the specified size, or an empty array if EOF has been reached.
+--
+-- 'hGet' is implemented in terms of 'hGetBuf'.
 hGet :: Handle -> Int -> IO (UArray Word8)
-hGet handle n = do
-    mv <- V.newPinned (Size n)
-    r <- V.withMutablePtr mv $ \ptr -> loop n ptr
-    if r < n
-        then V.unsafeFreezeShrink mv (Size $ n - r)
-        else unsafeFreeze mv
-  where
-    loop left dst
-        | left == 0 = return 0
-        | otherwise = do
-            let toRead = min blockSize left
-            r <- S.hGetBuf handle dst toRead
-            if r > 0 && r <= toRead
-                then loop (left - r) (dst `plusPtr` r)
-                else
-                    if r == 0
-                        then return left
-                        else error "readFile: " -- turn into proper error
+hGet h size
+    | size < 0   = invalidBufferSize "hGet" h size
+    | otherwise  = V.createFromIO size $ \p -> S.hGetBuf h p size
+
+-- | hGetNonBlocking is similar to 'hGet', except that it will never block
+-- waiting for data to become available, instead it returns only whatever data
+-- is available.  If there is no data available to be read, 'hGetNonBlocking'
+-- returns an empty array.
+--
+-- Note: on Windows, this function behaves identically to 'hGet'.
+hGetNonBlocking :: Handle -> Int -> IO (UArray Word8)
+hGetNonBlocking h size
+    | size < 0  = invalidBufferSize "hGetNonBlocking" h size
+    | otherwise = V.createFromIO size $ \p -> S.hGetBufNonBlocking h p size
+
+-- | Like 'hGet', except that a shorter array may be returned
+-- if there are not enough bytes immediately available to satisfy the
+-- whole request.  'hGetSome' only blocks if there is no data
+-- available, and EOF has not yet been reached.
+--
+hGetSome :: Handle -> Int -> IO (UArray Word8)
+hGetSome h size
+    | size < 0  = invalidBufferSize "hGetSome" h size
+    | otherwise = V.createFromIO size $ \p -> S.hGetBufSome h p size
+
+invalidBufferSize :: [Char] -> Handle -> Int -> IO a
+invalidBufferSize functionName handle size =
+    ioError $ mkIOError illegalOperationErrorType
+                        (functionName <> " invalid array size: " <> show size)
+                        (Just handle)
+                        Nothing
 
 -- | @'withFile' filepath mode act@ opens a file using the mode@
 -- and run act@. the by-product handle will be closed when act finish,
