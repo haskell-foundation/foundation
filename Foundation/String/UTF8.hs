@@ -34,6 +34,9 @@ module Foundation.String.UTF8
     , toBytes
     , mutableValidate
     , ValidationFailure(..)
+    -- * Legacy utility
+    , lines
+    , words
     ) where
 
 import           Foundation.Array.Unboxed           (UArray)
@@ -57,6 +60,7 @@ import           Foundation.Array.Unboxed.Builder (ArrayBuilder, appendTy)
  -- temporary
 import qualified Data.List
 import           Data.Data
+import qualified Prelude
 
 import           Foundation.String.ModifiedUTF8     (fromModified)
 import           GHC.CString                  (unpackCString#,
@@ -950,3 +954,9 @@ toBytes ASCII7     (String bytes) = toEncoderBytes Encoder.ASCII7     bytes
 toBytes ISO_8859_1 (String bytes) = toEncoderBytes Encoder.ISO_8859_1 bytes
 toBytes UTF16      (String bytes) = toEncoderBytes Encoder.UTF16      bytes
 toBytes UTF32      (String bytes) = toEncoderBytes Encoder.UTF32      bytes
+
+lines :: String -> [String]
+lines = fmap fromList . Prelude.lines . toList
+
+words :: String -> [String]
+words = fmap fromList . Prelude.words . toList

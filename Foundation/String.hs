@@ -28,6 +28,8 @@ module Foundation.String
     , fromBytesUnsafe
     , toBytes
     , ValidationFailure(..)
+    , lines
+    , words
     ) where
 
 import Foundation.String.UTF8
