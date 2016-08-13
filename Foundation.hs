@@ -118,7 +118,6 @@ module Foundation
     , Data.Typeable.Typeable
     , Control.Exception.SomeException
     , Control.Exception.IOException
-    , module System.IO.Error
       -- ** Proxy
     , Foundation.Internal.Proxy.Proxy(..)
     , Foundation.Internal.Proxy.asProxyTypeOf
