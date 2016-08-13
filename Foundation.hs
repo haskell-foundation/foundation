@@ -10,7 +10,6 @@
 -- What do they look like?
 --
 -- Alternative Prelude
-{-# LANGUAGE CPP #-}
 module Foundation
     ( -- * Standard
       -- ** Operators
@@ -162,11 +161,6 @@ import qualified Data.Tuple
 
 import qualified System.Environment
 import qualified Data.List
-#if MIN_VERSION_base(4,6,0)
-import           System.IO.Error
-#else
-import           System.IO.Error hiding (catch, try)
-#endif
 
 import           Data.Monoid ((<>))
 
