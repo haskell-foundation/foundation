@@ -91,9 +91,6 @@ module Foundation
     , Data.Foldable.Foldable
     , Data.Foldable.asum
     , Data.Traversable.Traversable
-      -- ** arrow
-    , Control.Arrow.first
-    , Control.Arrow.second
       -- ** Maybe
     , Data.Maybe.mapMaybe
     , Data.Maybe.catMaybes
@@ -135,7 +132,6 @@ import qualified Prelude
 
 import           Data.Monoid (Monoid (..))
 import           Control.Applicative
-import qualified Control.Arrow (first, second)
 import qualified Control.Category
 import qualified Control.Monad
 import qualified Control.Exception
