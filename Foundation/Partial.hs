@@ -30,6 +30,9 @@ import Foundation.Internal.Identity
 newtype Partial a = Partial (Identity a)
     deriving (Functor, Applicative, Monad)
 
+-- | An error related to the evaluation of a Partial value that failed.
+--
+-- it contains the name of the function and the reason for failure
 data PartialError = PartialError [Char] [Char]
     deriving (Show,Eq,Typeable)
 
@@ -62,12 +65,14 @@ fromJust x = partial $
         Nothing -> partialError "fromJust" "Nothing"
         Just y  -> y
 
+-- Grab the Right value of an Either
 fromRight :: Either a b -> Partial b
 fromRight x = partial $
     case x of
         Left _ -> partialError "fromRight" "Left"
         Right a -> a
 
+-- Grab the Left value of an Either
 fromLeft :: Either a b -> Partial a
 fromLeft x = partial $
     case x of
