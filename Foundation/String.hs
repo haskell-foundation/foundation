@@ -25,6 +25,7 @@ module Foundation.String
     , Encoding(..)
     , fromBytes
     , fromBytesLenient
+    , fromBytesUnsafe
     , toBytes
     , ValidationFailure(..)
     ) where
