@@ -7,6 +7,7 @@ module Main where
 
 import           Test.Tasty
 --import           Test.Tasty.Options
+import           Control.Arrow (second)
 import           Control.Monad
 import           Test.QuickCheck.Monadic
 import           Test.Tasty.HUnit
