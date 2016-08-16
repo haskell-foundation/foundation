@@ -1,4 +1,4 @@
-module Common
+module BenchUtil.Common
     ( defaultMain
     , bgroup
     , bench

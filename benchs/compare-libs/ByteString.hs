@@ -1,6 +1,6 @@
 module Main where
 
-import Common
+import BenchUtil.Common
 
 import qualified Foundation as F
 import qualified Foundation.Collection as F
