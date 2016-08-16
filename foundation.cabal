@@ -155,7 +155,7 @@ Benchmark bench-array
 
 Benchmark bench-profile-break
   Main-Is:           ProfBreak.hs
-  hs-source-dirs:    benchs
+  hs-source-dirs:    tests/Profiling
   default-language:  Haskell2010
   type:              exitcode-stdio-1.0
   Default-Extensions: NoImplicitPrelude
