@@ -102,6 +102,10 @@ Library
     Other-modules:   Foundation.Foreign.MemoryMap.Windows
   else
     Other-modules:   Foundation.Foreign.MemoryMap.Posix
+
+  if impl(ghc >= 7.10)
+    Exposed-modules: Foundation.Tuple.Nth
+
   Default-Extensions: NoImplicitPrelude
                       TypeFamilies
                       BangPatterns
