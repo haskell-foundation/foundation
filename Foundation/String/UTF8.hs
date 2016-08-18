@@ -874,7 +874,18 @@ fromEncoderBytes enc bytes =
     , mempty
     )
 
-
+-- | Convert a ByteArray to a string assuming a specific encoding.
+--
+-- It returns a 3-tuple of:
+--
+-- * The string that has been succesfully converted without any error
+-- * An optional validation error
+-- * The remaining buffer that hasn't been processed (either as a result of an error, or because the encoded sequence is not fully available)
+--
+-- Considering a stream of data that is fetched chunk by chunk, it's valid to assume
+-- that some sequence might fall in a chunk boundary. When converting chunks,
+-- if the error is Nothing and the remaining buffer is not empty, then this buffer
+-- need to be prepended to the next chunk
 fromBytes :: Encoding -> UArray Word8 -> (String, Maybe ValidationFailure, UArray Word8)
 fromBytes ASCII7     bytes = fromEncoderBytes Encoder.ASCII7     bytes
 fromBytes ISO_8859_1 bytes = fromEncoderBytes Encoder.ISO_8859_1 bytes
@@ -893,6 +904,14 @@ fromBytes UTF8       bytes
     toErr InvalidHeader       = Just InvalidHeader
     toErr InvalidContinuation = Just InvalidContinuation
 
+-- | Convert a UTF8 array of bytes to a String.
+--
+-- If there's any error in the stream, it will automatically
+-- insert replacement bytes to replace invalid sequences.
+--
+-- In the case of sequence that fall in the middle of 2 chunks,
+-- the remaining buffer is supposed to be preprended to the
+-- next chunk, and resume the parsing.
 fromBytesLenient :: UArray Word8 -> (String, UArray Word8)
 fromBytesLenient bytes
     | C.null bytes = (mempty, mempty)
@@ -934,7 +953,11 @@ fromChunkBytes l = loop l
             (_, Just err) -> doErr err
     doErr err = error ("fromChunkBytes: " <> show err)
 
--- | Convert a Byte Array directly to a string without checking for UTF8 validity
+-- | Convert a Byte Array representing UTF8 data directly to a string without checking for UTF8 validity
+--
+-- If the input contains invalid sequences, it will trigger runtime async errors when processing data.
+--
+-- In doubt, use 'fromBytes'
 fromBytesUnsafe :: UArray Word8 -> String
 fromBytesUnsafe = String
 
@@ -947,7 +970,11 @@ toEncoderBytes :: ( Encoder.Encoding encoding
                -> UArray Word8
 toEncoderBytes enc bytes = Vec.recast (runST $ Encoder.convertFromTo EncoderUTF8 enc bytes)
 
--- | Convert a String to a bytearray
+-- | Convert a String to a bytearray in a specific encoding
+--
+-- if the encoding is UTF8, the underlying buffer is returned without extra allocation or any processing
+--
+-- In any other encoding, some allocation and processing are done to convert.
 toBytes :: Encoding -> String -> UArray Word8
 toBytes UTF8       (String bytes) = bytes
 toBytes ASCII7     (String bytes) = toEncoderBytes Encoder.ASCII7     bytes
