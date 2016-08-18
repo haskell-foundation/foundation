@@ -212,6 +212,14 @@ instance Additive Word64 where
     azero = 0
     (+) = (Prelude.+)
     scale = scaleNum
+instance Additive Prelude.Float where
+    azero = 0.0
+    (+) = (Prelude.+)
+    scale = scaleNum
+instance Additive Prelude.Double where
+    azero = 0.0
+    (+) = (Prelude.+)
+    scale = scaleNum
 
 scaleNum :: (Prelude.Num a, Number n) => n -> a -> a
 scaleNum n a = (Prelude.fromIntegral $ toInteger n) Prelude.* a
@@ -248,6 +256,12 @@ instance Subtractive Word32 where
     (-) = (Prelude.-)
 instance Subtractive Word64 where
     type Difference Word64 = Word64
+    (-) = (Prelude.-)
+instance Subtractive Prelude.Float where
+    type Difference Prelude.Float = Prelude.Float
+    (-) = (Prelude.-)
+instance Subtractive Prelude.Double where
+    type Difference Prelude.Double = Prelude.Double
     (-) = (Prelude.-)
 
 instance Multiplicative Integer where
@@ -292,6 +306,14 @@ instance Multiplicative Word32 where
     (^) = power
 instance Multiplicative Word64 where
     midentity = 1
+    (*) = (Prelude.*)
+    (^) = power
+instance Multiplicative Prelude.Float where
+    midentity = 1.0
+    (*) = (Prelude.*)
+    (^) = power
+instance Multiplicative Prelude.Double where
+    midentity = 1.0
     (*) = (Prelude.*)
     (^) = power
 
