@@ -14,6 +14,7 @@ module Foundation.System.Info
       OS(..)
     , os
       -- * CPU info
+    , Arch(..)
     , arch
     , cpus
     , Endianness(..)
