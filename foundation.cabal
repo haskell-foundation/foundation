@@ -55,6 +55,7 @@ Library
                      Foundation.Primitive
                      Foundation.System.Info
                      Foundation.Strict
+                     Foundation.Parser
   Other-modules:     Foundation.String.Internal
                      Foundation.String.UTF8
                      Foundation.String.Encoding.Encoding
