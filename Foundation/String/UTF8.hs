@@ -45,6 +45,7 @@ import qualified Foundation.Array.Unboxed           as Vec
 import           Foundation.Array.Unboxed.ByteArray (MutableByteArray)
 import qualified Foundation.Array.Unboxed.Mutable   as MVec
 import qualified Foundation.Collection              as C
+import           Foundation.Collection.Buildable
 import           Foundation.Internal.Base
 import           Foundation.Internal.Primitive
 import           Foundation.Internal.Types
@@ -56,7 +57,6 @@ import           GHC.Prim
 import           GHC.ST
 import           GHC.Types
 import           GHC.Word
-import           Foundation.Array.Unboxed.Builder (ArrayBuilder, appendTy)
 
  -- temporary
 import qualified Data.List
@@ -290,7 +290,7 @@ nextWithIndexer getter off =
 
 writeWithBuilder :: (PrimMonad st, Monad st)
                  => Char
-                 ->  ArrayBuilder Word8 st ()
+                 -> Builder (UArray Word8) st ()
 writeWithBuilder c =
     if      bool# (ltWord# x 0x80##   ) then encode1
     else if bool# (ltWord# x 0x800##  ) then encode2
@@ -300,25 +300,25 @@ writeWithBuilder c =
     !(I# xi) = fromEnum c
     !x       = int2Word# xi
 
-    encode1 = appendTy (W8# x)
+    encode1 = append (W8# x)
 
     encode2 = do
         let x1  = or# (uncheckedShiftRL# x 6#) 0xc0##
             x2  = toContinuation x
-        appendTy (W8# x1) >> appendTy (W8# x2)
+        append (W8# x1) >> append (W8# x2)
 
     encode3 = do
         let x1  = or# (uncheckedShiftRL# x 12#) 0xe0##
             x2  = toContinuation (uncheckedShiftRL# x 6#)
             x3  = toContinuation x
-        appendTy (W8# x1) >> appendTy (W8# x2) >> appendTy (W8# x3)
+        append (W8# x1) >> append (W8# x2) >> append (W8# x3)
 
     encode4 = do
         let x1  = or# (uncheckedShiftRL# x 18#) 0xf0##
             x2  = toContinuation (uncheckedShiftRL# x 12#)
             x3  = toContinuation (uncheckedShiftRL# x 6#)
             x4  = toContinuation x
-        appendTy (W8# x1) >> appendTy (W8# x2) >> appendTy (W8# x3) >> appendTy (W8# x4)
+        append (W8# x1) >> append (W8# x2) >> append (W8# x3) >> append (W8# x4)
 
     toContinuation :: Word# -> Word#
     toContinuation w = or# (and# w 0x3f##) 0x80##

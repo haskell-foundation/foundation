@@ -21,8 +21,10 @@ module Foundation.Collection
     , IndexedCollection(..)
     , KeyedCollection(..)
     , Zippable(..)
+    , Buildable(..)
     ) where
 
+import           Foundation.Collection.Buildable
 import           Foundation.Collection.Element
 import           Foundation.Collection.Foldable
 import           Foundation.Collection.Indexed

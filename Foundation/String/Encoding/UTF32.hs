@@ -18,7 +18,8 @@ import GHC.Prim
 import GHC.Word
 import GHC.Types
 import Foundation.Number
-import Foundation.Array.Unboxed.Builder
+import Foundation.Array.Unboxed
+import Foundation.Collection.Buildable
 
 import Foundation.String.Encoding.Encoding
 
@@ -45,8 +46,8 @@ next getter off = Right (char, off + Offset 1)
 
 write :: (PrimMonad st, Monad st)
       => Char
-      -> ArrayBuilder Word32 st ()
-write c = appendTy w32
+      -> Builder (UArray Word32) st ()
+write c = append w32
   where
     !(C# ch) = c
     w32 :: Word32

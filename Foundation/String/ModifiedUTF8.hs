@@ -14,7 +14,8 @@
 -- The String data must contain UTF8 valid data.
 --
 
-{-# LANGUAGE MagicHash #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MagicHash        #-}
 module Foundation.String.ModifiedUTF8
     ( fromModified
     ) where
@@ -27,8 +28,8 @@ import           Foundation.Internal.Base
 import           Foundation.Internal.Types
 import qualified Foundation.Array.Unboxed as Vec
 import           Foundation.Array.Unboxed (UArray)
+import           Foundation.Collection.Buildable
 import           Foundation.Number
-import           Foundation.Array.Unboxed.Builder
 import           Foundation.Primitive.FinalPtr
 import           Foundation.String.UTF8Table
 
@@ -71,8 +72,8 @@ fromModified addr = runST $ do
          in case bs of
               [] -> internalError "ModifiedUTF8.fromModified"
               [0x00] -> return ()
-              [b1,b2] | b1 == 0xC0 && b2 == 0x80 -> appendTy 0x00 >> loopBuilder getAt noffset
-              _ -> Control.Monad.mapM appendTy bs >> loopBuilder getAt noffset
+              [b1,b2] | b1 == 0xC0 && b2 == 0x80 -> append 0x00 >> loopBuilder getAt noffset
+              _ -> Control.Monad.mapM append bs >> loopBuilder getAt noffset
 
 {-
 toModified :: ByteArray -> ByteArray

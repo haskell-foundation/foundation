@@ -17,7 +17,7 @@ module Foundation.Collection.Zippable
     ) where
 
 import qualified Foundation.Array.Unboxed as UV
-import qualified Foundation.Array.Unboxed.Builder as UVB
+import           Foundation.Collection.Buildable
 import           Foundation.Collection.Element
 import           Foundation.Collection.Sequential
 import           Foundation.Internal.Base
@@ -78,13 +78,13 @@ instance Zippable [c]
 
 instance UV.PrimType ty => Zippable (UV.UArray ty) where
   zipWith f as bs = runST $
-      Prelude.uncurry UVB.build $ go f (toList as) (toList bs)
+      Prelude.uncurry build $ go f (toList as) (toList bs)
     where
       go _  []       _        = (0, return ())
       go _  _        []       = (0, return ())
       go f' (a':as') (b':bs') =
           let (i, builder) = go f' as' bs'
-          in (i + 1, UVB.appendTy (f' a' b') >> builder)
+          in (i + 1, append (f' a' b') >> builder)
 
 class Zippable col => BoxedZippable col where
 

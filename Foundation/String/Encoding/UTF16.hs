@@ -20,7 +20,8 @@ import GHC.Types
 import Foundation.Number
 import Data.Bits
 import qualified Prelude
-import Foundation.Array.Unboxed.Builder
+import Foundation.Array.Unboxed
+import Foundation.Collection.Buildable
 
 import Foundation.String.Encoding.Encoding
 
@@ -75,12 +76,12 @@ next getter off
 
 write :: (PrimMonad st, Monad st)
       => Char
-      -> ArrayBuilder Word16 st ()
+      -> Builder (UArray Word16) st ()
 write c
-    | c < toEnum 0xd800   = appendTy $ w16 c
-    | c > toEnum 0x10000  = let (w1, w2) = wHigh c in appendTy w1 >> appendTy w2
+    | c < toEnum 0xd800   = append $ w16 c
+    | c > toEnum 0x10000  = let (w1, w2) = wHigh c in append w1 >> append w2
     | c > toEnum 0x10ffff = throw $ InvalidUnicode c
-    | c >= toEnum 0xe000  = appendTy $ w16 c
+    | c >= toEnum 0xe000  = append $ w16 c
     | otherwise = throw $ InvalidUnicode c
   where
     w16 :: Char -> Word16
