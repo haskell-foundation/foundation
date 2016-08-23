@@ -16,16 +16,19 @@ module Foundation.Array.Boxed
     , copy
     ) where
 
+import qualified Data.List
 import           GHC.Prim
 import           GHC.Types
 import           GHC.ST
 import           Foundation.Number
 import           Foundation.Internal.Base
+import           Foundation.Internal.MonadTrans
 import           Foundation.Internal.Types
 import           Foundation.Primitive.Types
 import           Foundation.Primitive.Monad
 import           Foundation.Array.Common
 import qualified Foundation.Collection as C
+import qualified Foundation.Collection.Buildable as CB
 import qualified Prelude
 
 -- | Array of a
@@ -131,6 +134,32 @@ instance C.Zippable (Array ty) where
             go mv (i + 1) f' as' bs'
 
 instance C.BoxedZippable (Array ty)
+
+type instance CB.MutableCol (Array ty) = MArray ty
+
+instance CB.Buildable (Array ty) where
+  append v = CB.Builder $ State $ \st ->
+      if offsetAsSize (CB.currentOffset st) == CB.chunkSize st
+          then do
+              newChunk <- new (CB.chunkSize st)
+              current  <- unsafeFreeze (CB.currentBuffer st)
+              write newChunk 0 v
+              return ((), st { CB.prevBuffers   = current : CB.prevBuffers st
+                             , CB.currentOffset = Offset 1
+                             , CB.currentBuffer = newChunk
+                             })
+          else do
+              let (Offset ofs) = CB.currentOffset st
+              write (CB.currentBuffer st) ofs v
+              return ((), st { CB.currentOffset = CB.currentOffset st + Offset 1 })
+
+  build sizeChunksI origab = call origab (Size sizeChunksI)
+    where
+      call ab sizeChunks = do
+          m        <- new sizeChunks
+          ((), st) <- runState (CB.runBuilder ab) (CB.BuildingState [] m (Offset 0) sizeChunks)
+          current  <- freezeUntilIndex (CB.currentBuffer st) (CB.currentOffset st)
+          return $ mconcat $ Data.List.reverse (current : CB.prevBuffers st)
 
 -- | return the numbers of elements in a mutable array
 mutableLength :: MArray ty st -> Int
