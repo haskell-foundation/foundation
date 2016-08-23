@@ -20,7 +20,6 @@
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Foundation.Parser
     ( Parser
@@ -51,8 +50,19 @@ import           Foundation.Number
 -- | use for convenience
 type Reader a = Sequential a
 
-newtype ParserError = Custom String
-  deriving (Show, Eq, IsString)
+data ParserError input
+    = Expected
+        { expectedInput :: !input
+            -- ^ the expected input
+        , receivedInput :: !input
+           -- ^ but received this data
+        }
+    | NotEnough
+        -- ^ not enough data to complete the parser
+    | MonadFail String
+        -- ^ only use in the event of Monad.fail function
+  deriving (Show, Eq, Ord, Typeable)
+instance (Show input, Typeable input) => Exception (ParserError input)
 
 -- | Simple parsing result, that represent respectively:
 --
@@ -63,7 +73,7 @@ newtype ParserError = Custom String
 -- * success: the remaining unparsed data and the parser value
 --
 data Result input a =
-      ParseFail ParserError
+      ParseFail (ParserError input)
     | ParseMore (Maybe input -> Result input a)
     | ParseOK   input a
 
@@ -73,7 +83,7 @@ instance (Show ba, Show a) => Show (Result ba a) where
     show (ParseOK b a)   = "ParseOK " <> show a <> " " <> show b
 
 -- | The continuation of the current buffer, and the error string
-type Failure input r = input -> ParserError -> Result input r
+type Failure input r = input -> ParserError input -> Result input r
 
 -- | The continuation of the next buffer value, and the parsed value
 type Success input a r = input -> a -> Result input r
@@ -92,7 +102,7 @@ instance Applicative (Parser input) where
     pure      = return
     (<*>) d e = d >>= \b -> e >>= \a -> return (b a)
 instance Monad (Parser input) where
-    fail errorMsg = Parser $ \buf err _ -> err buf (Custom $ "Parser failed: " <> fromList errorMsg)
+    fail errorMsg = Parser $ \buf err _ -> err buf (MonadFail $ fromList errorMsg)
     return v      = Parser $ \buf _ ok -> ok buf v
     m >>= k       = Parser $ \buf err ok ->
         runParser m buf err (\buf' a -> runParser (k a) buf' err ok)
@@ -129,7 +139,7 @@ parse p s = runParser p s (\_ msg -> ParseFail msg) ParseOK
 getMore :: Reader input => Parser input ()
 getMore = Parser $ \buf err ok -> ParseMore $ \nextChunk ->
     case nextChunk of
-        Nothing -> err buf "EOL: need more data"
+        Nothing -> err buf NotEnough
         Just nc
             | null nc   -> runParser getMore buf err ok
             | otherwise -> ok (mappend buf nc) ()
@@ -181,7 +191,7 @@ element w = Parser $ \buf err ok ->
     case uncons buf of
         Nothing      -> runParser (getMore >> element w) buf err ok
         Just (c1,b2) | c1 == w   -> ok b2 ()
-                     | otherwise -> err buf (Custom "elemen failed")
+                     | otherwise -> err buf (Expected (singleton w) (singleton c1))
 
 -- | Parse a sequence of elements from current position
 --
@@ -190,7 +200,6 @@ element w = Parser $ \buf err ok ->
 elements :: (Show input, Eq input, Reader input) => input -> Parser input ()
 elements allExpected = consumeEq allExpected
   where
-    errMsg = Custom $ "bytes " <> fromList (show allExpected) <> " : failed"
     -- partially consume as much as possible or raise an error.
     consumeEq expected = Parser $ \actual err ok ->
         let eLen = length expected in
@@ -199,12 +208,12 @@ elements allExpected = consumeEq allExpected
                 let (aMatch,aRem) = splitAt eLen actual
                  in if aMatch == expected
                      then ok aRem ()
-                     else err actual errMsg
+                     else err actual (Expected expected aMatch)
              else    -- not enough data, match as much as we have, and then recurse.
                 let (eMatch, eRem) = splitAt (length actual) expected
                  in if actual == eMatch
                      then runParser (getMore >> consumeEq eRem) mempty err ok
-                     else err actual errMsg
+                     else err actual (Expected expected eMatch)
 
 -- | Take @n elements from the current position in the stream
 take :: Reader input => Int -> Parser input input
