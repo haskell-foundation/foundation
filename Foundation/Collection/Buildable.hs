@@ -17,7 +17,17 @@ import           Foundation.Number
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
 
+-- $setup
+-- >>> import Control.Monad.ST
+-- >>> import Foundation.Array.Unboxed
+-- >>> import Foundation.Internal.Base
+
 -- | Collections that can be built chunk by chunk
+--
+-- Use the `Monad` instance of `Builder` to chain `append` operations
+-- and feed it into `build`:
+-- >>> runST $ build 32 (append 'a' >> append 'b' >> append 'c') :: UArray Char
+-- "abc"
 class Buildable col where
   {-# MINIMAL append, build #-}
   append :: (PrimMonad st) => Element col -> Builder col st ()

@@ -21,6 +21,7 @@ flags = ["-fobject-code"]
 -- Foundation.String.UTF8LL share the same module name, and doctest breaks.
 files :: [String]
 files =
-  [ "Foundation/VFS/FilePath.hs"
+  [ "Foundation/Collection/Buildable.hs"
+  , "Foundation/VFS/FilePath.hs"
   , "Foundation/VFS/Path.hs"
   ]
