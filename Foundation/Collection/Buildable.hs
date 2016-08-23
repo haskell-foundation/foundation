@@ -1,3 +1,12 @@
+-- |
+-- Module      : Foundation.Collection.Buildable
+-- License     : BSD-style
+-- Maintainer  : foundation
+-- Stability   : experimental
+-- Portability : portable
+--
+-- An interface for collections that can be built incrementally.
+--
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Foundation.Collection.Buildable
     ( Buildable(..)
@@ -22,10 +31,11 @@ import           Foundation.Primitive.Types
 -- >>> import Foundation.Array.Unboxed
 -- >>> import Foundation.Internal.Base
 
--- | Collections that can be built chunk by chunk
+-- | Collections that can be built chunk by chunk.
 --
--- Use the `Monad` instance of `Builder` to chain `append` operations
+-- Use the 'Monad' instance of 'Builder' to chain 'append' operations
 -- and feed it into `build`:
+--
 -- >>> runST $ build 32 (append 'a' >> append 'b' >> append 'c') :: UArray Char
 -- "abc"
 class Buildable col where
@@ -40,7 +50,7 @@ newtype Builder col st a = Builder
     { runBuilder :: State (BuildingState col (PrimState st)) st a }
     deriving (Functor,Applicative,Monad)
 
--- | The in progress state of a building operation
+-- | The in progress state of a building operation.
 --
 -- The previous buffers are in reverse order, and
 -- this contains the current buffer and the state of
