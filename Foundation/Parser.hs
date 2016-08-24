@@ -16,14 +16,14 @@
 -- > ParseOK "est" ("xx", 116)
 --
 
-{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
 
 module Foundation.Parser
-    ( Parser
+    ( Parser(..)
     , Result(..)
+    , ParserError(..)
     -- * run the Parser
     , parse
     , parseFeed
@@ -46,9 +46,6 @@ import           Foundation.Internal.Base
 import           Foundation.Collection hiding (take)
 import           Foundation.String
 import           Foundation.Number
-
--- | use for convenience
-type Reader a = Sequential a
 
 data ParserError input
     = Expected
@@ -119,7 +116,7 @@ instance Alternative (Parser input) where
 --
 -- If the Parser need more data than available, the @feeder function
 -- is automatically called and fed to the More continuation.
-parseFeed :: (Reader input, Monad m)
+parseFeed :: (Sequential input, Monad m)
           => m (Maybe input)
           -> Parser input a
           -> input
@@ -129,14 +126,14 @@ parseFeed feeder p initial = loop $ parse p initial
         loop r             = return r
 
 -- | Run a Parser on a ByteString and return a 'Result'
-parse :: Reader input
+parse :: Sequential input
       => Parser input a -> input -> Result input a
 parse p s = runParser p s (\_ msg -> ParseFail msg) ParseOK
 
 -- When needing more data, getMore append the next data
 -- to the current buffer. if no further data, then
 -- the err callback is called.
-getMore :: Reader input => Parser input ()
+getMore :: Sequential input => Parser input ()
 getMore = Parser $ \buf err ok -> ParseMore $ \nextChunk ->
     case nextChunk of
         Nothing -> err buf NotEnough
@@ -149,7 +146,7 @@ getMore = Parser $ \buf err ok -> ParseMore $ \nextChunk ->
 -- until ParseMore is fed a Nothing value.
 --
 -- getAll cannot fail.
-getAll :: Reader input => Parser input ()
+getAll :: Sequential input => Parser input ()
 getAll = Parser $ \buf err ok -> ParseMore $ \nextChunk ->
     case nextChunk of
         Nothing -> ok buf ()
@@ -159,13 +156,13 @@ getAll = Parser $ \buf err ok -> ParseMore $ \nextChunk ->
 -- until ParseMore is fed a Nothing value.
 --
 -- flushAll cannot fail.
-flushAll :: Reader input => Parser input ()
+flushAll :: Sequential input => Parser input ()
 flushAll = Parser $ \buf err ok -> ParseMore $ \nextChunk ->
     case nextChunk of
         Nothing -> ok buf ()
         Just _  -> runParser flushAll mempty err ok
 
-hasMore :: Reader input => Parser input Bool
+hasMore :: Sequential input => Parser input Bool
 hasMore = Parser $ \buf err ok ->
     if null buf
         then ParseMore $ \nextChunk ->
@@ -175,7 +172,7 @@ hasMore = Parser $ \buf err ok ->
         else ok buf True
 
 -- | Get the next `Element input` from the parser
-anyElement :: Reader input => Parser input (Element input)
+anyElement :: Sequential input => Parser input (Element input)
 anyElement = Parser $ \buf err ok ->
     case uncons buf of
         Nothing      -> runParser (getMore >> anyElement) buf err ok
@@ -185,7 +182,7 @@ anyElement = Parser $ \buf err ok ->
 --
 -- if the `Element input` is different than the expected one,
 -- this parser will raise a failure.
-element :: (Reader input, Eq (Element input))
+element :: (Sequential input, Eq (Element input))
         => Element input -> Parser input ()
 element w = Parser $ \buf err ok ->
     case uncons buf of
@@ -197,7 +194,7 @@ element w = Parser $ \buf err ok ->
 --
 -- if the following `Element input` don't match the expected
 -- `input` completely, the parser will raise a failure
-elements :: (Show input, Eq input, Reader input) => input -> Parser input ()
+elements :: (Show input, Eq input, Sequential input) => input -> Parser input ()
 elements allExpected = consumeEq allExpected
   where
     -- partially consume as much as possible or raise an error.
@@ -216,7 +213,7 @@ elements allExpected = consumeEq allExpected
                      else err actual (Expected expected eMatch)
 
 -- | Take @n elements from the current position in the stream
-take :: Reader input => Int -> Parser input input
+take :: Sequential input => Int -> Parser input input
 take n = Parser $ \buf err ok ->
     if length buf >= n
         then let (b1,b2) = splitAt n buf in ok b2 b1
@@ -224,7 +221,7 @@ take n = Parser $ \buf err ok ->
 
 -- | Take elements while the @predicate hold from the current position in the
 -- stream
-takeWhile :: Reader input => (Element input -> Bool) -> Parser input input
+takeWhile :: Sequential input => (Element input -> Bool) -> Parser input input
 takeWhile predicate = Parser $ \buf err ok ->
     let (b1, b2) = span predicate buf
      in if null b2
@@ -232,14 +229,14 @@ takeWhile predicate = Parser $ \buf err ok ->
             else ok b2 b1
 
 -- | Take the remaining elements from the current position in the stream
-takeAll :: Reader input => Parser input input
+takeAll :: Sequential input => Parser input input
 takeAll = Parser $ \buf err ok ->
     runParser (getAll >> returnBuffer) buf err ok
   where
     returnBuffer = Parser $ \buf _ ok -> ok mempty buf
 
 -- | Skip @n elements from the current position in the stream
-skip :: Reader input => Int -> Parser input ()
+skip :: Sequential input => Int -> Parser input ()
 skip n = Parser $ \buf err ok ->
     if length buf >= n
         then ok (drop n buf) ()
@@ -247,7 +244,7 @@ skip n = Parser $ \buf err ok ->
 
 -- | Skip `Element input` while the @predicate hold from the current position
 -- in the stream
-skipWhile :: Reader input => (Element input -> Bool) -> Parser input ()
+skipWhile :: Sequential input => (Element input -> Bool) -> Parser input ()
 skipWhile p = Parser $ \buf err ok ->
     let (_, b2) = span p buf
      in if null b2
@@ -256,5 +253,5 @@ skipWhile p = Parser $ \buf err ok ->
 
 -- | Skip all the remaining `Element input` from the current position in the
 -- stream
-skipAll :: Reader input => Parser input ()
+skipAll :: Sequential input => Parser input ()
 skipAll = Parser $ \buf err ok -> runParser flushAll buf err ok
