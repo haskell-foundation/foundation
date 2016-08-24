@@ -17,7 +17,6 @@
 --
 
 {-# LANGUAGE Rank2Types #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
 
 module Foundation.Parser
