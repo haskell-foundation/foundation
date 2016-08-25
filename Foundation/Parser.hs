@@ -37,9 +37,12 @@ module Foundation.Parser
     , skip
     , skipWhile
     , skipAll
+    -- utils
+    , optional
+    , many, some
     ) where
 
-import           Control.Applicative (Alternative, empty, (<|>))
+import           Control.Applicative (Alternative, empty, (<|>), many, some, optional)
 import           Control.Monad       (MonadPlus, mzero, mplus)
 import           Foundation.Internal.Base
 import           Foundation.Collection hiding (take)
@@ -194,7 +197,7 @@ element w = Parser $ \buf err ok ->
 -- if the following `Element input` don't match the expected
 -- `input` completely, the parser will raise a failure
 elements :: (Show input, Eq input, Sequential input) => input -> Parser input ()
-elements allExpected = consumeEq allExpected
+elements = consumeEq
   where
     -- partially consume as much as possible or raise an error.
     consumeEq expected = Parser $ \actual err ok ->

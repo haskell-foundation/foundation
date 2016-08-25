@@ -6,7 +6,6 @@ module Parser
   ) where
 
 import Foundation
-import Foundation.String
 import Foundation.Parser
 
 import Test.Tasty
@@ -23,7 +22,7 @@ parseTestCase :: (Show a, Eq a)
               -> Parser String a
               -> TestCaseRes a
               -> Assertion
-parseTestCase buff parser res = check (parse parser buff) res
+parseTestCase buff parser = check (parse parser buff)
 check :: (Show a, Eq a) => Result String a -> TestCaseRes a -> Assertion
 check r e = case (r, e) of
     (ParseOK remain a, TestCaseOk eRemain ea) -> do
@@ -71,7 +70,7 @@ parseTestCases = testGroup "units"
         , testCase "MoreFail" $ parseTestCase "aa" (takeWhile (' ' /=)) $ TestCaseMore Nothing TestCaseFail
         ]
     , testGroup "takeAll"
-        [ testCase "OK" $ parseTestCase "abc" (takeAll) (TestCaseMore Nothing $ TestCaseOk "" "abc")
+        [ testCase "OK" $ parseTestCase "abc" takeAll (TestCaseMore Nothing $ TestCaseOk "" "abc")
         ]
     , testGroup "skip"
         [ testCase "OK" $ parseTestCase "a" (skip 1) (TestCaseOk "" ())
@@ -86,7 +85,16 @@ parseTestCases = testGroup "units"
         , testCase "MoreFail" $ parseTestCase "aa" (skipWhile (' ' /=)) $ TestCaseMore Nothing TestCaseFail
         ]
     , testGroup "skipAll"
-        [ testCase "OK" $ parseTestCase "abc" (skipAll) (TestCaseMore Nothing $ TestCaseOk "abc" ())
+        [ testCase "OK" $ parseTestCase "abc" skipAll (TestCaseMore Nothing $ TestCaseOk "abc" ())
+        ]
+    , testGroup "optional"
+        [ testCase "Nothing" $ parseTestCase "aaa" (optional $ elements "bbb") (TestCaseOk "aaa" Nothing)
+        , testCase "Just"    $ parseTestCase "aaa" (optional $ elements "a") (TestCaseOk "aa" (Just ()))
+        ]
+    , testGroup "many"
+        [ testCase "many elements" $ parseTestCase "101010\0"
+            (many ((element '1' >> pure True) <|> (element '0' >> pure False) ) )
+            (TestCaseOk "\0" [True, False, True, False, True, False])
         ]
     ]
 
