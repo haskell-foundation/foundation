@@ -135,9 +135,10 @@ instance C.Zippable (Array ty) where
 
 instance C.BoxedZippable (Array ty)
 
-type instance CB.MutableCol (Array ty) = MArray ty
-
 instance CB.Buildable (Array ty) where
+  type Mutable (Array ty) = MArray ty
+  type Step (Array ty) = ty
+
   append v = CB.Builder $ State $ \st ->
       if offsetAsSize (CB.currentOffset st) == CB.chunkSize st
           then do
@@ -153,13 +154,14 @@ instance CB.Buildable (Array ty) where
               write (CB.currentBuffer st) ofs v
               return ((), st { CB.currentOffset = CB.currentOffset st + Offset 1 })
 
-  build sizeChunksI origab = call origab (Size sizeChunksI)
+  build sizeChunksI ab = do
+      m        <- new sizeChunks
+      ((), st) <- runState (CB.runBuilder ab) (CB.BuildingState [] m (Offset 0) sizeChunks)
+      -- TODO Use slicing when supported by boxed arrays
+      current  <- freezeUntilIndex (CB.currentBuffer st) (CB.currentOffset st)
+      return $ mconcat $ Data.List.reverse (current : CB.prevBuffers st)
     where
-      call ab sizeChunks = do
-          m        <- new sizeChunks
-          ((), st) <- runState (CB.runBuilder ab) (CB.BuildingState [] m (Offset 0) sizeChunks)
-          current  <- freezeUntilIndex (CB.currentBuffer st) (CB.currentOffset st)
-          return $ mconcat $ Data.List.reverse (current : CB.prevBuffers st)
+      sizeChunks = Size sizeChunksI
 
 -- | return the numbers of elements in a mutable array
 mutableLength :: MArray ty st -> Int

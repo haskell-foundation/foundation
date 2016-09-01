@@ -47,6 +47,7 @@ import qualified Foundation.Array.Unboxed.Mutable   as MVec
 import qualified Foundation.Collection              as C
 import           Foundation.Collection.Buildable
 import           Foundation.Internal.Base
+import           Foundation.Internal.MonadTrans
 import           Foundation.Internal.Primitive
 import           Foundation.Internal.Types
 import           Foundation.Number
@@ -121,6 +122,34 @@ instance C.Sequential String where
 instance C.Zippable String where
   -- TODO Use a string builder once available
   zipWith f a b = sFromList (C.zipWith f a b)
+
+instance Buildable String where
+  type Mutable String = MutableString
+  type Step String = Word8
+
+  append c = Builder $ State $ \st ->
+      if offsetAsSize (currentOffset st) + nbBytes >= chunkSize st
+          then do
+              newChunk  <- new (chunkSize st)
+              cur       <- unsafeFreezeShrink (currentBuffer st) (offsetAsSize $ currentOffset st)
+              newOffset <- write newChunk (Offset 0) c
+              return ((), st { prevBuffers   = cur : prevBuffers st
+                             , currentOffset = newOffset
+                             , currentBuffer = newChunk
+                             })
+          else do
+              newOffset <- write (currentBuffer st) (currentOffset st) c
+              return ((), st { currentOffset = newOffset })
+    where
+      !nbBytes = charToBytes (fromEnum c)
+
+  build sizeChunksI sb = do
+      m        <- new sizeChunks
+      ((), st) <- runState (runBuilder sb) (BuildingState [] m (Offset 0) sizeChunks)
+      current  <- unsafeFreezeShrink (currentBuffer st) (offsetAsSize $ currentOffset st)
+      return $ mconcat $ Data.List.reverse (current : prevBuffers st)
+    where
+      sizeChunks = Size sizeChunksI
 
 data ValidationFailure = InvalidHeader
                        | InvalidContinuation
@@ -441,6 +470,9 @@ write (MutableString mba) (Offset i) c =
 freeze :: PrimMonad prim => MutableString (PrimState prim) -> prim String
 freeze (MutableString mba) = String `fmap` C.unsafeFreeze mba
 {-# INLINE freeze #-}
+
+unsafeFreezeShrink :: PrimMonad prim => MutableString (PrimState prim) -> Size Word8 -> prim String
+unsafeFreezeShrink (MutableString mba) s = String <$> Vec.unsafeFreezeShrink mba s
 
 ------------------------------------------------------------------------
 -- real functions
