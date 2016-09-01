@@ -120,8 +120,11 @@ instance C.Sequential String where
     singleton = fromList . (:[])
 
 instance C.Zippable String where
-  -- TODO Use a string builder once available
-  zipWith f a b = sFromList (C.zipWith f a b)
+  zipWith f as bs = runST $ build 64 $ go f (toList as) (toList bs)
+    where
+      go _  []       _        = return ()
+      go _  _        []       = return ()
+      go f' (a':as') (b':bs') = append (f' a' b') >> go f' as' bs'
 
 instance Buildable String where
   type Mutable String = MutableString
@@ -143,11 +146,13 @@ instance Buildable String where
     where
       !nbBytes = charToBytes (fromEnum c)
 
-  build sizeChunksI sb = do
-      m        <- new sizeChunks
-      ((), st) <- runState (runBuilder sb) (BuildingState [] m (Offset 0) sizeChunks)
-      current  <- unsafeFreezeShrink (currentBuffer st) (offsetAsSize $ currentOffset st)
-      return $ mconcat $ Data.List.reverse (current : prevBuffers st)
+  build sizeChunksI sb
+    | sizeChunksI <= 0 = build 64 sb
+    | otherwise        = do
+        m        <- new sizeChunks
+        ((), st) <- runState (runBuilder sb) (BuildingState [] m (Offset 0) sizeChunks)
+        current  <- unsafeFreezeShrink (currentBuffer st) (offsetAsSize $ currentOffset st)
+        return $ mconcat $ Data.List.reverse (current : prevBuffers st)
     where
       sizeChunks = Size sizeChunksI
 

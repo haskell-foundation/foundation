@@ -22,6 +22,8 @@ module Foundation.Collection
     , KeyedCollection(..)
     , Zippable(..)
     , Buildable(..)
+    , Builder(..)
+    , BuildingState(..)
     ) where
 
 import           Foundation.Collection.Buildable

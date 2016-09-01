@@ -92,10 +92,12 @@ instance PrimType ty => Buildable (UArray ty) where
               write (currentBuffer st) ofs v
               return ((), st { currentOffset = Offset (ofs + 1) })
 
-  build sizeChunksI ab = do
-      m        <- new sizeChunks
-      ((), st) <- runState (runBuilder ab) (BuildingState [] m (Offset 0) sizeChunks)
-      current  <- unsafeFreezeShrink (currentBuffer st) (offsetAsSize $ currentOffset st)
-      return $ mconcat $ Data.List.reverse (current : prevBuffers st)
+  build sizeChunksI ab
+    | sizeChunksI <= 0 = build 64 ab
+    | otherwise        = do
+        m        <- new sizeChunks
+        ((), st) <- runState (runBuilder ab) (BuildingState [] m (Offset 0) sizeChunks)
+        current  <- unsafeFreezeShrink (currentBuffer st) (offsetAsSize $ currentOffset st)
+        return $ mconcat $ Data.List.reverse (current : prevBuffers st)
     where
       sizeChunks = Size sizeChunksI

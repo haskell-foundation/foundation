@@ -16,6 +16,7 @@ import           Foundation.Collection
 import           Foundation.VFS                (Path (..), filename, parent)
 import           Foundation.VFS.FilePath
 import qualified Prelude
+import           GHC.ST
 
 import Test.Data.Unicode
 import Test.Data.List
@@ -138,6 +139,16 @@ testBoxedZippable proxyA proxyB proxyCol genElementA genElementB =
     withList2 = forAll ((,) <$> generateListOfElement genElementA <*> generateListOfElement genElementB)
     withListOfTuples = forAll (generateListOfElement ((,) <$> genElementA <*> genElementB))
 
+testBuildable :: (Eq a, IsList a, Show (Element a), Element a ~ Item a, Buildable a)
+              => Proxy a -> Gen (Element a) -> Gen (Small Int) -> [TestTree]
+testBuildable proxyA genElementA genSizeChunk =
+    [ testProperty "build s . mapM_ append == id" $ withListAndSize $ \(e, Small s) ->
+        runST (build s (Prelude.mapM_ append e)) `asProxyTypeOf` proxyA
+            == fromListP proxyA e
+    ]
+  where
+    withListAndSize = forAll ((,) <$> listOfElement genElementA <*> genSizeChunk)
+
 testZippable :: ( Eq (Element col), Show (Item col), Show (Item a), Show (Item b)
                 , Zippable col, Zippable a, Zippable b )
              => Proxy a -> Proxy b -> Proxy col -> Gen (Element a) -> Gen (Element b) -> Gen (Element col) -> [TestTree]
@@ -240,6 +251,18 @@ tests =
                     (Proxy :: Proxy (Array Int)) (Proxy :: Proxy (Array Char))
                     (Proxy :: Proxy (Array (Int, Char))) arbitrary arbitrary )
             ]
+        ]
+    , testGroup "Buildable"
+        [ testGroup "String"
+            (testBuildable (Proxy :: Proxy String) arbitrary arbitrary)
+        , testGroup "Array Int"
+            (testBuildable (Proxy :: Proxy (Array Int)) arbitrary arbitrary)
+        , testGroup "Array Char"
+            (testBuildable (Proxy :: Proxy (Array Char)) arbitrary arbitrary)
+        , testGroup "UArray Word8"
+            (testBuildable (Proxy :: Proxy (UArray Word8)) arbitrary arbitrary)
+        , testGroup "UArray Char"
+            (testBuildable (Proxy :: Proxy (UArray Char)) arbitrary arbitrary)
         ]
     , testGroup "Zippable"
         [ testGroup "String"

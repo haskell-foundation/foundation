@@ -76,7 +76,7 @@ class Sequential col => Zippable col where
 instance Zippable [c]
 
 instance UV.PrimType ty => Zippable (UV.UArray ty) where
-  zipWith f as bs = runST $ build 32 $ go f (toList as) (toList bs)
+  zipWith f as bs = runST $ build 64 $ go f (toList as) (toList bs)
     where
       go _  []       _        = return ()
       go _  _        []       = return ()

@@ -120,18 +120,11 @@ instance C.IndexedCollection (Array ty) where
                 if predicate (unsafeIndex c i) then Just i else Nothing
 
 instance C.Zippable (Array ty) where
-    -- TODO Use an array builder once available
-    zipWith f a b = runST $ do
-        mv <- new len
-        go mv 0 f (toList a) (toList b)
-        unsafeFreeze mv
-      where
-        !len = Size $ min (C.length a) (C.length b)
-        go _  _  _ []       _        = return ()
-        go _  _  _ _        []       = return ()
-        go mv i f' (a':as') (b':bs') = do
-            write mv i (f' a' b')
-            go mv (i + 1) f' as' bs'
+  zipWith f as bs = runST $ CB.build 64 $ go f (toList as) (toList bs)
+    where
+      go _  []       _        = return ()
+      go _  _        []       = return ()
+      go f' (a':as') (b':bs') = CB.append (f' a' b') >> go f' as' bs'
 
 instance C.BoxedZippable (Array ty)
 
@@ -154,12 +147,14 @@ instance CB.Buildable (Array ty) where
               write (CB.currentBuffer st) ofs v
               return ((), st { CB.currentOffset = CB.currentOffset st + Offset 1 })
 
-  build sizeChunksI ab = do
-      m        <- new sizeChunks
-      ((), st) <- runState (CB.runBuilder ab) (CB.BuildingState [] m (Offset 0) sizeChunks)
-      -- TODO Use slicing when supported by boxed arrays
-      current  <- freezeUntilIndex (CB.currentBuffer st) (CB.currentOffset st)
-      return $ mconcat $ Data.List.reverse (current : CB.prevBuffers st)
+  build sizeChunksI ab
+    | sizeChunksI <= 0 = CB.build 64 ab
+    | otherwise        = do
+        m        <- new sizeChunks
+        ((), st) <- runState (CB.runBuilder ab) (CB.BuildingState [] m (Offset 0) sizeChunks)
+        -- TODO Use slicing when supported by boxed arrays
+        current  <- freezeUntilIndex (CB.currentBuffer st) (CB.currentOffset st)
+        return $ mconcat $ Data.List.reverse (current : CB.prevBuffers st)
     where
       sizeChunks = Size sizeChunksI
 
