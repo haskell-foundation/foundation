@@ -49,6 +49,23 @@ Any contributions is welcome, but a short list includes:
 * Make tutorial on how to use foundation
 * Make your project use foundation instead of base, report the missing coverage (IO, types, etc.), or what functionality is missing to make a succesful transition
 
+Profiling
+=========
+
+If you want to see the core (simpl step) or the assembly (asm step), then you can build with
+
+    stack build --ghc-options -ddump-simpl --ghc-options -ddump-asm
+
+Note that it doesn't actually will create the necessary extra files if the modules doesn't need building.
+
+you can then find your build by-products in:
+
+    .stack-work/dist/<architecture>/Cabal-<CabalVersion>/build/
+
+Each modules that get compiled will create an equivalent file in the build directory:
+
+* ModuleName.dump-simpl
+* ModuleName.dump-asm
 
 Design
 ======
