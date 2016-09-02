@@ -34,19 +34,19 @@ class Bifunctor p where
 
     -- | Map over both arguments at the same time.
     --
-    -- @'bimap' f g â‰¡ 'first' f '.' 'second' g@
+    -- @'bimap' f g ≡ 'first' f '.' 'second' g@
     bimap :: (a -> b) -> (c -> d) -> p a c -> p b d
     bimap f g = first f P.. second g
 
     -- | Map covariantly over the first argument.
     --
-    -- @'first' f â‰¡ 'bimap' f 'id'@
+    -- @'first' f ≡ 'bimap' f 'id'@
     first :: (a -> b) -> p a c -> p b c
     first f = bimap f P.id
 
     -- | Map covariantly over the second argument.
     --
-    -- @'second' â‰¡ 'bimap' 'id'@
+    -- @'second' ≡ 'bimap' 'id'@
     second :: (b -> c) -> p a b -> p a c
     second = bimap P.id
 
