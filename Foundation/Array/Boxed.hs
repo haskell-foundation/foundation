@@ -13,6 +13,7 @@
 module Foundation.Array.Boxed
     ( Array
     , MArray
+    , copy
     ) where
 
 import           GHC.Prim
@@ -225,6 +226,10 @@ freeze marray = do
     unsafeFreeze m
   where
     sz = Size $ mutableLength marray
+
+-- | Copy the element to a new element array
+copy :: Array ty -> Array ty
+copy a = runST (unsafeThaw a >>= freeze)
 
 -- | Copy a number of elements from an array to another array with offsets
 copyAt :: PrimMonad prim
