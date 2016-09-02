@@ -16,7 +16,6 @@ module Foundation.Array.Boxed
     , copy
     ) where
 
-import qualified Data.List
 import           GHC.Prim
 import           GHC.Types
 import           GHC.ST
@@ -139,6 +138,7 @@ instance CB.Buildable (Array ty) where
               current  <- unsafeFreeze (CB.currentBuffer st)
               write newChunk 0 v
               return ((), st { CB.prevBuffers   = current : CB.prevBuffers st
+                             , CB.prevSize      = CB.chunkSize st + CB.prevSize st
                              , CB.currentOffset = Offset 1
                              , CB.currentBuffer = newChunk
                              })
@@ -151,12 +151,19 @@ instance CB.Buildable (Array ty) where
     | sizeChunksI <= 0 = CB.build 64 ab
     | otherwise        = do
         m        <- new sizeChunks
-        ((), st) <- runState (CB.runBuilder ab) (CB.BuildingState [] m (Offset 0) sizeChunks)
-        -- TODO Use slicing when supported by boxed arrays
-        current  <- freezeUntilIndex (CB.currentBuffer st) (CB.currentOffset st)
-        return $ mconcat $ Data.List.reverse (current : CB.prevBuffers st)
+        ((), st) <- runState (CB.runBuilder ab) (CB.BuildingState [] (Size 0) m (Offset 0) sizeChunks)
+        current  <- unsafeFreezeShrink (CB.currentBuffer st) (offsetAsSize $ CB.currentOffset st)
+        -- Build final array
+        let totalSize = CB.prevSize st + offsetAsSize (CB.currentOffset st)
+        new totalSize >>= fillFromEnd totalSize (current : CB.prevBuffers st) >>= unsafeFreeze
     where
       sizeChunks = Size sizeChunksI
+
+      fillFromEnd _   []     mua = return mua
+      fillFromEnd !sz (x:xs) mua = do
+          let len = lengthSize x
+          unsafeCopyAtRO mua (sizeAsOffset (sz - len)) x (Offset 0) len
+          fillFromEnd (sz - len) xs mua
 
 -- | return the numbers of elements in a mutable array
 mutableLength :: MArray ty st -> Int
@@ -632,6 +639,9 @@ freezeUntilIndex mvec d = do
     m <- new (offsetAsSize d)
     copyAt m (Offset 0) mvec (Offset 0) (offsetAsSize d)
     unsafeFreeze m
+
+unsafeFreezeShrink :: PrimMonad prim => MArray ty (PrimState prim) -> Size ty -> prim (Array ty)
+unsafeFreezeShrink (MArray start _ ma) n = unsafeFreeze (MArray start n ma)
 
 reverse :: Array ty -> Array ty
 reverse a = create len toEnd

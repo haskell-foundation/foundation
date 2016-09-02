@@ -137,6 +137,7 @@ instance Buildable String where
               cur       <- unsafeFreezeShrink (currentBuffer st) (offsetAsSize $ currentOffset st)
               newOffset <- write newChunk (Offset 0) c
               return ((), st { prevBuffers   = cur : prevBuffers st
+                             , prevSize      = chunkSize st + prevSize st
                              , currentOffset = newOffset
                              , currentBuffer = newChunk
                              })
@@ -150,11 +151,20 @@ instance Buildable String where
     | sizeChunksI <= 0 = build 64 sb
     | otherwise        = do
         m        <- new sizeChunks
-        ((), st) <- runState (runBuilder sb) (BuildingState [] m (Offset 0) sizeChunks)
+        ((), st) <- runState (runBuilder sb) (BuildingState [] (Size 0) m (Offset 0) sizeChunks)
         current  <- unsafeFreezeShrink (currentBuffer st) (offsetAsSize $ currentOffset st)
-        return $ mconcat $ Data.List.reverse (current : prevBuffers st)
+        -- Build final array
+        let totalSize = prevSize st + offsetAsSize (currentOffset st)
+        ba <- Vec.new totalSize >>= fillFromEnd totalSize (current : prevBuffers st) >>= Vec.unsafeFreeze
+        return $ String ba
     where
       sizeChunks = Size sizeChunksI
+
+      fillFromEnd _   []            mba = return mba
+      fillFromEnd !sz (String x:xs) mba = do
+          let len = Vec.lengthSize x
+          Vec.unsafeCopyAtRO mba (sizeAsOffset (sz - len)) x (Offset 0) len
+          fillFromEnd (sz - len) xs mba
 
 data ValidationFailure = InvalidHeader
                        | InvalidContinuation

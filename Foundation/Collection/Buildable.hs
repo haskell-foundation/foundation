@@ -14,7 +14,6 @@ module Foundation.Collection.Buildable
     , BuildingState(..)
     ) where
 
-import qualified Data.List
 import           Foundation.Array.Unboxed
 import           Foundation.Array.Unboxed.Mutable
 import           Foundation.Collection.Element
@@ -68,6 +67,7 @@ newtype Builder col st a = Builder
 -- progress packing the elements inside.
 data BuildingState col st = BuildingState
     { prevBuffers   :: [col]
+    , prevSize      :: !(Size (Step col))
     , currentBuffer :: Mutable col st
     , currentOffset :: !(Offset (Step col))
     , chunkSize     :: !(Size (Step col))
@@ -84,6 +84,7 @@ instance PrimType ty => Buildable (UArray ty) where
               cur       <- unsafeFreeze (currentBuffer st)
               write newChunk 0 v
               return ((), st { prevBuffers   = cur : prevBuffers st
+                             , prevSize      = chunkSize st + prevSize st
                              , currentOffset = Offset 1
                              , currentBuffer = newChunk
                              })
@@ -95,9 +96,17 @@ instance PrimType ty => Buildable (UArray ty) where
   build sizeChunksI ab
     | sizeChunksI <= 0 = build 64 ab
     | otherwise        = do
-        m        <- new sizeChunks
-        ((), st) <- runState (runBuilder ab) (BuildingState [] m (Offset 0) sizeChunks)
+        first    <- new sizeChunks
+        ((), st) <- runState (runBuilder ab) (BuildingState [] (Size 0) first (Offset 0) sizeChunks)
         current  <- unsafeFreezeShrink (currentBuffer st) (offsetAsSize $ currentOffset st)
-        return $ mconcat $ Data.List.reverse (current : prevBuffers st)
+        -- Build final array
+        let totalSize = prevSize st + offsetAsSize (currentOffset st)
+        new totalSize >>= fillFromEnd totalSize (current : prevBuffers st) >>= unsafeFreeze
     where
       sizeChunks = Size sizeChunksI
+
+      fillFromEnd _   []     mua = return mua
+      fillFromEnd !sz (x:xs) mua = do
+          let len = lengthSize x
+          unsafeCopyAtRO mua (sizeAsOffset (sz - len)) x (Offset 0) len
+          fillFromEnd (sz - len) xs mua
