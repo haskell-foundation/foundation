@@ -42,7 +42,7 @@ Library
                      Foundation.Number
                      Foundation.Array
                      Foundation.Array.Internal
-                     Foundation.Bifunctor
+                     Foundation.Class.Bifunctor
                      Foundation.Convertible
                      Foundation.String
                      Foundation.IO

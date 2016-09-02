@@ -46,6 +46,7 @@ module Foundation
     , Prelude.Bounded (..)
     , Prelude.Enum (..)
     , Prelude.Functor (..)
+    , Foundation.Class.Bifunctor.Bifunctor (..)
     , Control.Applicative.Applicative (..)
     , Prelude.Monad (..)
     , (Control.Monad.=<<)
@@ -153,6 +154,8 @@ import qualified Foundation.Internal.Proxy
 import qualified Foundation.Number
 import qualified Foundation.Partial
 import           Foundation.Tuple
+
+import qualified Foundation.Class.Bifunctor
 
 import qualified Data.Maybe
 import qualified Data.Either

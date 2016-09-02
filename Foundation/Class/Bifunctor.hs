@@ -15,7 +15,7 @@
 -- defining both 'first' and 'second'.
 --
 {-# LANGUAGE CPP #-}
-module Foundation.Bifunctor
+module Foundation.Class.Bifunctor
   ( Bifunctor(..)
   ) where
 
