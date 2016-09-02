@@ -403,28 +403,29 @@ null :: Array ty -> Bool
 null = (==) 0 . length
 
 take ::  Int -> Array ty -> Array ty
-take nbElems v
+take nbElems a@(Array start len arr)
     | nbElems <= 0 = empty
-    | otherwise    = runST $ do
-        muv <- new n
-        unsafeCopyAtRO muv (Offset 0) v (Offset 0) n
-        unsafeFreeze muv
+    | n == len     = a
+    | otherwise    = Array start n arr
   where
-    n = Size $ min nbElems (length v)
+    n = min (Size nbElems) len
 
 drop ::  Int -> Array ty -> Array ty
-drop nbElems v
-    | nbElems <= 0 = v
-    | otherwise    = runST $ do
-        muv <- new n
-        unsafeCopyAtRO muv (Offset 0) v (Offset offset) n
-        unsafeFreeze muv
+drop nbElems a@(Array start len arr)
+    | nbElems <= 0 = a
+    | n == len     = empty
+    | otherwise    = Array (start `offsetPlusE` n) (len - n) arr
   where
-    offset = min nbElems (length v)
-    n = Size (length v - offset)
+    n = min (Size nbElems) len
 
 splitAt ::  Int -> Array ty -> (Array ty, Array ty)
-splitAt n v = (take n v, drop n v)
+splitAt nbElems a@(Array start len arr)
+    | nbElems <= 0 = (empty, a)
+    | n == len     = (a, empty)
+    | otherwise    =
+        (Array start n arr, Array (start `offsetPlusE` n) (len - n) arr)
+  where
+    n = min (Size nbElems) len
 
 revTake :: Int -> Array ty -> Array ty
 revTake nbElems v = drop (length v - nbElems) v
@@ -444,26 +445,21 @@ splitOn predicate vec
     !len = lengthSize vec
     !endIdx = Offset 0 `offsetPlusE` len
     loop prevIdx idx@(Offset i)
-        | idx == endIdx = [runST $ sub vec prevIdx idx]
+        | idx == endIdx = [sub vec prevIdx idx]
         | otherwise     =
             let e = unsafeIndex vec i
                 idx' = idx + Offset 1
              in if predicate e
-                    then runST (sub vec prevIdx idx) : loop idx' idx'
+                    then sub vec prevIdx idx : loop idx' idx'
                     else loop prevIdx idx'
 
-sub :: PrimMonad prim => Array ty -> Offset ty -> Offset ty -> prim (Array ty)
-sub vec startIdx expectedEndIdx
-    | startIdx == endIdx           = return empty
-    | startIdx >= sizeAsOffset len = return empty
-    | otherwise                    = new sz >>= loop startIdx (Offset 0)
+sub :: Array ty -> Offset ty -> Offset ty -> Array ty
+sub (Array start len a) startIdx expectedEndIdx
+    | startIdx == endIdx           = empty
+    | otherwise                    = Array (start + startIdx) newLen a
   where
-    !len = lengthSize vec
-    loop os@(Offset s) od@(Offset d) mv
-        | os == endIdx = unsafeFreeze mv
-        | otherwise    = unsafeWrite mv d (unsafeIndex vec s) >> loop (os+Offset 1) (od+Offset 1) mv
-    !sz  = endIdx - startIdx
-    !endIdx = min expectedEndIdx (sizeAsOffset $ lengthSize vec)
+    newLen = endIdx - startIdx
+    endIdx = min expectedEndIdx (sizeAsOffset len)
 
 break ::  (ty -> Bool) -> Array ty -> (Array ty, Array ty)
 break predicate v = findBreak 0
