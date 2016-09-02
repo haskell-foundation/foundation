@@ -137,7 +137,7 @@ instance Buildable String where
               cur       <- unsafeFreezeShrink (currentBuffer st) (offsetAsSize $ currentOffset st)
               newOffset <- write newChunk (Offset 0) c
               return ((), st { prevBuffers   = cur : prevBuffers st
-                             , prevSize      = chunkSize st + prevSize st
+                             , prevSize      = (offsetAsSize $ currentOffset st) + prevSize st
                              , currentOffset = newOffset
                              , currentBuffer = newChunk
                              })
