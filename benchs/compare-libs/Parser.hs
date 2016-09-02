@@ -5,81 +5,57 @@ module Main where
 import Foundation as F
 import Foundation.String as F
 import Foundation.Primitive
-import qualified Foundation.Parser as P
+import qualified Foundation.Parser as F
+import qualified Foundation.Collection as F hiding (take)
 import Criterion.Main
 
-import qualified Data.ByteString as B
-import qualified Data.ByteString.Internal as BC
-import qualified Data.Attoparsec.ByteString as Atto
+import qualified Data.Text as T
+import qualified Data.Attoparsec.Text as A
 
-dat :: F.UArray Word8
-dat = F.toBytes F.UTF8 "EHLO sub.smtp.domain.mail.com "
+refBufStr :: [Char]
+refBufStr = "Foundation, the new hope"
+refBufStrLarge :: [Char]
+refBufStrLarge = F.intercalate " " $ replicate 100 refBufStr
 
-datbs :: B.ByteString
-datbs = B.pack $ fmap BC.c2w "EHLO sub.smtp.domain.mail.com "
+foundationBufStr :: F.String
+foundationBufStr = F.fromList refBufStr
+foundationBufStrLarge :: F.String
+foundationBufStrLarge = F.fromList refBufStrLarge
 
-newtype DomainBS = DomainBS [B.ByteString]
-    deriving Show
+foundationParserStr :: F.Parser F.String F.String
+foundationParserStr = do
+    F.string "Foundation"
+    F.element ',' >> F.element ' '
+    F.take 12
+foundationParserStrLarge :: F.Parser F.String [F.String]
+foundationParserStrLarge = do
+    x <- foundationParserStr
+    (:) x <$> F.some (F.element ' ' >> foundationParserStr)
 
-newtype Domain = Domain [F.UArray Word8]
-    deriving Show
+forceParserStop p b = case F.parse p b of
+    F.ParseMore f -> f Nothing
+    a             -> a
 
-authorisedNodeElem :: [Word8]
-authorisedNodeElem = [0x61..0x7a]
+refText :: T.Text
+refText = T.pack refBufStr
+refTextLarge :: T.Text
+refTextLarge = T.pack refBufStrLarge
 
-dot :: Word8
-dot = 0x2E
-space :: Word8
-space = 0x20
+textParser :: A.Parser T.Text
+textParser = do
+    A.string "Foundation"
+    A.char ',' >> A.char ' '
+    A.take 12
+textParserLarge :: A.Parser [T.Text]
+textParserLarge = do
+    x <- textParser
+    (:) x <$> A.many1 (A.char ' ' >> textParser)
 
-parseNode :: P.Parser (F.UArray Word8) (F.UArray Word8)
-parseNode = P.takeWhile $ \x -> x `elem` authorisedNodeElem
-
-parseNodes :: P.Parser (F.UArray Word8) [F.UArray Word8]
-parseNodes = (parseNode >>= \x -> parseNodes_ >>= \xs -> return (x : xs)) <|> return []
-
-parseNodesBS :: Atto.Parser [B.ByteString]
-parseNodesBS = do
-    x <- parseNodeBS
-    xs <- Atto.many' $ Atto.word8 dot *> parseNodeBS
-    return $ x:xs
-parseNodeBS :: Atto.Parser B.ByteString
-parseNodeBS = Atto.takeWhile (\x -> x `elem` authorisedNodeElem)
-
-parseNodes_ :: P.Parser (F.UArray Word8) [F.UArray Word8]
-parseNodes_ = P.element dot >> parseNodes
-
-parseDomain :: P.Parser (F.UArray Word8) Domain
-parseDomain = Domain <$> parseNodes
-parseDomainBS :: Atto.Parser DomainBS
-parseDomainBS = DomainBS <$> parseNodesBS
-
-heloF :: F.UArray Word8
-heloF = fromList [0x48, 0x45, 0x4C, 0x4F]
-ehloF :: F.UArray Word8
-ehloF = fromList [0x45, 0x48, 0x4C, 0x4F]
-heloBS :: B.ByteString
-heloBS = B.pack [0x48, 0x45, 0x4C, 0x4F]
-ehloBS :: B.ByteString
-ehloBS = B.pack [0x45, 0x48, 0x4C, 0x4F]
-
-parseEHLO :: P.Parser (F.UArray Word8) Domain
-parseEHLO = do
-    P.elements ehloF <|> P.elements heloF
-    P.element space
-    parseDomain
-parseEHLOBS :: Atto.Parser DomainBS
-parseEHLOBS = do
-    Atto.string ehloBS <|> Atto.string heloBS
-    Atto.word8 space
-    parseDomainBS
-
-main = do
-  print $ P.parse parseEHLO dat
-  print $ Atto.parse parseEHLOBS datbs
-  defaultMain
+main = defaultMain
     [ bgroup "parse"
-        [ bench "foundation:EHLO" $ whnf (P.parse parseEHLO) dat
-        , bench "attoparsec:EHLO" $ whnf (Atto.parse parseEHLOBS) datbs
+        [ bench "foundation:small" $ whnf (forceParserStop foundationParserStr) foundationBufStr
+        , bench "text:small" $ whnf (A.parseOnly textParser) refText
+        , bench "foundation:large" $ whnf (forceParserStop foundationParserStrLarge) foundationBufStrLarge
+        , bench "text:large" $ whnf (A.parseOnly textParserLarge) refTextLarge
         ]
     ]

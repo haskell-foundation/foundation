@@ -31,6 +31,7 @@ module Foundation.Parser
     , element
     , anyElement
     , elements
+    , string
     , take
     , takeWhile
     , takeAll
@@ -213,6 +214,24 @@ elements = consumeEq
                  in if actual == eMatch
                      then runParser (getMore >> consumeEq eRem) mempty err ok
                      else err actual (Expected expected eMatch)
+
+string :: String -> Parser String ()
+string !expected = Parser $ \actual err ok ->
+    let !expBytes = toBytes UTF8 expected
+        !expLen   = length expBytes
+        !actBytes = toBytes UTF8 actual
+        !actLen   = length actBytes
+     in if expLen <= actLen
+          then
+              let (!aMatch, !aRem) = splitAt expLen actBytes
+               in if aMatch == expBytes
+                   then ok (fromBytesUnsafe aRem) ()
+                   else err actual (Expected expected (fromBytesUnsafe aMatch))
+          else
+              let (!eMatch, !eRem) = splitAt actLen expBytes
+               in if actBytes == eMatch
+                   then runParser (getMore >> string (fromBytesUnsafe eRem)) mempty err ok
+                   else err actual (Expected expected (fromBytesUnsafe eMatch))
 
 -- | Take @n elements from the current position in the stream
 take :: Sequential input => Int -> Parser input input
