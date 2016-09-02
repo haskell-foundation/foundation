@@ -28,11 +28,15 @@ import qualified Foundation.Collection as C
 import qualified Prelude
 
 -- | Array of a
-data Array a = Array (Array# a)
+data Array a = Array {-# UNPACK #-} !(Offset a)
+                     {-# UNPACK #-} !(Size a)
+                                    (Array# a)
     deriving (Typeable)
 
 -- | Mutable Array of a
-data MArray a st = MArray (MutableArray# st a)
+data MArray a st = MArray {-# UNPACK #-} !(Offset a)
+                          {-# UNPACK #-} !(Size a)
+                                         (MutableArray# st a)
     deriving (Typeable)
 
 instance Functor Array where
@@ -128,7 +132,7 @@ instance C.BoxedZippable (Array ty)
 
 -- | return the numbers of elements in a mutable array
 mutableLength :: MArray ty st -> Int
-mutableLength (MArray ma) = I# (sizeofMutableArray# ma)
+mutableLength (MArray _ (Size len) _) = len
 {-# INLINE mutableLength #-}
 
 -- | Return the element at a specific index from an array.
@@ -146,7 +150,7 @@ index array n
 -- Reading from invalid memory can return unpredictable and invalid values.
 -- use 'index' if unsure.
 unsafeIndex :: Array ty -> Int -> ty
-unsafeIndex (Array a) (I# n) = let (# v #) = indexArray# a n in v
+unsafeIndex (Array (Offset (I# ofs)) _ a) (I# i) = let (# v #) = indexArray# a (ofs +# i) in v
 {-# INLINE unsafeIndex #-}
 
 -- | read a cell in a mutable array.
@@ -164,7 +168,7 @@ read array n
 -- Reading from invalid memory can return unpredictable and invalid values.
 -- use 'read' if unsure.
 unsafeRead :: PrimMonad prim => MArray ty (PrimState prim) -> Int -> prim ty
-unsafeRead (MArray ma) (I# i) = primitive $ \s1 -> readArray# ma i s1
+unsafeRead (MArray (Offset (I# ofs)) _ ma) (I# i) = primitive $ \s1 -> readArray# ma (ofs +# i) s1
 --readArray# :: MutableArray# s a -> Int# -> State# s -> (#State# s, a#)
 {-# INLINE unsafeRead #-}
 
@@ -183,23 +187,24 @@ write array n val
 -- Writing with invalid bounds will corrupt memory and your program will
 -- become unreliable. use 'write' if unsure.
 unsafeWrite :: PrimMonad prim => MArray ty (PrimState prim) -> Int -> ty -> prim ()
-unsafeWrite (MArray ma) (I# i) v = primitive $ \s1 -> let !s2 = writeArray# ma i v s1 in (# s2, () #)
+unsafeWrite (MArray (Offset (I# ofs)) _ ma) (I# i) v =
+    primitive $ \s1 -> let !s2 = writeArray# ma (ofs +# i) v s1 in (# s2, () #)
 {-# INLINE unsafeWrite #-}
 
 -- | Freeze a mutable array into an array.
 --
 -- the MArray must not be changed after freezing.
 unsafeFreeze :: PrimMonad prim => MArray ty (PrimState prim) -> prim (Array ty)
-unsafeFreeze (MArray ma) = primitive $ \s1 ->
+unsafeFreeze (MArray ofs sz ma) = primitive $ \s1 ->
     case unsafeFreezeArray# ma s1 of
-        (# s2, a #) -> (# s2, Array a #)
+        (# s2, a #) -> (# s2, Array ofs sz a #)
 {-# INLINE unsafeFreeze #-}
 
 -- | Thaw an immutable array.
 --
 -- The Array must not be used after thawing.
 unsafeThaw :: PrimMonad prim => Array ty -> prim (MArray ty (PrimState prim))
-unsafeThaw (Array a) = primitive $ \st -> (# st, MArray (unsafeCoerce# a) #)
+unsafeThaw (Array ofs sz a) = primitive $ \st -> (# st, MArray ofs sz (unsafeCoerce# a) #)
 {-# INLINE unsafeThaw #-}
 
 -- | Thaw an array to a mutable array.
@@ -275,9 +280,9 @@ unsafeCopyFrom v' newLen f = new newLen >>= fill (Offset 0) f >>= unsafeFreeze
 -- All mutable arrays are allocated on a 64 bits aligned addresses
 -- and always contains a number of bytes multiples of 64 bits.
 new :: PrimMonad prim => Size ty -> prim (MArray ty (PrimState prim))
-new (Size (I# n)) = primitive $ \s1 ->
+new sz@(Size (I# n)) = primitive $ \s1 ->
     case newArray# n (error "vector: internal error uninitialized vector") s1 of
-        (# s2, ma #) -> (# s2, MArray ma #)
+        (# s2, ma #) -> (# s2, MArray (Offset 0) sz ma #)
 
 -- | Create a new array of size @n by settings each cells through the
 -- function @f.
@@ -325,10 +330,10 @@ empty :: Array a
 empty = runST $ onNewArray 0 (\_ s -> s)
 
 length :: Array a -> Int
-length (Array a) = I# (sizeofArray# a)
+length (Array _ (Size len) _) = len
 
 lengthSize :: Array a -> Size a
-lengthSize (Array a) = Size $ I# (sizeofArray# a)
+lengthSize (Array _ sz _) = sz
 
 vFromList :: [a] -> Array a
 vFromList l = runST (new len >>= loop 0 l)
@@ -385,11 +390,11 @@ onNewArray :: PrimMonad m
            => Int
            -> (MutableArray# (PrimState m) a -> State# (PrimState m) -> State# (PrimState m))
            -> m (Array a)
-onNewArray (I# len) f = primitive $ \st -> do
-    case newArray# len (error "onArray") st of { (# st2, mv #) ->
-    case f mv st2                           of { st3           ->
-    case unsafeFreezeArray# mv st3          of { (# st4, a #)  ->
-        (# st4, Array a #) }}}
+onNewArray len@(I# len#) f = primitive $ \st -> do
+    case newArray# len# (error "onArray") st of { (# st2, mv #) ->
+    case f mv st2                            of { st3           ->
+    case unsafeFreezeArray# mv st3           of { (# st4, a #)  ->
+        (# st4, Array (Offset 0) (Size len) a #) }}}
 
 -----------------------------------------------------------------------
 
