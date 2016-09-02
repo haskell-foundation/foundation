@@ -52,10 +52,12 @@ textParserLarge = do
     (:) x <$> A.many1 (A.char ' ' >> textParser)
 
 main = defaultMain
-    [ bgroup "parse"
-        [ bench "foundation:small" $ whnf (forceParserStop foundationParserStr) foundationBufStr
-        , bench "text:small" $ whnf (A.parseOnly textParser) refText
-        , bench "foundation:large" $ whnf (forceParserStop foundationParserStrLarge) foundationBufStrLarge
+    [ bgroup "foundation"
+        [ bench "string:small" $ whnf (forceParserStop foundationParserStr) foundationBufStr
+        , bench "string:large" $ whnf (forceParserStop foundationParserStrLarge) foundationBufStrLarge
+        ]
+    , bgroup "Attoparsec"
+        [ bench "text:small" $ whnf (A.parseOnly textParser) refText
         , bench "text:large" $ whnf (A.parseOnly textParserLarge) refTextLarge
         ]
     ]
