@@ -1,5 +1,5 @@
 -- |
--- Module      : Foundation.Bifunctor
+-- Module      : Foundation.Class.Bifunctor
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
