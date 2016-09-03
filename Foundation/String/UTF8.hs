@@ -33,6 +33,7 @@ module Foundation.String.UTF8
     , fromBytesLenient
     , toBytes
     , mutableValidate
+    , copy
     , ValidationFailure(..)
     -- * Legacy utility
     , lines
@@ -461,13 +462,13 @@ sToList s = loop azero
   #-}
 
 sFromList :: [Char] -> String
-sFromList l = runST (new bytes >>= copy)
+sFromList l = runST (new bytes >>= startCopy)
   where
     -- count how many bytes
     !bytes = C.foldl' (+) (Size 0) $ fmap (charToBytes . fromEnum) l
 
-    copy :: MutableString (PrimState (ST st)) -> ST st String
-    copy ms = loop azero l
+    startCopy :: MutableString (PrimState (ST st)) -> ST st String
+    startCopy ms = loop azero l
       where
         loop _   []     = freeze ms
         loop idx (c:xs) = write ms idx c >>= \idx' -> loop idx' xs
@@ -670,6 +671,10 @@ replicate n c = runST (new nbBytes >>= fill)
 sizeBytes :: String -> Int
 sizeBytes (String ba) = I# (sizeofByteArray# ba)
 -}
+
+-- | Copy the String
+copy :: String -> String
+copy (String s) = String (Vec.copy s)
 
 -- | Allocate a MutableString of a specific size in bytes.
 new :: PrimMonad prim
