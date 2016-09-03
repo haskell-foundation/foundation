@@ -76,8 +76,10 @@ instance C.Foldable Bitmap where
     foldl' = foldl'
     foldr' = foldr'
 
-instance C.Sequential Bitmap where
+instance C.Collection Bitmap where
     null = null
+    length = length
+instance C.Sequential Bitmap where
     take = take
     drop = drop
     splitAt = splitAt
@@ -95,7 +97,6 @@ instance C.Sequential Bitmap where
     intersperse = intersperse
     find = find
     sortBy = sortBy
-    length = length
     singleton = fromList . (:[])
 
 instance C.IndexedCollection Bitmap where
@@ -111,7 +112,7 @@ instance C.IndexedCollection Bitmap where
             | otherwise                   = Nothing
 
 instance C.MutableCollection MutableBitmap where
-    type Collection MutableBitmap = Bitmap
+    type MutableFreezed MutableBitmap = Bitmap
     type MutableKey MutableBitmap = Int
     type MutableValue MutableBitmap = Bool
 

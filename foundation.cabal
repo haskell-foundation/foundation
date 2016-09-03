@@ -70,6 +70,7 @@ Library
                      Foundation.Collection.List
                      Foundation.Collection.Element
                      Foundation.Collection.InnerFunctor
+                     Foundation.Collection.Collection
                      Foundation.Collection.Sequential
                      Foundation.Collection.Keyed
                      Foundation.Collection.Indexed

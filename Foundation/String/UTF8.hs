@@ -93,8 +93,10 @@ type instance C.Element String = Char
 
 instance C.InnerFunctor String where
     imap = charMap
-instance C.Sequential String where
+instance C.Collection String where
     null = null
+    length = length
+instance C.Sequential String where
     take = take
     drop = drop
     splitAt = splitAt
@@ -114,7 +116,6 @@ instance C.Sequential String where
     cons = cons
     find = find
     sortBy = sortBy
-    length = length
     singleton = fromList . (:[])
 
 instance C.Zippable String where
