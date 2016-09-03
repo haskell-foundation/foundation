@@ -13,7 +13,6 @@ import           Test.Tasty.QuickCheck
 import           Foundation hiding (second)
 import           Foundation.Array
 import           Foundation.Collection
-import           Foundation.String
 import           Foundation.VFS                (Path (..), filename, parent)
 import           Foundation.VFS.FilePath
 import qualified Prelude
@@ -25,7 +24,6 @@ import Test.Foundation.Collection
 import Test.Foundation.Number
 import Test.Foundation.Array
 import Test.Foundation.String
-import Test.Foundation.Encoding
 import Test.Foundation.Parser
 
 data CharMap = CharMap LUString Prelude.Int

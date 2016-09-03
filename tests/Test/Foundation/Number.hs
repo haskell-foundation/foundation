@@ -8,8 +8,6 @@ module Test.Foundation.Number
     , testNumberRefs
     ) where
 
-import qualified Prelude
-
 import Test.Tasty
 import Test.Tasty.QuickCheck
 

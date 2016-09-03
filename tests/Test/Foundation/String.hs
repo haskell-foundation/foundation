@@ -6,16 +6,6 @@ module Test.Foundation.String
     ( testStringRefs
     ) where
 
-import qualified Prelude
-
-import Test.Data.Unicode
-import Test.Data.List
-
-import Test.Foundation.Collection
-import Test.Foundation.Number
-import Test.Foundation.Array
-import Test.Foundation.Encoding
-import Test.Foundation.Parser
 import Foundation
 import Foundation.String
 import Foundation.Collection
@@ -24,8 +14,8 @@ import Test.Tasty
 import Test.Tasty.QuickCheck
 import Test.Tasty.HUnit
 
-import Test.Data.List
 import Test.Data.Unicode
+import Test.Data.List
 import Test.Foundation.Collection
 import Test.Foundation.Encoding
 
