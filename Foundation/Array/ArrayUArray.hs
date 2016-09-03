@@ -84,7 +84,7 @@ append (ArrayUArray a1) (ArrayUArray a2) = ArrayUArray $ runST $ do
   let a2Size              = Size $ C.length a2
   a <- A.new (a1Size + a2Size)
   A.thaw a1 >>= \a1' -> A.copyAt a (Offset 0) a1' (Offset 0) a1Size
-  A.thaw a1 >>= \a2' -> A.copyAt a (Offset a1len) a2' (Offset 0) a2Size
+  A.thaw a2 >>= \a2' -> A.copyAt a (Offset a1len) a2' (Offset 0) a2Size
   A.unsafeFreeze a
 
 concat :: [ArrayUArray ty] -> ArrayUArray ty
