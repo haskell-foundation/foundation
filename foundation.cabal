@@ -131,9 +131,9 @@ Test-Suite test-foundation
   type:              exitcode-stdio-1.0
   hs-source-dirs:    tests
   Main-is:           Tests.hs
-  Other-modules:     ForeignUtils
-                     Encoding
+  Other-modules:     Encoding
                      Parser
+                     Test.Utils.Foreign
                      Test.Data.List
                      Test.Data.Unicode
                      Test.Foundation.Collection

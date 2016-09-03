@@ -1,4 +1,4 @@
-module ForeignUtils
+module Test.Utils.Foreign
     ( Ptr
     , Storable
     , createPtr
