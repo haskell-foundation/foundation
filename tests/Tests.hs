@@ -13,7 +13,7 @@ import           Test.QuickCheck.Monadic
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 
-import           Foundation
+import           Foundation hiding (second)
 import           Foundation.Array
 import           Foundation.Collection
 import           Foundation.Foreign
