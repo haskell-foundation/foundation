@@ -13,7 +13,10 @@
 module Foundation.Array.Boxed
     ( Array
     , MArray
+    , empty
     , copy
+    , copyAt
+    , thaw
     , new
     , unsafeFreeze
     , unsafeWrite

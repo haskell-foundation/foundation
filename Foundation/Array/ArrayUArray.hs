@@ -18,27 +18,20 @@ import           Data.Typeable
 import           Foundation.Array.Boxed (Array)
 import qualified Foundation.Array.Boxed as A
 import           Foundation.Array.Unboxed (UArray, PrimType)
-import qualified Foundation.Array.Unboxed as U
 import qualified Foundation.Collection as C
 import           Foundation.Internal.Base
 import           Foundation.Internal.Types
 import           Foundation.Number
-import           Foundation.Tuple
-import           GHC.Prim
 import           GHC.ST
-import           GHC.Types
-import qualified Prelude as P
 
 
-data ArrayUArray ty =
-  ArrayUArray (Array (UArray ty))
-  deriving (Show, Eq, Ord, Typeable)
+data ArrayUArray ty = ArrayUArray (Array (UArray ty))
+                      deriving (Show, Eq, Ord, Typeable)
 
-
---instance Monoid (ArrayUArray a) where
---    mempty  = mempty
---    mappend = append
---    mconcat = concat
+instance Monoid (ArrayUArray a) where
+    mempty  = empty
+    mappend = append
+    mconcat = concat
 
 type instance C.Element (ArrayUArray ty) = ty
 
@@ -82,11 +75,20 @@ instance PrimType ty => IsList (ArrayUArray ty) where
 --            | otherwise =
 --                if predicate (unsafeIndex c i) then Just i else Nothing
 
---append :: ArrayUArray ty -> ArrayUArray ty -> ArrayUArray ty
---append = _
---
---concat :: [ArrayUArray ty] -> ArrayUArray ty
---concat x = _
+empty :: ArrayUArray ty
+empty = ArrayUArray (A.empty)
+
+append :: ArrayUArray ty -> ArrayUArray ty -> ArrayUArray ty
+append (ArrayUArray a1) (ArrayUArray a2) = ArrayUArray $ runST $ do
+  let a1Size@(Size a1len) = Size $ C.length a1
+  let a2Size              = Size $ C.length a2
+  a <- A.new (a1Size + a2Size)
+  A.thaw a1 >>= \a1' -> A.copyAt a (Offset 0) a1' (Offset 0) a1Size
+  A.thaw a1 >>= \a2' -> A.copyAt a (Offset a1len) a2' (Offset 0) a2Size
+  A.unsafeFreeze a
+
+concat :: [ArrayUArray ty] -> ArrayUArray ty
+concat x = C.foldl' append mempty x
 
 vFromList :: PrimType ty => [ty] -> ArrayUArray ty
 vFromList l = ArrayUArray array
