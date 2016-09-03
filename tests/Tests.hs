@@ -25,6 +25,7 @@ import qualified Prelude
 
 import           ForeignUtils
 import           Encoding
+import           Parser
 
 data Unicode = Unicode { unUnicode :: LString }
     deriving (Show)
@@ -557,6 +558,7 @@ tests =
             ( testZippableProps (Proxy :: Proxy (Array Int)) (Proxy :: Proxy (Array Char))
                 arbitrary arbitrary )
         ]
+    , testParsers
     ]
 
 testCaseModifiedUTF8 :: [Char] -> String -> Assertion

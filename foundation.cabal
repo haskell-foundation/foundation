@@ -55,6 +55,7 @@ Library
                      Foundation.Primitive
                      Foundation.System.Info
                      Foundation.Strict
+                     Foundation.Parser
   Other-modules:     Foundation.String.Internal
                      Foundation.String.UTF8
                      Foundation.String.Encoding.Encoding
@@ -131,6 +132,7 @@ Test-Suite test-foundation
   Main-is:           Tests.hs
   Other-modules:     ForeignUtils
                      Encoding
+                     Parser
   Build-Depends:     base >= 3 && < 5
                    , mtl
                    , QuickCheck
