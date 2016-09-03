@@ -15,6 +15,7 @@ module Foundation.Collection
     , Element
     , InnerFunctor(..)
     , Foldable(..)
+    , Collection(..)
     , Sequential(..)
     , MutableCollection(..)
     , IndexedCollection(..)
@@ -28,5 +29,6 @@ import           Foundation.Collection.Indexed
 import           Foundation.Collection.InnerFunctor
 import           Foundation.Collection.Keyed
 import           Foundation.Collection.Mutable
+import           Foundation.Collection.Collection
 import           Foundation.Collection.Sequential
 import           Foundation.Collection.Zippable

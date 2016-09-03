@@ -65,8 +65,10 @@ instance IsList (Array ty) where
 
 instance C.InnerFunctor (Array ty)
 
-instance C.Sequential (Array ty) where
+instance C.Collection (Array ty) where
     null = null
+    length = length
+instance C.Sequential (Array ty) where
     take = take
     drop = drop
     splitAt = splitAt
@@ -85,11 +87,10 @@ instance C.Sequential (Array ty) where
     cons = cons
     find = find
     sortBy = sortBy
-    length = length
     singleton = fromList . (:[])
 
 instance C.MutableCollection (MArray ty) where
-    type Collection (MArray ty) = Array ty
+    type MutableFreezed (MArray ty) = Array ty
     type MutableKey (MArray ty) = Int
     type MutableValue (MArray ty) = ty
 

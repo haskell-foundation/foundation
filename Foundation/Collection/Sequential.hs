@@ -17,23 +17,21 @@ module Foundation.Collection.Sequential
 
 import           Foundation.Internal.Base
 import           Foundation.Collection.Element
+import           Foundation.Collection.Collection
 import qualified Foundation.Collection.List as ListExtra
 import qualified Data.List
 import qualified Foundation.Array.Unboxed as UV
 
 -- | A set of methods for ordered colection
-class (IsList c, Item c ~ Element c, Monoid c) => Sequential c where
-    {-# MINIMAL null, ((take, drop) | splitAt)
+class (IsList c, Item c ~ Element c, Monoid c, Collection c) => Sequential c where
+    {-# MINIMAL ((take, drop) | splitAt)
               , ((revTake, revDrop) | revSplitAt)
               , splitOn
               , (break | span)
               , intersperse
               , filter, reverse
               , uncons, unsnoc, snoc, cons
-              , find, sortBy, length, singleton #-}
-
-    -- | Check if a collection is empty
-    null :: c -> Bool
+              , find, sortBy, singleton #-}
 
     -- | Take the first @n elements of a collection
     take :: Int -> c -> c
@@ -113,9 +111,6 @@ class (IsList c, Item c ~ Element c, Monoid c) => Sequential c where
     -- | Sort an ordered collection using the specified order function
     sortBy :: (Element c -> Element c -> Ordering) -> c -> c
 
-    -- | Length of a collection (number of Element c)
-    length :: c -> Int
-
     -- | Create a collection with a single element
     singleton :: Element c -> c
 
@@ -124,7 +119,6 @@ mconcatCollection :: (Monoid (Item c), Sequential c) => c -> Element c
 mconcatCollection c = mconcat (toList c)
 
 instance Sequential [a] where
-    null = Data.List.null
     take = Data.List.take
     drop = Data.List.drop
     revTake = ListExtra.revTake
@@ -143,11 +137,9 @@ instance Sequential [a] where
     cons e c = e : c
     find = Data.List.find
     sortBy = Data.List.sortBy
-    length = Data.List.length
     singleton = (:[])
 
 instance UV.PrimType ty => Sequential (UV.UArray ty) where
-    null = UV.null
     take = UV.take
     revTake = UV.revTake
     drop = UV.drop
@@ -167,5 +159,4 @@ instance UV.PrimType ty => Sequential (UV.UArray ty) where
     cons = UV.cons
     find = UV.find
     sortBy = UV.sortBy
-    length = UV.length
     singleton = fromList . (:[])
