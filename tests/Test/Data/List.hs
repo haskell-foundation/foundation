@@ -1,9 +1,12 @@
+{-# LANGUAGE NoImplicitPrelude #-}
+
 module Test.Data.List
     ( generateListOfElement
     , generateListOfElementMaxN
     , RandomList(..)
     ) where
 
+import Foundation
 import Test.Tasty.QuickCheck
 import Control.Monad
 
