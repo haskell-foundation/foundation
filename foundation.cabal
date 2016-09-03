@@ -137,6 +137,7 @@ Test-Suite test-foundation
                      Test.Data.List
                      Test.Data.Unicode
                      Test.Foundation.Collection
+                     Test.Foundation.Number
   Build-Depends:     base >= 3 && < 5
                    , mtl
                    , QuickCheck
