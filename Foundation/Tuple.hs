@@ -17,11 +17,15 @@ module Foundation.Tuple
     ) where
 
 import Foundation.Internal.Base
+import Foundation.Class.Bifunctor
 import Data.Data
 
 -- | Strict tuple (a,b)
 data Tuple2 a b = Tuple2 !a !b
     deriving (Show,Eq,Ord,Typeable,Data,Generic)
+
+instance Bifunctor Tuple2 where
+  bimap f g (Tuple2 a b) = Tuple2 (f a) (g b)
 
 -- | Strict tuple (a,b,c)
 data Tuple3 a b c = Tuple3 !a !b !c
