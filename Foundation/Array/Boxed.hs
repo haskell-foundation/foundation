@@ -14,6 +14,10 @@ module Foundation.Array.Boxed
     ( Array
     , MArray
     , copy
+    , new
+    , unsafeFreeze
+    , unsafeWrite
+    , unsafeIndex
     ) where
 
 import           GHC.Prim

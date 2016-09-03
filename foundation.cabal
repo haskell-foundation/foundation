@@ -90,6 +90,7 @@ Library
                      Foundation.Primitive.Monad
                      Foundation.Primitive.Utils
                      Foundation.Primitive.FinalPtr
+                     Foundation.Array.ArrayUArray
                      Foundation.Array.Common
                      Foundation.Array.Unboxed
                      Foundation.Array.Unboxed.Builder
