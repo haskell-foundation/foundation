@@ -50,6 +50,7 @@ Library
                      Foundation.Class.Bifunctor
                      Foundation.Convertible
                      Foundation.String
+                     Foundation.String.ASCII
                      Foundation.IO
                      Foundation.IO.FileMap
                      Foundation.VFS
