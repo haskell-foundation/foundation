@@ -57,7 +57,7 @@ class Buildable col where
         -> prim col
 
 newtype Builder col st a = Builder
-    { runBuilder :: State (BuildingState col (PrimState st)) st a }
+    { runBuilder :: State (Offset (Step col), BuildingState col (PrimState st)) st a }
     deriving (Functor, Applicative, Monad)
 
 -- | The in-progress state of a building operation.
@@ -69,7 +69,6 @@ data BuildingState col st = BuildingState
     { prevBuffers   :: [col]
     , prevSize      :: !(Size (Step col))
     , currentBuffer :: Mutable col st
-    , currentOffset :: !(Offset (Step col))
     , chunkSize     :: !(Size (Step col))
     }
 
@@ -77,30 +76,30 @@ instance PrimType ty => Buildable (UArray ty) where
   type Mutable (UArray ty) = MUArray ty
   type Step (UArray ty) = ty
 
-  append v = Builder $ State $ \st ->
-      if offsetAsSize (currentOffset st) == chunkSize st
+  append v = Builder $ State $ \(ofs, st) ->
+      if offsetAsSize ofs == chunkSize st
           then do
               newChunk  <- new (chunkSize st)
               cur       <- unsafeFreeze (currentBuffer st)
-              write newChunk 0 v
-              return ((), st { prevBuffers   = cur : prevBuffers st
-                             , prevSize      = chunkSize st + prevSize st
-                             , currentOffset = Offset 1
-                             , currentBuffer = newChunk
-                             })
+              unsafeWrite newChunk 0 v
+              return ((), (Offset 1, st { prevBuffers   = cur : prevBuffers st
+                                        , prevSize      = chunkSize st + prevSize st
+                                        , currentBuffer = newChunk
+                                        }))
           else do
-              let (Offset ofs) = currentOffset st
-              write (currentBuffer st) ofs v
-              return ((), st { currentOffset = Offset (ofs + 1) })
+              let Offset ofs' = ofs
+              unsafeWrite (currentBuffer st) ofs' v
+              return ((), (ofs + Offset 1, st))
+  {-# INLINE append #-}
 
   build sizeChunksI ab
     | sizeChunksI <= 0 = build 64 ab
     | otherwise        = do
         first    <- new sizeChunks
-        ((), st) <- runState (runBuilder ab) (BuildingState [] (Size 0) first (Offset 0) sizeChunks)
-        current  <- unsafeFreezeShrink (currentBuffer st) (offsetAsSize $ currentOffset st)
+        ((), (ofs, st)) <- runState (runBuilder ab) (Offset 0, BuildingState [] (Size 0) first sizeChunks)
+        current  <- unsafeFreezeShrink (currentBuffer st) (offsetAsSize ofs)
         -- Build final array
-        let totalSize = prevSize st + offsetAsSize (currentOffset st)
+        let totalSize = prevSize st + offsetAsSize ofs
         new totalSize >>= fillFromEnd totalSize (current : prevBuffers st) >>= unsafeFreeze
     where
       sizeChunks = Size sizeChunksI
@@ -110,3 +109,4 @@ instance PrimType ty => Buildable (UArray ty) where
           let len = lengthSize x
           unsafeCopyAtRO mua (sizeAsOffset (sz - len)) x (Offset 0) len
           fillFromEnd (sz - len) xs mua
+  {-# INLINE build #-}
