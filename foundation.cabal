@@ -132,9 +132,13 @@ Test-Suite test-foundation
   type:              exitcode-stdio-1.0
   hs-source-dirs:    tests
   Main-is:           Tests.hs
-  Other-modules:     ForeignUtils
-                     Encoding
-                     Parser
+  Other-modules:     Test.Utils.Foreign
+                     Test.Data.List
+                     Test.Data.Unicode
+                     Test.Foundation.Collection
+                     Test.Foundation.Number
+                     Test.Foundation.Encoding
+                     Test.Foundation.Parser
   Build-Depends:     base >= 3 && < 5
                    , mtl
                    , QuickCheck
