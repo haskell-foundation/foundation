@@ -1,6 +1,7 @@
 module Test.Data.List
     ( generateListOfElement
     , generateListOfElementMaxN
+    , RandomList(..)
     ) where
 
 import Test.Tasty.QuickCheck
@@ -15,3 +16,9 @@ generateListOfElement = generateListOfElementMaxN 100
 -- generator.
 generateListOfElementMaxN :: Int -> Gen e -> Gen [e]
 generateListOfElementMaxN n e = choose (0,n) >>= flip replicateM e
+
+data RandomList = RandomList [Int]
+    deriving (Show,Eq)
+
+instance Arbitrary RandomList where
+    arbitrary = RandomList <$> (choose (100,400) >>= flip replicateM (choose (0,8)))

@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
-module Encoding
+module Test.Foundation.Encoding
   ( EncodedString(..)
   , sample0
   , sample1
