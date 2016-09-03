@@ -63,9 +63,9 @@ class Number a => Signed a where
 -- | Represent class of things that can be added together,
 -- contains a neutral element and is commutative.
 --
--- * x + azero = x
--- * azero + x = x
--- * x + y = y + x
+-- > x + azero = x
+-- > azero + x = x
+-- > x + y = y + x
 --
 class Additive a where
     {-# MINIMAL azero, (+) #-}
@@ -83,8 +83,8 @@ class Additive a where
 
 -- | Represent class of things that can be multiplied together
 --
--- * x * midentity = x
--- * midentity * x = x
+-- > x * midentity = x
+-- > midentity * x = x
 class Multiplicative a where
     {-# MINIMAL midentity, (*) #-}
     -- | Identity element over multiplication
@@ -106,16 +106,17 @@ class Multiplicative a where
 -- as the operand depending on the actual type.
 --
 -- For example:
--- e.g. (-) :: Int -> Int -> Int
---      (-) :: DateTime -> DateTime -> Seconds
---      (-) :: Ptr a -> Ptr a -> PtrDiff
+--
+-- > (-) :: Int -> Int -> Int
+-- > (-) :: DateTime -> DateTime -> Seconds
+-- > (-) :: Ptr a -> Ptr a -> PtrDiff
 class Subtractive a where
     type Difference a
     (-) :: a -> a -> Difference a
 
 -- | Represent class of things that can be divided
 --
--- (x ‘div‘  y) * y + (x ‘mod‘ y) == x
+-- > (x ‘div‘  y) * y + (x ‘mod‘ y) == x
 class Multiplicative a => Divisible a where
     {-# MINIMAL (div, mod) | divMod #-}
     div :: a -> a -> a
