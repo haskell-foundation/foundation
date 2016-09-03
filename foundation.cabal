@@ -134,6 +134,9 @@ Test-Suite test-foundation
   Other-modules:     ForeignUtils
                      Encoding
                      Parser
+                     Test.Data.List
+                     Test.Data.Unicode
+                     Test.Foundation.Collection
   Build-Depends:     base >= 3 && < 5
                    , mtl
                    , QuickCheck
