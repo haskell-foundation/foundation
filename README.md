@@ -68,6 +68,10 @@ Each modules that get compiled will create an equivalent file in the build direc
 * ModuleName.dump-simpl
 * ModuleName.dump-asm
 
+For profiling individual programs, the following command is useful:
+
+    stack ghc -- -O --make X.hs -prof -auto-all -caf-all -fforce-recomp
+
 Design
 ======
 
