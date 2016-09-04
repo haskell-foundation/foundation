@@ -124,6 +124,15 @@ testPath genElement =
   where
     withElements f = forAll genElement f
 
+testBuildable :: (Eq a, IsList a, Show (Element a), Element a ~ Item a, Buildable a)
+              => Proxy a -> Gen (Element a) -> Gen (Small Int) -> [TestTree]
+testBuildable proxy genElement genChunkSize =
+    [ testProperty "build s . mapM_ append == id" $ withElementsAndChunkSize $ \(l, Small s) ->
+        runST (build s (Prelude.mapM_ append l)) `asProxyTypeOf` proxy == fromListP proxy l
+    ]
+  where
+    withElementsAndChunkSize = forAll ((,) <$> generateListOfElement genElement <*> genChunkSize)
+
 testBoxedZippable :: ( Eq (Element col) , Show (Item a), Show (Item b)
                      , BoxedZippable col, Zippable a, Zippable b
                      , Element col ~ (Item a, Item b) )
@@ -138,16 +147,6 @@ testBoxedZippable proxyA proxyB proxyCol genElementA genElementB =
   where
     withList2 = forAll ((,) <$> generateListOfElement genElementA <*> generateListOfElement genElementB)
     withListOfTuples = forAll (generateListOfElement ((,) <$> genElementA <*> genElementB))
-
-testBuildable :: (Eq a, IsList a, Show (Element a), Element a ~ Item a, Buildable a)
-              => Proxy a -> Gen (Element a) -> Gen (Small Int) -> [TestTree]
-testBuildable proxyA genElementA genSizeChunk =
-    [ testProperty "build s . mapM_ append == id" $ withListAndSize $ \(e, Small s) ->
-        runST (build s (Prelude.mapM_ append e)) `asProxyTypeOf` proxyA
-            == fromListP proxyA e
-    ]
-  where
-    withListAndSize = forAll ((,) <$> listOfElement genElementA <*> genSizeChunk)
 
 testZippable :: ( Eq (Element col), Show (Item col), Show (Item a), Show (Item b)
                 , Zippable col, Zippable a, Zippable b )
