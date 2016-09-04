@@ -45,6 +45,7 @@ module Foundation.Array.Unboxed
     , unsafeUpdate
     , unsafeIndex
     , unsafeIndexer
+    , unsafeDewrap
     , unsafeRead
     , unsafeWrite
     -- * Functions
@@ -180,7 +181,14 @@ unsafeIndexer (UVecAddr start _ fptr) f = withFinalPtr fptr (\ptr -> f (primAddr
     {-# INLINE primAddrIndex' #-}
 {-# NOINLINE unsafeIndexer #-}
 
-{-# SPECIALIZE [3] unsafeIndexer :: UArray Word8 -> ((Offset Word8 -> Word8) -> ST s a) -> ST s a #-}
+unsafeDewrap :: PrimType ty
+             => (ByteArray# -> Offset ty -> a)
+             -> (Ptr ty -> Offset ty -> ST s a)
+             -> UArray ty
+             -> a
+unsafeDewrap _ g (UVecAddr start _ fptr) = withUnsafeFinalPtr fptr $ \ptr -> g ptr start
+unsafeDewrap f _ (UVecBA start _ _ ba)   = f ba start
+{-# INLINE unsafeDewrap #-}
 
 foreignMem :: PrimType ty
            => FinalPtr ty -- ^ the start pointer with a finalizer
