@@ -118,7 +118,6 @@ newPinned n = newFake n Proxy
           where
                 !(Size (I# bytes)) = sizeOfE (primSizeInBytes ty) sz
         {-# INLINE newFake #-}
-{-# INLINE new #-}
 
 newUnpinned :: (PrimMonad prim, PrimType ty) => Size ty -> prim (MUArray ty (PrimState prim))
 newUnpinned n = newFake n Proxy
@@ -137,7 +136,7 @@ new :: (PrimMonad prim, PrimType ty) => Size ty -> prim (MUArray ty (PrimState p
 new sz@(Size n)
     | n > 0     = newPinned sz
     | otherwise = newUnpinned sz
-
+{-# INLINE new #-}
 
 mutableSame :: MUArray ty st -> MUArray ty st -> Bool
 mutableSame (MUVecMA sa ea _ ma) (MUVecMA sb eb _ mb) = and [ sa == sb, ea == eb, bool# (sameMutableByteArray# ma mb)]
