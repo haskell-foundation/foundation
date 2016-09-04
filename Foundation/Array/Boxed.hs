@@ -292,11 +292,11 @@ unsafeCopyAtRO :: PrimMonad prim
                -> Offset ty                  -- ^ offset at source
                -> Size ty                    -- ^ number of elements to copy
                -> prim ()
-unsafeCopyAtRO dst od src os n = loop od os
-  where !endIndex = os `offsetPlusE` n
-        loop (Offset d) s@(Offset i)
-            | s == endIndex = return ()
-            | otherwise     = unsafeWrite dst d (unsafeIndex src i) >> loop (Offset $ d+1) (Offset $ i+1)
+unsafeCopyAtRO (MArray (Offset (I# dstart)) _ da) (Offset (I# dofs))
+               (Array  (Offset (I# sstart)) _ sa) (Offset (I# sofs))
+               (Size (I# n)) =
+    primitive $ \st ->
+        (# copyArray# sa (sstart +# sofs) da (dstart +# dofs) n st, () #)
 
 -- | Allocate a new array with a fill function that has access to the elements of
 --   the source array.
