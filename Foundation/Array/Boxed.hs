@@ -131,39 +131,39 @@ instance CB.Buildable (Array ty) where
   type Mutable (Array ty) = MArray ty
   type Step (Array ty) = ty
 
-  append v = CB.Builder $ State $ \(ofs, st) ->
-      if offsetAsSize ofs == CB.chunkSize st
+  append v = CB.Builder $ State $ \(i, st) ->
+      if offsetAsSize i == CB.chunkSize st
           then do
+              cur      <- unsafeFreeze (CB.curChunk st)
               newChunk <- new (CB.chunkSize st)
-              current  <- unsafeFreeze (CB.currentBuffer st)
               unsafeWrite newChunk 0 v
-              return ((), (Offset 1, st { CB.prevBuffers   = current : CB.prevBuffers st
-                                        , CB.prevSize      = CB.chunkSize st + CB.prevSize st
-                                        , CB.currentBuffer = newChunk
+              return ((), (Offset 1, st { CB.prevChunks     = cur : CB.prevChunks st
+                                        , CB.prevChunksSize = CB.chunkSize st + CB.prevChunksSize st
+                                        , CB.curChunk       = newChunk
                                         }))
           else do
-              let (Offset ofs') = ofs
-              unsafeWrite (CB.currentBuffer st) ofs' v
-              return ((), (ofs + Offset 1, st))
+              let (Offset i') = i
+              unsafeWrite (CB.curChunk st) i' v
+              return ((), (i + Offset 1, st))
   {-# INLINE append #-}
 
   build sizeChunksI ab
     | sizeChunksI <= 0 = CB.build 64 ab
     | otherwise        = do
-        m        <- new sizeChunks
-        ((), (ofs, st)) <- runState (CB.runBuilder ab) (Offset 0, CB.BuildingState [] (Size 0) m sizeChunks)
-        current  <- unsafeFreezeShrink (CB.currentBuffer st) (offsetAsSize ofs)
+        first         <- new sizeChunks
+        ((), (i, st)) <- runState (CB.runBuilder ab) (Offset 0, CB.BuildingState [] (Size 0) first sizeChunks)
+        cur           <- unsafeFreezeShrink (CB.curChunk st) (offsetAsSize i)
         -- Build final array
-        let totalSize = CB.prevSize st + offsetAsSize ofs
-        new totalSize >>= fillFromEnd totalSize (current : CB.prevBuffers st) >>= unsafeFreeze
+        let totalSize = CB.prevChunksSize st + offsetAsSize i
+        new totalSize >>= fillFromEnd totalSize (cur : CB.prevChunks st) >>= unsafeFreeze
     where
       sizeChunks = Size sizeChunksI
 
       fillFromEnd _   []     mua = return mua
-      fillFromEnd !sz (x:xs) mua = do
-          let len = lengthSize x
-          unsafeCopyAtRO mua (sizeAsOffset (sz - len)) x (Offset 0) len
-          fillFromEnd (sz - len) xs mua
+      fillFromEnd !end (x:xs) mua = do
+          let sz = lengthSize x
+          unsafeCopyAtRO mua (sizeAsOffset (end - sz)) x (Offset 0) sz
+          fillFromEnd (end - sz) xs mua
   {-# INLINE build #-}
 
 -- | return the numbers of elements in a mutable array

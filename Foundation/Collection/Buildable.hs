@@ -66,47 +66,47 @@ newtype Builder col st a = Builder
 -- this contains the current buffer and the state of
 -- progress packing the elements inside.
 data BuildingState col st = BuildingState
-    { prevBuffers   :: [col]
-    , prevSize      :: !(Size (Step col))
-    , currentBuffer :: Mutable col st
-    , chunkSize     :: !(Size (Step col))
+    { prevChunks     :: [col]
+    , prevChunksSize :: !(Size (Step col))
+    , curChunk       :: Mutable col st
+    , chunkSize      :: !(Size (Step col))
     }
 
 instance PrimType ty => Buildable (UArray ty) where
   type Mutable (UArray ty) = MUArray ty
   type Step (UArray ty) = ty
 
-  append v = Builder $ State $ \(ofs, st) ->
-      if offsetAsSize ofs == chunkSize st
+  append v = Builder $ State $ \(i, st) ->
+      if offsetAsSize i == chunkSize st
           then do
-              newChunk  <- new (chunkSize st)
-              cur       <- unsafeFreeze (currentBuffer st)
+              cur      <- unsafeFreeze (curChunk st)
+              newChunk <- new (chunkSize st)
               unsafeWrite newChunk 0 v
-              return ((), (Offset 1, st { prevBuffers   = cur : prevBuffers st
-                                        , prevSize      = chunkSize st + prevSize st
-                                        , currentBuffer = newChunk
+              return ((), (Offset 1, st { prevChunks     = cur : prevChunks st
+                                        , prevChunksSize = chunkSize st + prevChunksSize st
+                                        , curChunk       = newChunk
                                         }))
           else do
-              let Offset ofs' = ofs
-              unsafeWrite (currentBuffer st) ofs' v
-              return ((), (ofs + Offset 1, st))
+              let Offset i' = i
+              unsafeWrite (curChunk st) i' v
+              return ((), (i + Offset 1, st))
   {-# INLINE append #-}
 
   build sizeChunksI ab
     | sizeChunksI <= 0 = build 64 ab
     | otherwise        = do
-        first    <- new sizeChunks
-        ((), (ofs, st)) <- runState (runBuilder ab) (Offset 0, BuildingState [] (Size 0) first sizeChunks)
-        current  <- unsafeFreezeShrink (currentBuffer st) (offsetAsSize ofs)
+        first         <- new sizeChunks
+        ((), (i, st)) <- runState (runBuilder ab) (Offset 0, BuildingState [] (Size 0) first sizeChunks)
+        cur           <- unsafeFreezeShrink (curChunk st) (offsetAsSize i)
         -- Build final array
-        let totalSize = prevSize st + offsetAsSize ofs
-        new totalSize >>= fillFromEnd totalSize (current : prevBuffers st) >>= unsafeFreeze
+        let totalSize = prevChunksSize st + offsetAsSize i
+        new totalSize >>= fillFromEnd totalSize (cur : prevChunks st) >>= unsafeFreeze
     where
       sizeChunks = Size sizeChunksI
 
       fillFromEnd _   []     mua = return mua
-      fillFromEnd !sz (x:xs) mua = do
-          let len = lengthSize x
-          unsafeCopyAtRO mua (sizeAsOffset (sz - len)) x (Offset 0) len
-          fillFromEnd (sz - len) xs mua
+      fillFromEnd !end (x:xs) mua = do
+          let sz = lengthSize x
+          unsafeCopyAtRO mua (sizeAsOffset (end - sz)) x (Offset 0) sz
+          fillFromEnd (end - sz) xs mua
   {-# INLINE build #-}

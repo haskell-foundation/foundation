@@ -130,41 +130,42 @@ instance Buildable String where
   type Mutable String = MutableString
   type Step String = Word8
 
-  append c = Builder $ State $ \(ofs, st) ->
-      if offsetAsSize ofs + nbBytes >= chunkSize st
+  append c = Builder $ State $ \(i, st) ->
+      if offsetAsSize i + nbBytes >= chunkSize st
           then do
-              cur      <- unsafeFreezeShrink (currentBuffer st) (offsetAsSize ofs)
+              cur      <- unsafeFreezeShrink (curChunk st) (offsetAsSize i)
               newChunk <- new (chunkSize st)
-              _        <- write newChunk (Offset 0) c
-              return ((), (sizeAsOffset nbBytes, st { prevBuffers   = cur : prevBuffers st
-                                                    , prevSize      = offsetAsSize ofs + prevSize st
-                                                    , currentBuffer = newChunk
+              writeUTF8Char newChunk (Offset 0) utf8Char
+              return ((), (sizeAsOffset nbBytes, st { prevChunks     = cur : prevChunks st
+                                                    , prevChunksSize = offsetAsSize i + prevChunksSize st
+                                                    , curChunk       = newChunk
                                                     }))
           else do
-              _ <- write (currentBuffer st) ofs c
-              return ((), (ofs + sizeAsOffset nbBytes, st))
+              writeUTF8Char (curChunk st) i utf8Char
+              return ((), (i + sizeAsOffset nbBytes, st))
     where
-      !nbBytes = charToBytes (fromEnum c)
+      utf8Char = asUTF8Char c
+      nbBytes  = numBytes utf8Char
   {-# INLINE append #-}
 
   build sizeChunksI sb
     | sizeChunksI <= 0 = build 64 sb
     | otherwise        = do
-        first           <- new sizeChunks
-        ((), (ofs, st)) <- runState (runBuilder sb) (Offset 0, BuildingState [] (Size 0) first sizeChunks)
-        current         <- unsafeFreezeShrink (currentBuffer st) (offsetAsSize ofs)
+        first         <- new sizeChunks
+        ((), (i, st)) <- runState (runBuilder sb) (Offset 0, BuildingState [] (Size 0) first sizeChunks)
+        cur           <- unsafeFreezeShrink (curChunk st) (offsetAsSize i)
         -- Build final array
-        let totalSize = prevSize st + offsetAsSize ofs
-        ba <- Vec.new totalSize >>= fillFromEnd totalSize (current : prevBuffers st) >>= Vec.unsafeFreeze
-        return $ String ba
+        let totalSize = prevChunksSize st + offsetAsSize i
+        final <- Vec.new totalSize >>= fillFromEnd totalSize (cur : prevChunks st) >>= Vec.unsafeFreeze
+        return $ String final
     where
       sizeChunks = Size sizeChunksI
 
       fillFromEnd _   []            mba = return mba
-      fillFromEnd !sz (String x:xs) mba = do
-          let len = Vec.lengthSize x
-          Vec.unsafeCopyAtRO mba (sizeAsOffset (sz - len)) x (Offset 0) len
-          fillFromEnd (sz - len) xs mba
+      fillFromEnd !end (String x:xs) mba = do
+          let sz = Vec.lengthSize x
+          Vec.unsafeCopyAtRO mba (sizeAsOffset (end - sz)) x (Offset 0) sz
+          fillFromEnd (end - sz) xs mba
   {-# INLINE build #-}
 
 data ValidationFailure = InvalidHeader
@@ -368,7 +369,6 @@ writeWithBuilder c =
     toContinuation :: Word# -> Word#
     toContinuation w = or# (and# w 0x3f##) 0x80##
 
-
 next :: String -> Offset8 -> (# Char, Offset8 #)
 next (String ba) (Offset n) =
     case getNbBytes# h of
@@ -412,34 +412,59 @@ data UTF8Char =
     | UTF8_3 {-# UNPACK #-} !Word8 {-# UNPACK #-} !Word8 {-# UNPACK #-} !Word8
     | UTF8_4 {-# UNPACK #-} !Word8 {-# UNPACK #-} !Word8 {-# UNPACK #-} !Word8 {-# UNPACK #-} !Word8
 
-writeBytes :: Char -> UTF8Char
-writeBytes !c =
-    if      bool# (ltWord# x 0x80##   ) then encode1
-    else if bool# (ltWord# x 0x800##  ) then encode2
-    else if bool# (ltWord# x 0x10000##) then encode3
-    else                                     encode4
-  where
-    !(I# xi) = fromEnum c
-    !x       = int2Word# xi
-    encode1 = UTF8_1 (W8# x)
-    encode2 =
-        let !x1  = W8# (or# (uncheckedShiftRL# x 6#) 0xc0##)
-            !x2  = toContinuation x
-         in UTF8_2 x1 x2
-    encode3 =
-        let !x1  = W8# (or# (uncheckedShiftRL# x 12#) 0xe0##)
-            !x2  = toContinuation (uncheckedShiftRL# x 6#)
-            !x3  = toContinuation x
-         in UTF8_3 x1 x2 x3
-    encode4 =
-        let !x1  = W8# (or# (uncheckedShiftRL# x 18#) 0xf0##)
-            !x2  = toContinuation (uncheckedShiftRL# x 12#)
-            !x3  = toContinuation (uncheckedShiftRL# x 6#)
-            !x4  = toContinuation x
-         in UTF8_4 x1 x2 x3 x4
-    toContinuation :: Word# -> Word8
-    toContinuation w = W8# (or# (and# w 0x3f##) 0x80##)
-    {-# INLINE toContinuation #-}
+asUTF8Char :: Char -> UTF8Char
+asUTF8Char !c
+  | bool# (ltWord# x 0x80##   ) = encode1
+  | bool# (ltWord# x 0x800##  ) = encode2
+  | bool# (ltWord# x 0x10000##) = encode3
+  | otherwise                   = encode4
+    where
+      !(I# xi) = fromEnum c
+      !x       = int2Word# xi
+
+      encode1 = UTF8_1 (W8# x)
+      encode2 =
+          let !x1 = W8# (or# (uncheckedShiftRL# x 6#) 0xc0##)
+              !x2 = toContinuation x
+           in UTF8_2 x1 x2
+      encode3 =
+          let !x1 = W8# (or# (uncheckedShiftRL# x 12#) 0xe0##)
+              !x2 = toContinuation (uncheckedShiftRL# x 6#)
+              !x3 = toContinuation x
+           in UTF8_3 x1 x2 x3
+      encode4 =
+          let !x1 = W8# (or# (uncheckedShiftRL# x 18#) 0xf0##)
+              !x2 = toContinuation (uncheckedShiftRL# x 12#)
+              !x3 = toContinuation (uncheckedShiftRL# x 6#)
+              !x4 = toContinuation x
+           in UTF8_4 x1 x2 x3 x4
+
+      toContinuation :: Word# -> Word8
+      toContinuation w = W8# (or# (and# w 0x3f##) 0x80##)
+      {-# INLINE toContinuation #-}
+
+numBytes :: UTF8Char -> Size8
+numBytes UTF8_1{} = Size 1
+numBytes UTF8_2{} = Size 2
+numBytes UTF8_3{} = Size 3
+numBytes UTF8_4{} = Size 4
+
+writeUTF8Char :: PrimMonad prim => MutableString (PrimState prim) -> Offset8 -> UTF8Char -> prim ()
+writeUTF8Char (MutableString mba) (Offset i) (UTF8_1 x1) =
+        C.mutUnsafeWrite mba i     x1
+writeUTF8Char (MutableString mba) (Offset i) (UTF8_2 x1 x2) = do
+        C.mutUnsafeWrite mba i     x1
+        C.mutUnsafeWrite mba (i+1) x2
+writeUTF8Char (MutableString mba) (Offset i) (UTF8_3 x1 x2 x3) = do
+        C.mutUnsafeWrite mba i     x1
+        C.mutUnsafeWrite mba (i+1) x2
+        C.mutUnsafeWrite mba (i+2) x3
+writeUTF8Char (MutableString mba) (Offset i) (UTF8_4 x1 x2 x3 x4) = do
+        C.mutUnsafeWrite mba i     x1
+        C.mutUnsafeWrite mba (i+1) x2
+        C.mutUnsafeWrite mba (i+2) x3
+        C.mutUnsafeWrite mba (i+3) x4
+{-# INLINE writeUTF8Char #-}
 
 write :: PrimMonad prim => MutableString (PrimState prim) -> Offset8 -> Char -> prim Offset8
 write (MutableString mba) (Offset i) c =
@@ -490,6 +515,7 @@ freeze (MutableString mba) = String `fmap` C.unsafeFreeze mba
 
 unsafeFreezeShrink :: PrimMonad prim => MutableString (PrimState prim) -> Size Word8 -> prim String
 unsafeFreezeShrink (MutableString mba) s = String <$> Vec.unsafeFreezeShrink mba s
+{-# INLINE unsafeFreezeShrink #-}
 
 ------------------------------------------------------------------------
 -- real functions
@@ -656,7 +682,7 @@ break predicate s@(String ba) = runST $ Vec.unsafeIndexer ba go
 
 breakElem :: Char -> String -> (String, String)
 breakElem !el s@(String ba) =
-    case writeBytes el of
+    case asUTF8Char el of
         UTF8_1 w -> let (# v1,v2 #) = Vec.splitElem w ba in (String v1, String v2)
         _        -> runST $ Vec.unsafeIndexer ba go
   where
