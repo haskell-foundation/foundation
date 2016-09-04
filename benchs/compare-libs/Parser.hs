@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 module Main where
 
@@ -12,15 +13,16 @@ import Criterion.Main
 import qualified Data.Text as T
 import qualified Data.Attoparsec.Text as A
 import qualified Data.ByteString.Internal as B
+import qualified Prelude
 
 refBufStr :: [Char]
 refBufStr = "Foundation, the new hope"
 refBufW8 :: [Word8]
-refBufW8 = map (B.c2w) refBufStr
+refBufW8 = fmap (B.c2w) refBufStr
 refBufStrLarge :: [Char]
-refBufStrLarge = F.intercalate " " $ replicate 100 refBufStr
+refBufStrLarge = F.intercalate " " $ Prelude.replicate 100 refBufStr
 refBufW8Large :: [Word8]
-refBufW8Large = map B.c2w refBufStrLarge
+refBufW8Large = fmap B.c2w refBufStrLarge
 
 foundationBufStr :: F.String
 foundationBufStr = F.fromList refBufStr
@@ -32,7 +34,7 @@ foundationBufW8Large :: F.UArray Word8
 foundationBufW8Large = F.fromList refBufW8Large
 
 foundationEl :: F.UArray Word8
-foundationEl = F.fromList $ map B.c2w "Foundation"
+foundationEl = F.fromList $ fmap B.c2w "Foundation"
 
 foundationParserStr :: F.Parser F.String F.String
 foundationParserStr = do
@@ -80,7 +82,7 @@ main = defaultMain
         , bench "UArray(W8):large" $ whnf (forceParserStop foundationParserW8Large) foundationBufW8Large
         ]
     , bgroup "Attoparsec"
-        [ bench "text:small" $ whnf (A.parseOnly textParser) refText
-        , bench "text:large" $ whnf (A.parseOnly textParserLarge) refTextLarge
+        [ bench "text:small" $ whnf (either error id . A.parseOnly textParser) refText
+        , bench "text:large" $ whnf (either error id . A.parseOnly textParserLarge) refTextLarge
         ]
     ]
