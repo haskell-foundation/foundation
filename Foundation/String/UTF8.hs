@@ -674,7 +674,9 @@ size :: String -> Size8
 size (String ba) = Size $ C.length ba
 
 lengthSize :: String -> Size Word8
-lengthSize (String ba) = Vec.unsafeDewrap goVec goAddr ba
+lengthSize (String ba)
+    | C.null ba = Size 0
+    | otherwise = Vec.unsafeDewrap goVec goAddr ba
   where
     goVec ma start = loop start (Size 0)
       where
