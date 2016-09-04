@@ -133,16 +133,16 @@ instance Buildable String where
   append c = Builder $ State $ \(ofs, st) ->
       if offsetAsSize ofs + nbBytes >= chunkSize st
           then do
-              newChunk  <- new (chunkSize st)
-              cur       <- unsafeFreezeShrink (currentBuffer st) (offsetAsSize ofs)
-              newOffset <- write newChunk (Offset 0) c
-              return ((), (newOffset, st { prevBuffers   = cur : prevBuffers st
-                                         , prevSize      = offsetAsSize ofs + prevSize st
-                                         , currentBuffer = newChunk
-                                         }))
+              cur      <- unsafeFreezeShrink (currentBuffer st) (offsetAsSize ofs)
+              newChunk <- new (chunkSize st)
+              _        <- write newChunk (Offset 0) c
+              return ((), (sizeAsOffset nbBytes, st { prevBuffers   = cur : prevBuffers st
+                                                    , prevSize      = offsetAsSize ofs + prevSize st
+                                                    , currentBuffer = newChunk
+                                                    }))
           else do
-              newOffset <- write (currentBuffer st) ofs c
-              return ((), (newOffset, st))
+              _ <- write (currentBuffer st) ofs c
+              return ((), (ofs + sizeAsOffset nbBytes, st))
     where
       !nbBytes = charToBytes (fromEnum c)
   {-# INLINE append #-}
@@ -150,9 +150,9 @@ instance Buildable String where
   build sizeChunksI sb
     | sizeChunksI <= 0 = build 64 sb
     | otherwise        = do
-        m        <- new sizeChunks
-        ((), (ofs, st)) <- runState (runBuilder sb) (Offset 0, BuildingState [] (Size 0) m sizeChunks)
-        current  <- unsafeFreezeShrink (currentBuffer st) (offsetAsSize ofs)
+        first           <- new sizeChunks
+        ((), (ofs, st)) <- runState (runBuilder sb) (Offset 0, BuildingState [] (Size 0) first sizeChunks)
+        current         <- unsafeFreezeShrink (currentBuffer st) (offsetAsSize ofs)
         -- Build final array
         let totalSize = prevSize st + offsetAsSize ofs
         ba <- Vec.new totalSize >>= fillFromEnd totalSize (current : prevBuffers st) >>= Vec.unsafeFreeze
@@ -482,6 +482,7 @@ write (MutableString mba) (Offset i) c =
 
     toContinuation :: Word# -> Word#
     toContinuation w = or# (and# w 0x3f##) 0x80##
+{-# INLINE write #-}
 
 freeze :: PrimMonad prim => MutableString (PrimState prim) -> prim String
 freeze (MutableString mba) = String `fmap` C.unsafeFreeze mba
