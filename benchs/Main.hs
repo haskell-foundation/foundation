@@ -9,16 +9,19 @@ import BenchUtil.RefData
 
 #ifdef BENCH_ALL
 import qualified Data.Text as Text
+type TextText = Text.Text
 
+textPack = Text.pack
 textLength = Text.length
 textSplitAt = Text.splitAt
 textTake    = Text.take
 #else
-type BOGUS = ()
+data TextText = Text
 
-textLength = ()
-textSplitAt = ((), ())
-textTake    = ()
+textPack _ = Text
+textLength = undefined
+textSplitAt _ _ = (undefined, undefined)
+textTake    = undefined
 #endif
 
 --------------------------------------------------------------------------
@@ -31,11 +34,7 @@ benchsString = bgroup "String"
     ]
   where
     diffTextString :: (String -> a)
-#ifdef BENCH_ALL
-                   -> (Text.Text   -> b)
-#else
-                   -> BOGUS
-#endif
+                   -> (TextText -> b)
                    -> [Char]
                    -> [Benchmark]
     diffTextString foundationBench textBench dat =
@@ -46,9 +45,8 @@ benchsString = bgroup "String"
         ]
       where
         s = fromList dat
-#ifdef BENCH_ALL
-        t = Text.pack dat
-#endif
+        t = textPack dat
+
     benchLength = bgroup "Length" $
         fmap (\(n, dat) -> bgroup n $ diffTextString length textLength dat)
             [ ("ascii", rdFoundationEn)
