@@ -368,7 +368,7 @@ data UTF8Char =
     | UTF8_4 {-# UNPACK #-} !Word8 {-# UNPACK #-} !Word8 {-# UNPACK #-} !Word8 {-# UNPACK #-} !Word8
 
 writeBytes :: Char -> UTF8Char
-writeBytes c =
+writeBytes !c =
     if      bool# (ltWord# x 0x80##   ) then encode1
     else if bool# (ltWord# x 0x800##  ) then encode2
     else if bool# (ltWord# x 0x10000##) then encode3
@@ -708,11 +708,6 @@ replicate n c = runST (new nbBytes >>= fill)
             | idx == end = freeze ms
             | otherwise  = write ms idx c >>= loop
 
-{-
-sizeBytes :: String -> Int
-sizeBytes (String ba) = I# (sizeofByteArray# ba)
--}
-
 -- | Copy the String
 copy :: String -> String
 copy (String s) = String (Vec.copy s)
@@ -889,15 +884,6 @@ reverse s@(String ba) = runST $ do
                     C.mutUnsafeWrite mba (d + 3) (Vec.unsafeIndex ba (si + 3))
                 _  -> return () -- impossible
             loop ms (sidx `offsetPlusE` nb) didx'
-
-{-
--- | Convert a Byte Array to a string and check UTF8 validity
-fromBytes :: Encoding -> UArray Word8 -> Maybe String
-fromBytes UTF8 bytes =
-    case validate bytes 0 (C.length bytes) of
-        (_, Nothing) -> Just $ fromBytesUnsafe bytes
-        (_, Just _)  -> Nothing
-        -}
 
 data Encoding
     = ASCII7
