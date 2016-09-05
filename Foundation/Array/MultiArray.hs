@@ -1,7 +1,7 @@
 -- |
--- Module      : Foundation.Array.ArrayUArray
+-- Module      : Foundation.Array.MultiArray
 -- License     : BSD-style
--- Maintainer  : Vincent Hanquez <vincent@snarc.org>
+-- Maintainer  : Alfredo Di Napoli <alfredo.dinapoli@gmail.com>
 -- Stability   : experimental
 -- Portability : portable
 --
@@ -10,8 +10,8 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE UnboxedTuples #-}
-module Foundation.Array.ArrayUArray
-    ( ArrayUArray
+module Foundation.Array.MultiArray
+    ( MultiArray
     ) where
 
 import           Data.Typeable
@@ -25,23 +25,26 @@ import           Foundation.Number
 import           GHC.ST
 
 
-data ArrayUArray ty = ArrayUArray (Array (UArray ty))
+data MultiArray ty = MultiArray (Array (UArray ty))
                       deriving (Show, Eq, Ord, Typeable)
 
-instance Monoid (ArrayUArray a) where
+instance Monoid (MultiArray a) where
     mempty  = empty
     mappend = append
     mconcat = concat
 
-type instance C.Element (ArrayUArray ty) = ty
+type instance C.Element (MultiArray ty) = ty
 
-instance PrimType ty => IsList (ArrayUArray ty) where
-    type Item (ArrayUArray ty) = ty
+instance PrimType ty => IsList (MultiArray ty) where
+    type Item (MultiArray ty) = ty
     fromList = vFromList
     toList = vToList
 
---instance C.Sequential (ArrayUArray ty) where
---    null = null
+instance PrimType ty => C.Collection (MultiArray ty) where
+    null = null
+    length = length
+
+--instance C.Sequential (MultiArray ty) where
 --    take = take
 --    drop = drop
 --    splitAt = splitAt
@@ -60,10 +63,9 @@ instance PrimType ty => IsList (ArrayUArray ty) where
 --    cons = cons
 --    find = find
 --    sortBy = sortBy
---    length = length
 --    singleton = fromList . (:[])
 
---instance C.IndexedCollection (ArrayUArray ty) where
+--instance C.IndexedCollection (MultiArray ty) where
 --    (!) l n
 --        | n < 0 || n >= length l = Nothing
 --        | otherwise              = Just $ index l n
@@ -75,11 +77,11 @@ instance PrimType ty => IsList (ArrayUArray ty) where
 --            | otherwise =
 --                if predicate (unsafeIndex c i) then Just i else Nothing
 
-empty :: ArrayUArray ty
-empty = ArrayUArray (A.empty)
+empty :: MultiArray ty
+empty = MultiArray (A.empty)
 
-append :: ArrayUArray ty -> ArrayUArray ty -> ArrayUArray ty
-append (ArrayUArray a1) (ArrayUArray a2) = ArrayUArray $ runST $ do
+append :: MultiArray ty -> MultiArray ty -> MultiArray ty
+append (MultiArray a1) (MultiArray a2) = MultiArray $ runST $ do
   let a1Size@(Size a1len) = Size $ C.length a1
   let a2Size              = Size $ C.length a2
   a <- A.new (a1Size + a2Size)
@@ -87,19 +89,19 @@ append (ArrayUArray a1) (ArrayUArray a2) = ArrayUArray $ runST $ do
   A.thaw a2 >>= \a2' -> A.copyAt a (Offset a1len) a2' (Offset 0) a2Size
   A.unsafeFreeze a
 
-concat :: [ArrayUArray ty] -> ArrayUArray ty
+concat :: [MultiArray ty] -> MultiArray ty
 concat x = C.foldl' append mempty x
 
-vFromList :: PrimType ty => [ty] -> ArrayUArray ty
-vFromList l = ArrayUArray array
+vFromList :: PrimType ty => [ty] -> MultiArray ty
+vFromList l = MultiArray array
   where
     array = runST $ do
       a <- A.new (Size 1)
       A.unsafeWrite a 0 (fromList l)
       A.unsafeFreeze a
 
-vToList :: PrimType ty => ArrayUArray ty -> [ty]
-vToList (ArrayUArray a) = loop (C.length a) 0 mempty
+vToList :: PrimType ty => MultiArray ty -> [ty]
+vToList (MultiArray a) = loop (C.length a) 0 mempty
   where
     -- TODO: Rewrite this to use something like a `DList`
     -- to avoid the expensive `mappend`.
@@ -107,8 +109,21 @@ vToList (ArrayUArray a) = loop (C.length a) 0 mempty
       True  -> l
       False -> loop len (acc+1) ((toList (A.unsafeIndex a acc)) <> l)
 
---null = _
---take = _
+null :: PrimType ty => MultiArray ty -> Bool
+null (MultiArray array) =
+  let len = C.length array
+  in C.null array || allNulls 0 len
+  where
+    allNulls !idx len
+      | idx == len = True
+      | otherwise  = C.null (array `A.unsafeIndex` idx) && allNulls (idx + 1) len
+
+-- | Returns the length of this `MultiArray`, by summing each inner length.
+-- Complexity: O(n*m) where `n` is the number of chunks and m the size of
+-- each chunk.
+length :: PrimType ty => MultiArray ty -> Int
+length (MultiArray array) = C.foldl' (\acc l -> acc + C.length l) 0 array
+
 --drop = _
 --splitAt = _
 --revTake = _
@@ -126,10 +141,9 @@ vToList (ArrayUArray a) = loop (C.length a) 0 mempty
 --cons = _
 --find = _
 --sortBy = _
---length = _
 
---index :: ArrayUArray ty -> Int -> ty
+--index :: MultiArray ty -> Int -> ty
 --index array n = _
 --
---unsafeIndex :: ArrayUArray ty -> Int -> ty
+--unsafeIndex :: MultiArray ty -> Int -> ty
 --unsafeIndex array n = _

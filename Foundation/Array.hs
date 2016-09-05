@@ -16,7 +16,7 @@ module Foundation.Array
     , MArray
     , UArray
     , MUArray
-    , ArrayUArray
+    , MultiArray
     , Bitmap
     , MutableBitmap
     , PrimType
@@ -29,4 +29,4 @@ import           Foundation.Array.Boxed
 import           Foundation.Array.Unboxed
 import           Foundation.Array.Unboxed.Mutable
 import           Foundation.Array.Bitmap
-import           Foundation.Array.ArrayUArray
+import           Foundation.Array.MultiArray
