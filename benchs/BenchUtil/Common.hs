@@ -1,6 +1,7 @@
 module BenchUtil.Common
     ( defaultMain
     , Benchmark
+    , Benchmarkable
     , bgroup
     , bench
     , fbench
