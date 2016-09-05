@@ -53,6 +53,7 @@ module Foundation.Internal.Base
     , Control.Exception.Exception
     , Control.Exception.throw
     , Control.Exception.throwIO
+    , GHC.Ptr.Ptr(..)
     -- * Errors
     , internalError
     ) where
@@ -68,6 +69,7 @@ import qualified Data.Int
 import qualified Foundation.Internal.IsList
 import qualified GHC.Exts
 import qualified GHC.Generics
+import qualified GHC.Ptr
 
 -- | Only to use internally for internal error cases
 internalError :: [Prelude.Char] -> a

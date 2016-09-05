@@ -37,6 +37,11 @@ source-repository head
   type: git
   location: https://github.com/haskell-foundation/foundation
 
+Flag bench-all
+  Description:       Add some comparaison benchmarks against other haskell libraries
+  Default:           False
+  Manual:            True
+
 Library
   Exposed-modules:   Foundation
                      Foundation.Number
@@ -70,6 +75,7 @@ Library
                      Foundation.Collection.List
                      Foundation.Collection.Element
                      Foundation.Collection.InnerFunctor
+                     Foundation.Collection.Collection
                      Foundation.Collection.Sequential
                      Foundation.Collection.Keyed
                      Foundation.Collection.Indexed
@@ -132,9 +138,13 @@ Test-Suite test-foundation
   type:              exitcode-stdio-1.0
   hs-source-dirs:    tests
   Main-is:           Tests.hs
-  Other-modules:     ForeignUtils
-                     Encoding
-                     Parser
+  Other-modules:     Test.Utils.Foreign
+                     Test.Data.List
+                     Test.Data.Unicode
+                     Test.Foundation.Collection
+                     Test.Foundation.Number
+                     Test.Foundation.Encoding
+                     Test.Foundation.Parser
   Build-Depends:     base >= 3 && < 5
                    , mtl
                    , QuickCheck
@@ -153,20 +163,16 @@ Test-Suite doctest
   Build-Depends:     base >= 3 && < 5
                    , doctest >= 0.11
 
-Benchmark bench-array
-  Main-Is:           Array.hs
+Benchmark bench
+  Main-Is:           Main.hs
+  Other-modules:     BenchUtil.Common
+                     BenchUtil.RefData
   hs-source-dirs:    benchs
   default-language:  Haskell2010
   type:              exitcode-stdio-1.0
   Default-Extensions: NoImplicitPrelude
                       BangPatterns
   Build-depends:     base >= 4, criterion, foundation
-
-Benchmark bench-profile-break
-  Main-Is:           ProfBreak.hs
-  hs-source-dirs:    tests/Profiling
-  default-language:  Haskell2010
-  type:              exitcode-stdio-1.0
-  Default-Extensions: NoImplicitPrelude
-                      BangPatterns
-  Build-depends:     foundation
+  if flag(bench-all)
+    CPP-Options:     -DBENCH_ALL
+    Build-depends:   text, attoparsec, vector, bytestring

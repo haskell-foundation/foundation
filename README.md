@@ -2,6 +2,7 @@ Foundation
 ==========
 
 [![Build Status](https://travis-ci.org/haskell-foundation/foundation.png?branch=master)](https://travis-ci.org/haskell-foundation/foundation)
+[![Coverage Status](https://coveralls.io/repos/github/haskell-foundation/foundation/badge.svg?branch=master)](https://coveralls.io/github/haskell-foundation/foundation?branch=master)
 [![BSD](http://b.repl.ca/v1/license-BSD-blue.png)](http://en.wikipedia.org/wiki/BSD_licenses)
 [![Haskell](http://b.repl.ca/v1/language-haskell-lightgrey.png)](http://haskell.org)
 
@@ -66,6 +67,28 @@ Each modules that get compiled will create an equivalent file in the build direc
 
 * ModuleName.dump-simpl
 * ModuleName.dump-asm
+
+For profiling individual programs, the following command is useful:
+
+    stack ghc -- -O --make X.hs -prof -auto-all -caf-all -fforce-recomp
+
+Benchmarking
+============
+
+To get the list of benchmark:
+
+    stack bench --benchmark-arguments -l
+
+To compare against other libraries, you need to set the `bench-all` flag
+
+    stack bench --flag foundation:bench-all --benchmark-arguments -l
+
+To run a specific or set of benchmarks :
+
+    stack bench --flag foundation:bench-all --benchmark-arguments 'types/String/SplitAt/mascii-10/Text'
+    stack bench --flag foundation:bench-all --benchmark-arguments '-m prefix types/String/SplitAt'
+    stack bench --flag foundation:bench-all --benchmark-arguments '-m glob types/String/SplitAt'
+
 
 Design
 ======

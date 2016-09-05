@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
-module Parser
+module Test.Foundation.Parser
   ( testParsers
   ) where
 
