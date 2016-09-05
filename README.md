@@ -68,6 +68,28 @@ Each modules that get compiled will create an equivalent file in the build direc
 * ModuleName.dump-simpl
 * ModuleName.dump-asm
 
+For profiling individual programs, the following command is useful:
+
+    stack ghc -- -O --make X.hs -prof -auto-all -caf-all -fforce-recomp
+
+Benchmarking
+============
+
+To get the list of benchmark:
+
+    stack bench --benchmark-arguments -l
+
+To compare against other libraries, you need to set the `bench-all` flag
+
+    stack bench --flag foundation:bench-all --benchmark-arguments -l
+
+To run a specific or set of benchmarks :
+
+    stack bench --flag foundation:bench-all --benchmark-arguments 'types/String/SplitAt/mascii-10/Text'
+    stack bench --flag foundation:bench-all --benchmark-arguments '-m prefix types/String/SplitAt'
+    stack bench --flag foundation:bench-all --benchmark-arguments '-m glob types/String/SplitAt'
+
+
 Design
 ======
 

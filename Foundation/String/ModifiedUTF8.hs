@@ -21,7 +21,6 @@ module Foundation.String.ModifiedUTF8
 
 import           GHC.ST (runST, ST)
 import           GHC.Prim (Addr#)
-import           GHC.Ptr (Ptr(..))
 import qualified Control.Monad (mapM)
 
 import           Foundation.Internal.Base

@@ -240,10 +240,13 @@ mutableValidate mba ofsStart sz = do
                                 else return (pos, Just InvalidContinuation)
                         _ -> error "internal error"
 
-skipNext :: String -> Int -> Int
-skipNext (String ba) n = n + 1 + getNbBytes h
-  where
-    !h = Vec.unsafeIndex ba n
+skipNextHeaderValue :: Word8 -> Size Word8
+skipNextHeaderValue !x
+    | x < 0xC0  = Size 1 -- 0b11000000
+    | x < 0xE0  = Size 2 -- 0b11100000
+    | x < 0xF0  = Size 3 -- 0b11110000
+    | otherwise = Size 4
+{-# INLINE skipNextHeaderValue #-}
 
 nextWithIndexer :: (Offset Word8 -> Word8)
                 -> Offset Word8
@@ -365,7 +368,7 @@ data UTF8Char =
     | UTF8_4 {-# UNPACK #-} !Word8 {-# UNPACK #-} !Word8 {-# UNPACK #-} !Word8 {-# UNPACK #-} !Word8
 
 writeBytes :: Char -> UTF8Char
-writeBytes c =
+writeBytes !c =
     if      bool# (ltWord# x 0x80##   ) then encode1
     else if bool# (ltWord# x 0x800##  ) then encode2
     else if bool# (ltWord# x 0x10000##) then encode3
@@ -473,8 +476,6 @@ sFromList l = runST (new bytes >>= startCopy)
       where
         loop _   []     = freeze ms
         loop idx (c:xs) = write ms idx c >>= \idx' -> loop idx' xs
-    -- write those bytes
-    --loop :: MutableByteArray# st -> Int# -> State# st -> [Char] -> (# State# st, String #)
 {-# INLINE [0] sFromList #-}
 
 null :: String -> Bool
@@ -484,30 +485,57 @@ null (String ba) = C.length ba == 0
 --
 -- if the input @s contains less characters than required, then
 take :: Int -> String -> String
-take n s = fst $ splitAt n s -- TODO specialize
+take n s@(String ba)
+    | n <= 0           = mempty
+    | n >= C.length ba = s
+    | otherwise        = let (Offset o) = indexN n s in String $ Vec.take o ba
 
 -- | Create a string with the remaining Chars after dropping @n Chars from the beginning
 drop :: Int -> String -> String
 drop n s@(String ba)
-    | n <= 0    = s
-    | otherwise = loop 0 0
-  where
-    !sz = C.length ba
-    loop idx i
-        | idx >= sz = mempty
-        | i == n    = String $ C.drop idx ba
-        | otherwise = loop (skipNext s idx) (i + 1)
+    | n <= 0           = s
+    | n >= C.length ba = mempty
+    | otherwise        = let (Offset o) = indexN n s in String $ Vec.drop o ba
 
 splitAt :: Int -> String -> (String, String)
-splitAt n s@(String ba)
-    | n <= 0    = (mempty, s)
-    | otherwise = loop 0 0
+splitAt nI s@(String ba)
+    | nI <= 0           = (mempty, s)
+    | nI >= C.length ba = (s, mempty)
+    | otherwise =
+        let (Offset k) = indexN nI s
+            (v1,v2)    = C.splitAt k ba
+         in (String v1, String v2)
+
+-- | Return the offset (in bytes) of the N'th sequence in an UTF8 String
+indexN :: Int -> String -> Offset Word8
+indexN nI (String ba) = Vec.unsafeDewrap goVec goAddr ba
   where
-    !sz = C.length ba
-    loop idx i
-        | idx >= sz = (s, mempty)
-        | i == n    = let (v1,v2) = C.splitAt idx ba in (String v1, String v2)
-        | otherwise = loop (skipNext s idx) (i + 1)
+    !n = Size nI
+    end :: Offset Char
+    !end = Offset 0 `offsetPlusE` n
+
+    goVec :: ByteArray# -> Offset Word8 -> Offset Word8
+    goVec !ma !start = loop start (Offset 0)
+      where
+        !len = start `offsetPlusE` Vec.lengthSize ba
+        loop :: Offset Word8 -> Offset Char -> Offset Word8
+        loop !idx !i
+            | idx >= len || i >= end = sizeAsOffset (idx - start)
+            | otherwise              = loop (idx `offsetPlusE` d) (i + Offset 1)
+          where d = skipNextHeaderValue (primBaIndex ma idx)
+    {-# INLINE goVec #-}
+
+    goAddr :: Ptr Word8 -> Offset Word8 -> ST s (Offset Word8)
+    goAddr !(Ptr ptr) !start = return $ loop start (Offset 0)
+      where
+        !len = start `offsetPlusE` Vec.lengthSize ba
+        loop :: Offset Word8 -> Offset Char -> Offset Word8
+        loop !idx !i
+            | idx >= len || i >= end = sizeAsOffset (idx - start)
+            | otherwise              = loop (idx `offsetPlusE` d) (i + Offset 1)
+          where d = skipNextHeaderValue (primAddrIndex ptr idx)
+    {-# INLINE goAddr #-}
+{-# INLINE indexN #-}
 
 -- rev{Take,Drop,SplitAt} TODO optimise:
 -- we can process the string from the end using a skipPrev instead of getting the length
@@ -645,15 +673,29 @@ span predicate s = break (not . predicate) s
 size :: String -> Size8
 size (String ba) = Size $ C.length ba
 
-length :: String -> Int
-length s@(String ba) = loop 0 0
+lengthSize :: String -> Size Word8
+lengthSize (String ba)
+    | C.null ba = Size 0
+    | otherwise = Vec.unsafeDewrap goVec goAddr ba
   where
-    !sz     = C.length ba
-    loop idx !i
-        | idx == sz = i
-        | otherwise =
-            let idx' = skipNext s idx
-             in loop idx' (i + 1)
+    goVec ma start = loop start (Size 0)
+      where
+        !end = start `offsetPlusE` Vec.lengthSize ba
+        loop !idx !i
+            | idx >= end = i
+            | otherwise  = loop (idx `offsetPlusE` d) (i + Size 1)
+          where d = skipNextHeaderValue (primBaIndex ma idx)
+
+    goAddr (Ptr ptr) start = return $ loop start (Size 0)
+      where
+        !end = start `offsetPlusE` Vec.lengthSize ba
+        loop !idx !i
+            | idx >= end = i
+            | otherwise  = loop (idx `offsetPlusE` d) (i + Size 1)
+          where d = skipNextHeaderValue (primAddrIndex ptr idx)
+
+length :: String -> Int
+length s = let (Size sz) = lengthSize s in sz
 
 replicate :: Int -> Char -> String
 replicate n c = runST (new nbBytes >>= fill)
@@ -667,11 +709,6 @@ replicate n c = runST (new nbBytes >>= fill)
         loop idx
             | idx == end = freeze ms
             | otherwise  = write ms idx c >>= loop
-
-{-
-sizeBytes :: String -> Int
-sizeBytes (String ba) = I# (sizeofByteArray# ba)
--}
 
 -- | Copy the String
 copy :: String -> String
@@ -849,15 +886,6 @@ reverse s@(String ba) = runST $ do
                     C.mutUnsafeWrite mba (d + 3) (Vec.unsafeIndex ba (si + 3))
                 _  -> return () -- impossible
             loop ms (sidx `offsetPlusE` nb) didx'
-
-{-
--- | Convert a Byte Array to a string and check UTF8 validity
-fromBytes :: Encoding -> UArray Word8 -> Maybe String
-fromBytes UTF8 bytes =
-    case validate bytes 0 (C.length bytes) of
-        (_, Nothing) -> Just $ fromBytesUnsafe bytes
-        (_, Just _)  -> Nothing
-        -}
 
 data Encoding
     = ASCII7
