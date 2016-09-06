@@ -2,6 +2,9 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 module Main where
 
+import qualified Prelude
+import GHC.ST
+
 import Foundation
 import Foundation.Collection
 import BenchUtil.Common
@@ -30,6 +33,7 @@ benchsString = bgroup "String"
     [ benchLength
     , benchTake
     , benchSplitAt
+    , benchBuildable
     -- , bgroup "SplitAt"
     ]
   where
@@ -70,6 +74,17 @@ benchsString = bgroup "String"
             , ("uni1-" <> show p,rdFoundationJap)
             , ("uni2-" <> show p,rdFoundationZh)
             ]) [ 10, 100, 800 ]
+
+    benchBuildable = bgroup "Buildable" $
+        fmap (\(n, dat) -> bench n $ toString (\es -> runST $ build 128 $ Prelude.mapM_ append es) dat)
+            [ ("ascii" , rdFoundationEn)
+            , ("mascii", rdFoundationHun)
+            , ("uni1"  , rdFoundationJap)
+            , ("uni2"  , rdFoundationZh)
+            ]
+
+    toString :: ([Char] -> String) -> [Char] -> Benchmarkable
+    toString = whnf
 
 --------------------------------------------------------------------------
 

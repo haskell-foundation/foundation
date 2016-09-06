@@ -17,9 +17,9 @@ import Foundation.Internal.Base
 import Foundation.Internal.Types
 import Foundation.Primitive.Monad
 import Foundation.Primitive.Types
-import Foundation.Array.Unboxed.Builder
 import Foundation.Number
 import qualified Foundation.Collection as C
+import           Foundation.Collection.Buildable
 import           Foundation.Array.Unboxed (UArray)
 import qualified Foundation.Array.Unboxed as Vec
 
@@ -61,7 +61,7 @@ class Encoding encoding where
                       -- ^ only used for type deduction
                   -> Char
                       -- ^ the unicode character to encode
-                  -> ArrayBuilder (Unit encoding) st ()
+                  -> Builder (UArray (Unit encoding)) st ()
 
 -- | helper to convert a given Array in a given encoding into an array
 -- with another encoding.

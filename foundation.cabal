@@ -72,6 +72,7 @@ Library
                      Foundation.String.UTF8Table
                      Foundation.String.ModifiedUTF8
                      Foundation.Tuple
+                     Foundation.Collection.Buildable
                      Foundation.Collection.List
                      Foundation.Collection.Element
                      Foundation.Collection.InnerFunctor
@@ -98,7 +99,6 @@ Library
                      Foundation.Primitive.FinalPtr
                      Foundation.Array.Common
                      Foundation.Array.Unboxed
-                     Foundation.Array.Unboxed.Builder
                      Foundation.Array.Unboxed.Mutable
                      Foundation.Array.Unboxed.ByteArray
                      Foundation.Array.Boxed

@@ -16,6 +16,7 @@ import           Foundation.Collection
 import           Foundation.VFS                (Path (..), filename, parent)
 import           Foundation.VFS.FilePath
 import qualified Prelude
+import           GHC.ST
 
 import Test.Data.Unicode
 import Test.Data.List
@@ -122,6 +123,15 @@ testPath genElement =
     ]
   where
     withElements f = forAll genElement f
+
+testBuildable :: (Eq a, IsList a, Show (Element a), Element a ~ Item a, Buildable a)
+              => Proxy a -> Gen (Element a) -> Gen (Small Int) -> [TestTree]
+testBuildable proxy genElement genChunkSize =
+    [ testProperty "build s . mapM_ append == id" $ withElementsAndChunkSize $ \(l, Small s) ->
+        runST (build s (Prelude.mapM_ append l)) `asProxyTypeOf` proxy == fromListP proxy l
+    ]
+  where
+    withElementsAndChunkSize = forAll ((,) <$> generateListOfElement genElement <*> genChunkSize)
 
 testBoxedZippable :: ( Eq (Element col) , Show (Item a), Show (Item b)
                      , BoxedZippable col, Zippable a, Zippable b
@@ -240,6 +250,18 @@ tests =
                     (Proxy :: Proxy (Array Int)) (Proxy :: Proxy (Array Char))
                     (Proxy :: Proxy (Array (Int, Char))) arbitrary arbitrary )
             ]
+        ]
+    , testGroup "Buildable"
+        [ testGroup "String"
+            (testBuildable (Proxy :: Proxy String) arbitrary arbitrary)
+        , testGroup "Array Int"
+            (testBuildable (Proxy :: Proxy (Array Int)) arbitrary arbitrary)
+        , testGroup "Array Char"
+            (testBuildable (Proxy :: Proxy (Array Char)) arbitrary arbitrary)
+        , testGroup "UArray Word8"
+            (testBuildable (Proxy :: Proxy (UArray Word8)) arbitrary arbitrary)
+        , testGroup "UArray Char"
+            (testBuildable (Proxy :: Proxy (UArray Char)) arbitrary arbitrary)
         ]
     , testGroup "Zippable"
         [ testGroup "String"
