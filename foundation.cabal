@@ -142,6 +142,7 @@ Test-Suite test-foundation
                      Test.Data.List
                      Test.Data.Unicode
                      Test.Foundation.Collection
+                     Test.Foundation.ChunkedUArray
                      Test.Foundation.Number
                      Test.Foundation.Encoding
                      Test.Foundation.Parser

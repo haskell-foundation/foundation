@@ -17,7 +17,9 @@ module Foundation.Array.Chunked.Unboxed
 import           Data.Typeable
 import           Foundation.Array.Boxed (Array)
 import qualified Foundation.Array.Boxed as A
+import           Foundation.Array.Common
 import           Foundation.Array.Unboxed (UArray, PrimType)
+import qualified Foundation.Array.Unboxed as U
 import qualified Foundation.Collection as C
 import           Foundation.Internal.Base
 import           Foundation.Internal.Types
@@ -26,7 +28,10 @@ import           GHC.ST
 
 
 data ChunkedUArray ty = ChunkedUArray (Array (UArray ty))
-                      deriving (Show, Eq, Ord, Typeable)
+                      deriving (Show, Ord, Typeable)
+
+instance PrimType ty => Eq (ChunkedUArray ty) where
+  (==) = equal
 
 instance Monoid (ChunkedUArray a) where
     mempty  = empty
@@ -44,38 +49,38 @@ instance PrimType ty => C.Collection (ChunkedUArray ty) where
     null = null
     length = length
 
---instance C.Sequential (ChunkedUArray ty) where
+instance PrimType ty => C.Sequential (ChunkedUArray ty) where
 --    take = take
---    drop = drop
---    splitAt = splitAt
---    revTake = revTake
---    revDrop = revDrop
---    revSplitAt = revSplitAt
---    splitOn = splitOn
---    break = break
---    intersperse = intersperse
---    span = span
---    reverse = reverse
---    filter = filter
---    unsnoc = unsnoc
---    uncons = uncons
---    snoc = snoc
---    cons = cons
---    find = find
---    sortBy = sortBy
---    singleton = fromList . (:[])
+--  drop = drop
+--  splitAt = splitAt
+--  revTake = revTake
+--  revDrop = revDrop
+--  revSplitAt = revSplitAt
+--  splitOn = splitOn
+--  break = break
+--  intersperse = intersperse
+--  span = span
+--  reverse = reverse
+--  filter = filter
+--  unsnoc = unsnoc
+--  uncons = uncons
+--  snoc = snoc
+--  cons = cons
+--  find = find
+--  sortBy = sortBy
+    singleton = fromList . (:[])
 
---instance C.IndexedCollection (ChunkedUArray ty) where
---    (!) l n
---        | n < 0 || n >= length l = Nothing
---        | otherwise              = Just $ index l n
---    findIndex predicate c = loop 0
---      where
---        !len = length c
---        loop i
---            | i == len  = Nothing
---            | otherwise =
---                if predicate (unsafeIndex c i) then Just i else Nothing
+instance PrimType ty => C.IndexedCollection (ChunkedUArray ty) where
+    (!) l n
+        | n < 0 || n >= length l = Nothing
+        | otherwise              = Just $ index l n
+    findIndex predicate c = loop 0
+      where
+        !len = length c
+        loop i
+            | i == len  = Nothing
+            | otherwise =
+                if predicate (unsafeIndex c i) then Just i else Nothing
 
 empty :: ChunkedUArray ty
 empty = ChunkedUArray (A.empty)
@@ -124,6 +129,19 @@ null (ChunkedUArray array) =
 length :: PrimType ty => ChunkedUArray ty -> Int
 length (ChunkedUArray array) = C.foldl' (\acc l -> acc + C.length l) 0 array
 
+equal :: PrimType ty => ChunkedUArray ty -> ChunkedUArray ty -> Bool
+equal (ChunkedUArray a1) (ChunkedUArray a2) =
+  let len1 = C.length a1
+      len2 = C.length a2
+      in len1 == len2 && checkChunks len1 len2
+  where
+    checkChunks :: Int -> Int -> Bool
+    checkChunks l1 l2 = go 0 0
+      where
+        go !x !y
+          | x == l1 && y == l2 = True
+          | otherwise = (a1 C.! l1 == a2 C.! l2) && go (x + 1) (y + 1)
+
 --drop = _
 --splitAt = _
 --revTake = _
@@ -142,8 +160,18 @@ length (ChunkedUArray array) = C.foldl' (\acc l -> acc + C.length l) 0 array
 --find = _
 --sortBy = _
 
---index :: ChunkedUArray ty -> Int -> ty
---index array n = _
---
---unsafeIndex :: ChunkedUArray ty -> Int -> ty
---unsafeIndex array n = _
+index :: PrimType ty => ChunkedUArray ty -> Int -> ty
+index a@(ChunkedUArray array) n
+    | n < 0 || n >= len = throw (OutOfBound OOB_Index n len)
+    | otherwise         = unsafeIndex a n
+  where len = C.length array
+{-# INLINE index #-}
+
+unsafeIndex :: PrimType ty => ChunkedUArray ty -> Int -> ty
+unsafeIndex (ChunkedUArray array) idx = go (A.unsafeIndex array 0) 0 idx
+  where
+    go u _ 0 = U.unsafeIndex u 0
+    go u !globalIndex !i = case i - (C.length u) of
+      i' | i >= 0 -> go (A.unsafeIndex array (globalIndex + 1)) (globalIndex + 1) i'
+      _           -> U.unsafeIndex u i
+{-# INLINE unsafeIndex #-}
