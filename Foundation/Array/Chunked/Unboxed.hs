@@ -124,23 +124,27 @@ null (ChunkedUArray array) =
       | otherwise  = C.null (array `A.unsafeIndex` idx) && allNulls (idx + 1) len
 
 -- | Returns the length of this `ChunkedUArray`, by summing each inner length.
--- Complexity: O(n*m) where `n` is the number of chunks and m the size of
--- each chunk.
+-- Complexity: O(n) where `n` is the number of chunks, as U.length u is O(1).
 length :: PrimType ty => ChunkedUArray ty -> Int
 length (ChunkedUArray array) = C.foldl' (\acc l -> acc + C.length l) 0 array
 
+-- | Equality between `ChunkedUArray`.
+-- This function is fiddly to write as is not enough to compare for
+-- equality the inner `UArray`(s), we need an element-by-element
+-- comparison.
 equal :: PrimType ty => ChunkedUArray ty -> ChunkedUArray ty -> Bool
-equal (ChunkedUArray a1) (ChunkedUArray a2) =
-  let len1 = C.length a1
-      len2 = C.length a2
-      in len1 == len2 && checkChunks len1 len2
+equal ca1 ca2 = (null ca1 && null ca2) || (len1 == len2 && deepEqual)
   where
-    checkChunks :: Int -> Int -> Bool
-    checkChunks l1 l2 = go 0 0
-      where
-        go !x !y
-          | x == l1 && y == l2 = True
-          | otherwise = (a1 C.! l1 == a2 C.! l2) && go (x + 1) (y + 1)
+    len1 = C.length ca1
+    len2 = C.length ca2
+
+    deepEqual :: Bool
+    deepEqual = go 0 0
+
+    go !x !y
+      | x == len1 && y == len2 = True
+      | otherwise =
+        (ca1 `unsafeIndex` x == ca2 `unsafeIndex` y) && go (x + 1) (y + 1)
 
 --drop = _
 --splitAt = _
@@ -161,9 +165,9 @@ equal (ChunkedUArray a1) (ChunkedUArray a2) =
 --sortBy = _
 
 index :: PrimType ty => ChunkedUArray ty -> Int -> ty
-index a@(ChunkedUArray array) n
+index array n
     | n < 0 || n >= len = throw (OutOfBound OOB_Index n len)
-    | otherwise         = unsafeIndex a n
+    | otherwise         = unsafeIndex array n
   where len = C.length array
 {-# INLINE index #-}
 
@@ -171,7 +175,10 @@ unsafeIndex :: PrimType ty => ChunkedUArray ty -> Int -> ty
 unsafeIndex (ChunkedUArray array) idx = go (A.unsafeIndex array 0) 0 idx
   where
     go u _ 0 = U.unsafeIndex u 0
-    go u !globalIndex !i = case i - (C.length u) of
-      i' | i >= 0 -> go (A.unsafeIndex array (globalIndex + 1)) (globalIndex + 1) i'
-      _           -> U.unsafeIndex u i
+    go u !globalIndex !i
+      -- Skip empty chunks.
+      | C.null u  = go (A.unsafeIndex array (globalIndex + 1)) (globalIndex + 1) i
+      | otherwise = case i - (C.length u) of
+        i' | i' >= 0 -> go (A.unsafeIndex array (globalIndex + 1)) (globalIndex + 1) i'
+        _            -> U.unsafeIndex u i
 {-# INLINE unsafeIndex #-}
