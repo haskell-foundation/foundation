@@ -133,7 +133,7 @@ length (ChunkedUArray array) = C.foldl' (\acc l -> acc + C.length l) 0 array
 -- equality the inner `UArray`(s), we need an element-by-element
 -- comparison.
 equal :: PrimType ty => ChunkedUArray ty -> ChunkedUArray ty -> Bool
-equal ca1 ca2 = (null ca1 && null ca2) || (len1 == len2 && deepEqual)
+equal ca1 ca2 = len1 == len2 && deepEqual
   where
     len1 = C.length ca1
     len2 = C.length ca2
@@ -174,7 +174,10 @@ index array n
 unsafeIndex :: PrimType ty => ChunkedUArray ty -> Int -> ty
 unsafeIndex (ChunkedUArray array) idx = go (A.unsafeIndex array 0) 0 idx
   where
-    go u _ 0 = U.unsafeIndex u 0
+    go u globalIndex 0 = case C.null u of
+      -- Skip empty chunks.
+      True  -> go (A.unsafeIndex array (globalIndex + 1)) (globalIndex + 1) 0
+      False -> U.unsafeIndex u 0
     go u !globalIndex !i
       -- Skip empty chunks.
       | C.null u  = go (A.unsafeIndex array (globalIndex + 1)) (globalIndex + 1) i
