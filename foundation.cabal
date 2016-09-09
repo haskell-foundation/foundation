@@ -48,6 +48,7 @@ Library
                      Foundation.Array
                      Foundation.Array.Internal
                      Foundation.Class.Bifunctor
+                     Foundation.Class.Storable
                      Foundation.Convertible
                      Foundation.String
                      Foundation.IO
@@ -146,6 +147,7 @@ Test-Suite test-foundation
                      Test.Foundation.Encoding
                      Test.Foundation.Parser
                      Test.Foundation.String
+                     Test.Foundation.Storable
   Build-Depends:     base >= 3 && < 5
                    , mtl
                    , QuickCheck
