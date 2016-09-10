@@ -17,6 +17,7 @@
 -- an API to rules them all, and in the darkness bind them.
 --
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ConstrainedClassMethods #-}
 module Foundation.Collection.Collection
     ( Collection(..)
     -- * NonEmpty Property
