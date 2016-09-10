@@ -140,10 +140,12 @@ Test-Suite test-foundation
   Other-modules:     Test.Utils.Foreign
                      Test.Data.List
                      Test.Data.Unicode
+                     Test.Foundation.Array
                      Test.Foundation.Collection
                      Test.Foundation.Number
                      Test.Foundation.Encoding
                      Test.Foundation.Parser
+                     Test.Foundation.String
   Build-Depends:     base >= 3 && < 5
                    , mtl
                    , QuickCheck
