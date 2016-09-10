@@ -26,7 +26,7 @@ import qualified Data.List
 import qualified Foundation.Array.Unboxed as UV
 
 -- | A set of methods for ordered colection
-class (IsList c, Item c ~ Element c, Monoid c) => Collection c where
+class (IsList c, Item c ~ Element c) => Collection c where
     -- | Check if a collection is empty
     null :: c -> Bool
     -- | Length of a collection (number of Element c)
