@@ -16,6 +16,7 @@
 --
 -- an API to rules them all, and in the darkness bind them.
 --
+{-# LANGUAGE FlexibleContexts #-}
 module Foundation.Collection.Collection
     ( Collection(..)
     -- * NonEmpty Property
@@ -34,7 +35,7 @@ import qualified Foundation.Array.Unboxed as UV
 --
 -- This can only be made, through the 'nonEmpty' smart contructor
 newtype NonEmpty a = NonEmpty { getNonEmpty :: a }
-    deriving (Eq)
+    deriving (Show,Eq)
 
 -- | Smart constructor to create a NonEmpty collection
 --
@@ -61,19 +62,31 @@ instance Collection c => IsList (NonEmpty c) where
 
 -- | A set of methods for ordered colection
 class (IsList c, Item c ~ Element c) => Collection c where
+    {-# MINIMAL null, length, minimum, maximum #-}
     -- | Check if a collection is empty
     null :: c -> Bool
     -- | Length of a collection (number of Element c)
     length :: c -> Int
+    -- | Get the maximum element of a collection
+    maximum :: Ord (Element c) => NonEmpty c -> Element c
+    -- | Get the minimum element of a collection
+    minimum :: Ord (Element c) => NonEmpty c -> Element c
 
 instance Collection [a] where
     null = Data.List.null
     length = Data.List.length
 
+    minimum = Data.List.minimum . getNonEmpty
+    maximum = Data.List.maximum . getNonEmpty
+
 instance UV.PrimType ty => Collection (UV.UArray ty) where
     null = UV.null
     length = UV.length
+    minimum = Data.List.minimum . toList . getNonEmpty
+    maximum = Data.List.maximum . toList . getNonEmpty
 
 instance Collection c => Collection (NonEmpty c) where
     null _ = False
     length = length . getNonEmpty
+    maximum = maximum . getNonEmpty
+    minimum = minimum . getNonEmpty

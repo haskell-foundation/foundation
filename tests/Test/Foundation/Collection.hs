@@ -12,7 +12,7 @@ module Test.Foundation.Collection
 import qualified Prelude
 
 import Test.Tasty
-import Test.Tasty.QuickCheck
+import Test.Tasty.QuickCheck hiding (getNonEmpty)
 
 import Foundation
 import Foundation.Collection
@@ -131,8 +131,26 @@ testCollection name proxy genElement = testGroup name
     , testOrdering proxy genElement
     , testIsList   proxy genElement
     , testMonoid   proxy genElement
+    , testCollectionOps proxy genElement
     , testSequentialOps proxy genElement
     ]
+
+testCollectionOps :: ( Collection a
+                     , Show a, Show (Element a)
+                     , Eq (Element a)
+                     , Ord a, Ord (Item a)
+                     )
+                  => Proxy a
+                  -> Gen (Element a)
+                  -> TestTree
+testCollectionOps proxy genElement = testGroup "Collection"
+    [ testProperty "length" $ withElements $ \l -> (length $ fromListP proxy l) === length l
+    , testProperty "minimum" $ withNonEmptyElements $ \els -> minimum (nonEmpty_ $ fromListP proxy $ getNonEmpty els) === minimum els
+    , testProperty "maximum" $ withNonEmptyElements $ \els -> maximum (nonEmpty_ $ fromListP proxy $ getNonEmpty els) === maximum els
+    ]
+  where
+    withElements f = forAll (generateListOfElement genElement) f
+    withNonEmptyElements f = forAll (generateNonEmptyListOfElement 80 genElement) f
 
 testSequentialOps :: ( Sequential a
                      , Show a, Show (Element a)
@@ -143,8 +161,7 @@ testSequentialOps :: ( Sequential a
                   -> Gen (Element a)
                   -> TestTree
 testSequentialOps proxy genElement = testGroup "Sequential"
-    [ testProperty "length" $ withElements $ \l -> (length $ fromListP proxy l) === length l
-    , testProperty "take" $ withElements2 $ \(l, n) -> toList (take n $ fromListP proxy l) === (take n) l
+    [ testProperty "take" $ withElements2 $ \(l, n) -> toList (take n $ fromListP proxy l) === (take n) l
     , testProperty "drop" $ withElements2 $ \(l, n) -> toList (drop n $ fromListP proxy l) === (drop n) l
     , testProperty "splitAt" $ withElements2 $ \(l, n) -> toList2 (splitAt n $ fromListP proxy l) === (splitAt n) l
     , testProperty "revTake" $ withElements2 $ \(l, n) -> toList (revTake n $ fromListP proxy l) === (revTake n) l

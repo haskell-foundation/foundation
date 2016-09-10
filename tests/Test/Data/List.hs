@@ -3,10 +3,12 @@
 module Test.Data.List
     ( generateListOfElement
     , generateListOfElementMaxN
+    , generateNonEmptyListOfElement
     , RandomList(..)
     ) where
 
 import Foundation
+import Foundation.Collection (nonEmpty_, NonEmpty)
 import Test.Tasty.QuickCheck
 import Control.Monad
 
@@ -19,6 +21,9 @@ generateListOfElement = generateListOfElementMaxN 100
 -- generator.
 generateListOfElementMaxN :: Int -> Gen e -> Gen [e]
 generateListOfElementMaxN n e = choose (0,n) >>= flip replicateM e
+
+generateNonEmptyListOfElement :: Int -> Gen e -> Gen (NonEmpty [e])
+generateNonEmptyListOfElement n e = nonEmpty_ <$> (choose (1,n) >>= flip replicateM e)
 
 data RandomList = RandomList [Int]
     deriving (Show,Eq)

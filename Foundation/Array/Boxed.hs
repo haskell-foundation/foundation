@@ -29,6 +29,7 @@ import           Foundation.Array.Common
 import qualified Foundation.Collection as C
 import qualified Foundation.Collection.Buildable as CB
 import qualified Prelude
+import qualified Data.List
 
 -- | Array of a
 data Array a = Array {-# UNPACK #-} !(Offset a)
@@ -70,6 +71,8 @@ instance C.InnerFunctor (Array ty)
 instance C.Collection (Array ty) where
     null = null
     length = length
+    minimum = Data.List.minimum . toList . C.getNonEmpty -- TODO
+    maximum = Data.List.maximum . toList . C.getNonEmpty -- TODO
 instance C.Sequential (Array ty) where
     take = take
     drop = drop
