@@ -114,6 +114,22 @@ class (IsList c, Item c ~ Element c, Monoid c, Collection c) => Sequential c whe
     -- | Create a collection with a single element
     singleton :: Element c -> c
 
+    -- | get the first element of a non-empty collection
+    head :: NonEmpty c -> Element c
+    head nel = maybe (error "head") fst $ uncons (getNonEmpty nel)
+
+    -- | get the last element of a non-empty collection
+    last :: NonEmpty c -> Element c
+    last nel = maybe (error "last") snd $ unsnoc (getNonEmpty nel)
+
+    -- | Extract the elements after the first element of a non-empty collection.
+    tail :: NonEmpty c -> c
+    tail nel = maybe (error "tail") snd $ uncons (getNonEmpty nel)
+
+    -- | Extract the elements before the last element of a non-empty collection.
+    init :: NonEmpty c -> c
+    init nel = maybe (error "init") fst $ unsnoc (getNonEmpty nel)
+
 -- Temporary utility functions
 mconcatCollection :: (Monoid (Item c), Sequential c) => c -> Element c
 mconcatCollection c = mconcat (toList c)
