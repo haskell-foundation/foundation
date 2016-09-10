@@ -17,8 +17,23 @@ Goals
 * provide better data-types: packed unicode string by default, arrays.
 * Better numerical classes that better represent mathematical things (No more all-in-one Num).
 
-How to use
-==========
+How to use with the normal Prelude
+==================================
+
+Add the `foundation` package in your cabal file, and it's recommended to import Foundation qualified if
+you're planning to use with the normal Prelude:
+
+For example:
+
+```haskell
+import qualified Foundation as F
+```
+
+It's also recommended if you're going to deal with packages using text, bytestring, vector.. to use
+the `foundation-edge` package.
+
+How to use fully without Prelude
+================================
 
 Disable the built-in prelude at the top of your file:
 
