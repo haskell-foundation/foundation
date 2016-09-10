@@ -18,12 +18,46 @@
 --
 module Foundation.Collection.Collection
     ( Collection(..)
+    -- * NonEmpty Property
+    , NonEmpty
+    , getNonEmpty
+    , nonEmpty
+    , nonEmpty_
     ) where
 
 import           Foundation.Internal.Base
 import           Foundation.Collection.Element
 import qualified Data.List
 import qualified Foundation.Array.Unboxed as UV
+
+-- | NonEmpty property for any Collection
+--
+-- This can only be made, through the 'nonEmpty' smart contructor
+newtype NonEmpty a = NonEmpty { getNonEmpty :: a }
+    deriving (Eq)
+
+-- | Smart constructor to create a NonEmpty collection
+--
+-- If the collection is empty, then Nothing is returned
+-- Otherwise, the collection is wrapped in the NonEmpty property
+nonEmpty :: Collection c => c -> Maybe (NonEmpty c)
+nonEmpty c
+    | null c    = Nothing
+    | otherwise = Just (NonEmpty c)
+
+-- | same as 'nonEmpty', but assume that the collection is non empty,
+-- and return an asynchronous error if it is.
+nonEmpty_ :: Collection c => c -> NonEmpty c
+nonEmpty_ c
+    | null c    = error "nonEmpty_: assumption failed: collection is empty. consider using nonEmpty and adding proper cases"
+    | otherwise = NonEmpty c
+
+type instance Element (NonEmpty a) = Element a
+
+instance Collection c => IsList (NonEmpty c) where
+    type Item (NonEmpty c) = Item c
+    toList   = toList . getNonEmpty
+    fromList = nonEmpty_ . fromList
 
 -- | A set of methods for ordered colection
 class (IsList c, Item c ~ Element c) => Collection c where
@@ -39,3 +73,7 @@ instance Collection [a] where
 instance UV.PrimType ty => Collection (UV.UArray ty) where
     null = UV.null
     length = UV.length
+
+instance Collection c => Collection (NonEmpty c) where
+    null _ = False
+    length = length . getNonEmpty
