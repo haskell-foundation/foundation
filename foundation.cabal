@@ -161,6 +161,8 @@ Test-Suite doctest
   Main-is:           DocTest.hs
   Build-Depends:     base >= 3 && < 5
                    , doctest >= 0.11
+  if impl(ghc < 7.6)
+    Buildable:       False
 
 Benchmark bench
   Main-Is:           Main.hs
