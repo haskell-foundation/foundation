@@ -18,7 +18,7 @@
 {-# LANGUAGE UnboxedTuples              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 module Foundation.String.ASCII
-    ( AsciiString(..)
+    ( AsciiString
     --, Buffer
     , create
     , replicate
@@ -27,8 +27,6 @@ module Foundation.String.ASCII
     , toBytes
     , copy
 
-    , validate
-    , ASCII7_Invalid(..)
     -- * Legacy utility
     , lines
     , words
@@ -36,55 +34,53 @@ module Foundation.String.ASCII
 
 import           Foundation.Array.Unboxed           (UArray)
 import qualified Foundation.Array.Unboxed           as Vec
-import           Foundation.Array.Unboxed.ByteArray (MutableByteArray)
 import qualified Foundation.Array.Unboxed.Mutable   as MVec
 import qualified Foundation.Collection              as C
 import           Foundation.Internal.Base
 import           Foundation.Internal.Types
 import           Foundation.Number
 import           Foundation.Primitive.Monad
-import           GHC.Prim
-import           GHC.Types
-import           GHC.Word
+import           Foundation.Foreign
+
+import GHC.Int
+import GHC.Types
+import GHC.Prim
 
  -- temporary
 import qualified Data.List
 import qualified Prelude
 import Foundation.Class.Bifunctor
 
-import           Foundation.String.ModifiedUTF8     (fromModified)
-import           GHC.CString                  (unpackCString#,
-                                               unpackCStringUtf8#)
-
-import qualified Foundation.String.Encoding.ASCII7     as Encoder
-import Foundation.String.Encoding.ASCII7 (ASCII7_Invalid)
+ccharToChar :: CChar -> Char
+ccharToChar (CChar (I8# i)) = C# (chr# i)
+charToCChar :: Char -> CChar
+charToCChar (C# i) = CChar (I8# (ord# i))
 
 -- | Opaque packed array of characters in the ASCII encoding
-newtype AsciiString = AsciiString (UArray Word8)
+newtype AsciiString = AsciiString { toBytes :: UArray CChar }
     deriving (Typeable, Monoid, Eq, Ord)
 
-toBytes :: AsciiString -> UArray Word8
-toBytes (AsciiString bs) = bs
-
-newtype MutableAsciiString st = MutableAsciiString (MutableByteArray st)
+newtype MutableAsciiString st = MutableAsciiString (MVec.MUArray CChar st)
     deriving (Typeable)
 
 instance Show AsciiString where
-    show = show . sToList
+    show = fmap ccharToChar . toList
 instance IsString AsciiString where
-    fromString = sFromList
+    fromString = fromList . fmap charToCChar
 instance IsList AsciiString where
-    type Item AsciiString = Char
+    type Item AsciiString = CChar
     fromList = sFromList
     toList = sToList
 
-type instance C.Element AsciiString = Char
+type instance C.Element AsciiString = CChar
 
 instance C.InnerFunctor AsciiString where
-    imap = charMap
+    imap = ccharMap
 instance C.Collection AsciiString where
     null = null
     length = length
+    minimum = Data.List.minimum . toList . C.getNonEmpty -- TODO faster implementation
+    maximum = Data.List.maximum . toList . C.getNonEmpty -- TODO faster implementation
 instance C.Sequential AsciiString where
     take = take
     drop = drop
@@ -111,26 +107,10 @@ instance C.Zippable AsciiString where
   -- TODO Use a string builder once available
   zipWith f a b = sFromList (C.zipWith f a b)
 
--- | Validate a bytearray for ASCIIness
---
--- On success Nothing is returned
--- On Failure the position along with the failure reason
-validate :: AsciiString -> Maybe ASCII7_Invalid
-validate = Encoder.validate . toBytes
-{-# INLINE validate #-}
-
-next :: AsciiString -> Offset Char -> (# Char, Offset Char #)
-next (AsciiString ba) (Offset n) = (# toChar h, Offset (n + 1) #)
+next :: AsciiString -> Offset CChar -> (# CChar, Offset CChar #)
+next (AsciiString ba) (Offset n) = (# h, Offset (n + 1) #)
   where
     !h = Vec.unsafeIndex ba n
-
-toChar :: Word8 -> Char
-toChar (W8# w) = C# (chr# (word2Int# w))
-{-# INLINE toChar #-}
-
-toWord8 :: Char -> Word8
-toWord8 (C# i) = W8# (int2Word# (ord# i))
-{-# INLINE toWord8 #-}
 
 freeze :: PrimMonad prim => MutableAsciiString (PrimState prim) -> prim AsciiString
 freeze (MutableAsciiString mba) = AsciiString `fmap` C.unsafeFreeze mba
@@ -139,9 +119,10 @@ freeze (MutableAsciiString mba) = AsciiString `fmap` C.unsafeFreeze mba
 ------------------------------------------------------------------------
 -- real functions
 
-sToList :: AsciiString -> [Char]
+sToList :: AsciiString -> [CChar]
 sToList s = loop azero
   where
+    nbBytes :: Size CChar
     !nbBytes = size s
     !end = azero `offsetPlusE` nbBytes
     loop idx
@@ -149,18 +130,8 @@ sToList s = loop azero
         | otherwise  =
             let (# c , idx' #) = next s idx in c : loop idx'
 
-
-{-# RULES
-"AsciiString sFromList" forall s .
-  sFromList (unpackCString# s) = AsciiString $ fromModified s
-  #-}
-{-# RULES
-"AsciiString sFromList" forall s .
-  sFromList (unpackCStringUtf8# s) = AsciiString $ fromModified s
-  #-}
-
-sFromList :: [Char] -> AsciiString
-sFromList = AsciiString . fromList . fmap toWord8
+sFromList :: [CChar] -> AsciiString
+sFromList = AsciiString . fromList
 {-# INLINE [0] sFromList #-}
 
 null :: AsciiString -> Bool
@@ -206,42 +177,35 @@ revSplitAt n v = (drop idx v, take idx v)
 -- > splitOn (== ':') "abc::def"   == ["abc","","def"]
 -- > splitOn (== ':') "::abc::def" == ["","","abc","","def"]
 --
-splitOn :: (Char -> Bool) -> AsciiString -> [AsciiString]
-splitOn predicate = fmap AsciiString . Vec.splitOn f . toBytes
-  where
-    f :: Word8 -> Bool
-    f = predicate . toChar
+splitOn :: (CChar -> Bool) -> AsciiString -> [AsciiString]
+splitOn predicate = fmap AsciiString . Vec.splitOn predicate . toBytes
 
-break :: (Char -> Bool) -> AsciiString -> (AsciiString, AsciiString)
-break predicate = bimap AsciiString AsciiString . Vec.break (predicate . toChar) . toBytes
+break :: (CChar -> Bool) -> AsciiString -> (AsciiString, AsciiString)
+break predicate = bimap AsciiString AsciiString . Vec.break predicate . toBytes
 {-# INLINE[0] break #-}
 
 {-# RULES "break (== 'c')" [3] forall c . break (== c) = breakElem c #-}
 
-breakElem :: Char -> AsciiString -> (AsciiString, AsciiString)
+breakElem :: CChar -> AsciiString -> (AsciiString, AsciiString)
 breakElem !el (AsciiString ba) =
-    let (# v1,v2 #) = Vec.splitElem (w8 el) ba in (AsciiString v1, AsciiString v2)
-  where
-    w8 (C# ch) = W8# (int2Word# (ord# ch))
+    let (# v1,v2 #) = Vec.splitElem el ba in (AsciiString v1, AsciiString v2)
 {-# INLINE breakElem #-}
 
-intersperse :: Char -> AsciiString -> AsciiString
-intersperse sep = AsciiString . Vec.intersperse (toWord8 sep) . toBytes
+intersperse :: CChar -> AsciiString -> AsciiString
+intersperse sep = AsciiString . Vec.intersperse sep . toBytes
 
-span :: (Char -> Bool) -> AsciiString -> (AsciiString, AsciiString)
+span :: (CChar -> Bool) -> AsciiString -> (AsciiString, AsciiString)
 span predicate = break (not . predicate)
 
 -- | size in bytes
-size :: AsciiString -> Size Char
+size :: AsciiString -> Size CChar
 size = Size . C.length . toBytes
 
 length :: AsciiString -> Int
 length s = let (Size l) = size s in l
 
-replicate :: Int -> Char -> AsciiString
-replicate n c = AsciiString $ Vec.create n (const w)
-  where
-    !w = toWord8 c
+replicate :: Int -> CChar -> AsciiString
+replicate n c = AsciiString $ Vec.create n (const c)
 
 -- | Copy the AsciiString
 copy :: AsciiString -> AsciiString
@@ -249,7 +213,7 @@ copy (AsciiString s) = AsciiString (Vec.copy s)
 
 -- | Allocate a MutableAsciiString of a specific size in bytes.
 new :: PrimMonad prim
-    => Size8 -- ^ in number of bytes, not of elements.
+    => Size CChar -- ^ in number of bytes, not of elements.
     -> prim (MutableAsciiString (PrimState prim))
 new n = MutableAsciiString `fmap` MVec.new n
 
@@ -261,30 +225,28 @@ create sz f = do
         then freeze ms
         else C.take filled `fmap` freeze ms
 
-charMap :: (Char -> Char) -> AsciiString -> AsciiString
-charMap f = AsciiString . Vec.map (toWord8 . f . toChar) . toBytes
+ccharMap :: (CChar -> CChar) -> AsciiString -> AsciiString
+ccharMap f = AsciiString . Vec.map f . toBytes
 
-snoc :: AsciiString -> Char -> AsciiString
-snoc (AsciiString ba) = AsciiString . Vec.snoc ba . toWord8
+snoc :: AsciiString -> CChar -> AsciiString
+snoc (AsciiString ba) = AsciiString . Vec.snoc ba
 
-cons :: Char -> AsciiString -> AsciiString
-cons c = AsciiString . Vec.cons (toWord8 c) . toBytes
+cons :: CChar -> AsciiString -> AsciiString
+cons c = AsciiString . Vec.cons c . toBytes
 
-unsnoc :: AsciiString -> Maybe (AsciiString, Char)
-unsnoc str = bimap AsciiString toChar <$> Vec.unsnoc (toBytes str)
+unsnoc :: AsciiString -> Maybe (AsciiString, CChar)
+unsnoc str = first AsciiString <$> Vec.unsnoc (toBytes str)
 
-uncons :: AsciiString -> Maybe (Char, AsciiString)
-uncons str = bimap toChar AsciiString <$> Vec.uncons (toBytes str)
+uncons :: AsciiString -> Maybe (CChar, AsciiString)
+uncons str = second AsciiString <$> Vec.uncons (toBytes str)
 
-find :: (Char -> Bool) -> AsciiString -> Maybe Char
-find predicate (AsciiString ba) = toChar <$> Vec.find (predicate . toChar) ba
+find :: (CChar -> Bool) -> AsciiString -> Maybe CChar
+find predicate = Vec.find predicate . toBytes
 
-sortBy :: (Char -> Char -> Ordering) -> AsciiString -> AsciiString
-sortBy sortF = AsciiString . Vec.sortBy f . toBytes
-  where
-    f a b = sortF (toChar a) (toChar b)
+sortBy :: (CChar -> CChar -> Ordering) -> AsciiString -> AsciiString
+sortBy sortF = AsciiString . Vec.sortBy sortF . toBytes
 
-filter :: (Char -> Bool) -> AsciiString -> AsciiString
+filter :: (CChar -> Bool) -> AsciiString -> AsciiString
 filter p s = fromList $ Data.List.filter p $ toList s
 
 reverse :: AsciiString -> AsciiString
@@ -295,11 +257,11 @@ reverse (AsciiString ba) = AsciiString $ Vec.reverse ba
 -- If the input contains invalid sequences, it will trigger runtime async errors when processing data.
 --
 -- In doubt, use 'fromBytes'
-fromBytesUnsafe :: UArray Word8 -> AsciiString
+fromBytesUnsafe :: UArray CChar -> AsciiString
 fromBytesUnsafe = AsciiString
 
 lines :: AsciiString -> [AsciiString]
-lines = fmap fromList . Prelude.lines . toList
+lines = fmap fromString . Prelude.lines . show
 
 words :: AsciiString -> [AsciiString]
-words = fmap fromList . Prelude.words . toList
+words = fmap fromString . Prelude.words . show

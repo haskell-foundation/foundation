@@ -9,8 +9,9 @@ module Test.Data.ASCII
     ) where
 
 import Foundation
+import Foundation.Foreign
 import Test.Tasty.QuickCheck
 
 -- | a better generator for unicode Character
-genAsciiChar :: Gen Char
-genAsciiChar = toEnum <$> choose (1, 128)
+genAsciiChar :: Gen CChar
+genAsciiChar = toEnum <$> choose (1, 127)
