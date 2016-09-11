@@ -12,7 +12,7 @@ module Test.Foundation.Collection
 import qualified Prelude
 
 import Test.Tasty
-import Test.Tasty.QuickCheck
+import Test.Tasty.QuickCheck hiding (getNonEmpty)
 
 import Foundation
 import Foundation.Collection
@@ -131,8 +131,29 @@ testCollection name proxy genElement = testGroup name
     , testOrdering proxy genElement
     , testIsList   proxy genElement
     , testMonoid   proxy genElement
+    , testCollectionOps proxy genElement
     , testSequentialOps proxy genElement
     ]
+
+fromListNonEmptyP :: Collection a => Proxy a -> NonEmpty [Element a] -> NonEmpty a
+fromListNonEmptyP proxy = nonEmpty_ . fromListP proxy . getNonEmpty
+
+testCollectionOps :: ( Collection a
+                     , Show a, Show (Element a)
+                     , Eq (Element a)
+                     , Ord a, Ord (Item a)
+                     )
+                  => Proxy a
+                  -> Gen (Element a)
+                  -> TestTree
+testCollectionOps proxy genElement = testGroup "Collection"
+    [ testProperty "length" $ withElements $ \l -> (length $ fromListP proxy l) === length l
+    , testProperty "minimum" $ withNonEmptyElements $ \els -> minimum (fromListNonEmptyP proxy els) === minimum els
+    , testProperty "maximum" $ withNonEmptyElements $ \els -> maximum (fromListNonEmptyP proxy els) === maximum els
+    ]
+  where
+    withElements f = forAll (generateListOfElement genElement) f
+    withNonEmptyElements f = forAll (generateNonEmptyListOfElement 80 genElement) f
 
 testSequentialOps :: ( Sequential a
                      , Show a, Show (Element a)
@@ -143,8 +164,7 @@ testSequentialOps :: ( Sequential a
                   -> Gen (Element a)
                   -> TestTree
 testSequentialOps proxy genElement = testGroup "Sequential"
-    [ testProperty "length" $ withElements $ \l -> (length $ fromListP proxy l) === length l
-    , testProperty "take" $ withElements2 $ \(l, n) -> toList (take n $ fromListP proxy l) === (take n) l
+    [ testProperty "take" $ withElements2 $ \(l, n) -> toList (take n $ fromListP proxy l) === (take n) l
     , testProperty "drop" $ withElements2 $ \(l, n) -> toList (drop n $ fromListP proxy l) === (drop n) l
     , testProperty "splitAt" $ withElements2 $ \(l, n) -> toList2 (splitAt n $ fromListP proxy l) === (splitAt n) l
     , testProperty "revTake" $ withElements2 $ \(l, n) -> toList (revTake n $ fromListP proxy l) === (revTake n) l
@@ -156,6 +176,10 @@ testSequentialOps proxy genElement = testGroup "Sequential"
     , testProperty "cons" $ withElements2E $ \(l, c) -> toList (cons c (fromListP proxy l)) === (c : l)
     , testProperty "unsnoc" $ withElements $ \l -> fmap toListFirst (unsnoc (fromListP proxy l)) === unsnoc l
     , testProperty "uncons" $ withElements $ \l -> fmap toListSecond (uncons (fromListP proxy l)) === uncons l
+    , testProperty "head" $ withNonEmptyElements $ \els -> head (fromListNonEmptyP proxy els) === head els
+    , testProperty "last" $ withNonEmptyElements $ \els -> last (fromListNonEmptyP proxy els) === last els
+    , testProperty "tail" $ withNonEmptyElements $ \els -> toList (tail $ fromListNonEmptyP proxy els) === tail els
+    , testProperty "init" $ withNonEmptyElements $ \els -> toList (init $ fromListNonEmptyP proxy els) === init els
     , testProperty "splitOn" $ withElements2E $ \(l, ch) ->
          fmap toList (splitOn (== ch) (fromListP proxy l)) === splitOn (== ch) l
     , testProperty "intersperse" $ withElements2E $ \(l, c) ->
@@ -190,3 +214,4 @@ testSequentialOps proxy genElement = testGroup "Sequential"
     withElements2 f = forAll ((,) <$> generateListOfElement genElement <*> arbitrary) f
     withElements3 f = forAll ((,,) <$> generateListOfElement genElement <*> arbitrary <*> arbitrary) f
     withElements2E f = forAll ((,) <$> generateListOfElement genElement <*> genElement) f
+    withNonEmptyElements f = forAll (generateNonEmptyListOfElement 80 genElement) f

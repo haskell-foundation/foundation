@@ -97,6 +97,8 @@ instance C.InnerFunctor String where
 instance C.Collection String where
     null = null
     length = length
+    minimum = Data.List.minimum . toList . C.getNonEmpty -- TODO faster implementation
+    maximum = Data.List.maximum . toList . C.getNonEmpty -- TODO faster implementation
 instance C.Sequential String where
     take = take
     drop = drop

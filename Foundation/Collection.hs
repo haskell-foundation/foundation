@@ -16,6 +16,10 @@ module Foundation.Collection
     , InnerFunctor(..)
     , Foldable(..)
     , Collection(..)
+    , NonEmpty
+    , getNonEmpty
+    , nonEmpty
+    , nonEmpty_
     , Sequential(..)
     , MutableCollection(..)
     , IndexedCollection(..)

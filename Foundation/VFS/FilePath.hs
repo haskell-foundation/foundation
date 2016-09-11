@@ -41,7 +41,6 @@ import Foundation.String (Encoding(..), ValidationFailure, toBytes, fromBytes, S
 import Foundation.VFS.Path(Path(..))
 
 import qualified Data.List
-import Foundation.Partial
 -- ------------------------------------------------------------------------- --
 --                           System related helpers                          --
 -- ------------------------------------------------------------------------- --
@@ -251,6 +250,6 @@ unsafeFileName = FileName
 
 extension :: FileName -> Maybe FileName
 extension (FileName fn) = case splitOn (\c -> c == 0x2E) fn of
-                            [] -> Nothing
+                            []  -> Nothing
                             [_] -> Nothing
-                            xs -> Just $ FileName $ fromPartial $ head $ reverse xs
+                            xs  -> Just $ FileName $ last $ nonEmpty_ xs
