@@ -19,6 +19,7 @@ module Foundation.Array.Boxed
     , thaw
     , new
     , unsafeFreeze
+    , freeze
     , unsafeWrite
     , unsafeIndex
     ) where

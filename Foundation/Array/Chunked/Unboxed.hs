@@ -10,6 +10,9 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE UnboxedTuples #-}
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Foundation.Array.Chunked.Unboxed
     ( ChunkedUArray
     ) where
@@ -24,7 +27,10 @@ import qualified Foundation.Collection as C
 import           Foundation.Internal.Base
 import           Foundation.Internal.Types
 import           Foundation.Number
+import           Foundation.Primitive.Monad
+import           Foundation.Primitive.Types
 import           GHC.ST
+import qualified Prelude as P
 
 
 data ChunkedUArray ty = ChunkedUArray (Array (UArray ty))
@@ -145,6 +151,44 @@ equal ca1 ca2 = len1 == len2 && deepEqual
       | x == len1 && y == len2 = True
       | otherwise =
         (ca1 `unsafeIndex` x == ca2 `unsafeIndex` y) && go (x + 1) (y + 1)
+
+-- | Take the first n elements from this `ChunkedUArray`.
+-- TODO: Perform compaction? Compacting the underlying chunks will have
+-- the snag of copying data, but the pro of improving cache-friendliness
+-- and reduce data scattering.
+take :: PrimType ty => Int -> ChunkedUArray ty -> ChunkedUArray ty
+take nbElems v@(ChunkedUArray inner)
+    | nbElems <= 0 = empty
+    | C.null v     = empty
+    | nbElems == C.length v = v
+    | otherwise =
+      let newSize = Size 5 -- TODO: newSize is wrong
+      in ChunkedUArray $ runST (A.new newSize >>= iter inner nbElems)
+  where
+    iter :: (PrimType ty, PrimMonad prim)
+         => Array (UArray ty)
+         -> Int
+         -> A.MArray (UArray ty) (PrimState prim)
+         -> prim (Array (UArray ty))
+    iter inner0 elems finalVector = loop 0 elems
+      where
+        loop !currentIndex remainingElems
+          | remainingElems <= 0 = A.unsafeFreeze finalVector
+          | otherwise =
+            let chunk = inner0 `A.unsafeIndex` currentIndex -- TODO: skip empty chunks
+                chunkLen = C.length chunk
+                slack    = chunkLen P.- remainingElems
+            in case chunkLen <= remainingElems of
+              True -> do
+                A.unsafeWrite finalVector currentIndex chunk
+                loop (currentIndex + 1) (remainingElems - chunkLen)
+              False -> do
+                nc <- do
+                  newChunk <- U.new (Size slack)
+                  U.unsafeCopyAtRO newChunk (Offset 0) chunk (Offset 0) (Size slack)
+                  U.unsafeFreeze newChunk
+                A.unsafeWrite finalVector (currentIndex + 1) nc
+                A.freeze finalVector
 
 --drop = _
 --splitAt = _
