@@ -79,6 +79,7 @@ instance C.Foldable Bitmap where
 instance C.Collection Bitmap where
     null = null
     length = length
+    elem e = Data.List.elem e . toList
     minimum = Data.List.minimum . toList . C.getNonEmpty -- TODO can shortcircuit all this massively
     maximum = Data.List.maximum . toList . C.getNonEmpty -- TODO DITTO
 instance C.Sequential Bitmap where
