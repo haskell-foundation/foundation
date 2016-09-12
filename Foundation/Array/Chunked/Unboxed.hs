@@ -56,24 +56,24 @@ instance PrimType ty => C.Collection (ChunkedUArray ty) where
     length = length
 
 instance PrimType ty => C.Sequential (ChunkedUArray ty) where
---    take = take
---  drop = drop
---  splitAt = splitAt
---  revTake = revTake
---  revDrop = revDrop
---  revSplitAt = revSplitAt
---  splitOn = splitOn
---  break = break
---  intersperse = intersperse
---  span = span
---  reverse = reverse
---  filter = filter
---  unsnoc = unsnoc
---  uncons = uncons
---  snoc = snoc
---  cons = cons
---  find = find
---  sortBy = sortBy
+    take = take
+    drop = drop
+    splitAt = splitAt
+    revTake = revTake
+    revDrop = revDrop
+    revSplitAt = revSplitAt
+    splitOn = splitOn
+    break = break
+    intersperse = intersperse
+    span = span
+    reverse = reverse
+    filter = filter
+    unsnoc = unsnoc
+    uncons = uncons
+    snoc = snoc
+    cons = cons
+    find = find
+    sortBy = sortBy
     singleton = fromList . (:[])
 
 instance PrimType ty => C.IndexedCollection (ChunkedUArray ty) where
@@ -162,9 +162,18 @@ take nbElems v@(ChunkedUArray inner)
     | C.null v     = empty
     | nbElems == C.length v = v
     | otherwise =
-      let newSize = Size 5 -- TODO: newSize is wrong
+      let newSize = Size requiredChunks
       in ChunkedUArray $ runST (A.new newSize >>= iter inner nbElems)
   where
+    -- TODO: How can we avoid this first pass?
+    requiredChunks = loop 0 0 nbElems
+      where
+        loop !acc !idx !remaining
+          | remaining <= 0 = acc
+          | otherwise =
+            let vec = inner `A.unsafeIndex` idx
+                l = U.length vec
+            in loop (acc + l) (idx + 1) (remaining - l)
     iter :: (PrimType ty, PrimMonad prim)
          => Array (UArray ty)
          -> Int
@@ -172,41 +181,43 @@ take nbElems v@(ChunkedUArray inner)
          -> prim (Array (UArray ty))
     iter inner0 elems finalVector = loop 0 elems
       where
-        loop !currentIndex remainingElems
+        loop !currentIndex !remainingElems
           | remainingElems <= 0 = A.unsafeFreeze finalVector
           | otherwise =
             let chunk = inner0 `A.unsafeIndex` currentIndex -- TODO: skip empty chunks
                 chunkLen = C.length chunk
                 slack    = chunkLen P.- remainingElems
-            in case chunkLen <= remainingElems of
-              True -> do
-                A.unsafeWrite finalVector currentIndex chunk
-                loop (currentIndex + 1) (remainingElems - chunkLen)
-              False -> do
-                nc <- do
-                  newChunk <- U.new (Size slack)
-                  U.unsafeCopyAtRO newChunk (Offset 0) chunk (Offset 0) (Size slack)
-                  U.unsafeFreeze newChunk
-                A.unsafeWrite finalVector (currentIndex + 1) nc
-                A.freeze finalVector
+            in case C.null chunk of
+              True -> loop (currentIndex + 1) remainingElems
+              False -> case chunkLen <= remainingElems of
+                True -> do
+                  A.unsafeWrite finalVector currentIndex chunk
+                  loop (currentIndex + 1) (remainingElems - chunkLen)
+                False -> do
+                  nc <- do
+                    newChunk <- U.new (Size slack)
+                    U.unsafeCopyAtRO newChunk (Offset 0) chunk (Offset 0) (Size slack)
+                    U.unsafeFreeze newChunk
+                  A.unsafeWrite finalVector (currentIndex + 1) nc
+                  A.freeze finalVector
 
---drop = _
---splitAt = _
---revTake = _
---revDrop = _
---revSplitAt = _
---splitOn = _
---break = _
---intersperse = _
---span = _
---reverse = _
---filter = _
---unsnoc = _
---uncons = _
---snoc = _
---cons = _
---find = _
---sortBy = _
+drop = error "todo"
+splitAt = error "todo"
+revTake = error "todo"
+revDrop = error "todo"
+revSplitAt = error "Todo"
+splitOn = error "todo"
+break = error "todo"
+intersperse = error "todo"
+span = error "todo"
+reverse = error "todo"
+filter = error "todo"
+unsnoc = error "todo"
+uncons = error "todo"
+snoc = error "Todo"
+cons = error "Todo"
+find = error "Todo"
+sortBy = error "Todo"
 
 index :: PrimType ty => ChunkedUArray ty -> Int -> ty
 index array n
