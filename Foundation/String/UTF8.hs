@@ -97,7 +97,7 @@ instance C.InnerFunctor String where
 instance C.Collection String where
     null = null
     length = length
-    elem e = Data.List.elem e . toList
+    elem = elem
     minimum = Data.List.minimum . toList . C.getNonEmpty -- TODO faster implementation
     maximum = Data.List.maximum . toList . C.getNonEmpty -- TODO faster implementation
 instance C.Sequential String where
@@ -702,6 +702,27 @@ breakElem !el s@(String ba) =
                 let (c, idx') = nextI idx
                 case el == c of
                     True  -> return $ splitIndex idx s
+                    False -> loop idx'
+
+elem :: Char -> String -> Bool
+elem !el s@(String ba) =
+    case asUTF8Char el of
+        UTF8_1 w -> Vec.elem w ba
+        _        -> runST $ Vec.unsafeIndexer ba go
+  where
+    sz = size s
+    end = azero `offsetPlusE` sz
+
+    go :: (Offset Word8 -> Word8) -> ST st Bool
+    go getIdx = loop (Offset 0)
+      where
+        !nextI = nextWithIndexer getIdx
+        loop !idx
+            | idx == end = return False
+            | otherwise  = do
+                let (c, idx') = nextI idx
+                case el == c of
+                    True  -> return True
                     False -> loop idx'
 
 intersperse :: Char -> String -> String

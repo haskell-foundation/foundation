@@ -96,7 +96,7 @@ instance Collection [a] where
 instance UV.PrimType ty => Collection (UV.UArray ty) where
     null = UV.null
     length = UV.length
-    elem e = Data.List.elem e . toList
+    elem = UV.elem
     minimum = Data.List.minimum . toList . getNonEmpty
     maximum = Data.List.maximum . toList . getNonEmpty
 
