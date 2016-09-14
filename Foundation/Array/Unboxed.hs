@@ -531,25 +531,25 @@ null (UVecAddr _ l _)  = l == Size 0
 take :: PrimType ty => Int -> UArray ty -> UArray ty
 take nbElems v
     | nbElems <= 0 = empty
-    | n == vlen    = v
+    | n >= vlen    = v
     | otherwise    =
         case v of
             UVecBA start _ pinst ba -> UVecBA start n pinst ba
             UVecAddr start _ fptr   -> UVecAddr start n fptr
   where
-    n = min (Size nbElems) vlen
+    n    = Size nbElems
     vlen = lengthSize v
 
 drop :: PrimType ty => Int -> UArray ty -> UArray ty
 drop nbElems v
     | nbElems <= 0 = v
-    | n == vlen    = empty
+    | n >= vlen    = empty
     | otherwise    =
         case v of
             UVecBA start len pinst ba -> UVecBA (start `offsetPlusE` n) (len - n) pinst ba
             UVecAddr start len fptr   -> UVecAddr (start `offsetPlusE` n) (len - n) fptr
   where
-    n = min (Size nbElems) vlen
+    n    = Size nbElems
     vlen = lengthSize v
 
 splitAt :: PrimType ty => Int -> UArray ty -> (UArray ty, UArray ty)
