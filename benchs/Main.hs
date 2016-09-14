@@ -11,22 +11,11 @@ import BenchUtil.Common
 import BenchUtil.RefData
 
 #ifdef BENCH_ALL
+import qualified Data.ByteString as ByteString
 import qualified Data.Text as Text
-type TextText = Text.Text
-
-textPack = Text.pack
-textLength = Text.length
-textSplitAt = Text.splitAt
-textTake    = Text.take
-textAny     = Text.any
 #else
-data TextText = Text
-
-textPack _ = Text
-textLength = undefined
-textSplitAt _ _ = (undefined, undefined)
-textTake    = undefined
-textAny     = undefined
+import qualified Fake.ByteString as ByteString
+import qualified Fake.Text as Text
 #endif
 
 --------------------------------------------------------------------------
@@ -37,10 +26,12 @@ benchsString = bgroup "String"
     , benchTake
     , benchSplitAt
     , benchBuildable
+    , benchReverse
+    , benchFilter
     ]
   where
     diffTextString :: (String -> a)
-                   -> (TextText -> b)
+                   -> (Text.Text -> b)
                    -> [Char]
                    -> [Benchmark]
     diffTextString foundationBench textBench dat =
@@ -51,54 +42,96 @@ benchsString = bgroup "String"
         ]
       where
         s = fromList dat
-        t = textPack dat
+        t = Text.pack dat
+
+    allDat = [ ("ascii", rdFoundationEn)
+             , ("mascii", rdFoundationHun)
+             , ("uni1" ,rdFoundationJap)
+             , ("uni2" ,rdFoundationZh)
+             ]
+    allDatSuffix s = fmap (first (\x -> x <> "-" <> s)) allDat
 
     benchLength = bgroup "Length" $
-        fmap (\(n, dat) -> bgroup n $ diffTextString length textLength dat)
-            [ ("ascii", rdFoundationEn)
-            , ("mascii", rdFoundationHun)
-            , ("uni1" ,rdFoundationJap)
-            , ("uni2" ,rdFoundationZh)
-            ]
+        fmap (\(n, dat) -> bgroup n $ diffTextString length Text.length dat)
+            allDat
     benchElem = bgroup "Elem" $
-        fmap (\(n, dat) -> bgroup n $ diffTextString (elem '.') (textAny (== '.')) dat)
-            [ ("ascii" , rdFoundationEn)
-            , ("mascii", rdFoundationHun)
-            , ("uni1"  , rdFoundationJap)
-            , ("uni2"  , rdFoundationZh)
-            ]
-    benchTake = bgroup "Take" $
-        mconcat $ fmap (\p ->
-        fmap (\(n, dat) -> bgroup n $ diffTextString (take p) (textTake p) dat)
-            [ ("ascii-" <> show p, rdFoundationEn)
-            , ("mascii-" <> show p, rdFoundationHun)
-            , ("uni1-" <> show p,rdFoundationJap)
-            , ("uni2-" <> show p,rdFoundationZh)
-            ]) [ 10, 100, 800 ]
-    benchSplitAt = bgroup "SplitAt" $
-        mconcat $ fmap (\p ->
-        fmap (\(n, dat) -> bgroup n $ diffTextString (fst . splitAt p) (fst . textSplitAt p) dat)
-            [ ("ascii-" <> show p, rdFoundationEn)
-            , ("mascii-" <> show p, rdFoundationHun)
-            , ("uni1-" <> show p,rdFoundationJap)
-            , ("uni2-" <> show p,rdFoundationZh)
-            ]) [ 10, 100, 800 ]
+        fmap (\(n, dat) -> bgroup n $ diffTextString (elem '.') (Text.any (== '.')) dat)
+            allDat
+    benchTake = bgroup "Take" $ mconcat $ fmap (\p ->
+        fmap (\(n, dat) -> bgroup n $ diffTextString (take p) (Text.take p) dat)
+                $ allDatSuffix (show p)
+            ) [ 10, 100, 800 ]
+    benchSplitAt = bgroup "SplitAt" $ mconcat $ fmap (\p ->
+        fmap (\(n, dat) -> bgroup n $ diffTextString (fst . splitAt p) (fst . Text.splitAt p) dat)
+                $ allDatSuffix (show p)
+            ) [ 10, 100, 800 ]
 
     benchBuildable = bgroup "Buildable" $
         fmap (\(n, dat) -> bench n $ toString (\es -> runST $ build 128 $ Prelude.mapM_ append es) dat)
-            [ ("ascii" , rdFoundationEn)
-            , ("mascii", rdFoundationHun)
-            , ("uni1"  , rdFoundationJap)
-            , ("uni2"  , rdFoundationZh)
-            ]
+            allDat
+
+    benchReverse = bgroup "Reverse" $
+        fmap (\(n, dat) -> bgroup n $ diffTextString reverse Text.reverse dat)
+            allDat
+
+    benchFilter = bgroup "Filter" $
+        fmap (\(n, dat) -> bgroup n $ diffTextString (filter (> 'b')) (Text.filter (> 'b')) dat)
+            allDat
 
     toString :: ([Char] -> String) -> [Char] -> Benchmarkable
     toString = whnf
 
 --------------------------------------------------------------------------
+benchsByteArray = bgroup "ByteArray"
+    [ benchLength
+    , benchTake
+    , benchBreakElem
+    , benchReverse
+    , benchFilter
+    --, benchSplitAt
+    ]
+  where
+    diffByteString :: (UArray Word8 -> a)
+                   -> (ByteString.ByteString -> b)
+                   -> [Word8]
+                   -> [Benchmark]
+    diffByteString foundationBench textBench dat =
+        [ bench "UArray_W8" $ whnf foundationBench s
+#ifdef BENCH_ALL
+        , bench "ByteString" $ whnf textBench t
+#endif
+        ]
+      where
+        s = fromList dat
+        t = ByteString.pack dat
+
+    allDat =
+        [ ("bs20", rdBytes20)
+        , ("bs200", rdBytes200)
+        , ("bs2000", rdBytes2000)
+        ]
+
+    benchLength = bgroup "Length" $
+        fmap (\(n, dat) -> bgroup n $ diffByteString length ByteString.length dat) allDat
+
+    benchTake = bgroup "Take" $ mconcat $ fmap (\p ->
+        fmap (\(n, dat) -> bgroup n $ diffByteString (take p) (ByteString.take p) dat) allDat
+        ) [ 0, 10, 100 ]
+
+    benchBreakElem = bgroup "BreakElem" $ mconcat $ fmap (\p ->
+        fmap (\(n, dat) -> bgroup n $ diffByteString (fst . breakElem p) (fst . ByteString.break (== p)) dat) allDat
+        ) [ 19, 199, 0 ]
+
+    benchReverse = bgroup "Reverse" $
+        fmap (\(n, dat) -> bgroup n $ diffByteString reverse ByteString.reverse dat) allDat
+
+    benchFilter = bgroup "Filter" $
+        fmap (\(n, dat) -> bgroup n $ diffByteString (filter (> 100)) (ByteString.filter (> 100)) dat) allDat
+--------------------------------------------------------------------------
 
 benchsTypes = bgroup "types"
     [ benchsString
+    , benchsByteArray
     ]
 
 main = defaultMain
