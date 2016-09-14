@@ -148,11 +148,14 @@ testCollectionOps :: ( Collection a
                   -> TestTree
 testCollectionOps proxy genElement = testGroup "Collection"
     [ testProperty "length" $ withElements $ \l -> (length $ fromListP proxy l) === length l
+    , testProperty "elem" $ withListAndElement $ \(l,e) -> elem e (fromListP proxy l) == elem e l
+    , testProperty "notElem" $ withListAndElement $ \(l,e) -> notElem e (fromListP proxy l) == notElem e l
     , testProperty "minimum" $ withNonEmptyElements $ \els -> minimum (fromListNonEmptyP proxy els) === minimum els
     , testProperty "maximum" $ withNonEmptyElements $ \els -> maximum (fromListNonEmptyP proxy els) === maximum els
     ]
   where
     withElements f = forAll (generateListOfElement genElement) f
+    withListAndElement = forAll ((,) <$> generateListOfElement genElement <*> genElement)
     withNonEmptyElements f = forAll (generateNonEmptyListOfElement 80 genElement) f
 
 testSequentialOps :: ( Sequential a

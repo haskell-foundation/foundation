@@ -71,6 +71,7 @@ instance C.InnerFunctor (Array ty)
 instance C.Collection (Array ty) where
     null = null
     length = length
+    elem e = Data.List.elem e . toList
     minimum = Data.List.minimum . toList . C.getNonEmpty -- TODO
     maximum = Data.List.maximum . toList . C.getNonEmpty -- TODO
 instance C.Sequential (Array ty) where

@@ -64,6 +64,7 @@ module Foundation.Array.Unboxed
     , splitElem
     , break
     , breakElem
+    , elem
     , intersperse
     , span
     , cons
@@ -675,6 +676,28 @@ breakElem :: PrimType ty => ty -> UArray ty -> (UArray ty, UArray ty)
 breakElem xelem xv = let (# v1, v2 #) = splitElem xelem xv in (v1, v2)
 {-# SPECIALIZE [2] breakElem :: Word8 -> UArray Word8 -> (UArray Word8, UArray Word8) #-}
 {-# SPECIALIZE [2] breakElem :: Word32 -> UArray Word32 -> (UArray Word32, UArray Word32) #-}
+
+elem :: PrimType ty => ty -> UArray ty -> Bool
+elem !ty (UVecBA start len _ ba)
+    | k == end   = False
+    | otherwise  = True
+  where
+    !end = start `offsetPlusE` len
+    !k = loop start
+    loop !i | i < end && t /= ty = loop (i+Offset 1)
+            | otherwise          = i
+        where !t                 = primBaIndex ba i
+elem ty (UVecAddr start len fptr)
+    | k == end  = False
+    | otherwise = True
+  where
+    !(Ptr addr) = withFinalPtrNoTouch fptr id
+    !end = start `offsetPlusE` len
+    !k = loop start
+    loop !i | i < end && t /= ty = loop (i+Offset 1)
+            | otherwise          = i
+        where t                  = primAddrIndex addr i
+{-# SPECIALIZE [2] elem :: Word8 -> UArray Word8 -> Bool #-}
 
 intersperse :: PrimType ty => ty -> UArray ty -> UArray ty
 intersperse sep v

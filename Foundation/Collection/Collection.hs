@@ -63,11 +63,21 @@ instance Collection c => IsList (NonEmpty c) where
 
 -- | A set of methods for ordered colection
 class (IsList c, Item c ~ Element c) => Collection c where
-    {-# MINIMAL null, length, minimum, maximum #-}
+    {-# MINIMAL null, length, (elem | notElem), minimum, maximum #-}
     -- | Check if a collection is empty
     null :: c -> Bool
     -- | Length of a collection (number of Element c)
     length :: c -> Int
+    -- | Check if a collection contains a specific element
+    --
+    -- This is the inverse of `notElem`.
+    elem :: Eq (Element c) => Element c -> c -> Bool
+    elem e col = not $ e `notElem` col
+    -- | Check if a collection does *not* contain a specific element
+    --
+    -- This is the inverse of `elem`.
+    notElem :: Eq (Element c) => Element c -> c -> Bool
+    notElem e col = not $ e `elem` col
     -- | Get the maximum element of a collection
     maximum :: Ord (Element c) => NonEmpty c -> Element c
     -- | Get the minimum element of a collection
@@ -77,17 +87,22 @@ instance Collection [a] where
     null = Data.List.null
     length = Data.List.length
 
+    elem = Data.List.elem
+    notElem = Data.List.notElem
+
     minimum = Data.List.minimum . getNonEmpty
     maximum = Data.List.maximum . getNonEmpty
 
 instance UV.PrimType ty => Collection (UV.UArray ty) where
     null = UV.null
     length = UV.length
+    elem = UV.elem
     minimum = Data.List.minimum . toList . getNonEmpty
     maximum = Data.List.maximum . toList . getNonEmpty
 
 instance Collection c => Collection (NonEmpty c) where
     null _ = False
     length = length . getNonEmpty
+    elem e = elem e . getNonEmpty
     maximum = maximum . getNonEmpty
     minimum = minimum . getNonEmpty

@@ -18,6 +18,7 @@ textPack = Text.pack
 textLength = Text.length
 textSplitAt = Text.splitAt
 textTake    = Text.take
+textAny     = Text.any
 #else
 data TextText = Text
 
@@ -25,16 +26,17 @@ textPack _ = Text
 textLength = undefined
 textSplitAt _ _ = (undefined, undefined)
 textTake    = undefined
+textAny     = undefined
 #endif
 
 --------------------------------------------------------------------------
 
 benchsString = bgroup "String"
     [ benchLength
+    , benchElem
     , benchTake
     , benchSplitAt
     , benchBuildable
-    -- , bgroup "SplitAt"
     ]
   where
     diffTextString :: (String -> a)
@@ -57,6 +59,13 @@ benchsString = bgroup "String"
             , ("mascii", rdFoundationHun)
             , ("uni1" ,rdFoundationJap)
             , ("uni2" ,rdFoundationZh)
+            ]
+    benchElem = bgroup "Elem" $
+        fmap (\(n, dat) -> bgroup n $ diffTextString (elem '.') (textAny (== '.')) dat)
+            [ ("ascii" , rdFoundationEn)
+            , ("mascii", rdFoundationHun)
+            , ("uni1"  , rdFoundationJap)
+            , ("uni2"  , rdFoundationZh)
             ]
     benchTake = bgroup "Take" $
         mconcat $ fmap (\p ->
