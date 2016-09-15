@@ -580,7 +580,7 @@ splitElem !ty r@(UVecBA start len pinst ba)
     loop !i | i < end && t /= ty = loop (i+Offset 1)
             | otherwise          = i
         where !t                 = primBaIndex ba i
-splitElem ty r@(UVecAddr start len fptr)
+splitElem !ty r@(UVecAddr start len fptr)
     | k == end  = (# r, empty #)
     | otherwise =
         (# UVecAddr start (offsetAsSize k) fptr
