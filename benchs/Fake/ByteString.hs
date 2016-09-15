@@ -5,6 +5,8 @@ module Fake.ByteString
     , splitAt
     , take
     , break
+    , reverse
+    , filter
     ) where
 
 import Prelude (undefined)
@@ -15,6 +17,6 @@ pack _      = ByteString
 length      = undefined
 splitAt _ _ = (undefined, undefined)
 take        = undefined
-break   _ _ = (undefined, undefined
+break   _ _ = (undefined, undefined)
 reverse     = undefined
 filter _    = undefined

@@ -5,6 +5,8 @@ module Fake.Text
     , splitAt
     , take
     , any
+    , filter
+    , reverse
     ) where
 
 import Prelude (undefined)
