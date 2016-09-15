@@ -7,6 +7,8 @@ module Fake.ByteString
     , break
     ) where
 
+import Prelude (undefined)
+
 data ByteString = ByteString
 
 pack _      = ByteString

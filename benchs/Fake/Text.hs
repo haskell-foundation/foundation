@@ -7,6 +7,8 @@ module Fake.Text
     , any
     ) where
 
+import Prelude (undefined)
+
 data Text = Text
 
 pack _      = Text
