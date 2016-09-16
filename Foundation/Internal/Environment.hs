@@ -28,8 +28,7 @@ import           Text.Read
 --
 -- TODO The default value of 1024 bytes is arbitrarily chosen for now.
 unsafeUArrayUnpinnedMaxSize :: Size8
-unsafeUArrayUnpinnedMaxSize = maybe (Size 1024) Size maxSize
-  where
-    fromEnv = unsafePerformIO $ lookupEnv "HS_FOUNDATION_UARRAY_UNPINNED_MAX"
-    maxSize = fromEnv >>= readMaybe
+unsafeUArrayUnpinnedMaxSize = unsafePerformIO $ do
+    maxSize <- (>>= readMaybe) <$> lookupEnv "HS_FOUNDATION_UARRAY_UNPINNED_MAX"
+    return $ maybe (Size 1024) Size maxSize
 {-# NOINLINE unsafeUArrayUnpinnedMaxSize #-}
