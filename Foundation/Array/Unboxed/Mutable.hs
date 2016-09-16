@@ -36,6 +36,7 @@ import           GHC.Prim
 import           GHC.Types
 import           GHC.Ptr
 import           Foundation.Internal.Base
+import qualified Foundation.Internal.Environment as Environment
 import           Foundation.Internal.Types
 import           Foundation.Internal.Primitive
 import           Foundation.Internal.Proxy
@@ -131,11 +132,20 @@ newUnpinned n = newFake n Proxy
 
 -- | Create a new mutable array of size @n.
 --
--- TODO: heuristic to allocated unpinned (< 1K for example)
+-- When memory for a new array is allocated, we decide if that memory region
+-- should be pinned (will not be copied around by GC) or unpinned (can be
+-- moved around by GC) depending on its size.
+--
+-- You can change the threshold value used by setting the environment variable
+-- @HS_FOUNDATION_UARRAY_UNPINNED_MAX@.
 new :: (PrimMonad prim, PrimType ty) => Size ty -> prim (MUArray ty (PrimState prim))
-new sz@(Size n)
-    | n > 0     = newPinned sz
-    | otherwise = newUnpinned sz
+new sz
+    | sizeRecast sz <= maxSizeUnpinned = newUnpinned sz
+    | otherwise                        = newPinned sz
+  where
+    -- Safe to use here: If the value changes during runtime, this will only
+    -- have an impact on newly created arrays.
+    maxSizeUnpinned = Environment.unsafeUArrayUnpinnedMaxSize
 {-# INLINE new #-}
 
 mutableSame :: MUArray ty st -> MUArray ty st -> Bool
