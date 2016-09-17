@@ -81,6 +81,8 @@ instance C.Collection AsciiString where
     length = length
     minimum = Data.List.minimum . toList . C.getNonEmpty -- TODO faster implementation
     maximum = Data.List.maximum . toList . C.getNonEmpty -- TODO faster implementation
+    elem x = Data.List.elem x . toList
+    notElem x = Data.List.notElem x . toList
 instance C.Sequential AsciiString where
     take = take
     drop = drop
