@@ -734,15 +734,15 @@ intersperse sep src
     !srcLen   = length src
     dstBytes = srcBytes + ((srcLen - 1) `scale` charToBytes (fromEnum sep))
 
-    lastSrc :: Offset Char
-    lastSrc = Offset 0 `offsetPlusE` Size srcLen
+    lastSrcI :: Offset Char
+    lastSrcI = Offset 0 `offsetPlusE` Size (srcLen - 1)
 
     go :: Char -> String -> Offset Char -> Offset8 -> MutableString s -> Offset8 -> ST s (Offset8, Offset8)
     go sep' src' srcI srcIdx dst dstIdx
-        | srcI == lastSrc = do
+        | srcI == lastSrcI = do
             nextDstIdx <- write dst dstIdx c
             return (nextSrcIdx, nextDstIdx)
-        | otherwise          = do
+        | otherwise        = do
             nextDstIdx  <- write dst dstIdx c
             nextDstIdx' <- write dst nextDstIdx sep'
             return (nextSrcIdx, nextDstIdx')
