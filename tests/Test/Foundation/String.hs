@@ -8,6 +8,7 @@ module Test.Foundation.String
 
 import Foundation
 import Foundation.String
+import Foundation.String.ASCII (AsciiString)
 import Foundation.Collection
 
 import Test.Tasty
@@ -15,6 +16,7 @@ import Test.Tasty.QuickCheck
 import Test.Tasty.HUnit
 
 import Test.Data.Unicode
+import Test.Data.ASCII
 import Test.Data.List
 import Test.Foundation.Collection
 import Test.Foundation.Encoding
@@ -28,6 +30,9 @@ testStringRefs = testGroup "String"
            , testGroup "Encoding Sample1" (testEncodings sample1)
            , testGroup "Encoding Sample2" (testEncodings sample2)
            ]
+    , testGroup "ASCII" $
+        [  testCollection "Sequential" (Proxy :: Proxy AsciiString) genAsciiChar
+        ]
     ]
 
 testStringCases :: [TestTree]
