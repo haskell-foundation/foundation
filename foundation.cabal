@@ -85,6 +85,7 @@ Library
                      Foundation.Collection.Mutable
                      Foundation.Collection.Zippable
                      Foundation.Internal.Base
+                     Foundation.Internal.Environment
                      Foundation.Internal.Primitive
                      Foundation.Internal.IsList
                      Foundation.Internal.Identity
