@@ -74,6 +74,7 @@ module Foundation
     , Prelude.Rational
     , Prelude.Float
     , Prelude.Double
+    , Size(..), Offset(..)
       -- ** Collection types
     , UArray
     , PrimType
@@ -156,6 +157,7 @@ import qualified Foundation.Partial
 import           Foundation.Tuple
 
 import qualified Foundation.Class.Bifunctor
+import Foundation.Internal.Types (Size(..), Offset(..))
 
 import qualified Data.Maybe
 import qualified Data.Either

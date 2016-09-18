@@ -26,6 +26,7 @@ import Test.Foundation.Number
 import Test.Foundation.Array
 import Test.Foundation.String
 import Test.Foundation.Parser
+import Test.Foundation.Storable
 
 data CharMap = CharMap LUString Prelude.Int
     deriving (Show)
@@ -311,6 +312,7 @@ tests =
                 arbitrary arbitrary )
         ]
     , testParsers
+    , testForeignStorableRefs
     ]
 
 testCaseModifiedUTF8 :: [Char] -> String -> Assertion
