@@ -160,7 +160,51 @@ take :: PrimType ty => Int -> ChunkedUArray ty -> ChunkedUArray ty
 take nbElems v@(ChunkedUArray inner)
     | nbElems <= 0 = empty
     | C.null v     = empty
-    | nbElems == C.length v = v
+    | nbElems >= C.length v = v
+    | otherwise =
+      let newSize = Size requiredChunks
+      in ChunkedUArray $ runST (A.new newSize >>= iter inner nbElems)
+  where
+    -- TODO: How can we avoid this first pass?
+    requiredChunks = loop 0 nbElems
+      where
+        loop !idx !remaining
+          | remaining <= 0 = idx
+          | otherwise =
+            let vec = inner `A.unsafeIndex` idx
+                l = U.length vec
+            in loop (idx + 1) (remaining - l)
+    iter :: (PrimType ty, PrimMonad prim)
+         => Array (UArray ty)
+         -> Int
+         -> A.MArray (UArray ty) (PrimState prim)
+         -> prim (Array (UArray ty))
+    iter inner0 elems finalVector = loop 0 elems
+      where
+        loop !currentIndex !remainingElems
+          | remainingElems <= 0 || currentIndex >= C.length inner0 = A.unsafeFreeze finalVector
+          | otherwise =
+            let chunk = inner0 `A.unsafeIndex` currentIndex -- TODO: skip empty chunks
+                chunkLen = C.length chunk
+            in case C.null chunk of
+              True -> loop (currentIndex + 1) remainingElems
+              False -> case chunkLen <= remainingElems of
+                True -> do
+                  A.unsafeWrite finalVector currentIndex chunk
+                  loop (currentIndex + 1) (remainingElems - chunkLen)
+                False -> do
+                  nc <- do
+                    newChunk <- U.new (Size remainingElems)
+                    U.unsafeCopyAtRO newChunk (Offset 0) chunk (Offset 0) (Size remainingElems)
+                    U.unsafeFreeze newChunk
+                  A.unsafeWrite finalVector currentIndex nc
+                  A.freeze finalVector
+
+drop :: PrimType ty => Int -> ChunkedUArray ty -> ChunkedUArray ty
+drop nbElems v@(ChunkedUArray inner)
+    | nbElems >= C.length v = empty
+    | nbElems <= 0 = v
+    | C.null v     = empty
     | otherwise =
       let newSize = Size requiredChunks
       in ChunkedUArray $ runST (A.new newSize >>= iter inner nbElems)
@@ -172,7 +216,7 @@ take nbElems v@(ChunkedUArray inner)
           | remaining <= 0 = acc
           | otherwise =
             let vec = inner `A.unsafeIndex` idx
-                l = U.length vec
+                l   = U.length vec
             in loop (acc + l) (idx + 1) (remaining - l)
     iter :: (PrimType ty, PrimMonad prim)
          => Array (UArray ty)
@@ -201,7 +245,7 @@ take nbElems v@(ChunkedUArray inner)
                   A.unsafeWrite finalVector (currentIndex + 1) nc
                   A.freeze finalVector
 
-drop = error "todo"
+
 splitAt = error "todo"
 revTake = error "todo"
 revDrop = error "todo"
