@@ -259,8 +259,26 @@ filter = error "todo"
 unsnoc = error "todo"
 uncons = error "todo"
 snoc = error "Todo"
-cons = error "Todo"
-find = error "Todo"
+
+cons :: PrimType ty => ty -> ChunkedUArray ty -> ChunkedUArray ty
+cons elem (ChunkedUArray inner) = ChunkedUArray $ runST $ do
+  newArray   <- A.new (Size $ C.length inner + 1)
+  let single = fromList [elem]
+  A.unsafeCopyAtRO newArray (Offset 0) inner (Offset 0) (Size $ C.length inner)
+  A.unsafeWrite newArray (C.length inner) single
+  A.unsafeFreeze newArray
+
+find :: PrimType ty => (ty -> Bool) -> ChunkedUArray ty -> Maybe ty
+find fn v = loop 0 (C.length v)
+  where
+    loop !idx len
+      | idx >= len = Nothing
+      | otherwise  =
+        let currentElem = v `unsafeIndex` idx
+        in case fn currentElem of
+          True  -> Just currentElem
+          False -> loop (idx + 1) len
+
 sortBy = error "Todo"
 
 index :: PrimType ty => ChunkedUArray ty -> Int -> ty

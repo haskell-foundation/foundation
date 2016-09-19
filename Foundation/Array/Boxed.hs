@@ -16,9 +16,11 @@ module Foundation.Array.Boxed
     , empty
     , copy
     , copyAt
+    , unsafeCopyAtRO
     , thaw
     , new
     , unsafeFreeze
+    , unsafeThaw
     , freeze
     , unsafeWrite
     , unsafeIndex
