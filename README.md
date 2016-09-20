@@ -114,6 +114,10 @@ To run a specific or set of benchmarks :
     stack bench --flag foundation:bench-all --benchmark-arguments '-m prefix types/String/SplitAt'
     stack bench --flag foundation:bench-all --benchmark-arguments '-m glob types/String/SplitAt'
 
+To register a set of benchmarks:
+
+    stack bench --flag foundation:bench-all --benchmark-arguments "--csv $(git describe).csv"
+
 
 Design
 ======

@@ -531,25 +531,25 @@ null (UVecAddr _ l _)  = l == Size 0
 take :: PrimType ty => Int -> UArray ty -> UArray ty
 take nbElems v
     | nbElems <= 0 = empty
-    | n == vlen    = v
+    | n >= vlen    = v
     | otherwise    =
         case v of
             UVecBA start _ pinst ba -> UVecBA start n pinst ba
             UVecAddr start _ fptr   -> UVecAddr start n fptr
   where
-    n = min (Size nbElems) vlen
+    n    = Size nbElems
     vlen = lengthSize v
 
 drop :: PrimType ty => Int -> UArray ty -> UArray ty
 drop nbElems v
     | nbElems <= 0 = v
-    | n == vlen    = empty
+    | n >= vlen    = empty
     | otherwise    =
         case v of
             UVecBA start len pinst ba -> UVecBA (start `offsetPlusE` n) (len - n) pinst ba
             UVecAddr start len fptr   -> UVecAddr (start `offsetPlusE` n) (len - n) fptr
   where
-    n = min (Size nbElems) vlen
+    n    = Size nbElems
     vlen = lengthSize v
 
 splitAt :: PrimType ty => Int -> UArray ty -> (UArray ty, UArray ty)
@@ -580,7 +580,7 @@ splitElem !ty r@(UVecBA start len pinst ba)
     loop !i | i < end && t /= ty = loop (i+Offset 1)
             | otherwise          = i
         where !t                 = primBaIndex ba i
-splitElem ty r@(UVecAddr start len fptr)
+splitElem !ty r@(UVecAddr start len fptr)
     | k == end  = (# r, empty #)
     | otherwise =
         (# UVecAddr start (offsetAsSize k) fptr
@@ -809,10 +809,32 @@ filter :: PrimType ty => (ty -> Bool) -> UArray ty -> UArray ty
 filter predicate vec = vFromList $ Data.List.filter predicate $ vToList vec
 
 reverse :: PrimType ty => UArray ty -> UArray ty
-reverse a = create len toEnd
+reverse a
+    | len == Size 0 = empty
+    | otherwise     = runST $ do
+        ma <- newNative len $ \mba ->
+                case a of
+                    (UVecBA start _ _ ba)   -> goNative endOfs mba ba start
+                    (UVecAddr start _ fptr) -> withFinalPtr fptr $ \ptr -> goAddr endOfs mba ptr start
+        unsafeFreeze ma
   where
-    len = length a
-    toEnd i = unsafeIndex a (len - i - 1)
+    !len = lengthSize a
+    !endOfs = Offset 0 `offsetPlusE` len
+
+    goNative :: PrimType ty => Offset ty -> MutableByteArray# s -> ByteArray# -> Offset ty -> ST s ()
+    goNative !end !ma !ba !srcStart = loop (Offset 0)
+      where
+        !endI = sizeAsOffset ((srcStart + end) - Offset 1)
+        loop !i
+            | i == end  = return ()
+            | otherwise = primMbaWrite ma i (primBaIndex ba (sizeAsOffset (endI - i))) >> loop (i+Offset 1)
+    goAddr !end !ma !(Ptr ba) !srcStart = loop (Offset 0)
+      where
+        !endI = sizeAsOffset ((srcStart + end) - Offset 1)
+        loop !i
+            | i == end  = return ()
+            | otherwise = primMbaWrite ma i (primAddrIndex ba (sizeAsOffset (endI - i))) >> loop (i+Offset 1)
+{-# SPECIALIZE [3] reverse :: UArray Word8 -> UArray Word8 #-}
 
 foldl :: PrimType ty => (a -> ty -> a) -> a -> UArray ty -> a
 foldl f initialAcc vec = loop 0 initialAcc
