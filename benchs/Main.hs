@@ -110,16 +110,19 @@ benchsByteArray = bgroup "ByteArray"
         , ("bs200", rdBytes200)
         , ("bs2000", rdBytes2000)
         ]
+    allDatSuffix s = fmap (first (\x -> x <> "-" <> s)) allDat
 
     benchLength = bgroup "Length" $
         fmap (\(n, dat) -> bgroup n $ diffByteString length ByteString.length dat) allDat
 
     benchTake = bgroup "Take" $ mconcat $ fmap (\p ->
-        fmap (\(n, dat) -> bgroup n $ diffByteString (take p) (ByteString.take p) dat) allDat
+        fmap (\(n, dat) -> bgroup n $ diffByteString (take p) (ByteString.take p) dat)
+            $ allDatSuffix (show p)
         ) [ 0, 10, 100 ]
 
     benchBreakElem = bgroup "BreakElem" $ mconcat $ fmap (\p ->
-        fmap (\(n, dat) -> bgroup n $ diffByteString (fst . breakElem p) (fst . ByteString.break (== p)) dat) allDat
+        fmap (\(n, dat) -> bgroup n $ diffByteString (fst . breakElem p) (fst . ByteString.break (== p)) dat)
+                $ allDatSuffix (show p)
         ) [ 19, 199, 0 ]
 
     benchReverse = bgroup "Reverse" $
