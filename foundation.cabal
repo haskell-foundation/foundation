@@ -112,6 +112,7 @@ Library
   C-sources:         cbits/foundation_random.c
   if os(windows)
     Other-modules:   Foundation.Foreign.MemoryMap.Windows
+                     Foundation.System.Entropy.Windows
   else
     Other-modules:   Foundation.Foreign.MemoryMap.Posix
 
