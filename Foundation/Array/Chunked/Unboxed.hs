@@ -247,18 +247,37 @@ drop nbElems v@(ChunkedUArray inner)
 
 
 splitAt = error "todo"
+
 revTake = error "todo"
+
 revDrop = error "todo"
+
 revSplitAt = error "Todo"
+
 splitOn = error "todo"
+
 break = error "todo"
+
 intersperse = error "todo"
+
 span = error "todo"
+
 reverse = error "todo"
+
 filter = error "todo"
+
 unsnoc = error "todo"
+
 uncons = error "todo"
-snoc = error "Todo"
+
+snoc :: PrimType ty => ChunkedUArray ty -> ty -> ChunkedUArray ty
+snoc (ChunkedUArray inner) elem = ChunkedUArray $ runST $ do
+  let newLen = (Size $ C.length inner + 1)
+  newArray   <- A.new newLen
+  let single = fromList [elem]
+  A.unsafeWrite newArray 0 single
+  A.unsafeCopyAtRO newArray (Offset 1) inner (Offset 0) (Size $ C.length inner)
+  A.unsafeFreeze newArray
 
 cons :: PrimType ty => ty -> ChunkedUArray ty -> ChunkedUArray ty
 cons elem (ChunkedUArray inner) = ChunkedUArray $ runST $ do
@@ -279,7 +298,9 @@ find fn v = loop 0 (C.length v)
           True  -> Just currentElem
           False -> loop (idx + 1) len
 
-sortBy = error "Todo"
+-- TODO: Improve implementation.
+sortBy :: PrimType ty => (ty -> ty -> Ordering) -> ChunkedUArray ty -> ChunkedUArray ty
+sortBy p = fromList . C.sortBy p . toList
 
 index :: PrimType ty => ChunkedUArray ty -> Int -> ty
 index array n
