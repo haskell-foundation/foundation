@@ -110,7 +110,10 @@ Library
                      Foundation.Foreign.MemoryMap
                      Foundation.Foreign.MemoryMap.Types
                      Foundation.Partial
+
+  include-dirs:      cbits
   C-sources:         cbits/foundation_random.c
+
   if os(windows)
     Other-modules:   Foundation.Foreign.MemoryMap.Windows
                      Foundation.System.Entropy.Windows
