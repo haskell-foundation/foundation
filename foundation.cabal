@@ -64,6 +64,7 @@ Library
                      Foundation.System.Info
                      Foundation.Strict
                      Foundation.Parser
+                     Foundation.System.Entropy
   Other-modules:     Foundation.String.Internal
                      Foundation.String.UTF8
                      Foundation.String.Encoding.Encoding
