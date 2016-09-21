@@ -3,7 +3,7 @@
 #include <stddef.h>
 #include "foundation_system.h"
 
-#ifdef FOUNDATION_SYSTEM_LINUX
+#if defined(FOUNDATION_SYSTEM_LINUX) && defined(SYS_getrandom)
 #define _GNU_SOURCE
 
 #include <unistd.h>
