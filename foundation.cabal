@@ -115,6 +115,7 @@ Library
                      Foundation.System.Entropy.Windows
   else
     Other-modules:   Foundation.Foreign.MemoryMap.Posix
+                     Foundation.System.Entropy.Unix
 
   if impl(ghc >= 7.10)
     Exposed-modules: Foundation.Tuple.Nth
