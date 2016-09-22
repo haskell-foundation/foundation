@@ -25,10 +25,12 @@ import Foreign.Marshal.Alloc (alloca)
 import Foreign.Marshal.Utils (toBool)
 import Foreign.Storable (peek)
 import System.Win32.Types (getLastError)
+import Foundation.System.Entropy.Common
+import Control.Exception
 
 newtype EntropyCtx = EntropyCtx CryptCtx
 
-entropyOpen :: IO (Maybe EntropyCtx)
+entropyOpen :: IO EntropyCtx
 entropyOpen = EntropyCtx <$> cryptAcquireCtx
 
 entropyGather :: EntropyCtx -> Ptr Word8 -> Int -> IO Int
@@ -70,14 +72,14 @@ provRSAFull = 1
 cryptVerifyContext :: DWORD
 cryptVerifyContext = 0xF0000000
 
-cryptAcquireCtx :: IO (Maybe CryptCtx)
+cryptAcquireCtx :: IO CryptCtx
 cryptAcquireCtx =
     alloca $ \handlePtr ->
     withCString msDefProv $ \provName -> do
         r <- toBool `fmap` c_cryptAcquireCtx handlePtr nullPtr provName provRSAFull cryptVerifyContext
         if r
-            then Just `fmap` peek handlePtr
-            else return Nothing
+            then peek handlePtr
+            else throwIO EntropySystemMissing
 
 cryptGenRandom :: CryptCtx -> Ptr Word8 -> Int -> IO Int
 cryptGenRandom h buf n = do

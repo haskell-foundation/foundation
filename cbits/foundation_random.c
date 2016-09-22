@@ -19,6 +19,6 @@ int foundation_sysrandom_linux(void *buf, size_t length)
 #include <errno.h>
 int foundation_sysrandom_linux(void *buf, size_t length)
 {
-	return ENODEV;
+	return -ENODEV;
 }
 #endif
