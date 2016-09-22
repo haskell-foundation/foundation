@@ -206,18 +206,19 @@ drop nbElems v@(ChunkedUArray inner)
     | nbElems <= 0 = v
     | C.null v     = empty
     | otherwise =
-      let newSize = Size requiredChunks
+      let newSize = Size (C.length inner - chunksToSkip)
       in ChunkedUArray $ runST (A.new newSize >>= iter inner nbElems)
   where
     -- TODO: How can we avoid this first pass?
-    requiredChunks = loop 0 0 nbElems
+    chunksToSkip = loop 0 0 nbElems
       where
-        loop !acc !idx !remaining
-          | remaining <= 0 = acc
-          | otherwise =
-            let vec = inner `A.unsafeIndex` idx
-                l   = U.length vec
-            in loop (acc + l) (idx + 1) (remaining - l)
+        loop !acc !idx !remaining =
+          let vec   = inner `A.unsafeIndex` idx
+              l     = U.length vec
+              slack = remaining - l
+          in case slack <= 0 of
+            True  -> acc
+            False -> loop (acc + l) (idx + 1) slack
     iter :: (PrimType ty, PrimMonad prim)
          => Array (UArray ty)
          -> Int
@@ -225,24 +226,26 @@ drop nbElems v@(ChunkedUArray inner)
          -> prim (Array (UArray ty))
     iter inner0 elems finalVector = loop 0 elems
       where
+        -- We do not skip empty chunks, or this would screw
+        -- the total, final size.
         loop !currentIndex !remainingElems
           | remainingElems <= 0 = A.unsafeFreeze finalVector
           | otherwise =
-            let chunk = inner0 `A.unsafeIndex` currentIndex -- TODO: skip empty chunks
+            let chunk = inner0 `A.unsafeIndex` currentIndex
                 chunkLen = C.length chunk
                 slack    = chunkLen P.- remainingElems
-            in case C.null chunk of
-              True -> loop (currentIndex + 1) remainingElems
-              False -> case chunkLen <= remainingElems of
+            in case chunkLen <= remainingElems of
                 True -> do
-                  A.unsafeWrite finalVector currentIndex chunk
+                  -- Skip the whole chunk
                   loop (currentIndex + 1) (remainingElems - chunkLen)
                 False -> do
                   nc <- do
                     newChunk <- U.new (Size slack)
-                    U.unsafeCopyAtRO newChunk (Offset 0) chunk (Offset 0) (Size slack)
+                    U.unsafeCopyAtRO newChunk (Offset 0) chunk (Offset remainingElems) (Size slack)
                     U.unsafeFreeze newChunk
-                  A.unsafeWrite finalVector (currentIndex + 1) nc
+                  A.unsafeWrite finalVector 0 nc
+                  -- Copy the rest of the vector
+                  A.unsafeCopyAtRO finalVector (Offset 1) inner0 (Offset slack) (Size $ C.length inner0 - currentIndex)
                   A.freeze finalVector
 
 
