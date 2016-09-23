@@ -105,6 +105,7 @@ instance C.MutableCollection (MArray ty) where
     unsafeThaw = unsafeThaw
     unsafeFreeze = unsafeFreeze
 
+    mutNew n = new (Size n)
     mutUnsafeWrite = unsafeWrite
     mutUnsafeRead = unsafeRead
     mutWrite = write

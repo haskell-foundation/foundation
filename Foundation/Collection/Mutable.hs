@@ -11,6 +11,7 @@ module Foundation.Collection.Mutable
 
 import Foundation.Primitive.Monad
 import Foundation.Internal.Base
+import Foundation.Internal.Types
 
 import qualified Foundation.Array.Unboxed.Mutable as MUV
 import qualified Foundation.Array.Unboxed as UV
@@ -18,7 +19,7 @@ import qualified Foundation.Array.Unboxed as UV
 -- | Collection of things that can be made mutable, modified and then freezed into an MutableFreezed collection
 class MutableCollection c where
     -- unfortunately: cannot set mutUnsafeWrite to default to mutWrite .. same for read..
-    {-# MINIMAL thaw, freeze, mutWrite, mutRead, mutUnsafeWrite, mutUnsafeRead #-}
+    {-# MINIMAL thaw, freeze, mutNew, mutWrite, mutRead, mutUnsafeWrite, mutUnsafeRead #-}
     type MutableFreezed c
     type MutableKey c
     type MutableValue c
@@ -30,6 +31,8 @@ class MutableCollection c where
 
     thaw   :: PrimMonad prim => MutableFreezed c -> prim (c (PrimState prim))
     freeze :: PrimMonad prim => c (PrimState prim) -> prim (MutableFreezed c)
+
+    mutNew :: PrimMonad prim => Int -> prim (c (PrimState prim))
 
     mutUnsafeWrite :: PrimMonad prim => c (PrimState prim) -> MutableKey c -> MutableValue c -> prim ()
     mutWrite       :: PrimMonad prim => c (PrimState prim) -> MutableKey c -> MutableValue c -> prim ()
@@ -45,6 +48,8 @@ instance UV.PrimType ty => MutableCollection (MUV.MUArray ty) where
     freeze = UV.freeze
     unsafeThaw = UV.unsafeThaw
     unsafeFreeze = UV.unsafeFreeze
+
+    mutNew i = MUV.new (Size i)
 
     mutUnsafeWrite = MUV.unsafeWrite
     mutUnsafeRead = MUV.unsafeRead
