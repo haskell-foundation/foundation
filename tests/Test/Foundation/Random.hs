@@ -28,7 +28,7 @@ testRandom = testGroup "random"
                                        <> " compression%=" <> show (res_compressionPercent v))
 
         unless (res_entropy v > 6.5 && res_entropy v <= 8) failInfo
-        unless (res_mean v >= 120 && res_mean v <= 136) failInfo
+        unless (res_mean v >= 112 && res_mean v <= 144) failInfo
         unless (res_compressionPercent v >= 0 && res_compressionPercent v <= 5.0) failInfo
 
 -------- generic random testing
