@@ -21,9 +21,15 @@ testRandom = testGroup "random"
     entropyCheck = monadicIO $ do
         v <- run (getEntropy 1024 >>= randomTest)
         --run (putStrLn . fromList $ show v)
-        assert (res_entropy v > 6.5 && res_entropy v <= 8)
-        assert (res_mean v >= 120 && res_mean v <= 136) 
-        assert (res_compressionPercent v >= 0 && res_compressionPercent v <= 5.0) 
+        let failInfo = do
+                fail ("randomness assert failed: entropy=" <> show (res_entropy v)
+                                              <> " chi^2=" <> show (res_chi_square v)
+                                               <> " mean=" <> show (res_mean v)
+                                       <> " compression%=" <> show (res_compressionPercent v))
+
+        unless (res_entropy v > 6.5 && res_entropy v <= 8) failInfo
+        unless (res_mean v >= 120 && res_mean v <= 136) failInfo
+        unless (res_compressionPercent v >= 0 && res_compressionPercent v <= 5.0) failInfo
 
 -------- generic random testing
 
