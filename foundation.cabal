@@ -187,6 +187,8 @@ Benchmark bench
   Other-modules:     BenchUtil.Common
                      BenchUtil.RefData
                      Sys
+                     Fake.ByteString
+                     Fake.Text
   hs-source-dirs:    benchs
   default-language:  Haskell2010
   type:              exitcode-stdio-1.0
