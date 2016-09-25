@@ -12,7 +12,18 @@
 int foundation_sysrandom_linux(void *buf, size_t length)
 {
 	unsigned int flags = 1; /* RANDOM=0x2, NONBLOCK=0x1 */
-	int r = syscall(SYS_getrandom, buf, length, flags);
+	size_t i = 0;
+
+	if (length == 0)
+		return 0;
+
+	while (i < length) {
+		int r = syscall(SYS_getrandom, buf + i, length - i, flags);
+		if (r <= 0 && r != -EAGAIN)
+			return r;
+		if (r != -EAGAIN)
+			i += r;
+	}
 	return r;
 }
 #else

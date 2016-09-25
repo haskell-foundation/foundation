@@ -19,6 +19,7 @@ import Foreign.C.Types
 import Control.Exception as E
 import Control.Monad
 import System.IO
+import System.IO.Unsafe (unsafePerformIO)
 import Foundation.Internal.Base
 import Prelude (fromIntegral)
 import Foundation.System.Entropy.Common
@@ -29,10 +30,13 @@ data EntropyCtx =
 
 entropyOpen :: IO EntropyCtx
 entropyOpen = do
-    mh <- openDev "/dev/urandom"
-    case mh of
-        Nothing -> E.throwIO EntropySystemMissing
-        Just h  -> return $ EntropyCtx h
+    if supportSyscall
+        then return EntropySyscall
+        else do
+            mh <- openDev "/dev/urandom"
+            case mh of
+                Nothing -> E.throwIO EntropySystemMissing
+                Just h  -> return $ EntropyCtx h
 
 -- | try to fill the ptr with the amount of data required.
 -- Return the number of bytes, or a negative number otherwise
@@ -55,6 +59,12 @@ gatherDevEntropy :: Handle -> Ptr Word8 -> Int -> IO Int
 gatherDevEntropy h ptr sz =
      (fromIntegral `fmap` hGetBufSome h ptr (fromIntegral sz))
     `E.catch` \(_ :: E.IOException) -> return 0
+
+supportSyscall :: Bool
+supportSyscall = unsafePerformIO $ do
+    r <- c_sysrandom_linux nullPtr 0
+    return $! r == 0
+{-# NOINLINE supportSyscall #-}
 
 foreign import ccall unsafe "foundation_sysrandom_linux"
    c_sysrandom_linux :: Ptr Word8 -> CSize -> IO Int
