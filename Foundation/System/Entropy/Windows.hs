@@ -15,6 +15,7 @@ module Foundation.System.Entropy.Windows
     , entropyOpen
     , entropyGather
     , entropyClose
+    , entropyMaximumSize
     ) where
 
 import Data.Int (Int32)
@@ -33,11 +34,14 @@ newtype EntropyCtx = EntropyCtx CryptCtx
 entropyOpen :: IO EntropyCtx
 entropyOpen = EntropyCtx <$> cryptAcquireCtx
 
-entropyGather :: EntropyCtx -> Ptr Word8 -> Int -> IO Int
+entropyGather :: EntropyCtx -> Ptr Word8 -> Int -> IO Bool
 entropyGather (EntropyCtx ctx) ptr n = cryptGenRandom ctx ptr n
 
 entropyClose :: EntropyCtx -> IO ()
 entropyClose (EntropyCtx ctx) = cryptReleaseCtx ctx
+
+entropyMaximumSize :: Int
+entropyMaximumSize = 4096
 
 type DWORD = Word32
 type BOOL  = Int32
@@ -81,10 +85,8 @@ cryptAcquireCtx =
             then peek handlePtr
             else throwIO EntropySystemMissing
 
-cryptGenRandom :: CryptCtx -> Ptr Word8 -> Int -> IO Int
-cryptGenRandom h buf n = do
-    success <- toBool `fmap` c_cryptGenRandom h (fromIntegral n) buf
-    return $ if success then n else 0
+cryptGenRandom :: CryptCtx -> Ptr Word8 -> Int -> IO Bool
+cryptGenRandom h buf n = toBool `fmap` c_cryptGenRandom h (fromIntegral n) buf
 
 cryptReleaseCtx :: CryptCtx -> IO ()
 cryptReleaseCtx h = do

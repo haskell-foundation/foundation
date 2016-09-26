@@ -34,7 +34,7 @@ int foundation_sysrandom_linux(void *buf, size_t length)
 		if (r > 0)
 			i += r;
 	}
-	return i;
+	return 0;
 }
 #else
 int foundation_sysrandom_linux(void *buf, size_t length) { return -ENODEV; }

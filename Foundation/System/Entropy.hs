@@ -36,8 +36,8 @@ getEntropy n = do
     loop :: EntropyCtx -> Int -> Ptr Word8 -> IO ()
     loop _   0 _ = return ()
     loop ctx i p = do
-        r <- entropyGather ctx p i
-        if r <= 0
-            then throwIO EntropySystemMissing
-            else loop ctx (n-i) (p `plusPtr` r)
-           
+        let chSz = min entropyMaximumSize i
+        r <- entropyGather ctx p chSz
+        if r
+            then loop ctx (n-chSz) (p `plusPtr` chSz)
+            else throwIO EntropySystemMissing
