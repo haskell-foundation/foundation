@@ -23,6 +23,7 @@ import qualified Foundation.Array.Boxed as A
 import           Foundation.Array.Common
 import           Foundation.Array.Unboxed (UArray, PrimType)
 import qualified Foundation.Array.Unboxed as U
+import           Foundation.Class.Bifunctor
 import qualified Foundation.Collection as C
 import           Foundation.Internal.Base
 import           Foundation.Internal.Types
@@ -249,7 +250,9 @@ drop nbElems v@(ChunkedUArray inner)
                   A.freeze finalVector
 
 
-splitAt = error "todo"
+-- TODO: Improve implementation.
+splitAt :: PrimType ty => Int -> ChunkedUArray ty -> (ChunkedUArray ty, ChunkedUArray ty)
+splitAt i = bimap fromList fromList . C.splitAt i . toList
 
 revTake = error "todo"
 
@@ -265,9 +268,13 @@ intersperse = error "todo"
 
 span = error "todo"
 
-reverse = error "todo"
+-- TODO: Improve implementation.
+reverse :: PrimType ty => ChunkedUArray ty -> ChunkedUArray ty
+reverse = fromList . C.reverse . toList
 
-filter = error "todo"
+-- TODO: Improve implementation.
+filter :: PrimType ty => (ty -> Bool) -> ChunkedUArray ty -> ChunkedUArray ty
+filter p = fromList . C.filter p . toList
 
 unsnoc = error "todo"
 
