@@ -74,6 +74,7 @@ Library
                      Foundation.String.UTF8Table
                      Foundation.String.ModifiedUTF8
                      Foundation.Tuple
+                     Foundation.Hashing.FNV
                      Foundation.Collection.Buildable
                      Foundation.Collection.List
                      Foundation.Collection.Element
