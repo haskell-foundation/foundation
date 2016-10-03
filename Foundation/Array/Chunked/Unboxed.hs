@@ -21,7 +21,7 @@ import           Data.Typeable
 import           Foundation.Array.Boxed (Array)
 import qualified Foundation.Array.Boxed as A
 import           Foundation.Array.Common
-import           Foundation.Array.Unboxed (UArray, PrimType)
+import           Foundation.Array.Unboxed (UArray)
 import qualified Foundation.Array.Unboxed as U
 import           Foundation.Class.Bifunctor
 import qualified Foundation.Collection as C
@@ -59,16 +59,13 @@ instance PrimType ty => C.Collection (ChunkedUArray ty) where
 instance PrimType ty => C.Sequential (ChunkedUArray ty) where
     take = take
     drop = drop
-    splitAt = splitAt
     revTake = revTake
     revDrop = revDrop
-    revSplitAt = revSplitAt
     splitOn = splitOn
     break = break
     intersperse = intersperse
-    span = span
-    reverse = reverse
     filter = filter
+    reverse = reverse
     unsnoc = unsnoc
     uncons = uncons
     snoc = snoc
@@ -251,22 +248,24 @@ drop nbElems v@(ChunkedUArray inner)
 
 
 -- TODO: Improve implementation.
-splitAt :: PrimType ty => Int -> ChunkedUArray ty -> (ChunkedUArray ty, ChunkedUArray ty)
-splitAt i = bimap fromList fromList . C.splitAt i . toList
+revTake :: PrimType ty => Int -> ChunkedUArray ty -> ChunkedUArray ty
+revTake x = fromList . C.revTake x . toList
 
-revTake = error "todo"
+-- TODO: Improve implementation.
+revDrop :: PrimType ty => Int -> ChunkedUArray ty -> ChunkedUArray ty
+revDrop x = fromList . C.revTake x . toList
 
-revDrop = error "todo"
+-- TODO: Improve implementation.
+splitOn :: PrimType ty => (ty -> Bool) -> ChunkedUArray ty -> [ChunkedUArray ty]
+splitOn p = fmap fromList . C.splitOn p . toList
 
-revSplitAt = error "Todo"
+-- TODO: Improve implementation.
+break :: PrimType ty => (ty -> Bool) -> ChunkedUArray ty -> (ChunkedUArray ty, ChunkedUArray ty)
+break p = bimap fromList fromList . C.break p . toList
 
-splitOn = error "todo"
-
-break = error "todo"
-
-intersperse = error "todo"
-
-span = error "todo"
+-- TODO: Improve implementation.
+intersperse :: PrimType ty => ty -> ChunkedUArray ty -> ChunkedUArray ty
+intersperse el = fromList . C.intersperse el . toList
 
 -- TODO: Improve implementation.
 reverse :: PrimType ty => ChunkedUArray ty -> ChunkedUArray ty
@@ -276,9 +275,13 @@ reverse = fromList . C.reverse . toList
 filter :: PrimType ty => (ty -> Bool) -> ChunkedUArray ty -> ChunkedUArray ty
 filter p = fromList . C.filter p . toList
 
-unsnoc = error "todo"
+-- TODO: Improve implementation.
+unsnoc :: PrimType ty => ChunkedUArray ty -> Maybe (ChunkedUArray ty, ty)
+unsnoc v = first fromList <$> (C.unsnoc $ toList v)
 
-uncons = error "todo"
+-- TODO: Improve implementation.
+uncons :: PrimType ty => ChunkedUArray ty -> Maybe (ty, ChunkedUArray ty)
+uncons v = second fromList <$> (C.uncons $ toList v)
 
 snoc :: PrimType ty => ChunkedUArray ty -> ty -> ChunkedUArray ty
 snoc (ChunkedUArray inner) elem = ChunkedUArray $ runST $ do
