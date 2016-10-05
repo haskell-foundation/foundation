@@ -15,13 +15,12 @@
 module Foundation.Hashing.FNV
     (
     -- * types
-      FnvHash32(..)
-    , FnvHash64(..)
-    -- * methods
-    , fnv1
-    , fnv1a
-    , fnv1_64
-    , fnv1a_64
+      FNV1Hash32(..)
+    , FNV1Hash64(..)
+    , FNV1_32
+    , FNV1a_32
+    , FNV1_64
+    , FNV1a_64
     ) where
 
 import           Foundation.Internal.Base
@@ -29,17 +28,18 @@ import qualified Foundation.Array.Unboxed as A
 import           Foundation.Internal.Types
 import           Foundation.Primitive.Types
 import           Foundation.Number
+import           Foundation.Hashing.Hasher
 import           Data.Bits
 import           GHC.Prim
 import           GHC.ST
 import qualified Prelude
 
 -- | FNV1(a) hash (32 bit variants)
-newtype FnvHash32 = FnvHash32 Word32
+newtype FNV1Hash32 = FNV1Hash32 Word32
     deriving (Show,Eq,Ord)
 
 -- | FNV1(a) hash (64 bit variants)
-newtype FnvHash64 = FnvHash64 Word64
+newtype FNV1Hash64 = FNV1Hash64 Word64
     deriving (Show,Eq,Ord)
 
 xor32 :: Word -> Word8 -> Word
@@ -50,102 +50,154 @@ xor64 :: Word64 -> Word8 -> Word64
 xor64 !a !b = a `xor` Prelude.fromIntegral b
 {-# INLINE xor64 #-}
 
+newtype FNV1_32 = FNV1_32 Word
+
+newtype FNV1_64 = FNV1_64 Word64
+
+newtype FNV1a_32 = FNV1a_32 Word
+
+newtype FNV1a_64 = FNV1a_64 Word64
+
+fnv1_32_Mix8 :: Word8 -> FNV1_32 -> FNV1_32
+fnv1_32_Mix8 !w !(FNV1_32 acc) = FNV1_32 (0x01000193 * acc `xor32` w)
+{-# INLINE fnv1_32_Mix8 #-}
+
+fnv1a_32_Mix8 :: Word8 -> FNV1a_32 -> FNV1a_32
+fnv1a_32_Mix8 !w !(FNV1a_32 acc) = FNV1a_32 (0x01000193 * (acc `xor32` w))
+{-# INLINE fnv1a_32_Mix8 #-}
+
+fnv1_64_Mix8 :: Word8 -> FNV1_64 -> FNV1_64
+fnv1_64_Mix8 !w !(FNV1_64 acc) = FNV1_64 (0x100000001b3 * acc `xor64` w)
+{-# INLINE fnv1_64_Mix8 #-}
+
+fnv1a_64_Mix8 :: Word8 -> FNV1a_64 -> FNV1a_64
+fnv1a_64_Mix8 !w !(FNV1a_64 acc) = FNV1a_64 (0x100000001b3 * (acc `xor64` w))
+{-# INLINE fnv1a_64_Mix8 #-}
+
+instance Hasher FNV1_32 where
+    type HashResult FNV1_32 = FNV1Hash32
+    hashNew = FNV1_32 0
+    hashEnd (FNV1_32 w) = FNV1Hash32 (Prelude.fromIntegral w)
+    hashMix8 = fnv1_32_Mix8
+    hashMixBytes = fnv1_32_mixBa
+
+instance Hasher FNV1a_32 where
+    type HashResult FNV1a_32 = FNV1Hash32
+    hashNew = FNV1a_32 0
+    hashEnd (FNV1a_32 w) = FNV1Hash32 (Prelude.fromIntegral w)
+    hashMix8 = fnv1a_32_Mix8
+    hashMixBytes = fnv1a_32_mixBa
+
+instance Hasher FNV1_64 where
+    type HashResult FNV1_64 = FNV1Hash64
+    hashNew = FNV1_64 0xcbf29ce484222325
+    hashEnd (FNV1_64 w) = FNV1Hash64 (Prelude.fromIntegral w)
+    hashMix8 = fnv1_64_Mix8
+    hashMixBytes = fnv1_64_mixBa
+
+instance Hasher FNV1a_64 where
+    type HashResult FNV1a_64 = FNV1Hash64
+    hashNew = FNV1a_64 0xcbf29ce484222325
+    hashEnd (FNV1a_64 w) = FNV1Hash64 (Prelude.fromIntegral w)
+    hashMix8 = fnv1a_64_Mix8
+    hashMixBytes = fnv1a_64_mixBa
+
 -- | compute FNV1 (32 bit variant) of a raw piece of memory
-fnv1 :: PrimType a => A.UArray a -> FnvHash32
-fnv1 baA = FnvHash32 $ Prelude.fromIntegral $ A.unsafeDewrap goVec goAddr ba
+fnv1_32_mixBa :: PrimType a => A.UArray a -> FNV1_32 -> FNV1_32
+fnv1_32_mixBa baA !initialState = A.unsafeDewrap goVec goAddr ba
   where
     ba :: A.UArray Word8
     ba = A.unsafeRecast baA
 
-    goVec :: ByteArray# -> Offset Word8 -> Word
-    goVec !ma !start = loop start 0
+    goVec :: ByteArray# -> Offset Word8 -> FNV1_32
+    goVec !ma !start = loop start initialState
       where
         !len = start `offsetPlusE` A.lengthSize ba
         loop !idx !acc
             | idx >= len = acc
-            | otherwise  = loop (idx + Offset 1) ((0x01000193 * acc) `xor32` primBaIndex ma idx)
+            | otherwise  = loop (idx + Offset 1) (hashMix8 (primBaIndex ma idx) acc)
     {-# INLINE goVec #-}
 
-    goAddr :: Ptr Word8 -> Offset Word8 -> ST s Word
-    goAddr !(Ptr ptr) !start = return $ loop start 0
+    goAddr :: Ptr Word8 -> Offset Word8 -> ST s FNV1_32
+    goAddr !(Ptr ptr) !start = return $ loop start initialState
       where
         !len = start `offsetPlusE` A.lengthSize ba
         loop !idx !acc
             | idx >= len = acc
-            | otherwise  = loop (idx + Offset 1) ((0x01000193 * acc) `xor32` primAddrIndex ptr idx)
+            | otherwise  = loop (idx + Offset 1) (hashMix8 (primAddrIndex ptr idx) acc)
     {-# INLINE goAddr #-}
 
 -- | compute FNV1a (32 bit variant) of a raw piece of memory
-fnv1a :: PrimType a => A.UArray a -> FnvHash32
-fnv1a baA = FnvHash32 $ Prelude.fromIntegral $ A.unsafeDewrap goVec goAddr ba
+fnv1a_32_mixBa :: PrimType a => A.UArray a -> FNV1a_32 -> FNV1a_32
+fnv1a_32_mixBa baA !initialState  = A.unsafeDewrap goVec goAddr ba
   where
     ba :: A.UArray Word8
     ba = A.unsafeRecast baA
 
-    goVec :: ByteArray# -> Offset Word8 -> Word
-    goVec !ma !start = loop start 0
+    goVec :: ByteArray# -> Offset Word8 -> FNV1a_32
+    goVec !ma !start = loop start initialState
       where
         !len = start `offsetPlusE` A.lengthSize ba
         loop !idx !acc
             | idx >= len = acc
-            | otherwise  = loop (idx + Offset 1) (0x01000193 * (acc `xor32` primBaIndex ma idx))
+            | otherwise  = loop (idx + Offset 1) (hashMix8 (primBaIndex ma idx) acc)
     {-# INLINE goVec #-}
 
-    goAddr :: Ptr Word8 -> Offset Word8 -> ST s Word
-    goAddr !(Ptr ptr) !start = return $ loop start 0
+    goAddr :: Ptr Word8 -> Offset Word8 -> ST s FNV1a_32
+    goAddr !(Ptr ptr) !start = return $ loop start initialState
       where
         !len = start `offsetPlusE` A.lengthSize ba
         loop !idx !acc
             | idx >= len = acc
-            | otherwise  = loop (idx + Offset 1) (0x01000193 * (acc `xor32` primAddrIndex ptr idx))
+            | otherwise  = loop (idx + Offset 1) (hashMix8 (primAddrIndex ptr idx) acc)
     {-# INLINE goAddr #-}
 
 -- | compute FNV1 (64 bit variant) of a raw piece of memory
-fnv1_64 :: PrimType a => A.UArray a -> FnvHash64
-fnv1_64 baA = FnvHash64 $ Prelude.fromIntegral $ A.unsafeDewrap goVec goAddr ba
+fnv1_64_mixBa :: PrimType a => A.UArray a -> FNV1_64 -> FNV1_64
+fnv1_64_mixBa baA !initialState = A.unsafeDewrap goVec goAddr ba
   where
     ba :: A.UArray Word8
     ba = A.unsafeRecast baA
 
-    goVec :: ByteArray# -> Offset Word8 -> Word64
-    goVec !ma !start = loop start 0xcbf29ce484222325
+    goVec :: ByteArray# -> Offset Word8 -> FNV1_64
+    goVec !ma !start = loop start initialState
       where
         !len = start `offsetPlusE` A.lengthSize ba
         loop !idx !acc
             | idx >= len = acc
-            | otherwise  = loop (idx + Offset 1) ((0x100000001b3 * acc) `xor64` primBaIndex ma idx)
+            | otherwise  = loop (idx + Offset 1) (hashMix8 (primBaIndex ma idx) acc)
     {-# INLINE goVec #-}
 
-    goAddr :: Ptr Word8 -> Offset Word8 -> ST s Word64
-    goAddr !(Ptr ptr) !start = return $ loop start 0xcbf29ce484222325
+    goAddr :: Ptr Word8 -> Offset Word8 -> ST s FNV1_64
+    goAddr !(Ptr ptr) !start = return $ loop start initialState
       where
         !len = start `offsetPlusE` A.lengthSize ba
         loop !idx !acc
             | idx >= len = acc
-            | otherwise  = loop (idx + Offset 1) ((0x100000001b3 * acc) `xor64` primAddrIndex ptr idx)
+            | otherwise  = loop (idx + Offset 1) (hashMix8 (primAddrIndex ptr idx) acc)
     {-# INLINE goAddr #-}
 
 -- | compute FNV1a (64 bit variant) of a raw piece of memory
-fnv1a_64 :: PrimType a => A.UArray a -> FnvHash64
-fnv1a_64 baA = FnvHash64 $ Prelude.fromIntegral $ A.unsafeDewrap goVec goAddr ba
+fnv1a_64_mixBa :: PrimType a => A.UArray a -> FNV1a_64 -> FNV1a_64
+fnv1a_64_mixBa baA !initialState = A.unsafeDewrap goVec goAddr ba
   where
     ba :: A.UArray Word8
     ba = A.unsafeRecast baA
 
-    goVec :: ByteArray# -> Offset Word8 -> Word64
-    goVec !ma !start = loop start 0xcbf29ce484222325
+    goVec :: ByteArray# -> Offset Word8 -> FNV1a_64
+    goVec !ma !start = loop start initialState
       where
         !len = start `offsetPlusE` A.lengthSize ba
         loop !idx !acc
             | idx >= len = acc
-            | otherwise  = loop (idx + Offset 1) (0x100000001b3 * (acc `xor64` primBaIndex ma idx))
+            | otherwise  = loop (idx + Offset 1) (hashMix8 (primBaIndex ma idx) acc)
     {-# INLINE goVec #-}
 
-    goAddr :: Ptr Word8 -> Offset Word8 -> ST s Word64
-    goAddr !(Ptr ptr) !start = return $ loop start 0xcbf29ce484222325
+    goAddr :: Ptr Word8 -> Offset Word8 -> ST s FNV1a_64
+    goAddr !(Ptr ptr) !start = return $ loop start initialState
       where
         !len = start `offsetPlusE` A.lengthSize ba
         loop !idx !acc
             | idx >= len = acc
-            | otherwise  = loop (idx + Offset 1) (0x100000001b3 * (acc `xor64` primAddrIndex ptr idx))
+            | otherwise  = loop (idx + Offset 1) (hashMix8 (primAddrIndex ptr idx) acc)
     {-# INLINE goAddr #-}

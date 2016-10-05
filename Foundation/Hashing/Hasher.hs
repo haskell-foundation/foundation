@@ -9,7 +9,7 @@ import qualified Foundation.Array.Unboxed as A
 import           Data.Bits
 import qualified Prelude
 
--- | Incremental Hashing state.
+-- | Incremental Hashing state. Represent an hashing algorithm
 --
 -- the base primitive of this class is `hashMix8`, append
 -- mix a Word8 in the state
@@ -17,10 +17,13 @@ import qualified Prelude
 -- The class allow to define faster mixing function that works on
 -- bigger Word size and any unboxed array of any PrimType elements
 class Hasher st where
-    {-# MINIMAL hashMix8, hashEnd #-}
+    {-# MINIMAL hashNew, hashMix8, hashEnd #-}
 
     -- | Associate type when finalizing the state with 'hashEnd'
     type HashResult st
+
+    -- | Create a new Hashing context
+    hashNew :: st
 
     -- | Finalize the state and returns the hash result
     hashEnd :: st -> HashResult st
@@ -44,8 +47,8 @@ class Hasher st where
       where (# !w1, !w2 #) = unWord64_32 w
 
     -- | Mix an arbitrary sized unboxed array and return the new state
-    hashMixBA :: A.PrimType e => UArray e -> st -> st
-    hashMixBA ba st = A.foldl' (flip hashMix8) st (A.unsafeRecast ba)
+    hashMixBytes :: A.PrimType e => UArray e -> st -> st
+    hashMixBytes ba st = A.foldl' (flip hashMix8) st (A.unsafeRecast ba)
 
 unWord16 :: Word16 -> (# Word8, Word8 #)
 unWord16 w = (# Prelude.fromIntegral (w `unsafeShiftR` 8)
