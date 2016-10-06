@@ -76,6 +76,7 @@ Library
                      Foundation.Tuple
                      Foundation.Hashing.FNV
                      Foundation.Hashing.SipHash
+                     Foundation.Hashing.Hasher
                      Foundation.Collection.Buildable
                      Foundation.Collection.List
                      Foundation.Collection.Element
