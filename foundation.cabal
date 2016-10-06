@@ -58,6 +58,7 @@ Library
                      Foundation.VFS.Path
                      Foundation.VFS.FilePath
                      Foundation.VFS.URI
+                     Foundation.Hashing
                      Foundation.Foreign
                      Foundation.Collection
                      Foundation.Primitive
