@@ -31,12 +31,15 @@ import           GHC.Types
 import           GHC.ST
 import           Foundation.Number
 import           Foundation.Internal.Base
+import           Foundation.Internal.MonadTrans
 import           Foundation.Internal.Types
 import           Foundation.Primitive.Types
 import           Foundation.Primitive.Monad
 import           Foundation.Array.Common
 import qualified Foundation.Collection as C
+import qualified Foundation.Collection.Buildable as CB
 import qualified Prelude
+import qualified Data.List
 
 -- | Array of a
 data Array a = Array {-# UNPACK #-} !(Offset a)
@@ -83,6 +86,9 @@ instance C.Foldable (Array ty) where
 instance C.Collection (Array ty) where
     null = null
     length = length
+    elem e = Data.List.elem e . toList
+    minimum = Data.List.minimum . toList . C.getNonEmpty -- TODO
+    maximum = Data.List.maximum . toList . C.getNonEmpty -- TODO
 instance C.Sequential (Array ty) where
     take = take
     drop = drop
@@ -132,20 +138,52 @@ instance C.IndexedCollection (Array ty) where
                 if predicate (unsafeIndex c i) then Just i else Nothing
 
 instance C.Zippable (Array ty) where
-    -- TODO Use an array builder once available
-    zipWith f a b = runST $ do
-        mv <- new len
-        go mv 0 f (toList a) (toList b)
-        unsafeFreeze mv
-      where
-        !len = Size $ min (C.length a) (C.length b)
-        go _  _  _ []       _        = return ()
-        go _  _  _ _        []       = return ()
-        go mv i f' (a':as') (b':bs') = do
-            write mv i (f' a' b')
-            go mv (i + 1) f' as' bs'
+  zipWith f as bs = runST $ CB.build 64 $ go f (toList as) (toList bs)
+    where
+      go _  []       _        = return ()
+      go _  _        []       = return ()
+      go f' (a':as') (b':bs') = CB.append (f' a' b') >> go f' as' bs'
 
 instance C.BoxedZippable (Array ty)
+
+instance CB.Buildable (Array ty) where
+  type Mutable (Array ty) = MArray ty
+  type Step (Array ty) = ty
+
+  append v = CB.Builder $ State $ \(i, st) ->
+      if offsetAsSize i == CB.chunkSize st
+          then do
+              cur      <- unsafeFreeze (CB.curChunk st)
+              newChunk <- new (CB.chunkSize st)
+              unsafeWrite newChunk 0 v
+              return ((), (Offset 1, st { CB.prevChunks     = cur : CB.prevChunks st
+                                        , CB.prevChunksSize = CB.chunkSize st + CB.prevChunksSize st
+                                        , CB.curChunk       = newChunk
+                                        }))
+          else do
+              let (Offset i') = i
+              unsafeWrite (CB.curChunk st) i' v
+              return ((), (i + Offset 1, st))
+  {-# INLINE append #-}
+
+  build sizeChunksI ab
+    | sizeChunksI <= 0 = CB.build 64 ab
+    | otherwise        = do
+        first         <- new sizeChunks
+        ((), (i, st)) <- runState (CB.runBuilder ab) (Offset 0, CB.BuildingState [] (Size 0) first sizeChunks)
+        cur           <- unsafeFreezeShrink (CB.curChunk st) (offsetAsSize i)
+        -- Build final array
+        let totalSize = CB.prevChunksSize st + offsetAsSize i
+        new totalSize >>= fillFromEnd totalSize (cur : CB.prevChunks st) >>= unsafeFreeze
+    where
+      sizeChunks = Size sizeChunksI
+
+      fillFromEnd _   []     mua = return mua
+      fillFromEnd !end (x:xs) mua = do
+          let sz = lengthSize x
+          unsafeCopyAtRO mua (sizeAsOffset (end - sz)) x (Offset 0) sz
+          fillFromEnd (end - sz) xs mua
+  {-# INLINE build #-}
 
 -- | return the numbers of elements in a mutable array
 mutableLength :: MArray ty st -> Int
@@ -273,11 +311,11 @@ unsafeCopyAtRO :: PrimMonad prim
                -> Offset ty                  -- ^ offset at source
                -> Size ty                    -- ^ number of elements to copy
                -> prim ()
-unsafeCopyAtRO dst od src os n = loop od os
-  where !endIndex = os `offsetPlusE` n
-        loop (Offset d) s@(Offset i)
-            | s == endIndex = return ()
-            | otherwise     = unsafeWrite dst d (unsafeIndex src i) >> loop (Offset $ d+1) (Offset $ i+1)
+unsafeCopyAtRO (MArray (Offset (I# dstart)) _ da) (Offset (I# dofs))
+               (Array  (Offset (I# sstart)) _ sa) (Offset (I# sofs))
+               (Size (I# n)) =
+    primitive $ \st ->
+        (# copyArray# sa (sstart +# sofs) da (dstart +# dofs) n st, () #)
 
 -- | Allocate a new array with a fill function that has access to the elements of
 --   the source array.
@@ -621,6 +659,9 @@ freezeUntilIndex mvec d = do
     m <- new (offsetAsSize d)
     copyAt m (Offset 0) mvec (Offset 0) (offsetAsSize d)
     unsafeFreeze m
+
+unsafeFreezeShrink :: PrimMonad prim => MArray ty (PrimState prim) -> Size ty -> prim (Array ty)
+unsafeFreezeShrink (MArray start _ ma) n = unsafeFreeze (MArray start n ma)
 
 reverse :: Array ty -> Array ty
 reverse a = create len toEnd

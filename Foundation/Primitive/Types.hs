@@ -20,6 +20,7 @@ import           GHC.Prim
 import           GHC.Int
 import           GHC.Types
 import           GHC.Word
+import           Foreign.C.Types
 import           Foundation.Internal.Proxy
 import           Foundation.Internal.Base
 import           Foundation.Internal.Types
@@ -247,6 +248,38 @@ instance PrimType Char where
     {-# INLINE primAddrRead #-}
     primAddrWrite addr (Offset (I# n)) (C# w) = primitive $ \s1 -> (# writeWideCharOffAddr# addr n w s1, () #)
     {-# INLINE primAddrWrite #-}
+
+instance PrimType CChar where
+    primSizeInBytes _ = Size 1
+    {-# INLINE primSizeInBytes #-}
+    primBaIndex ba (Offset n) = CChar (primBaIndex ba (Offset n :: Offset Int8))
+    {-# INLINE primBaIndex #-}
+    primMbaRead mba (Offset n) = CChar <$> primMbaRead mba (Offset n :: Offset Int8)
+    {-# INLINE primMbaRead #-}
+    primMbaWrite mba (Offset n) (CChar int8) = primMbaWrite mba (Offset n) int8
+    {-# INLINE primMbaWrite #-}
+    primAddrIndex addr (Offset n) = CChar $ primAddrIndex addr (Offset n :: Offset Int8)
+    {-# INLINE primAddrIndex #-}
+    primAddrRead addr (Offset n) = CChar <$> primAddrRead addr (Offset n :: Offset Int8)
+    {-# INLINE primAddrRead #-}
+    primAddrWrite addr (Offset n) (CChar int8) = primAddrWrite addr (Offset n) int8
+    {-# INLINE primAddrWrite #-}
+instance PrimType CUChar where
+    primSizeInBytes _ = Size 1
+    {-# INLINE primSizeInBytes #-}
+    primBaIndex ba (Offset n) = CUChar (primBaIndex ba (Offset n :: Offset Word8))
+    {-# INLINE primBaIndex #-}
+    primMbaRead mba (Offset n) = CUChar <$> primMbaRead mba (Offset n :: Offset Word8)
+    {-# INLINE primMbaRead #-}
+    primMbaWrite mba (Offset n) (CUChar w8) = primMbaWrite mba (Offset n) w8
+    {-# INLINE primMbaWrite #-}
+    primAddrIndex addr (Offset n) = CUChar $ primAddrIndex addr (Offset n :: Offset Word8)
+    {-# INLINE primAddrIndex #-}
+    primAddrRead addr (Offset n) = CUChar <$> primAddrRead addr (Offset n :: Offset Word8)
+    {-# INLINE primAddrRead #-}
+    primAddrWrite addr (Offset n) (CUChar w8) = primAddrWrite addr (Offset n) w8
+    {-# INLINE primAddrWrite #-}
+
 
 -- | Cast a Size linked to type A (Size A) to a Size linked to type B (Size B)
 sizeRecast :: (PrimType a, PrimType b) => Size a -> Size b

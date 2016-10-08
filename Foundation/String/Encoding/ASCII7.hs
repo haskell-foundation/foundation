@@ -21,7 +21,8 @@ import Foundation.Primitive.Monad
 import GHC.Prim
 import GHC.Word
 import GHC.Types
-import Foundation.Array.Unboxed.Builder
+import Foundation.Array.Unboxed
+import Foundation.Collection.Buildable
 
 import Foundation.String.Encoding.Encoding
 
@@ -77,9 +78,9 @@ write :: (PrimMonad st, Monad st)
       => Char
            -- ^ expecting it to be a valid Ascii character.
            -- otherwise this function will throw an exception
-      -> ArrayBuilder Word8 st ()
+      -> Builder (UArray Word8) st ()
 write c
-    | c < toEnum 0x80 = appendTy $ w8 c
+    | c < toEnum 0x80 = append $ w8 c
     | otherwise       = throw $ CharNotAscii c
   where
     w8 :: Char -> Word8

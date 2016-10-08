@@ -17,8 +17,26 @@ Goals
 * provide better data-types: packed unicode string by default, arrays.
 * Better numerical classes that better represent mathematical things (No more all-in-one Num).
 
-How to use
-==========
+Usage
+=====
+
+How to use with the normal Prelude
+----------------------------------
+
+Add the `foundation` package in your cabal file, and it's recommended to import Foundation qualified if
+you're planning to use with the normal Prelude:
+
+For example:
+
+```haskell
+import qualified Foundation as F
+```
+
+It's also recommended if you're going to deal with packages using text, bytestring, vector.. to use
+the `foundation-edge` package.
+
+How to use fully without Prelude
+--------------------------------
 
 Disable the built-in prelude at the top of your file:
 
@@ -38,6 +56,13 @@ Then in your modules:
 import Foundation
 ```
 
+Advanced settings
+----------------------
+
+Please check out the chapter [Advanced Usage Options](docs/Advanced.md) in the
+documentation.
+
+
 How to contribute
 =================
 
@@ -51,7 +76,7 @@ Any contributions is welcome, but a short list includes:
 * Make your project use foundation instead of base, report the missing coverage (IO, types, etc.), or what functionality is missing to make a succesful transition
 
 Profiling
-=========
+---------
 
 If you want to see the core (simpl step) or the assembly (asm step), then you can build with
 
@@ -73,7 +98,7 @@ For profiling individual programs, the following command is useful:
     stack ghc -- -O --make X.hs -prof -auto-all -caf-all -fforce-recomp
 
 Benchmarking
-============
+------------
 
 To get the list of benchmark:
 
@@ -89,6 +114,10 @@ To run a specific or set of benchmarks :
     stack bench --flag foundation:bench-all --benchmark-arguments '-m prefix types/String/SplitAt'
     stack bench --flag foundation:bench-all --benchmark-arguments '-m glob types/String/SplitAt'
 
+To register a set of benchmarks:
+
+    stack bench --flag foundation:bench-all --benchmark-arguments "--csv $(git describe).csv"
+
 
 Design
 ======
@@ -97,9 +126,9 @@ Foundation started on the simple idea of trying to put everything I need in one
 simple and consistent package. The amazing haskell ecosystem is extremely
 fragmented and maintained by different people with different goals, free time,
 and style. The overall scare of not trying to change anything relatively
-central (base, bytestring, text, vector ..) for a promise of stability has pushed
-many people to work on their own thing, leading to unnecessary work duplication
-and further fragmentation.
+central (`base`, `bytestring`, `text`, `vector`, ...) for a promise of stability
+has pushed many people to work on their own thing, leading to unnecessary work
+duplication and further fragmentation.
 
 
 Foundation uses and abuses type families.

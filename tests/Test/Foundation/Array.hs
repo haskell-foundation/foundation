@@ -33,6 +33,8 @@ testArrayRefs = testGroup "Array"
         , testCollection "UArray(I64)" (Proxy :: Proxy (UArray Int64))  arbitrary
         , testCollection "UArray(F32)" (Proxy :: Proxy (UArray Float))  arbitrary
         , testCollection "UArray(F64)" (Proxy :: Proxy (UArray Double)) arbitrary
+        , testCollection "UArray(CChar)"  (Proxy :: Proxy (UArray CChar))  (CChar <$> arbitrary)
+        , testCollection "UArray(CUChar)" (Proxy :: Proxy (UArray CUChar)) (CUChar <$> arbitrary)
         ]
     , testGroup "Unboxed-Foreign"
         [ testGroup "UArray(W8)"  (testUnboxedForeign (Proxy :: Proxy (UArray Word8))  arbitrary)
@@ -45,6 +47,8 @@ testArrayRefs = testGroup "Array"
         , testGroup "UArray(I64)" (testUnboxedForeign (Proxy :: Proxy (UArray Int64))  arbitrary)
         , testGroup "UArray(F32)" (testUnboxedForeign (Proxy :: Proxy (UArray Float))  arbitrary)
         , testGroup "UArray(F64)" (testUnboxedForeign (Proxy :: Proxy (UArray Double)) arbitrary)
+        , testGroup "UArray(CChar)"  (testUnboxedForeign (Proxy :: Proxy (UArray CChar))  (CChar <$> arbitrary))
+        , testGroup "UArray(CUChar)" (testUnboxedForeign (Proxy :: Proxy (UArray CUChar)) (CUChar <$> arbitrary))
         ]
     , testGroup "Boxed"
         [ testCollection "Array(W8)"  (Proxy :: Proxy (Array Word8))  arbitrary
@@ -60,6 +64,8 @@ testArrayRefs = testGroup "Array"
         , testCollection "Array(Int)" (Proxy :: Proxy (Array Int))  arbitrary
         , testCollection "Array(Int,Int)" (Proxy :: Proxy (Array (Int,Int)))  arbitrary
         , testCollection "Array(Integer)" (Proxy :: Proxy (Array Integer)) arbitrary
+        , testCollection "Array(CChar)"   (Proxy :: Proxy (Array CChar))  (CChar <$> arbitrary)
+        , testCollection "Array(CUChar)"  (Proxy :: Proxy (Array CUChar)) (CUChar <$> arbitrary)
         ]
     ]
 

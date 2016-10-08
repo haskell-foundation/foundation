@@ -48,8 +48,10 @@ Library
                      Foundation.Array
                      Foundation.Array.Internal
                      Foundation.Class.Bifunctor
+                     Foundation.Class.Storable
                      Foundation.Convertible
                      Foundation.String
+                     Foundation.String.ASCII
                      Foundation.IO
                      Foundation.IO.FileMap
                      Foundation.VFS
@@ -72,6 +74,7 @@ Library
                      Foundation.String.UTF8Table
                      Foundation.String.ModifiedUTF8
                      Foundation.Tuple
+                     Foundation.Collection.Buildable
                      Foundation.Collection.List
                      Foundation.Collection.Element
                      Foundation.Collection.InnerFunctor
@@ -83,6 +86,7 @@ Library
                      Foundation.Collection.Mutable
                      Foundation.Collection.Zippable
                      Foundation.Internal.Base
+                     Foundation.Internal.Environment
                      Foundation.Internal.Primitive
                      Foundation.Internal.IsList
                      Foundation.Internal.Identity
@@ -99,7 +103,6 @@ Library
                      Foundation.Array.Chunked.Unboxed
                      Foundation.Array.Common
                      Foundation.Array.Unboxed
-                     Foundation.Array.Unboxed.Builder
                      Foundation.Array.Unboxed.Mutable
                      Foundation.Array.Unboxed.ByteArray
                      Foundation.Array.Boxed
@@ -141,11 +144,15 @@ Test-Suite test-foundation
   Other-modules:     Test.Utils.Foreign
                      Test.Data.List
                      Test.Data.Unicode
+                     Test.Data.ASCII
                      Test.Foundation.Collection
                      Test.Foundation.ChunkedUArray
                      Test.Foundation.Number
                      Test.Foundation.Encoding
                      Test.Foundation.Parser
+                     Test.Foundation.Array
+                     Test.Foundation.String
+                     Test.Foundation.Storable
   Build-Depends:     base >= 3 && < 5
                    , mtl
                    , QuickCheck
@@ -163,6 +170,8 @@ Test-Suite doctest
   Main-is:           DocTest.hs
   Build-Depends:     base >= 3 && < 5
                    , doctest >= 0.11
+  if impl(ghc < 7.6)
+    Buildable:       False
 
 Benchmark bench
   Main-Is:           Main.hs
