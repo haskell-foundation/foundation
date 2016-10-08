@@ -258,7 +258,7 @@ revTake x = fromList . C.revTake x . toList
 
 -- TODO: Improve implementation.
 revDrop :: PrimType ty => Int -> ChunkedUArray ty -> ChunkedUArray ty
-revDrop x = fromList . C.revTake x . toList
+revDrop x = fromList . C.revDrop x . toList
 
 -- TODO: Improve implementation.
 splitOn :: PrimType ty => (ty -> Bool) -> ChunkedUArray ty -> [ChunkedUArray ty]
