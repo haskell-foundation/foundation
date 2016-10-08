@@ -208,15 +208,16 @@ drop nbElems v@(ChunkedUArray inner)
       in ChunkedUArray $ runST (A.new newSize >>= iter inner nbElems)
   where
     -- TODO: How can we avoid this first pass?
-    chunksToSkip = loop 0 0 nbElems
+    chunksToSkip = loop 0 nbElems
       where
-        loop !acc !idx !remaining =
+        loop !idx !remaining =
           let vec   = inner `A.unsafeIndex` idx
               l     = U.length vec
               slack = remaining - l
-          in case slack <= 0 of
-            True  -> acc
-            False -> loop (acc + l) (idx + 1) slack
+          in case slack of
+            x | x == 0 -> idx + 1
+            x | x <  0 -> idx
+            _          -> loop (idx + 1) slack
     iter :: (PrimType ty, PrimMonad prim)
          => Array (UArray ty)
          -> Int
@@ -227,7 +228,10 @@ drop nbElems v@(ChunkedUArray inner)
         -- We do not skip empty chunks, or this would screw
         -- the total, final size.
         loop !currentIndex !remainingElems
-          | remainingElems <= 0 = A.unsafeFreeze finalVector
+          | remainingElems <= 0 = do
+            -- Copy the rest of the vector
+            A.unsafeCopyAtRO finalVector (Offset 0) inner0 (Offset currentIndex) (Size $ C.length inner0 - currentIndex)
+            A.freeze finalVector
           | otherwise =
             let chunk = inner0 `A.unsafeIndex` currentIndex
                 chunkLen = C.length chunk
@@ -243,7 +247,8 @@ drop nbElems v@(ChunkedUArray inner)
                     U.unsafeFreeze newChunk
                   A.unsafeWrite finalVector 0 nc
                   -- Copy the rest of the vector
-                  A.unsafeCopyAtRO finalVector (Offset 1) inner0 (Offset slack) (Size $ C.length inner0 - currentIndex)
+                  let !nextIdx = currentIndex + 1
+                  A.unsafeCopyAtRO finalVector (Offset 1) inner0 (Offset nextIdx) (Size $ C.length inner0 - nextIdx)
                   A.freeze finalVector
 
 
