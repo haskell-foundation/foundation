@@ -65,6 +65,7 @@ Library
                      Foundation.System.Info
                      Foundation.Strict
                      Foundation.Parser
+                     Foundation.Random
                      Foundation.System.Entropy
   Other-modules:     Foundation.String.Internal
                      Foundation.String.UTF8

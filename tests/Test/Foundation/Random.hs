@@ -9,27 +9,42 @@ import Foundation.Primitive
 import Foundation.Array
 import Foundation.Collection
 import Foundation.System.Entropy
+import Foundation.Random
 import Control.Monad
 import qualified Prelude
 import qualified Data.List
+import GHC.ST
 
 testRandom :: TestTree
 testRandom = testGroup "random"
-    [ testProperty "random" entropyCheck
+    [ testProperty "entropy" entropyCheck
+    , testProperty "rngv1" rngv1Check
     ]
   where
     entropyCheck = monadicIO $ do
-        v <- run (getEntropy 1024 >>= randomTest)
+        v <- randomTest <$> run (getEntropy 1024)
         --run (putStrLn . fromList $ show v)
-        let failInfo = do
-                fail ("randomness assert failed: entropy=" <> show (res_entropy v)
-                                              <> " chi^2=" <> show (res_chi_square v)
-                                               <> " mean=" <> show (res_mean v)
-                                       <> " compression%=" <> show (res_compressionPercent v))
 
-        unless (res_entropy v > 6.5 && res_entropy v <= 8) failInfo
-        unless (res_mean v >= 112 && res_mean v <= 144) failInfo
-        unless (res_compressionPercent v >= 0 && res_compressionPercent v <= 5.0) failInfo
+        unless (res_entropy v > 6.5 && res_entropy v <= 8) (failInfo v)
+        unless (res_mean v >= 112 && res_mean v <= 144) (failInfo v)
+        unless (res_compressionPercent v >= 0 && res_compressionPercent v <= 5.0) (failInfo v)
+
+    rngv1Check = monadicIO $ do
+        rng         <- run (randomNew :: IO RNG)
+        --nbQueries  <- pick arbitrary
+        let (l, _) = withRandomGenerator rng $ do
+                mapM getRandomBytes [1,2,4,8,32,80,250,2139]
+            v = randomTest (mconcat l)
+        unless (res_entropy v > 6.5 && res_entropy v <= 8) (failInfo v)
+        unless (res_mean v >= 112 && res_mean v <= 144) (failInfo v)
+        unless (res_compressionPercent v >= 0 && res_compressionPercent v <= 5.0) (failInfo v)
+        return ()
+
+    failInfo v = do
+        fail ("randomness assert failed: entropy=" <> show (res_entropy v)
+                                      <> " chi^2=" <> show (res_chi_square v)
+                                       <> " mean=" <> show (res_mean v)
+                               <> " compression%=" <> show (res_compressionPercent v))
 
 -------- generic random testing
 
@@ -43,28 +58,27 @@ data RandomTestResult = RandomTestResult
     } deriving (Show,Eq)
 
 -- | Mutable random test State
-newtype RandomTestState = RandomTestState (MUArray Word64 (PrimState IO))
+newtype RandomTestState s = RandomTestState (MUArray Word64 (PrimState (ST s)))
 
 -- | Initialize new state to run tests
-randomTestInitialize :: IO RandomTestState
+randomTestInitialize :: ST s (RandomTestState s)
 randomTestInitialize = do
     m <- mutNew 256
     forM_ [0..255] $ \i -> mutWrite m i 0
     return $ RandomTestState m
 
 -- | Append random data to the test state
-randomTestAppend :: RandomTestState -> UArray Word8 -> IO ()
+randomTestAppend :: RandomTestState s -> UArray Word8 -> ST s ()
 randomTestAppend (RandomTestState buckets) = mapM_ (addVec 1 . fromIntegral) . toList
   where
-    addVec :: Word64 -> Int -> IO ()
     addVec a i = mutRead buckets i >>= \d -> mutWrite buckets i $! d+a
 
 -- | Finalize random test state into some result
-randomTestFinalize :: RandomTestState -> IO RandomTestResult
+randomTestFinalize :: RandomTestState s -> ST s RandomTestResult
 randomTestFinalize (RandomTestState buckets) = (calculate . toList) <$> freeze buckets
 
-randomTest :: UArray Word8 -> IO RandomTestResult
-randomTest a = do
+randomTest :: UArray Word8 -> RandomTestResult
+randomTest a = runST $ do
     st <- randomTestInitialize
     randomTestAppend st a
     randomTestFinalize st
