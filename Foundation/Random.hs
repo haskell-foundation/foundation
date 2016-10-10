@@ -36,7 +36,7 @@ import           GHC.ST
 import qualified Prelude
 
 -- | A monad constraint that allows to generate random bytes
-class Monad m => MonadRandom m where
+class (Functor m, Applicative m, Monad m) => MonadRandom m where
     getRandomBytes :: Int -> m (UArray Word8)
 
 instance MonadRandom IO where
