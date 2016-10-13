@@ -17,6 +17,7 @@ module Foundation.Array.Chunked.Unboxed
     ( ChunkedUArray
     ) where
 
+import qualified Data.List
 import           Data.Typeable
 import           Foundation.Array.Boxed (Array)
 import qualified Foundation.Array.Boxed as A
@@ -55,6 +56,9 @@ instance PrimType ty => IsList (ChunkedUArray ty) where
 instance PrimType ty => C.Collection (ChunkedUArray ty) where
     null = null
     length = length
+    elem   = elem
+    minimum = minimum
+    maximum = maximum
 
 instance PrimType ty => C.Sequential (ChunkedUArray ty) where
     take = take
@@ -131,6 +135,26 @@ null (ChunkedUArray array) =
 -- Complexity: O(n) where `n` is the number of chunks, as U.length u is O(1).
 length :: PrimType ty => ChunkedUArray ty -> Int
 length (ChunkedUArray array) = C.foldl' (\acc l -> acc + C.length l) 0 array
+
+-- | Returns `True` if the given element is contained in the `ChunkedUArray`.
+-- Complexity: O(n) where `n` is the number of chunks, as U.length u is O(1).
+elem :: PrimType ty => ty -> ChunkedUArray ty -> Bool
+elem el array = go 0
+  where
+    len = C.length array
+    go !currentIndex = case currentIndex < len of
+      True  -> case el == array `unsafeIndex` currentIndex of
+        True  -> True
+        False -> go (currentIndex + 1)
+      False -> False
+
+-- | TODO: Improve implementation.
+minimum :: (Ord ty, PrimType ty) => C.NonEmpty (ChunkedUArray ty) -> ty
+minimum = Data.List.minimum . toList . C.getNonEmpty
+
+-- | TODO: Improve implementation.
+maximum :: (Ord ty, PrimType ty) => C.NonEmpty (ChunkedUArray ty) -> ty
+maximum = Data.List.maximum . toList . C.getNonEmpty
 
 -- | Equality between `ChunkedUArray`.
 -- This function is fiddly to write as is not enough to compare for
@@ -289,18 +313,18 @@ uncons :: PrimType ty => ChunkedUArray ty -> Maybe (ty, ChunkedUArray ty)
 uncons v = second fromList <$> (C.uncons $ toList v)
 
 snoc :: PrimType ty => ChunkedUArray ty -> ty -> ChunkedUArray ty
-snoc (ChunkedUArray inner) elem = ChunkedUArray $ runST $ do
+snoc (ChunkedUArray inner) el = ChunkedUArray $ runST $ do
   let newLen = (Size $ C.length inner + 1)
   newArray   <- A.new newLen
-  let single = fromList [elem]
+  let single = fromList [el]
   A.unsafeWrite newArray 0 single
   A.unsafeCopyAtRO newArray (Offset 1) inner (Offset 0) (Size $ C.length inner)
   A.unsafeFreeze newArray
 
 cons :: PrimType ty => ty -> ChunkedUArray ty -> ChunkedUArray ty
-cons elem (ChunkedUArray inner) = ChunkedUArray $ runST $ do
+cons el (ChunkedUArray inner) = ChunkedUArray $ runST $ do
   newArray   <- A.new (Size $ C.length inner + 1)
-  let single = fromList [elem]
+  let single = fromList [el]
   A.unsafeCopyAtRO newArray (Offset 0) inner (Offset 0) (Size $ C.length inner)
   A.unsafeWrite newArray (C.length inner) single
   A.unsafeFreeze newArray
