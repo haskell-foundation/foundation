@@ -103,6 +103,7 @@ Library
                      Foundation.Primitive.Monad
                      Foundation.Primitive.Utils
                      Foundation.Primitive.FinalPtr
+                     Foundation.Array.Chunked.Unboxed
                      Foundation.Array.Common
                      Foundation.Array.Unboxed
                      Foundation.Array.Unboxed.Mutable
@@ -157,6 +158,7 @@ Test-Suite test-foundation
                      Test.Data.Unicode
                      Test.Data.ASCII
                      Test.Foundation.Collection
+                     Test.Foundation.ChunkedUArray
                      Test.Foundation.Number
                      Test.Foundation.Encoding
                      Test.Foundation.Parser

@@ -24,6 +24,7 @@ import Test.Data.List
 import Test.Foundation.Collection
 import Test.Foundation.Number
 import Test.Foundation.Array
+import Test.Foundation.ChunkedUArray
 import Test.Foundation.String
 import Test.Foundation.Parser
 import Test.Foundation.Storable
@@ -219,6 +220,7 @@ testZippableProps proxyA proxyB genElementA genElementB =
 tests :: [TestTree]
 tests =
     [ testArrayRefs
+    , testChunkedUArrayRefs
     , testCollection "Bitmap"  (Proxy :: Proxy (Bitmap))  arbitrary
     , testStringRefs
     , testGroup "VFS"
