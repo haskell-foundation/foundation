@@ -124,6 +124,7 @@ instance C.MutableCollection MutableBitmap where
     unsafeThaw = unsafeThaw
     unsafeFreeze = unsafeFreeze
 
+    mutNew n = new (Size n)
     mutUnsafeWrite = unsafeWrite
     mutUnsafeRead = unsafeRead
     mutWrite = write
@@ -247,11 +248,23 @@ mutableLength (MutableBitmap len _) = len
 empty :: Bitmap
 empty = Bitmap 0 A.empty
 
+new :: PrimMonad prim => Size Bool -> prim (MutableBitmap (PrimState prim))
+new (Size len) =
+    MutableBitmap len <$> A.new nbElements
+  where
+    nbElements :: Size Word32
+    nbElements = Size (len `divUp` bitsPerTy)
+
+    divUp a b
+        | d == 0    = c
+        | otherwise = c+1
+      where
+        (c,d) = a `divMod` b
+
 -- | make an array from a list of elements.
 vFromList :: [Bool] -> Bitmap
 vFromList allBools = runST $ do
-    mba <- A.new nbElements
-    let mbitmap = MutableBitmap len mba
+    mbitmap <- new (Size len)
     loop mbitmap 0 allBools
   where
     loop mb _ []     = unsafeFreeze mb
@@ -275,14 +288,6 @@ vFromList allBools = runST $ do
         C.foldl (.|.) 0 $ Prelude.zipWith (\b w -> if b then (1 `shiftL` w) else 0) l (C.reverse [0..31])
 -}
 
-    nbElements :: Size Word32
-    nbElements = Size (len `divUp` bitsPerTy)
-
-    divUp a b
-        | d == 0    = c
-        | otherwise = c+1
-      where
-        (c,d) = a `divMod` b
 
     len        = C.length allBools
 

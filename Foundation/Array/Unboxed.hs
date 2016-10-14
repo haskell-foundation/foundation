@@ -471,10 +471,10 @@ unsafeUpdate array modifiers = runST (thaw array >>= doUpdate modifiers)
                 {-# INLINE loop #-}
         {-# INLINE doUpdate #-}
 
-withPtr :: PrimType ty
+withPtr :: (PrimMonad prim, PrimType ty)
         => UArray ty
-        -> (Ptr ty -> IO a)
-        -> IO a
+        -> (Ptr ty -> prim a)
+        -> prim a
 withPtr vec@(UVecAddr start _ fptr)  f =
     withFinalPtr fptr (\ptr -> f (ptr `plusPtr` os))
   where
@@ -495,10 +495,10 @@ withPtr vec@(UVecBA start _ pstatus a) f
     sz           = primSizeInBytes (vectorProxyTy vec)
     !(Offset os) = offsetOfE sz start
 
-withMutablePtr :: PrimType ty
-               => MUArray ty RealWorld
-               -> (Ptr ty -> IO a)
-               -> IO a
+withMutablePtr :: (PrimMonad prim, PrimType ty)
+               => MUArray ty (PrimState prim)
+               -> (Ptr ty -> prim a)
+               -> prim a
 withMutablePtr muvec f = do
     v <- unsafeFreeze muvec
     withPtr v f

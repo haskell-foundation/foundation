@@ -10,6 +10,8 @@ import Foundation.Collection
 import BenchUtil.Common
 import BenchUtil.RefData
 
+import Sys
+
 #ifdef BENCH_ALL
 import qualified Data.ByteString as ByteString
 import qualified Data.Text as Text
@@ -138,4 +140,6 @@ benchsTypes = bgroup "types"
     ]
 
 main = defaultMain
-    [ benchsTypes ]
+    [ benchsTypes
+    , bgroup "Sys" benchSys
+    ]

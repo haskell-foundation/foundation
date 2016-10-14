@@ -32,6 +32,7 @@ Bug-Reports:         https://github.com/haskell-foundation/foundation/issues
 Cabal-Version:       >=1.10
 tested-with:         GHC == 7.4.2, GHC == 7.6.3, GHC == 7.8.4, GHC == 7.10.3, GHC == 8.0.1
 extra-source-files:  README.md
+                     cbits/*.h
 
 source-repository head
   type: git
@@ -64,6 +65,8 @@ Library
                      Foundation.System.Info
                      Foundation.Strict
                      Foundation.Parser
+                     Foundation.Random
+                     Foundation.System.Entropy
   Other-modules:     Foundation.String.Internal
                      Foundation.String.UTF8
                      Foundation.String.Encoding.Encoding
@@ -109,10 +112,17 @@ Library
                      Foundation.Foreign.MemoryMap
                      Foundation.Foreign.MemoryMap.Types
                      Foundation.Partial
+                     Foundation.System.Entropy.Common
+
+  include-dirs:      cbits
+  C-sources:         cbits/foundation_random.c
+
   if os(windows)
     Other-modules:   Foundation.Foreign.MemoryMap.Windows
+                     Foundation.System.Entropy.Windows
   else
     Other-modules:   Foundation.Foreign.MemoryMap.Posix
+                     Foundation.System.Entropy.Unix
 
   if impl(ghc >= 7.10)
     Exposed-modules: Foundation.Tuple.Nth
@@ -151,6 +161,8 @@ Test-Suite test-foundation
                      Test.Foundation.Array
                      Test.Foundation.String
                      Test.Foundation.Storable
+                     Test.Foundation.Random
+                     Imports
   Build-Depends:     base >= 3 && < 5
                    , mtl
                    , QuickCheck
@@ -175,6 +187,9 @@ Benchmark bench
   Main-Is:           Main.hs
   Other-modules:     BenchUtil.Common
                      BenchUtil.RefData
+                     Sys
+                     Fake.ByteString
+                     Fake.Text
   hs-source-dirs:    benchs
   default-language:  Haskell2010
   type:              exitcode-stdio-1.0

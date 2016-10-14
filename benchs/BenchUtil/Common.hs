@@ -6,6 +6,7 @@ module BenchUtil.Common
     , bench
     , fbench
     , whnf
+    , whnfIO
     , nf
     ) where
 
