@@ -88,6 +88,10 @@ module Foundation
       -- ** Monoids
     , Monoid (..)
     , (<>)
+      -- ** Collection
+    , Collection(..)
+      -- ** Folds
+    , Foldable(..)
       -- ** Maybe
     , Data.Maybe.mapMaybe
     , Data.Maybe.catMaybes
@@ -138,7 +142,7 @@ import           Data.Word (Word8, Word16, Word32, Word64, Word)
 import           Data.Int (Int8, Int16, Int32, Int64)
 import           Foundation.String (String)
 import           Foundation.Array (UArray, Array, PrimType)
---import           Foundation.Collection
+import           Foundation.Collection (Collection(..), Foldable(..))
 import qualified Foundation.IO.Terminal
 
 import           GHC.Exts (IsString(..))
