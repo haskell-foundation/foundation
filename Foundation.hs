@@ -40,7 +40,8 @@ module Foundation
     , Prelude.undefined
     , Prelude.seq
       -- ** Type classes
-    , Prelude.Show (..)
+    , Prelude.Show
+    , show
     , Prelude.Ord (..)
     , Prelude.Eq (..)
     , Prelude.Bounded (..)
@@ -170,6 +171,14 @@ import           Data.Monoid ((<>))
 
 -- | Alias to Prelude String ([Char]) for compatibility purpose
 type LString = Prelude.String
+
+-- | Use the Show class to create a String.
+--
+-- Note that this is not efficient, since
+-- an intermediate [Char] is going to be
+-- created before turning into a real String.
+show :: Prelude.Show a => a -> String
+show = fromList Prelude.. Prelude.show
 
 -- | Returns a list of the program's command line arguments (not including the program name).
 getArgs :: Prelude.IO [String]
