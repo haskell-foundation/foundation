@@ -81,8 +81,18 @@ withRandomGenerator :: RandomGen gen
                     -> (a, gen)
 withRandomGenerator gen m = runRandomState m gen
 
+-- | An alias to the default choice of deterministic random number generator
+--
+-- Unless, you want to have the stability of a specific random number generator,
+-- e.g. for tests purpose, it's recommended to use this alias so that you would
+-- keep up to date with possible bugfixes, or change of algorithms.
 type RNG = RNGv1
 
+-- | RNG based on ChaCha core.
+--
+-- The algorithm is identical to the arc4random found in recent BSDs,
+-- namely a ChaCha core provide 64 bytes of random from 32 bytes of
+-- key.
 newtype RNGv1 = RNGv1 (UArray Word8)
 
 instance RandomGen RNGv1 where
