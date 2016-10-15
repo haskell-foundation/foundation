@@ -150,7 +150,7 @@ import qualified Foundation.Partial
 import           Foundation.Tuple
 
 import qualified Foundation.Class.Bifunctor
-import Foundation.Internal.Types (Size(..), Offset(..))
+import           Foundation.Internal.Types (Size(..), Offset(..))
 
 import qualified Data.Maybe
 import qualified Data.Either
