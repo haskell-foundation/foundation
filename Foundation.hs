@@ -88,10 +88,6 @@ module Foundation
       -- ** Monoids
     , Monoid (..)
     , (<>)
-      -- ** Folds and traversals
-    , Data.Foldable.Foldable
-    , Data.Foldable.asum
-    , Data.Traversable.Traversable
       -- ** Maybe
     , Data.Maybe.mapMaybe
     , Data.Maybe.catMaybes
@@ -137,9 +133,6 @@ import qualified Control.Category
 import qualified Control.Monad
 import qualified Control.Exception
 import qualified Data.Typeable
-
-import qualified Data.Foldable
-import qualified Data.Traversable
 
 import           Data.Word (Word8, Word16, Word32, Word64, Word)
 import           Data.Int (Int8, Int16, Int32, Int64)
