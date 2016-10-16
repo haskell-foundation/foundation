@@ -14,8 +14,7 @@ import Foundation
 import Foundation.String (Encoding(..), fromBytes, toBytes)
 import Foundation.Array.Internal (recast)
 
-import Test.Tasty
-import Test.Tasty.HUnit
+import Imports
 
 data EncodedString = EncodedString Encoding (UArray Word8)
 

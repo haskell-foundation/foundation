@@ -5,10 +5,8 @@
 {-# LANGUAGE TypeFamilies        #-}
 module Main where
 
-import           Test.Tasty
 import           Control.Monad
-import           Test.Tasty.HUnit
-import           Test.Tasty.QuickCheck
+import           Imports
 
 import           Foundation hiding (second)
 import           Foundation.Array
@@ -74,7 +72,7 @@ transEq unWrap f g s =
 assertEq :: (Eq a, Show a) => a -> a -> Bool
 assertEq got expected
     | got == expected = True
-    | otherwise       = error ("got: " <> show got <> " expected: " <> show expected)
+    | otherwise       = error $ toList ("got: " <> show got <> " expected: " <> show expected)
 
 -- | Set in front of tests to make them verbose
 qcv :: TestTree -> TestTree
@@ -103,7 +101,7 @@ testCaseFilePath = Prelude.map (makeTestCases . (\x -> (show x, x)))
     , "." </> "new hope" </> ".." </> ".." </> "haskell-lang" </> "new hope"
     ]
   where
-    makeTestCases :: ([Char], FilePath) -> TestTree
+    makeTestCases :: (String, FilePath) -> TestTree
     makeTestCases (title, p) = testGroup title
         [ testCase "buildPath . splitPath == id)" $ assertBuildSplitIdemPotent p
         , testCase "p == (parent p </> filename p)" $ assertParentFilenameIdemPotent p

@@ -1,4 +1,5 @@
-    {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 module Test.Foundation.Random
     ( testRandom
     ) where
@@ -41,7 +42,8 @@ testRandom = testGroup "random"
         return ()
 
     failInfo v = do
-        fail ("randomness assert failed: entropy=" <> show (res_entropy v)
+        fail $ toList
+             ("randomness assert failed: entropy=" <> show (res_entropy v)
                                       <> " chi^2=" <> show (res_chi_square v)
                                        <> " mean=" <> show (res_mean v)
                                <> " compression%=" <> show (res_compressionPercent v))
