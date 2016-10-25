@@ -20,7 +20,7 @@ import           Foreign.Ptr
 import           Foundation.Number
 
 import           Foundation.System.Entropy.Common
-#ifdef WINDOWS
+#ifdef mingw32_HOST_OS
 import           Foundation.System.Entropy.Windows
 #else
 import           Foundation.System.Entropy.Unix

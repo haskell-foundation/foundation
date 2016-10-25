@@ -26,8 +26,10 @@ import Foreign.Marshal.Alloc (alloca)
 import Foreign.Marshal.Utils (toBool)
 import Foreign.Storable (peek)
 import System.Win32.Types (getLastError)
-import Foundation.System.Entropy.Common
 import Control.Exception
+import Foundation.System.Entropy.Common
+import Foundation.Internal.Base
+import qualified Prelude
 
 newtype EntropyCtx = EntropyCtx CryptCtx
 
@@ -47,14 +49,16 @@ type DWORD = Word32
 type BOOL  = Int32
 type BYTE  = Word8
 
-#if defined(ARCH_X86)
-# define WINDOWS_CCONV stdcall
-type CryptCtx = Word32
-#elif defined(ARCH_X86_64)
+#ifdef mingw32_HOST_OS
+#ifdef x86_64_HOST_ARCH
 # define WINDOWS_CCONV ccall
 type CryptCtx = Word64
 #else
-# error Unknown mingw32 arch
+# define WINDOWS_CCONV stdcall
+type CryptCtx = Word32
+#endif
+#else
+# error Unknown windows platform
 #endif
 
 -- Declare the required CryptoAPI imports
@@ -67,7 +71,7 @@ foreign import WINDOWS_CCONV unsafe "CryptReleaseContext"
 
 
 -- Define the constants we need from WinCrypt.h
-msDefProv :: String
+msDefProv :: [Char]
 msDefProv = "Microsoft Base Cryptographic Provider v1.0"
 
 provRSAFull :: DWORD
@@ -86,7 +90,7 @@ cryptAcquireCtx =
             else throwIO EntropySystemMissing
 
 cryptGenRandom :: CryptCtx -> Ptr Word8 -> Int -> IO Bool
-cryptGenRandom h buf n = toBool `fmap` c_cryptGenRandom h (fromIntegral n) buf
+cryptGenRandom h buf n = toBool `fmap` c_cryptGenRandom h (Prelude.fromIntegral n) buf
 
 cryptReleaseCtx :: CryptCtx -> IO ()
 cryptReleaseCtx h = do
@@ -95,4 +99,4 @@ cryptReleaseCtx h = do
         then return ()
         else do
             lastError <- getLastError
-            fail $ "cryptReleaseCtx: error " ++ show lastError
+            fail $ "cryptReleaseCtx: error " <> show lastError
