@@ -166,7 +166,7 @@ testZippable proxyA proxyB proxyCol genElementA genElementB genElementCol =
 testZippableProps :: (Eq (Item a), Eq (Item b), Show (Item a), Show (Item b), Zippable a, Zippable b)
                   => Proxy a -> Proxy b -> Gen (Element a) -> Gen (Element b) -> [TestTree]
 testZippableProps proxyA proxyB genElementA genElementB =
-    [ testProperty "zipWith ⊥ [] xs == []" $ withList $ \as ->
+    [ testProperty "zipWith _|_ [] xs == []" $ withList $ \as ->
         toListP proxyA (zipWith undefined [] (fromListP proxyA as)) == []
     , testProperty "zipWith f a b == zipWith (flip f) b a" $ withList2 $ \(as, bs) ->
         let f = ignore1
@@ -174,31 +174,31 @@ testZippableProps proxyA proxyB genElementA genElementB =
             bs' = fromListP proxyB bs
         in toListP proxyB (zipWith f as' bs')
             == toListP proxyB (zipWith (flip f) bs' as')
-    , testProperty "zipWith3 f […] xs == zipWith id (zipWith f […]) xs)" $ withList2 $ \(as, bs) ->
+    , testProperty "zipWith3 f [...] xs == zipWith id (zipWith f [...]) xs)" $ withList2 $ \(as, bs) ->
         let f = ignore2
             as' = fromListP proxyA as
             bs' = fromListP proxyB bs
         in toListP proxyB (zipWith3 f as' as' bs')
             == Prelude.zipWith id (zipWith f as as) bs
-    , testProperty "zipWith4 f […] xs == zipWith id (zipWith3 f […]) xs)" $ withList2 $ \(as, bs) ->
+    , testProperty "zipWith4 f [...] xs == zipWith id (zipWith3 f [...]) xs)" $ withList2 $ \(as, bs) ->
         let f = ignore3
             as' = fromListP proxyA as
             bs' = fromListP proxyB bs
         in toListP proxyB (zipWith4 f as' as' as' bs')
             == Prelude.zipWith id (zipWith3 f as as as) bs
-    , testProperty "zipWith5 f […] xs == zipWith id (zipWith4 f […]) xs)" $ withList2 $ \(as, bs) ->
+    , testProperty "zipWith5 f [...] xs == zipWith id (zipWith4 f [...]) xs)" $ withList2 $ \(as, bs) ->
         let f = ignore4
             as' = fromListP proxyA as
             bs' = fromListP proxyB bs
         in toListP proxyB (zipWith5 f as' as' as' as' bs')
             == Prelude.zipWith id (zipWith4 f as as as as) bs
-    , testProperty "zipWith6 f […] xs == zipWith id (zipWith5 f […]) xs)" $ withList2 $ \(as, bs) ->
+    , testProperty "zipWith6 f [...] xs == zipWith id (zipWith5 f [...]) xs)" $ withList2 $ \(as, bs) ->
         let f = ignore5
             as' = fromListP proxyA as
             bs' = fromListP proxyB bs
         in toListP proxyB (zipWith6 f as' as' as' as' as' bs')
             == Prelude.zipWith id (zipWith5 f as as as as as) bs
-    , testProperty "zipWith7 f […] xs == zipWith id (zipWith6 f […]) xs)" $ withList2 $ \(as, bs) ->
+    , testProperty "zipWith7 f [...] xs == zipWith id (zipWith6 f [...]) xs)" $ withList2 $ \(as, bs) ->
         let f = ignore6
             as' = fromListP proxyA as
             bs' = fromListP proxyB bs
