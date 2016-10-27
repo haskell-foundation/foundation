@@ -12,7 +12,7 @@
 -- representation
 --
 -- > {-# LANGUAGE OverloadedStrings #-}
--- > s = "Hello World :: String
+-- > s = "Hello World" :: String
 --
 -- > s = fromList ("Hello World" :: Prelude.String) :: String
 --
