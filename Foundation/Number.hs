@@ -16,7 +16,6 @@
 {-# LANGUAGE DefaultSignatures #-}
 module Foundation.Number
     ( Number(..)
-    , fromInteger
     , Signed(..)
     , Additive(..)
     , Multiplicative(..)
@@ -47,12 +46,7 @@ orderingToSign LT = Positive
 -- next element
 class (Eq a, Ord a, Prelude.Num a, Enum a, Additive a, Subtractive a, Difference a ~ a, Multiplicative a, Divisible a) => Number a where
     {-# MINIMAL toInteger #-}
-    --fromInteger  :: Integer -> a
     toInteger    :: a -> Integer
-
--- | convert an Integer to a type having the Number constraint
-fromInteger :: Number a => Integer -> a
-fromInteger = Prelude.fromInteger
 
 -- | Number literals that can be negative
 class Number a => Signed a where

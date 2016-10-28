@@ -40,6 +40,8 @@ module Foundation.Internal.Base
     , Prelude.Int
     , Prelude.Integer
     , Prelude.Char
+    , Foundation.Internal.NumLiteral.Integral (..)
+    , Foundation.Internal.NumLiteral.Fractional (..)
     , Data.Int.Int8, Data.Int.Int16, Data.Int.Int32, Data.Int.Int64
     , Data.Word.Word8, Data.Word.Word16, Data.Word.Word32, Data.Word.Word64, Data.Word.Word
     , Prelude.IO
@@ -67,6 +69,7 @@ import qualified Data.Typeable
 import qualified Data.Word
 import qualified Data.Int
 import qualified Foundation.Internal.IsList
+import qualified Foundation.Internal.NumLiteral
 import qualified GHC.Exts
 import qualified GHC.Generics
 import qualified GHC.Ptr

@@ -102,6 +102,8 @@ Library
                      Foundation.Internal.Types
                      Foundation.Internal.PrimTypes
                      Foundation.Internal.MonadTrans
+                     Foundation.Internal.Natural
+                     Foundation.Internal.NumLiteral
                      Foundation.IO.File
                      Foundation.IO.Terminal
                      Foundation.Primitive.Types
