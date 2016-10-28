@@ -40,7 +40,8 @@ module Foundation
     , Prelude.undefined
     , Prelude.seq
       -- ** Type classes
-    , Prelude.Show (..)
+    , Prelude.Show
+    , show
     , Prelude.Ord (..)
     , Prelude.Eq (..)
     , Prelude.Bounded (..)
@@ -88,10 +89,12 @@ module Foundation
       -- ** Monoids
     , Monoid (..)
     , (<>)
-      -- ** Folds and traversals
-    , Data.Foldable.Foldable
-    , Data.Foldable.asum
-    , Data.Traversable.Traversable
+      -- ** Collection
+    , Collection(..)
+    , NonEmpty
+    , nonEmpty
+      -- ** Folds
+    , Foldable(..)
       -- ** Maybe
     , Data.Maybe.mapMaybe
     , Data.Maybe.catMaybes
@@ -138,14 +141,11 @@ import qualified Control.Monad
 import qualified Control.Exception
 import qualified Data.Typeable
 
-import qualified Data.Foldable
-import qualified Data.Traversable
-
 import           Data.Word (Word8, Word16, Word32, Word64, Word)
 import           Data.Int (Int8, Int16, Int32, Int64)
 import           Foundation.String (String)
 import           Foundation.Array (UArray, Array, PrimType)
---import           Foundation.Collection
+import           Foundation.Collection (Collection(..), NonEmpty, nonEmpty, Foldable(..))
 import qualified Foundation.IO.Terminal
 
 import           GHC.Exts (IsString(..))
@@ -157,7 +157,7 @@ import qualified Foundation.Partial
 import           Foundation.Tuple
 
 import qualified Foundation.Class.Bifunctor
-import Foundation.Internal.Types (Size(..), Offset(..))
+import           Foundation.Internal.Types (Size(..), Offset(..))
 
 import qualified Data.Maybe
 import qualified Data.Either
@@ -171,6 +171,14 @@ import           Data.Monoid ((<>))
 
 -- | Alias to Prelude String ([Char]) for compatibility purpose
 type LString = Prelude.String
+
+-- | Use the Show class to create a String.
+--
+-- Note that this is not efficient, since
+-- an intermediate [Char] is going to be
+-- created before turning into a real String.
+show :: Prelude.Show a => a -> String
+show = fromList Prelude.. Prelude.show
 
 -- | Returns a list of the program's command line arguments (not including the program name).
 getArgs :: Prelude.IO [String]

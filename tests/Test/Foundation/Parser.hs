@@ -30,7 +30,7 @@ check r e = case (r, e) of
         assertEqual "returned value" ea a
     (ParseMore fr, TestCaseMore mb res') -> check (fr mb) res'
     (ParseFail _, TestCaseFail) -> return ()
-    _ -> assertFailure $
+    _ -> assertFailure $ toList $
             "parseTestCase failed: "
                 <> "expected: " <> show e <> " "
                 <> "buf received: " <> show r

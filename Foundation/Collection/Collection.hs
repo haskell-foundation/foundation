@@ -17,7 +17,7 @@
 -- an API to rules them all, and in the darkness bind them.
 --
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE ConstrainedClassMethods #-}
+{-# LANGUAGE ExistentialQuantification #-}
 module Foundation.Collection.Collection
     ( Collection(..)
     -- * NonEmpty Property
@@ -71,17 +71,18 @@ class (IsList c, Item c ~ Element c) => Collection c where
     -- | Check if a collection contains a specific element
     --
     -- This is the inverse of `notElem`.
-    elem :: Eq (Element c) => Element c -> c -> Bool
+    elem :: forall a . (Eq a, a ~ Element c) => Element c -> c -> Bool
     elem e col = not $ e `notElem` col
     -- | Check if a collection does *not* contain a specific element
     --
     -- This is the inverse of `elem`.
-    notElem :: Eq (Element c) => Element c -> c -> Bool
+    notElem :: forall a . (Eq a, a ~ Element c) => Element c -> c -> Bool
     notElem e col = not $ e `elem` col
+
     -- | Get the maximum element of a collection
-    maximum :: Ord (Element c) => NonEmpty c -> Element c
+    maximum :: forall a . (Ord a, a ~ Element c) => NonEmpty c -> Element c
     -- | Get the minimum element of a collection
-    minimum :: Ord (Element c) => NonEmpty c -> Element c
+    minimum :: forall a . (Ord a, a ~ Element c) => NonEmpty c -> Element c
 
 instance Collection [a] where
     null = Data.List.null

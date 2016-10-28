@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 module Main where
 
@@ -46,6 +47,7 @@ benchsString = bgroup "String"
         s = fromList dat
         t = Text.pack dat
 
+    allDat :: [(String, [Char])]
     allDat = [ ("ascii", rdFoundationEn)
              , ("mascii", rdFoundationHun)
              , ("uni1" ,rdFoundationJap)

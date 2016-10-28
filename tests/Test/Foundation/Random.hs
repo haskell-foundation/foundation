@@ -1,4 +1,5 @@
-    {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 module Test.Foundation.Random
     ( testRandom
     ) where
@@ -41,7 +42,8 @@ testRandom = testGroup "random"
         return ()
 
     failInfo v = do
-        fail ("randomness assert failed: entropy=" <> show (res_entropy v)
+        fail $ toList
+             ("randomness assert failed: entropy=" <> show (res_entropy v)
                                       <> " chi^2=" <> show (res_chi_square v)
                                        <> " mean=" <> show (res_mean v)
                                <> " compression%=" <> show (res_compressionPercent v))
@@ -96,7 +98,7 @@ calculate buckets = RandomTestResult
         probs = fmap (\v -> fromIntegral v Prelude./ fromIntegral totalChars :: Double) buckets
         entropy = Data.List.foldl' accEnt 0.0 probs
         cexp    = fromIntegral totalChars Prelude./ 256.0 :: Double
-        (datasum, chisq) = Data.List.foldl' accMeanChi (0, 0.0) $ Prelude.zip [0..255] buckets
+        (datasum, chisq) = foldl' accMeanChi (0, 0.0) $ Prelude.zip [0..255] buckets
         --chip' = abs (sqrt (2.0 * chisq) - sqrt (2.0 * 255.0 - 1.0))
 
         accEnt ent pr

@@ -10,7 +10,7 @@ import           Foreign.Marshal.Alloc
 import           Foreign.Ptr
 import           Foreign.Storable
 import           Foundation
-import           Prelude (length, head, zip, null)
+import           Prelude (head, zip)
 import           Control.Monad (forM_)
 
 import           Foundation.Foreign
