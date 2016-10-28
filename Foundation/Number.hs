@@ -44,7 +44,7 @@ orderingToSign LT = Positive
 --
 -- all number are Enum'erable, meaning that you can move to
 -- next element
-class (Eq a, Ord a, Prelude.Num a, Enum a, Additive a, Subtractive a, Difference a ~ a, Multiplicative a, Divisible a) => Number a where
+class (Eq a, Ord a, Integral a, Enum a, Additive a, Subtractive a, Difference a ~ a, Multiplicative a, Divisible a) => Number a where
     {-# MINIMAL toInteger #-}
     toInteger    :: a -> Integer
 

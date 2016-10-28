@@ -4,12 +4,12 @@
 -- Maintainer  : Foundation
 --
 -- Literal support for Integral and Fractional
---
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 module Foundation.Internal.NumLiteral
     ( Integral(..)
     , Fractional(..)
+    , HasNegation(..)
     ) where
 
 import           Prelude (Int, Word, Integer, Rational, Float, Double)
@@ -17,6 +17,8 @@ import           Data.Word (Word8, Word16, Word32, Word64)
 import           Data.Int (Int8, Int16, Int32, Int64)
 import qualified Prelude
 import           Foundation.Internal.Natural
+import           Foreign.C.Types
+import           System.Posix.Types
 
 -- | Integral Literal support
 -- 
@@ -31,6 +33,12 @@ class Integral a where
 --      0.03 :: Float
 class Fractional a where
     fromRational :: Rational -> a
+
+-- | Negation support
+--
+-- e.g. -(f x)
+class HasNegation a where
+    negate :: a -> a
 
 instance Integral Integer where
     fromInteger a = a
@@ -56,6 +64,37 @@ instance Integral Int32 where
     fromInteger a = Prelude.fromInteger a
 instance Integral Int64 where
     fromInteger a = Prelude.fromInteger a
+instance Integral CSize where
+    fromInteger a = Prelude.fromInteger a
+instance Integral CInt where
+    fromInteger a = Prelude.fromInteger a
+instance Integral COff where
+    fromInteger a = Prelude.fromInteger a
+
+instance HasNegation Integer where
+    negate = Prelude.negate
+instance HasNegation Int where
+    negate = Prelude.negate
+instance HasNegation Int8 where
+    negate = Prelude.negate
+instance HasNegation Int16 where
+    negate = Prelude.negate
+instance HasNegation Int32 where
+    negate = Prelude.negate
+instance HasNegation Int64 where
+    negate = Prelude.negate
+instance HasNegation Word where
+    negate = Prelude.negate
+instance HasNegation Word8 where
+    negate = Prelude.negate
+instance HasNegation Word16 where
+    negate = Prelude.negate
+instance HasNegation Word32 where
+    negate = Prelude.negate
+instance HasNegation Word64 where
+    negate = Prelude.negate
+instance HasNegation CInt where
+    negate = Prelude.negate
 
 instance Fractional Rational where
     fromRational a = Prelude.fromRational a

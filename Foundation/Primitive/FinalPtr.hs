@@ -28,7 +28,7 @@ import GHC.ForeignPtr
 import GHC.IO
 import Foundation.Primitive.Monad
 import Foundation.Internal.Primitive
-import Foundation.Internal.Base (return, Bool(..), (==))
+import Foundation.Internal.Base
 
 -- | Create a pointer with an associated finalizer
 data FinalPtr a = FinalPtr (Ptr a)
