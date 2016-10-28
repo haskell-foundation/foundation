@@ -101,6 +101,7 @@ import           Foundation.Array.Common
 import           Foundation.Array.Unboxed.Mutable
 import           Foundation.Number
 import qualified Data.List
+import           Data.Data
 
 -- | An array of type built on top of GHC primitive.
 --
@@ -115,6 +116,15 @@ data UArray ty =
     | UVecAddr {-# UNPACK #-} !(Offset ty)
                {-# UNPACK #-} !(Size ty)
                               !(FinalPtr ty)
+    deriving (Typeable)
+
+instance Data ty => Data (UArray ty) where
+    dataTypeOf _ = arrayType
+    toConstr _   = error "toConstr"
+    gunfold _ _  = error "gunfold"
+
+arrayType :: DataType
+arrayType = mkNoRepType "Foundation.UArray"
 
 instance (PrimType ty, Show ty) => Show (UArray ty) where
     show v = show (toList v)

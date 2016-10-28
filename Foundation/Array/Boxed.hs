@@ -47,6 +47,14 @@ data Array a = Array {-# UNPACK #-} !(Offset a)
                                     (Array# a)
     deriving (Typeable)
 
+instance Data ty => Data (Array ty) where
+    dataTypeOf _ = arrayType
+    toConstr _   = error "toConstr"
+    gunfold _ _  = error "gunfold"
+
+arrayType :: DataType
+arrayType = mkNoRepType "Foundation.Array"
+
 -- | Mutable Array of a
 data MArray a st = MArray {-# UNPACK #-} !(Offset a)
                           {-# UNPACK #-} !(Size a)
