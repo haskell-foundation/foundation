@@ -175,6 +175,8 @@ Test-Suite test-foundation
                      Test.Foundation.Storable
                      Test.Foundation.Random
                      Imports
+  Default-Extensions: NoImplicitPrelude
+                      RebindableSyntax
   Build-Depends:     base >= 3 && < 5
                    , mtl
                    , QuickCheck

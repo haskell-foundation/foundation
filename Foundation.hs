@@ -47,6 +47,9 @@ module Foundation
     , Prelude.Bounded (..)
     , Prelude.Enum (..)
     , Prelude.Functor (..)
+    , Integral (..)
+    , Fractional (..)
+    , HasNegation (..)
     , Foundation.Class.Bifunctor.Bifunctor (..)
     , Control.Applicative.Applicative (..)
     , Prelude.Monad (..)
@@ -158,6 +161,7 @@ import           Foundation.Tuple
 
 import qualified Foundation.Class.Bifunctor
 import           Foundation.Internal.Types (Size(..), Offset(..))
+import           Foundation.Internal.NumLiteral
 
 import qualified Data.Maybe
 import qualified Data.Either

@@ -3,16 +3,29 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Test.Foundation.Number
     ( testNumber
     , testNumberRefs
     ) where
 
 import Test.Tasty
-import Test.Tasty.QuickCheck
+import Test.Tasty.QuickCheck hiding (Positive, NonZero)
 
 import Foundation
 import Foundation.Number hiding (Positive)
+import qualified Prelude
+
+newtype Positive a = Positive { getPositive :: a }
+    deriving ( Eq, Ord, Show, Enum)
+instance (Ord a, Integral a, Arbitrary a) => Arbitrary (Positive a) where
+    arbitrary = Positive <$> (arbitrary `suchThat` \i -> i > 0)
+    shrink (Positive x) = [ Positive x' | x' <- shrink x , x' > 0 ]
+newtype NonZero a = NonZero { getNonZero :: a }
+    deriving (Eq, Ord, Show, Enum)
+instance (Ord a, Integral a, Arbitrary a) => Arbitrary (NonZero a) where
+    arbitrary = NonZero <$> (arbitrary `suchThat` \i -> i /= 0)
+    shrink (NonZero x) = [ NonZero x' | x' <- shrink x , x' /= 0 ]
 
 testAddNullElementRight :: (Show a, Eq a, Additive a, Arbitrary a)
                         => Proxy a -> a -> Property
@@ -30,7 +43,8 @@ testMultiplyByIdentityRight _ a = a * midentity === a
 testMultiplyByIdentityLeft :: (Show a, Eq a, Multiplicative a, Arbitrary a)
                            => Proxy a -> a -> Property
 testMultiplyByIdentityLeft _ a = midentity * a === a
-testDivMulPlusRest :: (Show a, Eq a, Number a, Arbitrary a)
+
+testDivMulPlusRest :: (Show a, Eq a, Integral a, Number a, Arbitrary a)
                    => Proxy a -> a -> (NonZero a) -> Property
 testDivMulPlusRest _ a (NonZero b) =
     a === (a `div` b) * b + (a `mod` b)
@@ -63,7 +77,7 @@ withP3Pos2 :: (Show a, Eq a, Number a, Difference a ~ a, Arbitrary a)
            => Proxy a -> (a -> Positive a -> a -> Property) -> (a -> Positive a -> a -> Property)
 withP3Pos2 _ f = f
 
-testOperatorPrecedence :: (Show a, Eq a, Number a, Difference a ~ a, Arbitrary a) => Proxy a -> TestTree
+testOperatorPrecedence :: (Show a, Eq a, Prelude.Num a, Number a, Difference a ~ a, Arbitrary a) => Proxy a -> TestTree
 testOperatorPrecedence proxy = testGroup "Precedence"
     [ testProperty "+ and - (1)" $ withP3 proxy $ \a b c -> (a + b - c) === ((a + b) - c)
     , testProperty "+ and - (2)" $ withP3 proxy $ \a b c -> (a - b + c) === ((a - b) + c)
@@ -76,7 +90,7 @@ testOperatorPrecedence proxy = testGroup "Precedence"
     ]
 
 
-testNumber :: (Show a, Eq a, Number a, Difference a ~ a, Arbitrary a)
+testNumber :: (Show a, Eq a, Prelude.Num a, Number a, Difference a ~ a, Arbitrary a)
            => LString -> Proxy a -> TestTree
 testNumber name proxy = testGroup name
     [ testAdditive proxy

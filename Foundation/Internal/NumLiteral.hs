@@ -71,6 +71,15 @@ instance Integral CInt where
 instance Integral COff where
     fromInteger a = Prelude.fromInteger a
 
+instance Integral Float where
+    fromInteger a = Prelude.fromInteger a
+instance Integral Double where
+    fromInteger a = Prelude.fromInteger a
+instance Integral CFloat where
+    fromInteger a = Prelude.fromInteger a
+instance Integral CDouble where
+    fromInteger a = Prelude.fromInteger a
+
 instance HasNegation Integer where
     negate = Prelude.negate
 instance HasNegation Int where
@@ -101,4 +110,8 @@ instance Fractional Rational where
 instance Fractional Float where
     fromRational a = Prelude.fromRational a
 instance Fractional Double where
+    fromRational a = Prelude.fromRational a
+instance Fractional CFloat where
+    fromRational a = Prelude.fromRational a
+instance Fractional CDouble where
     fromRational a = Prelude.fromRational a

@@ -14,6 +14,7 @@ import           Prelude (head, zip)
 import           Control.Monad (forM_)
 
 import           Foundation.Foreign
+import           Foundation
 
 createPtr :: Storable e => [e] -> IO (FinalPtr e)
 createPtr l
