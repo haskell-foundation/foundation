@@ -59,6 +59,7 @@ Library
                      Foundation.VFS.Path
                      Foundation.VFS.FilePath
                      Foundation.VFS.URI
+                     Foundation.Hashing
                      Foundation.Foreign
                      Foundation.Collection
                      Foundation.Primitive
@@ -77,6 +78,10 @@ Library
                      Foundation.String.UTF8Table
                      Foundation.String.ModifiedUTF8
                      Foundation.Tuple
+                     Foundation.Hashing.FNV
+                     Foundation.Hashing.SipHash
+                     Foundation.Hashing.Hasher
+                     Foundation.Hashing.Hashable
                      Foundation.Collection.Buildable
                      Foundation.Collection.List
                      Foundation.Collection.Element
