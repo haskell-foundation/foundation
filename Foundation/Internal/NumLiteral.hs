@@ -12,8 +12,8 @@ module Foundation.Internal.NumLiteral
     , HasNegation(..)
     ) where
 
-import           Prelude (Int, Word, Integer, Rational, Float, Double)
-import           Data.Word (Word8, Word16, Word32, Word64)
+import           Prelude (Int, Integer, Rational, Float, Double)
+import           Data.Word (Word8, Word16, Word32, Word64, Word)
 import           Data.Int (Int8, Int16, Int32, Int64)
 import qualified Prelude
 import           Foundation.Internal.Natural

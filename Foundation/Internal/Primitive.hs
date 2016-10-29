@@ -140,8 +140,8 @@ compatResizeMutableByteArray# src i s =
   where
     isGrow = bool# (i ># len)
     nbBytes
-        | isGrow        = len
-        | Prelude.False = i
+        | isGrow            = len
+        | Prelude.otherwise = i
     !len = sizeofMutableByteArray# src
 #endif
 {-# INLINE compatResizeMutableByteArray# #-}
