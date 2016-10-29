@@ -136,9 +136,12 @@ compatResizeMutableByteArray# mba i s = resizeMutableByteArray# mba i s
 #else
 compatResizeMutableByteArray# src i s =
     case newAlignedPinnedByteArray# i 8# s of { (# s2, dst #) ->
-    case copyMutableByteArray# dst 0# src 0# (if isGrow then len else i) s2 of { s3 -> (# s3, dst #) }}
+    case copyMutableByteArray# dst 0# src 0# nbBytes s2 of { s3 -> (# s3, dst #) }}
   where
     isGrow = bool# (i ># len)
+    nbBytes
+        | isGrow        = len
+        | Prelude.False = i
     !len = sizeofMutableByteArray# src
 #endif
 {-# INLINE compatResizeMutableByteArray# #-}
