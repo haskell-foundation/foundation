@@ -1,6 +1,7 @@
 module Main where
 
 import Test.DocTest
+import Prelude
 
 main :: IO ()
 main = doctest (extensions ++ flags ++ files)
@@ -10,6 +11,7 @@ extensions =
   [ "-XBangPatterns"
   , "-XDeriveDataTypeable"
   , "-XNoImplicitPrelude"
+  , "-XRebindableSyntax"
   , "-XOverloadedStrings"
   , "-XTypeFamilies"
   ]

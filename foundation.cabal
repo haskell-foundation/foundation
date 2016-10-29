@@ -196,8 +196,11 @@ Test-Suite doctest
   Main-is:           DocTest.hs
   Build-Depends:     base >= 3 && < 5
                    , doctest >= 0.11
+  Default-Extensions: NoImplicitPrelude
+                      RebindableSyntax
   if impl(ghc < 7.6)
     Buildable:       False
+  Buildable:         False
 
 Benchmark bench
   Main-Is:           Main.hs
