@@ -42,6 +42,9 @@ type Offset8 = Offset Word8
 newtype Offset ty = Offset Int
     deriving (Show,Eq,Ord)
 
+instance Integral (Offset ty) where
+    fromInteger = Offset . fromInteger
+
 instance Additive (Offset ty) where
     azero = Offset 0
     (+) (Offset a) (Offset b) = Offset (a+b)
@@ -69,6 +72,9 @@ offsetRecast szTy (Size szTy2) ofs =
 
 -- | Size of a data structure in bytes.
 type Size8 = Size Word8
+
+instance Integral (Size ty) where
+    fromInteger = Size . fromInteger
 
 instance Additive (Size ty) where
     azero = Size 0
