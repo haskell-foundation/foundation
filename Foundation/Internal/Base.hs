@@ -47,6 +47,9 @@ module Foundation.Internal.Base
     , GHC.Exts.IsString (..)
     , GHC.Generics.Generic (..)
     , Prelude.Either (..)
+    , Data.Data.Data (..)
+    , Data.Data.mkNoRepType
+    , Data.Data.DataType
     , Data.Typeable.Typeable
     , Data.Monoid.Monoid (..)
     , (Data.Monoid.<>)
@@ -63,6 +66,7 @@ import qualified Control.Category
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Data.Monoid
+import qualified Data.Data
 import qualified Data.Typeable
 import qualified Data.Word
 import qualified Data.Int

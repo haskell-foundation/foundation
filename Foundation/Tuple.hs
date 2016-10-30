@@ -18,7 +18,6 @@ module Foundation.Tuple
 
 import Foundation.Internal.Base
 import Foundation.Class.Bifunctor
-import Data.Data
 
 -- | Strict tuple (a,b)
 data Tuple2 a b = Tuple2 !a !b

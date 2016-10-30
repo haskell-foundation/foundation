@@ -79,6 +79,14 @@ import qualified Foundation.String.Encoding.ISO_8859_1 as Encoder
 newtype String = String (UArray Word8)
     deriving (Typeable, Monoid, Eq, Ord)
 
+instance Data String where
+    toConstr s   = mkConstr stringType (show s) [] Prefix
+    dataTypeOf _ = stringType
+    gunfold _ _  = error "gunfold"
+
+stringType :: DataType
+stringType = mkNoRepType "Foundation.String"
+
 newtype MutableString st = MutableString (MutableByteArray st)
     deriving (Typeable)
 
