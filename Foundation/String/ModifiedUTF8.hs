@@ -22,7 +22,7 @@ module Foundation.String.ModifiedUTF8
 
 import           GHC.ST (runST, ST)
 import           GHC.Prim (Addr#)
-import qualified Control.Monad (mapM)
+import           Control.Monad (mapM_)
 
 import           Foundation.Internal.Base
 import           Foundation.Internal.Types
@@ -73,7 +73,7 @@ fromModified addr = runST $ do
               [] -> internalError "ModifiedUTF8.fromModified"
               [0x00] -> return ()
               [b1,b2] | b1 == 0xC0 && b2 == 0x80 -> append 0x00 >> loopBuilder getAt noffset
-              _ -> Control.Monad.mapM append bs >> loopBuilder getAt noffset
+            _ -> mapM_ append bs >> loopBuilder getAt noffset
 
 {-
 toModified :: ByteArray -> ByteArray

@@ -534,10 +534,6 @@ sToList s = loop azero
         | otherwise  =
             let (# c , idx' #) = next s idx in c : loop idx'
 
-#if MIN_VERSION_base(4,9,0)
-
-#else
-
 {-# RULES
 "String sFromList" forall s .
   sFromList (unpackCString# s) = String $ fromModified s
@@ -546,8 +542,6 @@ sToList s = loop azero
 "String sFromList" forall s .
   sFromList (unpackCStringUtf8# s) = String $ fromModified s
   #-}
-
-#endif
 
 sFromList :: [Char] -> String
 sFromList l = runST (new bytes >>= startCopy)
