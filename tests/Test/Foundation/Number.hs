@@ -9,23 +9,10 @@ module Test.Foundation.Number
     , testNumberRefs
     ) where
 
-import Test.Tasty
-import Test.Tasty.QuickCheck hiding (Positive, NonZero)
-
+import Imports
 import Foundation
-import Foundation.Number hiding (Positive)
+import Foundation.Number -- hiding (Positive)
 import qualified Prelude
-
-newtype Positive a = Positive { getPositive :: a }
-    deriving ( Eq, Ord, Show, Enum)
-instance (Ord a, Integral a, Arbitrary a) => Arbitrary (Positive a) where
-    arbitrary = Positive <$> (arbitrary `suchThat` \i -> i > 0)
-    shrink (Positive x) = [ Positive x' | x' <- shrink x , x' > 0 ]
-newtype NonZero a = NonZero { getNonZero :: a }
-    deriving (Eq, Ord, Show, Enum)
-instance (Ord a, Integral a, Arbitrary a) => Arbitrary (NonZero a) where
-    arbitrary = NonZero <$> (arbitrary `suchThat` \i -> i /= 0)
-    shrink (NonZero x) = [ NonZero x' | x' <- shrink x , x' /= 0 ]
 
 testAddNullElementRight :: (Show a, Eq a, Additive a, Arbitrary a)
                         => Proxy a -> a -> Property
@@ -91,7 +78,7 @@ testOperatorPrecedence proxy = testGroup "Precedence"
 
 
 testNumber :: (Show a, Eq a, Prelude.Num a, Number a, Difference a ~ a, Arbitrary a)
-           => LString -> Proxy a -> TestTree
+           => String -> Proxy a -> TestTree
 testNumber name proxy = testGroup name
     [ testAdditive proxy
     , testMultiplicative proxy
