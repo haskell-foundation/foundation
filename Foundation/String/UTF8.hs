@@ -212,34 +212,32 @@ validate ba ofsStart sz = runST (Vec.unsafeIndexer ba go)
 
         one pos =
             case nbConts of
-                0    -> (pos + o1, Nothing)
+                0    -> (pos + 1, Nothing)
                 0xff -> (pos, Just InvalidHeader)
-                _ | (pos + o1) `offsetPlusE` nbContsE > end -> (pos, Just MissingByte)
+                _ | (pos + 1) `offsetPlusE` nbContsE > end -> (pos, Just MissingByte)
                 1    ->
-                    let c1 = getIdx (pos + o1)
+                    let c1 = getIdx (pos + 1)
                      in if isContinuation c1
-                            then (pos + Offset 2, Nothing)
+                            then (pos + 2, Nothing)
                             else (pos, Just InvalidContinuation)
                 2 ->
-                    let c1 = getIdx (pos + o1)
-                        c2 = getIdx (pos + Offset 2)
+                    let c1 = getIdx (pos + 1)
+                        c2 = getIdx (pos + 2)
                      in if isContinuation c1 && isContinuation c2
-                            then (pos + Offset 3, Nothing)
+                            then (pos + 3, Nothing)
                             else (pos, Just InvalidContinuation)
                 3 ->
-                    let c1 = getIdx (pos + Offset 1)
-                        c2 = getIdx (pos + Offset 2)
-                        c3 = getIdx (pos + Offset 3)
+                    let c1 = getIdx (pos + 1)
+                        c2 = getIdx (pos + 2)
+                        c3 = getIdx (pos + 3)
                      in if isContinuation c1 && isContinuation c2 && isContinuation c3
-                            then (pos + Offset 4, Nothing)
+                            then (pos + 4, Nothing)
                             else (pos, Just InvalidContinuation)
                 _ -> error "internal error"
           where
             !h = getIdx pos
             !nbContsE@(Size nbConts) = Size $ getNbBytes h
     {-# INLINE go #-}
-
-    o1 = Offset 1
 
 mutableValidate :: PrimMonad prim
                 => MutableByteArray (PrimState prim)
@@ -383,7 +381,7 @@ next (String ba) (Offset n) =
         3# -> (# toChar (decode4 (Vec.unsafeIndex ba (n + 1))
                                  (Vec.unsafeIndex ba (n + 2))
                                  (Vec.unsafeIndex ba (n + 3))) , Offset $ n + 4 #)
-        r -> error ("next: internal error: invalid input: " <> show (I# r) <> " " <> show (W# h))
+        r -> error ("next: internal error: invalid input: offset=" <> show n <> " table=" <> show (I# r) <> " h=" <> show (W# h))
   where
     !(W8# h) = Vec.unsafeIndex ba n
 
