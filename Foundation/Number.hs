@@ -32,13 +32,13 @@ infixl 6  +, -
 infixr 8  ^
 
 -- | Sign of a signed number
-data Sign = Negative | Zero | Positive
+data Sign = SignNegative | SignZero | SignPositive
     deriving (Eq)
 
 orderingToSign :: Ordering -> Sign
-orderingToSign EQ = Zero
-orderingToSign GT = Negative
-orderingToSign LT = Positive
+orderingToSign EQ = SignZero
+orderingToSign GT = SignNegative
+orderingToSign LT = SignPositive
 
 -- | Number literals, convertible through the generic Integer type.
 --
