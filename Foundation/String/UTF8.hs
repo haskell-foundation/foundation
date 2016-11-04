@@ -51,7 +51,7 @@ import           Foundation.Internal.Base
 import           Foundation.Internal.MonadTrans
 import           Foundation.Internal.Primitive
 import           Foundation.Internal.Types
-import           Foundation.Number
+import           Foundation.Numerical
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
 import           Foundation.String.UTF8Table
@@ -59,6 +59,7 @@ import           GHC.Prim
 import           GHC.ST
 import           GHC.Types
 import           GHC.Word
+import           GHC.Char
 
  -- temporary
 import qualified Data.List
@@ -679,7 +680,11 @@ break predicate s@(String ba) = runST $ Vec.unsafeIndexer ba go
         {-# INLINE loop #-}
 {-# INLINE [2] break #-}
 
+#if MIN_VERSION_base(4,9,0)
+{-# RULES "break (== 'c')" [3] forall c . break (eqChar c) = breakElem c #-}
+#else
 {-# RULES "break (== 'c')" [3] forall c . break (== c) = breakElem c #-}
+#endif
 
 breakElem :: Char -> String -> (String, String)
 breakElem !el s@(String ba) =
@@ -729,11 +734,12 @@ intersperse sep src
     | otherwise   = runST $ unsafeCopyFrom src dstBytes (go sep)
   where
     !srcBytes = size src
-    !srcLen   = length src
-    dstBytes = srcBytes + ((srcLen - 1) `scale` charToBytes (fromEnum sep))
+    !srcLen   = lengthSize src
+    dstBytes = (srcBytes :: Size8)
+             + ((srcLen - 1) `scale` charToBytes (fromEnum sep))
 
     lastSrcI :: Offset Char
-    lastSrcI = Offset 0 `offsetPlusE` Size (srcLen - 1)
+    lastSrcI = 0 `offsetPlusE` (srcLen - 1)
 
     go :: Char -> String -> Offset Char -> Offset8 -> MutableString s -> Offset8 -> ST s (Offset8, Offset8)
     go sep' src' srcI srcIdx dst dstIdx
@@ -770,7 +776,7 @@ span predicate s = break (not . predicate) s
 size :: String -> Size8
 size (String ba) = Size $ C.length ba
 
-lengthSize :: String -> Size Word8
+lengthSize :: String -> Size Char
 lengthSize (String ba)
     | C.null ba = Size 0
     | otherwise = Vec.unsafeDewrap goVec goAddr ba

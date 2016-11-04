@@ -37,7 +37,7 @@ import           Foundation.Internal.Base
 import           Foundation.Internal.Types
 import           Foundation.Primitive.Monad
 import qualified Foundation.Collection as C
-import           Foundation.Number
+import           Foundation.Numerical
 import           Data.Bits
 import           GHC.ST
 import qualified Data.List

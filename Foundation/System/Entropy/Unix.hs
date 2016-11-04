@@ -24,7 +24,7 @@ import System.IO.Unsafe (unsafePerformIO)
 import Foundation.Internal.Base
 import Prelude (fromIntegral)
 import Foundation.System.Entropy.Common
-import Foundation.Number
+import Foundation.Numerical
 
 data EntropyCtx =
       EntropyCtx Handle

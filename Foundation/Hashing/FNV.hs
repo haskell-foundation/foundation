@@ -27,7 +27,7 @@ import           Foundation.Internal.Base
 import qualified Foundation.Array.Unboxed as A
 import           Foundation.Internal.Types
 import           Foundation.Primitive.Types
-import           Foundation.Number
+import           Foundation.Numerical
 import           Foundation.Hashing.Hasher
 import           Data.Bits
 import           GHC.Prim

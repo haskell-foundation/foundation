@@ -17,7 +17,7 @@ import qualified Foundation.Array.Unboxed.Mutable as A
 import qualified Foundation.Array.Unboxed as A
 import           Control.Exception
 import           Foreign.Ptr
-import           Foundation.Number
+import           Foundation.Numerical
 
 import           Foundation.System.Entropy.Common
 #ifdef mingw32_HOST_OS

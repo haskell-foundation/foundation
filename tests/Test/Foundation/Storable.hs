@@ -110,7 +110,7 @@ testPropertyStorableFixedPeekOff :: (StorableFixed a, Foreign.Storable.Storable 
                          => Proxy a
                          -> SomeWhereInArray a
                          -> Property
-testPropertyStorableFixedPeekOff _ r@(SomeWhereInArray v sz off) = monadicIO $ do
+testPropertyStorableFixedPeekOff _ (SomeWhereInArray v sz off) = monadicIO $ do
     v' <- run $ Foreign.Marshal.Array.allocaArray sz $ \ptr -> do
             Foreign.Storable.pokeElemOff ptr off v
             peekOff ptr (Offset off)
@@ -120,7 +120,7 @@ testPropertyStorableFixedPokeOff :: (StorableFixed a, Foreign.Storable.Storable 
                          => Proxy a
                          -> SomeWhereInArray a
                          -> Property
-testPropertyStorableFixedPokeOff _ r@(SomeWhereInArray v sz off) = monadicIO $ do
+testPropertyStorableFixedPokeOff _ (SomeWhereInArray v sz off) = monadicIO $ do
     v' <- run $ Foreign.Marshal.Array.allocaArray sz $ \ptr -> do
             pokeOff ptr (Offset off) v
             Foreign.Storable.peekElemOff ptr off

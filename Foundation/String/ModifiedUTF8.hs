@@ -29,7 +29,7 @@ import           Foundation.Internal.Types
 import qualified Foundation.Array.Unboxed as Vec
 import           Foundation.Array.Unboxed (UArray)
 import           Foundation.Collection.Buildable
-import           Foundation.Number
+import           Foundation.Numerical
 import           Foundation.Primitive.FinalPtr
 import           Foundation.String.UTF8Table
 

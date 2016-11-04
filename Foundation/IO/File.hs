@@ -26,7 +26,7 @@ import           Foundation.Internal.Types
 import           Foundation.Internal.Base
 import           Foundation.String
 import           Foundation.Array
-import           Foundation.Number
+import           Foundation.Numerical
 import qualified Foundation.Array.Unboxed.Mutable as V
 import qualified Foundation.Array.Unboxed as V
 import qualified Foundation.String.UTF8 as S

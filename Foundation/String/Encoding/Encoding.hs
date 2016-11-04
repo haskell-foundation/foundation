@@ -17,7 +17,7 @@ import Foundation.Internal.Base
 import Foundation.Internal.Types
 import Foundation.Primitive.Monad
 import Foundation.Primitive.Types
-import Foundation.Number
+import Foundation.Numerical
 import qualified Foundation.Collection as C
 import           Foundation.Collection.Buildable
 import           Foundation.Array.Unboxed (UArray)

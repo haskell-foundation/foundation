@@ -15,7 +15,7 @@ module Foundation.String.Encoding.ISO_8859_1
 
 import Foundation.Internal.Base
 import Foundation.Internal.Types
-import Foundation.Number
+import Foundation.Numerical
 import Foundation.Primitive.Monad
 
 import GHC.Prim

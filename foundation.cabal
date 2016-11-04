@@ -45,7 +45,7 @@ Flag bench-all
 
 Library
   Exposed-modules:   Foundation
-                     Foundation.Number
+                     Foundation.Numerical
                      Foundation.Array
                      Foundation.Array.Internal
                      Foundation.Class.Bifunctor
@@ -104,6 +104,11 @@ Library
                      Foundation.Internal.MonadTrans
                      Foundation.Internal.Natural
                      Foundation.Internal.NumLiteral
+                     Foundation.Numerical.Primitives
+                     Foundation.Numerical.Number
+                     Foundation.Numerical.Additive
+                     Foundation.Numerical.Subtractive
+                     Foundation.Numerical.Multiplicative
                      Foundation.IO.File
                      Foundation.IO.Terminal
                      Foundation.Primitive.Types

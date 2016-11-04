@@ -17,7 +17,7 @@ import Foundation.Primitive.Monad
 import GHC.Prim
 import GHC.Word
 import GHC.Types
-import Foundation.Number
+import Foundation.Numerical
 import Data.Bits
 import qualified Prelude
 import Foundation.Array.Unboxed

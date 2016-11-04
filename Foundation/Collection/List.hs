@@ -17,7 +17,7 @@ module Foundation.Collection.List
 import qualified Data.List
 import           Data.Tuple (swap)
 import           Foundation.Internal.Base
-import           Foundation.Number
+import           Foundation.Numerical
 
 -- | Simple helper to split a list repeatly when the predicate match
 wordsWhen     :: (x -> Bool) -> [x] -> [[x]]

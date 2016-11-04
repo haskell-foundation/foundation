@@ -60,7 +60,7 @@ diffList a b = "left : " <> show a <> "\nright: " <> show b <> "\ndiff : " <> sh
   where
     d = loop 0 a b
     loop :: (Eq a, Show a) => Int -> [a] -> [a] -> String
-    loop n [] []       = "internal error : list is equal"
+    loop _ [] []       = "internal error : list is equal"
     loop n l1@(_:_) [] = "offset=" <> show n <> " extra left=" <> show l1
     loop n [] l2@(_:_) = "offset=" <> show n <> " extra right=" <> show l2
     loop n l1@(x:xs) l2@(y:ys)

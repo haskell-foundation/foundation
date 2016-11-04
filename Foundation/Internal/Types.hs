@@ -5,6 +5,7 @@
 -- Stability   : experimental
 -- Portability : portable
 --
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Foundation.Internal.Types
     ( FileSize(..)
     , Offset(..)
@@ -22,7 +23,11 @@ module Foundation.Internal.Types
 import GHC.Types
 import GHC.Word
 import Foundation.Internal.Base
-import Foundation.Number
+import Foundation.Numerical.Primitives
+import Foundation.Numerical.Number
+import Foundation.Numerical.Additive
+import Foundation.Numerical.Subtractive
+import Foundation.Numerical.Multiplicative
 
 -- $setup
 -- >>> import Foundation.Array.Unboxed
@@ -40,10 +45,14 @@ type Offset8 = Offset Word8
 -- considering that GHC/Haskell are mostly using this for offset.
 -- Trying to bring some sanity by a lightweight wrapping.
 newtype Offset ty = Offset Int
-    deriving (Show,Eq,Ord)
+    deriving (Show,Eq,Ord,Enum)
 
 instance Integral (Offset ty) where
     fromInteger = Offset . fromInteger
+instance IsIntegral (Offset ty) where
+    toInteger (Offset i) = toInteger i
+instance IsNatural (Offset ty) where
+    toNatural (Offset i) = toNatural (intToWord i)
 
 instance Additive (Offset ty) where
     azero = Offset 0
@@ -75,6 +84,10 @@ type Size8 = Size Word8
 
 instance Integral (Size ty) where
     fromInteger = Size . fromInteger
+instance IsIntegral (Size ty) where
+    toInteger (Size i) = toInteger i
+instance IsNatural (Size ty) where
+    toNatural (Size i) = toNatural (intToWord i)
 
 instance Additive (Size ty) where
     azero = Size 0
@@ -94,7 +107,7 @@ instance Subtractive (Size ty) where
 --
 -- Same caveats as 'Offset' apply here.
 newtype Size ty = Size Int
-    deriving (Show,Eq,Ord)
+    deriving (Show,Eq,Ord,Enum)
 
 sizeOfE :: Size8 -> Size ty -> Size8
 sizeOfE (Size sz) (Size ty) = Size (ty * sz)
