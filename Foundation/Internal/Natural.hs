@@ -33,4 +33,13 @@ instance Num Natural where
         | n > 0     = 1
         | otherwise = 0
 
+instance Integral Natural where
+    toInteger (Natural n) = n
+    divMod (Natural n) (Natural e) = let (a,b) = n `quotRem` e in (Natural a, Natural b)
+    quotRem (Natural n) (Natural e) = let (a,b) = n `quotRem` e in (Natural a, Natural b)
+    quot (Natural n) (Natural e) = Natural (n `quot` e)
+    rem (Natural n) (Natural e) = Natural (n `rem` e)
+    div = quot
+    mod = rem
+
 #endif
