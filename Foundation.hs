@@ -64,6 +64,8 @@ module Foundation
     , Foundation.Numerical.Additive (..)
     , Foundation.Numerical.Subtractive (..)
     , Foundation.Numerical.Multiplicative (..)
+    , Foundation.Numerical.IDivisible(..)
+    , Foundation.Numerical.Divisible(..)
       -- ** Data types
     , Prelude.Maybe (..)
     , Prelude.Ordering (..)

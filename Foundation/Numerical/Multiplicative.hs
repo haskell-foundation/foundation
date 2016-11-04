@@ -1,8 +1,11 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 module Foundation.Numerical.Multiplicative
     ( Multiplicative(..)
     , IDivisible(..)
     , Divisible(..)
+    , recip
     ) where
 
 import           Foundation.Internal.Base
@@ -44,7 +47,7 @@ class (Additive a, Multiplicative a) => IDivisible a where
     divMod :: a -> a -> (a, a)
     divMod a b = (div a b, mod a b)
 
-class Divisible a where
+class Multiplicative a => Divisible a where
     {-# MINIMAL (/) #-}
     (/) :: a -> a -> a
 
@@ -93,6 +96,9 @@ instance Multiplicative Prelude.Float where
 instance Multiplicative Prelude.Double where
     midentity = 1.0
     (*) = (Prelude.*)
+instance Multiplicative Prelude.Rational where
+    midentity = 1.0
+    (*) = (Prelude.*)
 
 instance IDivisible Integer where
     div = Prelude.div
@@ -130,6 +136,16 @@ instance IDivisible Word32 where
 instance IDivisible Word64 where
     div = Prelude.quot
     mod = Prelude.rem
+
+instance Divisible Prelude.Rational where
+    (/) = (Prelude./)
+instance Divisible Float where
+    (/) = (Prelude./)
+instance Divisible Double where
+    (/) = (Prelude./)
+
+recip :: Divisible a => a -> a
+recip x = midentity / x
 
 power :: (IsNatural n, IDivisible n, Multiplicative a) => a -> n -> a
 power a n

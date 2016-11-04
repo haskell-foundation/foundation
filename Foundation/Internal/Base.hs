@@ -45,6 +45,7 @@ module Foundation.Internal.Base
     , Foundation.Internal.NumLiteral.HasNegation (..)
     , Data.Int.Int8, Data.Int.Int16, Data.Int.Int32, Data.Int.Int64
     , Data.Word.Word8, Data.Word.Word16, Data.Word.Word32, Data.Word.Word64, Data.Word.Word
+    , Prelude.Double, Prelude.Float
     , Prelude.IO
     , Foundation.Internal.IsList.IsList (..)
     , GHC.Exts.IsString (..)
