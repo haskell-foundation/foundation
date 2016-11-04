@@ -10,7 +10,7 @@ import Numeric.Natural
 
 #else
 
-import Prelude (Show,Eq,Ord,Enum,Num(..),Integer,error,(<), (>), otherwise)
+import Prelude (Show,Eq,Ord,Enum,Num(..),Real(..),Integral(..),Integer,error,(<), (>), otherwise)
 import Data.Typeable
 
 newtype Natural = Natural Integer
@@ -32,6 +32,9 @@ instance Num Natural where
     signum (Natural n)
         | n > 0     = 1
         | otherwise = 0
+
+instance Real Natural where
+    toRational (Natural n) = toRational n
 
 instance Integral Natural where
     toInteger (Natural n) = n
