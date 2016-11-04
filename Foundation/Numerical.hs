@@ -14,6 +14,8 @@
 --
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 module Foundation.Numerical
     ( IsIntegral(..)
     , IsNatural(..)
@@ -25,6 +27,7 @@ module Foundation.Numerical
     , Divisible(..)
     , Sign(..)
     , recip
+    , IntegralRounding(..)
     ) where
 
 import           Foundation.Internal.Base
@@ -67,3 +70,27 @@ instance Signed Int32 where
 instance Signed Int64 where
     abs = Prelude.abs
     signum = orderingToSign . compare 0
+
+class IntegralRounding a where
+    roundUp       :: Integral n => a -> n
+    roundDown     :: Integral n => a -> n
+    roundTruncate :: Integral n => a -> n
+    roundNearest  :: Integral n => a -> n
+
+instance IntegralRounding Prelude.Rational where
+    roundUp       = fromInteger . Prelude.ceiling
+    roundDown     = fromInteger . Prelude.floor
+    roundTruncate = fromInteger . Prelude.truncate
+    roundNearest  = fromInteger . Prelude.round
+
+instance IntegralRounding Prelude.Double where
+    roundUp       = fromInteger . Prelude.ceiling
+    roundDown     = fromInteger . Prelude.floor
+    roundTruncate = fromInteger . Prelude.truncate
+    roundNearest  = fromInteger . Prelude.round
+
+instance IntegralRounding Prelude.Float where
+    roundUp       = fromInteger . Prelude.ceiling
+    roundDown     = fromInteger . Prelude.floor
+    roundTruncate = fromInteger . Prelude.truncate
+    roundNearest  = fromInteger . Prelude.round
