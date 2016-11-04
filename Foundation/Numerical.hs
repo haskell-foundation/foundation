@@ -72,9 +72,29 @@ instance Signed Int64 where
     signum = orderingToSign . compare 0
 
 class IntegralRounding a where
+    -- | Round up, to the next integral.
+    --
+    -- Also known as 'ceiling'
     roundUp       :: Integral n => a -> n
+
+    -- | Round down, to the previous integral
+    --
+    -- Also known as 'floor'
     roundDown     :: Integral n => a -> n
+
+    -- | Truncate to the closest integral to the fractional number
+    -- closer to 0.
+    --
+    -- This is equivalent to roundUp for negative Number
+    -- and roundDown for positive Number
     roundTruncate :: Integral n => a -> n
+
+    -- | Round to the nearest integral
+    --
+    -- > roundNearest 3.6
+    -- 4
+    -- > roundNearest 3.4
+    -- 3
     roundNearest  :: Integral n => a -> n
 
 instance IntegralRounding Prelude.Rational where
