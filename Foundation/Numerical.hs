@@ -28,6 +28,7 @@ module Foundation.Numerical
     , Sign(..)
     , recip
     , IntegralRounding(..)
+    , FloatingPoint(..)
     ) where
 
 import           Foundation.Internal.Base
@@ -35,6 +36,7 @@ import           Foundation.Numerical.Number
 import           Foundation.Numerical.Additive
 import           Foundation.Numerical.Subtractive
 import           Foundation.Numerical.Multiplicative
+import           Foundation.Numerical.Floating
 import qualified Prelude
 
 -- | Sign of a signed number
