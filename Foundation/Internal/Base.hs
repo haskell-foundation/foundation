@@ -40,8 +40,12 @@ module Foundation.Internal.Base
     , Prelude.Int
     , Prelude.Integer
     , Prelude.Char
+    , Foundation.Internal.NumLiteral.Integral (..)
+    , Foundation.Internal.NumLiteral.Fractional (..)
+    , Foundation.Internal.NumLiteral.HasNegation (..)
     , Data.Int.Int8, Data.Int.Int16, Data.Int.Int32, Data.Int.Int64
     , Data.Word.Word8, Data.Word.Word16, Data.Word.Word32, Data.Word.Word64, Data.Word.Word
+    , Prelude.Double, Prelude.Float
     , Prelude.IO
     , Foundation.Internal.IsList.IsList (..)
     , GHC.Exts.IsString (..)
@@ -57,6 +61,7 @@ module Foundation.Internal.Base
     , Control.Exception.throw
     , Control.Exception.throwIO
     , GHC.Ptr.Ptr(..)
+    , ifThenElse
     -- * Errors
     , internalError
     ) where
@@ -71,6 +76,7 @@ import qualified Data.Typeable
 import qualified Data.Word
 import qualified Data.Int
 import qualified Foundation.Internal.IsList
+import qualified Foundation.Internal.NumLiteral
 import qualified GHC.Exts
 import qualified GHC.Generics
 import qualified GHC.Ptr
@@ -78,3 +84,8 @@ import qualified GHC.Ptr
 -- | Only to use internally for internal error cases
 internalError :: [Prelude.Char] -> a
 internalError s = Prelude.error ("Internal Error: the impossible happened: " Prelude.++ s)
+
+-- | for support of if .. then .. else
+ifThenElse :: Prelude.Bool -> a -> a -> a
+ifThenElse Prelude.True  e1 _  = e1
+ifThenElse Prelude.False _  e2 = e2

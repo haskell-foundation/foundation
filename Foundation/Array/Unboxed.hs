@@ -99,7 +99,7 @@ import           Foundation.Primitive.FinalPtr
 import           Foundation.Primitive.Utils
 import           Foundation.Array.Common
 import           Foundation.Array.Unboxed.Mutable
-import           Foundation.Number
+import           Foundation.Numerical
 import qualified Data.List
 import           Data.Data
 
@@ -678,9 +678,11 @@ break xpredicate xv
 {-# NOINLINE [2] break #-}
 {-# SPECIALIZE [2] break :: (Word8 -> Bool) -> UArray Word8 -> (UArray Word8, UArray Word8) #-}
 
+{-
 {-# RULES "break (== ty)" [3] forall (x :: forall ty . PrimType ty => ty) . break (== x) = breakElem x #-}
 {-# RULES "break (ty ==)" [3] forall (x :: forall ty . PrimType ty => ty) . break (x ==) = breakElem x #-}
 {-# RULES "break (== ty)" [3] forall (x :: Word8) . break (== x) = breakElem x #-}
+-}
 
 breakElem :: PrimType ty => ty -> UArray ty -> (UArray ty, UArray ty)
 breakElem xelem xv = let (# v1, v2 #) = splitElem xelem xv in (v1, v2)

@@ -23,7 +23,7 @@ import           Foundation.Primitive.Types
 import           Foundation.Hashing.Hasher
 import qualified Foundation.Array.Unboxed as A
 import           Foundation.Array
-import           Foundation.Number
+import           Foundation.Numerical
 import           Data.Bits
 import qualified Prelude
 import           GHC.ST

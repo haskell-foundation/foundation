@@ -26,7 +26,7 @@ import Foundation.Internal.Base
 import Foundation.Internal.Types
 import Foundation.Internal.Proxy
 import Foundation.Primitive.Types
-import Foundation.Number
+import Foundation.Numerical
 
 toProxy :: proxy ty -> Proxy ty
 toProxy _ = Proxy

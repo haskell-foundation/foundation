@@ -38,7 +38,7 @@ import qualified Foundation.Array.Unboxed.Mutable   as MVec
 import qualified Foundation.Collection              as C
 import           Foundation.Internal.Base
 import           Foundation.Internal.Types
-import           Foundation.Number
+import           Foundation.Numerical
 import           Foundation.Primitive.Monad
 import           Foundation.Foreign
 

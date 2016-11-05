@@ -15,7 +15,7 @@ module Foundation.String.Encoding.ASCII7
 
 import Foundation.Internal.Base
 import Foundation.Internal.Types
-import Foundation.Number
+import Foundation.Numerical
 import Foundation.Primitive.Monad
 
 import GHC.Prim

@@ -51,7 +51,7 @@ import           Foundation.Internal.Base
 import           Foundation.Internal.MonadTrans
 import           Foundation.Internal.Primitive
 import           Foundation.Internal.Types
-import           Foundation.Number
+import           Foundation.Numerical
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
 import           Foundation.String.UTF8Table
@@ -59,6 +59,7 @@ import           GHC.Prim
 import           GHC.ST
 import           GHC.Types
 import           GHC.Word
+import           GHC.Char
 
  -- temporary
 import qualified Data.List
@@ -220,34 +221,32 @@ validate ba ofsStart sz = runST (Vec.unsafeIndexer ba go)
 
         one pos =
             case nbConts of
-                0    -> (pos + o1, Nothing)
+                0    -> (pos + 1, Nothing)
                 0xff -> (pos, Just InvalidHeader)
-                _ | (pos + o1) `offsetPlusE` nbContsE > end -> (pos, Just MissingByte)
+                _ | (pos + 1) `offsetPlusE` nbContsE > end -> (pos, Just MissingByte)
                 1    ->
-                    let c1 = getIdx (pos + o1)
+                    let c1 = getIdx (pos + 1)
                      in if isContinuation c1
-                            then (pos + Offset 2, Nothing)
+                            then (pos + 2, Nothing)
                             else (pos, Just InvalidContinuation)
                 2 ->
-                    let c1 = getIdx (pos + o1)
-                        c2 = getIdx (pos + Offset 2)
+                    let c1 = getIdx (pos + 1)
+                        c2 = getIdx (pos + 2)
                      in if isContinuation c1 && isContinuation c2
-                            then (pos + Offset 3, Nothing)
+                            then (pos + 3, Nothing)
                             else (pos, Just InvalidContinuation)
                 3 ->
-                    let c1 = getIdx (pos + Offset 1)
-                        c2 = getIdx (pos + Offset 2)
-                        c3 = getIdx (pos + Offset 3)
+                    let c1 = getIdx (pos + 1)
+                        c2 = getIdx (pos + 2)
+                        c3 = getIdx (pos + 3)
                      in if isContinuation c1 && isContinuation c2 && isContinuation c3
-                            then (pos + Offset 4, Nothing)
+                            then (pos + 4, Nothing)
                             else (pos, Just InvalidContinuation)
                 _ -> error "internal error"
           where
             !h = getIdx pos
             !nbContsE@(Size nbConts) = Size $ getNbBytes h
     {-# INLINE go #-}
-
-    o1 = Offset 1
 
 mutableValidate :: PrimMonad prim
                 => MutableByteArray (PrimState prim)
@@ -391,7 +390,7 @@ next (String ba) (Offset n) =
         3# -> (# toChar (decode4 (Vec.unsafeIndex ba (n + 1))
                                  (Vec.unsafeIndex ba (n + 2))
                                  (Vec.unsafeIndex ba (n + 3))) , Offset $ n + 4 #)
-        r -> error ("next: internal error: invalid input: " <> show (I# r) <> " " <> show (W# h))
+        r -> error ("next: internal error: invalid input: offset=" <> show n <> " table=" <> show (I# r) <> " h=" <> show (W# h))
   where
     !(W8# h) = Vec.unsafeIndex ba n
 
@@ -542,10 +541,6 @@ sToList s = loop azero
         | otherwise  =
             let (# c , idx' #) = next s idx in c : loop idx'
 
-#if MIN_VERSION_base(4,9,0)
-
-#else
-
 {-# RULES
 "String sFromList" forall s .
   sFromList (unpackCString# s) = String $ fromModified s
@@ -554,8 +549,6 @@ sToList s = loop azero
 "String sFromList" forall s .
   sFromList (unpackCStringUtf8# s) = String $ fromModified s
   #-}
-
-#endif
 
 sFromList :: [Char] -> String
 sFromList l = runST (new bytes >>= startCopy)
@@ -695,7 +688,11 @@ break predicate s@(String ba) = runST $ Vec.unsafeIndexer ba go
         {-# INLINE loop #-}
 {-# INLINE [2] break #-}
 
+#if MIN_VERSION_base(4,9,0)
+{-# RULES "break (== 'c')" [3] forall c . break (eqChar c) = breakElem c #-}
+#else
 {-# RULES "break (== 'c')" [3] forall c . break (== c) = breakElem c #-}
+#endif
 
 breakElem :: Char -> String -> (String, String)
 breakElem !el s@(String ba) =
@@ -745,11 +742,12 @@ intersperse sep src
     | otherwise   = runST $ unsafeCopyFrom src dstBytes (go sep)
   where
     !srcBytes = size src
-    !srcLen   = length src
-    dstBytes = srcBytes + ((srcLen - 1) `scale` charToBytes (fromEnum sep))
+    !srcLen   = lengthSize src
+    dstBytes = (srcBytes :: Size8)
+             + ((srcLen - 1) `scale` charToBytes (fromEnum sep))
 
     lastSrcI :: Offset Char
-    lastSrcI = Offset 0 `offsetPlusE` Size (srcLen - 1)
+    lastSrcI = 0 `offsetPlusE` (srcLen - 1)
 
     go :: Char -> String -> Offset Char -> Offset8 -> MutableString s -> Offset8 -> ST s (Offset8, Offset8)
     go sep' src' srcI srcIdx dst dstIdx
@@ -786,7 +784,7 @@ span predicate s = break (not . predicate) s
 size :: String -> Size8
 size (String ba) = Size $ C.length ba
 
-lengthSize :: String -> Size Word8
+lengthSize :: String -> Size Char
 lengthSize (String ba)
     | C.null ba = Size 0
     | otherwise = Vec.unsafeDewrap goVec goAddr ba

@@ -20,7 +20,7 @@ import           Foundation.Collection.Element
 import           Foundation.Internal.Base
 import           Foundation.Internal.MonadTrans
 import           Foundation.Internal.Types
-import           Foundation.Number
+import           Foundation.Numerical
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
 

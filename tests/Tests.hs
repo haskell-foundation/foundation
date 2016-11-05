@@ -320,8 +320,7 @@ tests =
 testCaseModifiedUTF8 :: [Char] -> String -> Assertion
 testCaseModifiedUTF8 ghcStr str
     | ghcStr == fStr = return ()
-    | otherwise      = assertFailure $
-        "expecting: " <> show ghcStr <> " received: " <> show fStr
+    | otherwise      = assertFailure $ diffList ghcStr fStr
   where
     fStr :: [Char]
     fStr = toList str

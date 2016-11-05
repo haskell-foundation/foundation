@@ -3,16 +3,22 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE CPP #-}
 module Test.Foundation.Number
     ( testNumber
     , testNumberRefs
     ) where
 
-import Test.Tasty
-import Test.Tasty.QuickCheck
-
+import Imports
 import Foundation
-import Foundation.Number hiding (Positive)
+import Foundation.Numerical -- hiding (Positive)
+import qualified Prelude
+
+#if !(MIN_VERSION_base(4,8,0))
+instance Arbitrary Natural where
+    arbitrary = fromInteger <$> (arbitrary `suchThat` \i -> i >= 0)
+#endif
 
 testAddNullElementRight :: (Show a, Eq a, Additive a, Arbitrary a)
                         => Proxy a -> a -> Property
@@ -30,7 +36,8 @@ testMultiplyByIdentityRight _ a = a * midentity === a
 testMultiplyByIdentityLeft :: (Show a, Eq a, Multiplicative a, Arbitrary a)
                            => Proxy a -> a -> Property
 testMultiplyByIdentityLeft _ a = midentity * a === a
-testDivMulPlusRest :: (Show a, Eq a, Number a, Arbitrary a)
+
+testDivMulPlusRest :: (Show a, Eq a, Integral a, IDivisible a, Arbitrary a)
                    => Proxy a -> a -> (NonZero a) -> Property
 testDivMulPlusRest _ a (NonZero b) =
     a === (a `div` b) * b + (a `mod` b)
@@ -50,20 +57,21 @@ testMultiplicative proxy = testGroup "Multiplicative"
     , testProperty "midentity * a == a" (testMultiplyByIdentityLeft proxy)
     ]
 
-testDividible :: (Show a, Eq a, Number a, Arbitrary a)
+testDividible :: (Show a, Eq a, IsIntegral a, IDivisible a, Arbitrary a)
               => Proxy a -> TestTree
 testDividible proxy = testGroup "Divisible"
     [ testProperty "(x `div` y) * y + (x `mod` y) == x" (testDivMulPlusRest proxy)
     ]
 
-withP3 :: (Show a, Eq a, Number a, Difference a ~ a, Arbitrary a)
+withP3 :: (Show a, Eq a, IsIntegral a, Additive a, Multiplicative a, Subtractive a, Difference a ~ a, Arbitrary a)
        => Proxy a -> (a -> a -> a -> Property) -> (a -> a -> a -> Property)
 withP3 _ f = f
-withP3Pos2 :: (Show a, Eq a, Number a, Difference a ~ a, Arbitrary a)
-           => Proxy a -> (a -> Positive a -> a -> Property) -> (a -> Positive a -> a -> Property)
+
+withP3Pos2 :: (Show a, Eq a, IsIntegral a, Difference a ~ a, Arbitrary a)
+           => Proxy a -> (a -> Natural -> a -> Property) -> (a -> Natural -> a -> Property)
 withP3Pos2 _ f = f
 
-testOperatorPrecedence :: (Show a, Eq a, Number a, Difference a ~ a, Arbitrary a) => Proxy a -> TestTree
+testOperatorPrecedence :: (Show a, Eq a, Prelude.Num a, IsIntegral a, Additive a, Subtractive a, Multiplicative a, Difference a ~ a, Arbitrary a) => Proxy a -> TestTree
 testOperatorPrecedence proxy = testGroup "Precedence"
     [ testProperty "+ and - (1)" $ withP3 proxy $ \a b c -> (a + b - c) === ((a + b) - c)
     , testProperty "+ and - (2)" $ withP3 proxy $ \a b c -> (a - b + c) === ((a - b) + c)
@@ -71,13 +79,13 @@ testOperatorPrecedence proxy = testGroup "Precedence"
     , testProperty "+ and * (2)" $ withP3 proxy $ \a b c -> (a * b + c) === ((a * b) + c)
     , testProperty "- and * (1)" $ withP3 proxy $ \a b c -> (a - b * c) === (a - (b * c))
     , testProperty "- and * (2)" $ withP3 proxy $ \a b c -> (a * b - c) === ((a * b) - c)
-    , testProperty "* and ^ (1)" $ withP3Pos2 proxy $ \a (Positive b) c -> (a ^ b * c) === ((a ^ b) * c)
-    , testProperty "* and ^ (2)" $ withP3Pos2 proxy $ \a (Positive c) b -> (a * b ^ c) === (a * (b ^ c))
+    , testProperty "* and ^ (1)" $ withP3Pos2 proxy $ \a b c -> (a ^ b * c) === ((a ^ b) * c)
+    , testProperty "* and ^ (2)" $ withP3Pos2 proxy $ \a c b -> (a * b ^ c) === (a * (b ^ c))
     ]
 
 
-testNumber :: (Show a, Eq a, Number a, Difference a ~ a, Arbitrary a)
-           => LString -> Proxy a -> TestTree
+testNumber :: (Show a, Eq a, Prelude.Num a, IsIntegral a, Additive a, Multiplicative a, Subtractive a, Difference a ~ a, IDivisible a, Arbitrary a)
+           => String -> Proxy a -> TestTree
 testNumber name proxy = testGroup name
     [ testAdditive proxy
     , testMultiplicative proxy

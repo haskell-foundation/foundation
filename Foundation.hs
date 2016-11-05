@@ -47,6 +47,9 @@ module Foundation
     , Prelude.Bounded (..)
     , Prelude.Enum (..)
     , Prelude.Functor (..)
+    , Integral (..)
+    , Fractional (..)
+    , HasNegation (..)
     , Foundation.Class.Bifunctor.Bifunctor (..)
     , Control.Applicative.Applicative (..)
     , Prelude.Monad (..)
@@ -55,11 +58,14 @@ module Foundation
     , IsString(..)
     , IsList(..)
       -- ** Numeric type classes
-    , Foundation.Number.Number (..)
-    , Foundation.Number.Signed (..)
-    , Foundation.Number.Additive (..)
-    , Foundation.Number.Subtractive (..)
-    , Foundation.Number.Multiplicative (..)
+    , Foundation.Numerical.IsIntegral (..)
+    , Foundation.Numerical.IsNatural (..)
+    , Foundation.Numerical.Signed (..)
+    , Foundation.Numerical.Additive (..)
+    , Foundation.Numerical.Subtractive (..)
+    , Foundation.Numerical.Multiplicative (..)
+    , Foundation.Numerical.IDivisible(..)
+    , Foundation.Numerical.Divisible(..)
       -- ** Data types
     , Prelude.Maybe (..)
     , Prelude.Ordering (..)
@@ -72,6 +78,7 @@ module Foundation
     , Data.Word.Word8, Data.Word.Word16, Data.Word.Word32, Data.Word.Word64, Data.Word.Word
     , Prelude.Int
     , Prelude.Integer
+    , Natural
     , Prelude.Rational
     , Prelude.Float
     , Prelude.Double
@@ -152,12 +159,14 @@ import           GHC.Exts (IsString(..))
 import           Foundation.Internal.IsList
 import qualified Foundation.Internal.Proxy
 
-import qualified Foundation.Number
+import qualified Foundation.Numerical
 import qualified Foundation.Partial
 import           Foundation.Tuple
 
 import qualified Foundation.Class.Bifunctor
 import           Foundation.Internal.Types (Size(..), Offset(..))
+import           Foundation.Internal.NumLiteral
+import           Foundation.Internal.Natural
 
 import qualified Data.Maybe
 import qualified Data.Either

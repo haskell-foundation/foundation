@@ -29,7 +29,7 @@ module Foundation.Array.Boxed
 import           GHC.Prim
 import           GHC.Types
 import           GHC.ST
-import           Foundation.Number
+import           Foundation.Numerical
 import           Foundation.Internal.Base
 import           Foundation.Internal.MonadTrans
 import           Foundation.Internal.Types

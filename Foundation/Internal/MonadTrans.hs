@@ -22,8 +22,8 @@ instance Monad m => Functor (State s m) where
 instance Monad m => Applicative (State s m) where
     pure a = State $ \st -> return (a,st)
     fab <*> fa = State $ \s1 -> do
-        (a,s2)  <- runState fa s1
-        (ab,s3) <- runState fab s2
+        (ab,s2) <- runState fab s1
+        (a,s3)  <- runState fa s2
         return (ab a, s3)
 instance Monad m => Monad (State r m) where
     return a = State $ \st -> return (a,st)

@@ -9,7 +9,7 @@ import Foundation.Internal.Base
 import Foundation.Primitive.Monad
 import Foundation.Array.Common
 import Foundation.Array.Unboxed.Mutable
-import Foundation.Number
+import Foundation.Numerical
 import Control.Monad (forM_)
 import qualified Foundation.Collection as C
 

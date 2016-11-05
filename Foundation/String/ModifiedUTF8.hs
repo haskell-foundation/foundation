@@ -22,20 +22,16 @@ module Foundation.String.ModifiedUTF8
 
 import           GHC.ST (runST, ST)
 import           GHC.Prim (Addr#)
-import qualified Control.Monad (mapM)
+import           Control.Monad (mapM_)
 
 import           Foundation.Internal.Base
 import           Foundation.Internal.Types
 import qualified Foundation.Array.Unboxed as Vec
 import           Foundation.Array.Unboxed (UArray)
 import           Foundation.Collection.Buildable
-import           Foundation.Number
+import           Foundation.Numerical
 import           Foundation.Primitive.FinalPtr
 import           Foundation.String.UTF8Table
-
--- offset of size one
-aone :: Offset Word8
-aone = Offset 1
 
 -- helper function to read some bytes from the given byte reader
 accessBytes :: Offset Word8 -> (Offset Word8 -> Word8) -> ([Word8], Offset Word8)
@@ -44,11 +40,11 @@ accessBytes offset getAtIdx = (loop offset, pastEnd)
     nbytes :: Size Word8
     nbytes = Size $ getNbBytes $ getAtIdx offset
     pastEnd :: Offset Word8
-    pastEnd = aone + (offset `offsetPlusE` nbytes)
+    pastEnd = 1 + (offset `offsetPlusE` nbytes)
     loop :: Offset Word8 -> [Word8]
     loop off
         | off == pastEnd = []
-        | otherwise      = getAtIdx off : loop (off + aone)
+        | otherwise      = getAtIdx off : loop (off + 1)
 
 buildByteArray :: Addr# -> ST st (UArray Word8)
 buildByteArray addr = Vec.UVecAddr (Offset 0) (Size 100000) `fmap`
@@ -68,12 +64,13 @@ fromModified addr = runST $ do
   where
     buildWithBytes getAt = build 64 $ loopBuilder getAt (Offset 0)
     loopBuilder getAt offset =
-        let (bs, noffset) = accessBytes offset getAt
-         in case bs of
-              [] -> internalError "ModifiedUTF8.fromModified"
-              [0x00] -> return ()
-              [b1,b2] | b1 == 0xC0 && b2 == 0x80 -> append 0x00 >> loopBuilder getAt noffset
-              _ -> Control.Monad.mapM append bs >> loopBuilder getAt noffset
+        case bs of
+            [] -> internalError "ModifiedUTF8.fromModified"
+            [0x00] -> return ()
+            [b1,b2] | b1 == 0xC0 && b2 == 0x80 -> append 0x00 >> loopBuilder getAt noffset
+            _ -> mapM_ append bs >> loopBuilder getAt noffset
+      where
+        (bs, noffset) = accessBytes offset getAt
 
 {-
 toModified :: ByteArray -> ByteArray

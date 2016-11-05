@@ -44,7 +44,7 @@ import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
 import           Foundation.Primitive.FinalPtr
 import           Foundation.Array.Common
-import           Foundation.Number
+import           Foundation.Numerical
 -- import           Foreign.Marshal.Utils (copyBytes)
 
 -- | A Mutable array of types built on top of GHC primitive.

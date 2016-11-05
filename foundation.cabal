@@ -1,5 +1,5 @@
 Name:                foundation
-Version:             0.0.1
+Version:             0.0.2
 Synopsis:            Alternative prelude with batteries and no dependencies
 Description:
     A custom prelude with no dependencies apart from base.
@@ -45,7 +45,7 @@ Flag bench-all
 
 Library
   Exposed-modules:   Foundation
-                     Foundation.Number
+                     Foundation.Numerical
                      Foundation.Array
                      Foundation.Array.Internal
                      Foundation.Class.Bifunctor
@@ -102,6 +102,13 @@ Library
                      Foundation.Internal.Types
                      Foundation.Internal.PrimTypes
                      Foundation.Internal.MonadTrans
+                     Foundation.Internal.Natural
+                     Foundation.Internal.NumLiteral
+                     Foundation.Numerical.Primitives
+                     Foundation.Numerical.Number
+                     Foundation.Numerical.Additive
+                     Foundation.Numerical.Subtractive
+                     Foundation.Numerical.Multiplicative
                      Foundation.IO.File
                      Foundation.IO.Terminal
                      Foundation.Primitive.Types
@@ -134,6 +141,7 @@ Library
     Exposed-modules: Foundation.Tuple.Nth
 
   Default-Extensions: NoImplicitPrelude
+                      RebindableSyntax
                       TypeFamilies
                       BangPatterns
                       DeriveDataTypeable
@@ -172,6 +180,8 @@ Test-Suite test-foundation
                      Test.Foundation.Storable
                      Test.Foundation.Random
                      Imports
+  Default-Extensions: NoImplicitPrelude
+                      RebindableSyntax
   Build-Depends:     base >= 3 && < 5
                    , mtl
                    , QuickCheck
@@ -191,8 +201,11 @@ Test-Suite doctest
   Main-is:           DocTest.hs
   Build-Depends:     base >= 3 && < 5
                    , doctest >= 0.11
+  Default-Extensions: NoImplicitPrelude
+                      RebindableSyntax
   if impl(ghc < 7.6)
     Buildable:       False
+  Buildable:         False
 
 Benchmark bench
   Main-Is:           Main.hs

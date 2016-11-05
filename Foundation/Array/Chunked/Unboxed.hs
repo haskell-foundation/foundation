@@ -28,7 +28,7 @@ import           Foundation.Class.Bifunctor
 import qualified Foundation.Collection as C
 import           Foundation.Internal.Base
 import           Foundation.Internal.Types
-import           Foundation.Number
+import           Foundation.Numerical
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
 import           GHC.ST

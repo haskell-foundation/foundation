@@ -48,7 +48,7 @@ import           Control.Monad       (MonadPlus, mzero, mplus)
 import           Foundation.Internal.Base
 import           Foundation.Collection hiding (take)
 import           Foundation.String
-import           Foundation.Number
+import           Foundation.Numerical
 
 data ParserError input
     = Expected
