@@ -47,6 +47,8 @@ module Foundation.Internal.Base
     , Data.Word.Word8, Data.Word.Word16, Data.Word.Word32, Data.Word.Word64, Data.Word.Word
     , Prelude.Double, Prelude.Float
     , Prelude.IO
+    , FP32
+    , FP64
     , Foundation.Internal.IsList.IsList (..)
     , GHC.Exts.IsString (..)
     , GHC.Generics.Generic (..)
@@ -89,3 +91,6 @@ internalError s = Prelude.error ("Internal Error: the impossible happened: " Pre
 ifThenElse :: Prelude.Bool -> a -> a -> a
 ifThenElse Prelude.True  e1 _  = e1
 ifThenElse Prelude.False _  e2 = e2
+
+type FP32 = Prelude.Float
+type FP64 = Prelude.Double
