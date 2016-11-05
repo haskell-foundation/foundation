@@ -59,6 +59,7 @@ Library
                      Foundation.VFS.Path
                      Foundation.VFS.FilePath
                      Foundation.VFS.URI
+                     Foundation.Math.Trigonometry
                      Foundation.Hashing
                      Foundation.Foreign
                      Foundation.Collection
