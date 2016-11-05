@@ -109,6 +109,7 @@ Library
                      Foundation.Numerical.Additive
                      Foundation.Numerical.Subtractive
                      Foundation.Numerical.Multiplicative
+                     Foundation.Numerical.Floating
                      Foundation.IO.File
                      Foundation.IO.Terminal
                      Foundation.Primitive.Types
