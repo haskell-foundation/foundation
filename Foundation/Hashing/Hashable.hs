@@ -13,13 +13,24 @@ module Foundation.Hashing.Hashable
     ) where
 
 import Foundation.Internal.Base
+import Foundation.Internal.Natural
+import Foundation.Numerical.Primitives
+import Foundation.Numerical.Multiplicative
 import Foundation.Array
 import Foundation.Tuple
 import Foundation.String
 import Foundation.Collection
 import Foundation.Hashing.Hasher
+import qualified Prelude
 
 -- | Type with the ability to be hashed
+--
+-- Hashable doesn't have any specific rules, and it's
+-- made for raw speed. More specifically don't expect different
+-- type representing the same data to hash to the same value
+--
+-- > hashMix (1 :: Integer) /= hashMix (1 :: Word8)
+-- True
 class Hashable a where
     hashMix :: Hasher st => a -> st -> st
 
@@ -32,7 +43,33 @@ instance Hashable Word32 where
     hashMix w = hashMix32 w
 instance Hashable Word64 where
     hashMix w = hashMix64 w
--- TODO : add Int{8,16,24,32}, Int, Word, Integer
+instance Hashable Natural where
+    hashMix n iacc
+        | n == 0    = hashMix8 0 iacc
+        | otherwise = loop n iacc
+      where
+        loop 0 acc = acc
+        loop w acc =
+            let b = Prelude.fromIntegral w
+             in loop (w `div` 256) (hashMix8 b acc)
+instance Hashable Int8 where
+    hashMix w = hashMix8 (integralConvert w)
+instance Hashable Int16 where
+    hashMix w = hashMix16 (integralConvert w)
+instance Hashable Int32 where
+    hashMix w = hashMix32 (integralConvert w)
+instance Hashable Int64 where
+    hashMix w = hashMix64 (integralConvert w)
+instance Hashable Integer where
+    hashMix i iacc
+        | i == 0    = hashMix8 0 iacc
+        | i < 0     = loop (-i) (hashMix8 1 iacc)
+        | otherwise = loop i (hashMix8 0 iacc)
+      where
+        loop 0 acc = acc
+        loop w acc =
+            let b = Prelude.fromIntegral w
+             in loop (w `div` 256) (hashMix8 b acc)
 
 instance Hashable String where
     hashMix s = hashMixBytes (toBytes UTF8 s)
