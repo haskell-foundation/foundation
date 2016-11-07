@@ -1,5 +1,6 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE CPP #-}
 module Foundation.Numerical.Primitives
     ( intToWord
     , integralConvert
@@ -9,6 +10,7 @@ import GHC.Types
 import GHC.Prim
 import GHC.Word
 import GHC.Int
+import qualified Prelude
 
 intToWord :: Int -> Word
 intToWord (I# i) = W# (int2Word# i)
@@ -25,4 +27,4 @@ instance IntegralConvert Int16 Word16 where
 instance IntegralConvert Int32 Word32 where
     integralConvert (I32# i) = W32# (int2Word# i)
 instance IntegralConvert Int64 Word64 where
-    integralConvert (I64# i) = W64# (int2Word# i)
+    integralConvert i = Prelude.fromIntegral i
