@@ -176,6 +176,7 @@ testSequentialOps proxy genElement = testGroup "Sequential"
     , testProperty "break" $ withElements2E $ \(l, c) -> toList2 (break (== c) $ fromListP proxy l) === (break (== c)) l
     , testProperty "breakElem" $ withElements2E $ \(l, c) -> toList2 (breakElem c $ fromListP proxy l) === (breakElem c) l
     , testProperty "span" $ withElements2E $ \(l, c) -> toList2 (span (== c) $ fromListP proxy l) === (span (== c)) l
+    , testProperty "filter" $ withElements2E $ \(l, c) -> toList (filter (== c) $ fromListP proxy l) === (filter (== c)) l
     , testProperty "snoc" $ withElements2E $ \(l, c) -> toList (snoc (fromListP proxy l) c) === (l <> [c])
     , testProperty "cons" $ withElements2E $ \(l, c) -> toList (cons c (fromListP proxy l)) === (c : l)
     , testProperty "unsnoc" $ withElements $ \l -> fmap toListFirst (unsnoc (fromListP proxy l)) === unsnoc l
