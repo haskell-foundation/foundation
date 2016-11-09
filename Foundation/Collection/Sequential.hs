@@ -88,6 +88,10 @@ class (IsList c, Item c ~ Element c, Monoid c, Collection c) => Sequential c whe
     -- | Filter all the elements that satisfy the predicate
     filter :: (Element c -> Bool) -> c -> c
 
+    -- | Partition the elements thtat satisfy the predicate and those that don't
+    partition :: (Element c -> Bool) -> c -> (c,c)
+    partition predicate c = (filter predicate c, filter (not . predicate) c)
+
     -- | Reverse a collection
     reverse :: c -> c
 
@@ -146,6 +150,7 @@ instance Sequential [a] where
     intersperse = Data.List.intersperse
     span = Data.List.span
     filter = Data.List.filter
+    partition = Data.List.partition
     reverse = Data.List.reverse
     uncons = ListExtra.uncons
     unsnoc = ListExtra.unsnoc
