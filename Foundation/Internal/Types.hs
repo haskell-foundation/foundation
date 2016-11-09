@@ -48,7 +48,9 @@ newtype Offset ty = Offset Int
     deriving (Show,Eq,Ord,Enum)
 
 instance Integral (Offset ty) where
-    fromInteger = Offset . fromInteger
+    fromInteger n
+        | n < 0     = error "Size: fromInteger: negative"
+        | otherwise = Offset . fromInteger $ n
 instance IsIntegral (Offset ty) where
     toInteger (Offset i) = toInteger i
 instance IsNatural (Offset ty) where
@@ -83,7 +85,9 @@ offsetRecast szTy (Size szTy2) ofs =
 type Size8 = Size Word8
 
 instance Integral (Size ty) where
-    fromInteger = Size . fromInteger
+    fromInteger n
+        | n < 0     = error "Size: fromInteger: negative"
+        | otherwise = Size . fromInteger $ n
 instance IsIntegral (Size ty) where
     toInteger (Size i) = toInteger i
 instance IsNatural (Size ty) where
