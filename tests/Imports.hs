@@ -14,7 +14,7 @@ module Imports
 
 import Foundation
 import Test.Tasty              as X hiding (testGroup)
-import Test.Tasty.QuickCheck   as X (Arbitrary(..), Gen, suchThat, Property, (===)
+import Test.Tasty.QuickCheck   as X (Arbitrary(..), Gen, suchThat, Property, (===), (==>)
                                     , Small(..), QuickCheckVerbose(..), QuickCheckTests(..)
                                     , forAll, vectorOf, frequency, choose, elements)
 import Test.Tasty.HUnit        as X hiding (testCase, assert, assertFailure)
