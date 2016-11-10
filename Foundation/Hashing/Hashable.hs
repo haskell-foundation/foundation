@@ -19,7 +19,7 @@ import Foundation.Numerical.Multiplicative
 import Foundation.Array
 import Foundation.Tuple
 import Foundation.String
-import Foundation.Collection
+import Foundation.Collection.Foldable
 import Foundation.Hashing.Hasher
 import qualified Prelude
 
