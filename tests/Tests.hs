@@ -27,6 +27,7 @@ import Test.Foundation.String
 import Test.Foundation.Parser
 import Test.Foundation.Storable
 import Test.Foundation.Random
+import qualified Test.Foundation.Bits as Bits
 
 data CharMap = CharMap LUString Prelude.Int
     deriving (Show)
@@ -219,6 +220,7 @@ tests :: [TestTree]
 tests =
     [ testArrayRefs
     , testChunkedUArrayRefs
+    , Bits.tests
     , testCollection "Bitmap"  (Proxy :: Proxy (Bitmap))  arbitrary
     , testStringRefs
     , testGroup "VFS"

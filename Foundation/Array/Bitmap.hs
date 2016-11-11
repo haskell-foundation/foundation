@@ -39,6 +39,7 @@ import           Foundation.Primitive.Monad
 import qualified Foundation.Collection as C
 import           Foundation.Numerical
 import           Data.Bits
+import           Foundation.Bits
 import           GHC.ST
 import qualified Data.List
 
@@ -48,6 +49,12 @@ data MutableBitmap st = MutableBitmap Int (MUArray Word32 st)
 
 bitsPerTy :: Int
 bitsPerTy = 32
+
+shiftPerTy :: Int
+shiftPerTy = 5
+
+maskPerTy :: Int
+maskPerTy = 0x1f
 
 instance Show Bitmap where
     show v = show (toList v)
@@ -130,8 +137,8 @@ instance C.MutableCollection MutableBitmap where
     mutWrite = write
     mutRead = read
 
-bitmapIndex :: Int -> (Int, Int)
-bitmapIndex !i = i `divMod` bitsPerTy
+bitmapIndex :: Offset Bool -> (Int, Int)
+bitmapIndex (Offset !i) = (i .>>. shiftPerTy, i .&. maskPerTy)
 {-# INLINE bitmapIndex #-}
 
 -- return the index in word32 quantity and mask to a bit in a bitmap
@@ -188,7 +195,7 @@ unsafeFreeze (MutableBitmap len mba) = Bitmap len `fmap` C.unsafeFreeze mba
 
 unsafeWrite :: PrimMonad prim => MutableBitmap (PrimState prim) -> Int -> Bool -> prim ()
 unsafeWrite (MutableBitmap _ ma) i v = do
-    let (idx, bitIdx) = bitmapIndex i
+    let (idx, bitIdx) = bitmapIndex (Offset i)
     w <- A.unsafeRead ma idx
     let w' = if v then setBit w bitIdx else clearBit w bitIdx
     A.unsafeWrite ma idx w'
@@ -196,7 +203,7 @@ unsafeWrite (MutableBitmap _ ma) i v = do
 
 unsafeRead :: PrimMonad prim => MutableBitmap (PrimState prim) -> Int -> prim Bool
 unsafeRead (MutableBitmap _ ma) i = do
-    let (idx, bitIdx) = bitmapIndex i
+    let (idx, bitIdx) = bitmapIndex (Offset i)
     flip testBit bitIdx `fmap` A.unsafeRead ma idx
 {-# INLINE unsafeRead #-}
 
@@ -231,7 +238,7 @@ index bits n
 -- use 'index' if unsure.
 unsafeIndex :: Bitmap -> Int -> Bool
 unsafeIndex (Bitmap _ ba) n =
-    let (idx, bitIdx) = bitmapIndex n
+    let (idx, bitIdx) = bitmapIndex (Offset n)
      in testBit (A.unsafeIndex ba idx) bitIdx
 
 {-# INLINE unsafeIndex #-}
@@ -253,13 +260,7 @@ new (Size len) =
     MutableBitmap len <$> A.new nbElements
   where
     nbElements :: Size Word32
-    nbElements = Size (len `divUp` bitsPerTy)
-
-    divUp a b
-        | d == 0    = c
-        | otherwise = c+1
-      where
-        (c,d) = a `divMod` b
+    nbElements = Size ((len `alignRoundUp` bitsPerTy) .>>. shiftPerTy)
 
 -- | make an array from a list of elements.
 vFromList :: [Bool] -> Bitmap

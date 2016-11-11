@@ -24,6 +24,7 @@ import           Foundation.Hashing.Hasher
 import qualified Foundation.Array.Unboxed as A
 import           Foundation.Array
 import           Foundation.Numerical
+import           Foundation.Bits
 import           Data.Bits
 import qualified Prelude
 import           GHC.ST
@@ -270,11 +271,6 @@ loopRounds :: Int -> InternalState -> InternalState
 loopRounds 1 !v = doRound v
 loopRounds n !v = loopRounds (n-1) (doRound v)
 {-# INLINE loopRounds #-}
-
-(.<<.) :: Bits a => a -> Int -> a
-(.<<.) = unsafeShiftL
-(.>>.) :: Bits a => a -> Int -> a
-(.>>.) = unsafeShiftR
 
 andMask64 :: Int -> Word64
 andMask64 64 = 0xffffffffffffffff

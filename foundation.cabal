@@ -48,6 +48,7 @@ Library
                      Foundation.Numerical
                      Foundation.Array
                      Foundation.Array.Internal
+                     Foundation.Bits
                      Foundation.Class.Bifunctor
                      Foundation.Class.Storable
                      Foundation.Convertible
@@ -173,6 +174,7 @@ Test-Suite test-foundation
                      Test.Data.Unicode
                      Test.Data.ASCII
                      Test.Foundation.Collection
+                     Test.Foundation.Bits
                      Test.Foundation.ChunkedUArray
                      Test.Foundation.Number
                      Test.Foundation.Encoding
