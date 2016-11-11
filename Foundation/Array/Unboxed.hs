@@ -101,7 +101,6 @@ import           Foundation.Array.Common
 import           Foundation.Array.Unboxed.Mutable
 import           Foundation.Numerical
 import qualified Data.List
-import           Data.Data
 
 -- | An array of type built on top of GHC primitive.
 --
