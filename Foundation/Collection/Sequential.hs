@@ -11,6 +11,7 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ConstrainedClassMethods #-}
+{-# LANGUAGE DefaultSignatures #-}
 module Foundation.Collection.Sequential
     ( Sequential(..)
     ) where
@@ -31,7 +32,8 @@ class (IsList c, Item c ~ Element c, Monoid c, Collection c) => Sequential c whe
               , intersperse
               , filter, reverse
               , uncons, unsnoc, snoc, cons
-              , find, sortBy, singleton #-}
+              , find, sortBy, singleton
+              #-}
 
     -- | Take the first @n elements of a collection
     take :: Int -> c -> c
@@ -88,6 +90,10 @@ class (IsList c, Item c ~ Element c, Monoid c, Collection c) => Sequential c whe
     -- | Filter all the elements that satisfy the predicate
     filter :: (Element c -> Bool) -> c -> c
 
+    -- | Partition the elements thtat satisfy the predicate and those that don't
+    partition :: (Element c -> Bool) -> c -> (c,c)
+    partition predicate c = (filter predicate c, filter (not . predicate) c)
+
     -- | Reverse a collection
     reverse :: c -> c
 
@@ -130,6 +136,28 @@ class (IsList c, Item c ~ Element c, Monoid c, Collection c) => Sequential c whe
     init :: NonEmpty c -> c
     init nel = maybe (error "init") fst $ unsnoc (getNonEmpty nel)
 
+    -- | Takes two collections and returns True iff the first collection is a prefix of the second.
+    isPrefixOf :: Eq (Element c) => c -> c -> Bool
+    default isPrefixOf :: Eq c => c -> c -> Bool
+    isPrefixOf c1 c2
+        | len1 > len2  = False
+        | len1 == len2 = c1 == c2
+        | otherwise    = c1 == take len1 c2
+      where
+        len1 = length c1
+        len2 = length c2
+
+    -- | Takes two collections and returns True iff the first collection is a suffix of the second.
+    isSuffixOf :: Eq (Element c) => c -> c -> Bool
+    default isSuffixOf :: Eq c => c -> c -> Bool
+    isSuffixOf c1 c2
+        | len1 > len2  = False
+        | len1 == len2 = c1 == c2
+        | otherwise    = c1 == revTake len1 c2
+      where
+        len1 = length c1
+        len2 = length c2
+
 -- Temporary utility functions
 mconcatCollection :: (Monoid (Item c), Sequential c) => c -> Element c
 mconcatCollection c = mconcat (toList c)
@@ -146,6 +174,7 @@ instance Sequential [a] where
     intersperse = Data.List.intersperse
     span = Data.List.span
     filter = Data.List.filter
+    partition = Data.List.partition
     reverse = Data.List.reverse
     uncons = ListExtra.uncons
     unsnoc = ListExtra.unsnoc
@@ -154,6 +183,8 @@ instance Sequential [a] where
     find = Data.List.find
     sortBy = Data.List.sortBy
     singleton = (:[])
+    isPrefixOf = Data.List.isPrefixOf
+    isSuffixOf = Data.List.isSuffixOf
 
 instance UV.PrimType ty => Sequential (UV.UArray ty) where
     take = UV.take

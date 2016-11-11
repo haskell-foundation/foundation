@@ -175,6 +175,9 @@ testSequentialOps proxy genElement = testGroup "Sequential"
     , testProperty "revSplitAt" $ withElements2 $ \(l, n) -> toList2 (revSplitAt n $ fromListP proxy l) === (revSplitAt n) l
     , testProperty "break" $ withElements2E $ \(l, c) -> toList2 (break (== c) $ fromListP proxy l) === (break (== c)) l
     , testProperty "breakElem" $ withElements2E $ \(l, c) -> toList2 (breakElem c $ fromListP proxy l) === (breakElem c) l
+    , testProperty "span" $ withElements2E $ \(l, c) -> toList2 (span (== c) $ fromListP proxy l) === (span (== c)) l
+    , testProperty "filter" $ withElements2E $ \(l, c) -> toList (filter (== c) $ fromListP proxy l) === (filter (== c)) l
+    , testProperty "partition" $ withElements2E $ \(l, c) -> toList2 (partition (== c) $ fromListP proxy l) === (partition (== c)) l
     , testProperty "snoc" $ withElements2E $ \(l, c) -> toList (snoc (fromListP proxy l) c) === (l <> [c])
     , testProperty "cons" $ withElements2E $ \(l, c) -> toList (cons c (fromListP proxy l)) === (c : l)
     , testProperty "unsnoc" $ withElements $ \l -> fmap toListFirst (unsnoc (fromListP proxy l)) === unsnoc l
@@ -203,6 +206,20 @@ testSequentialOps proxy genElement = testGroup "Sequential"
     , testProperty "second take . splitAt" $ withElements3 $ \(l, n1, n2) ->
         (toList2 $ (second (take n1) . splitAt n2) $ fromListP proxy l) === (second (take n1) . splitAt n2) l
     , testSequentialProperties proxy genElement
+    , testGroup "isSuffixOf"
+        [ testProperty "collection + sub" $ withElements2 $ \(l1, n) ->
+            let c1 = fromListP proxy l1 in isSuffixOf (revTake n c1) c1 === isSuffixOf (revTake n l1) l1
+        , testProperty "2 collections" $ with2Elements $ \(l1, l2) -> isSuffixOf (fromListP proxy l1) (fromListP proxy l2) === isSuffixOf l1 l2
+        , testProperty "collection + empty" $ withElements $ \l1 ->
+            isSuffixOf (fromListP proxy []) (fromListP proxy l1) === isSuffixOf [] l1
+        ]
+    , testGroup "isPrefixOf"
+        [ testProperty "collection + sub" $ withElements2 $ \(l1, n) ->
+            let c1 = fromListP proxy l1 in isPrefixOf (take n c1) c1 === isPrefixOf (take n l1) l1
+        , testProperty "2 collections" $ with2Elements $ \(l1, l2) -> isPrefixOf (fromListP proxy l1) (fromListP proxy l2) === isPrefixOf l1 l2
+        , testProperty "collection + empty" $ withElements $ \l1 ->
+            isPrefixOf (fromListP proxy []) (fromListP proxy l1) === isPrefixOf [] l1
+        ]
     ]
 {-
     , testProperty "imap" $ \(CharMap (LUString u) i) ->
@@ -214,6 +231,7 @@ testSequentialOps proxy genElement = testGroup "Sequential"
     toListFirst (x,y) = (toList x, y)
     toListSecond (x,y) = (x, toList y)
     withElements f = forAll (generateListOfElement genElement) f
+    with2Elements f = forAll ((,) <$> generateListOfElement genElement <*> generateListOfElement genElement) f
     withElements2 f = forAll ((,) <$> generateListOfElement genElement <*> arbitrary) f
     withElements3 f = forAll ((,,) <$> generateListOfElement genElement <*> arbitrary <*> arbitrary) f
     withElements2E f = forAll ((,) <$> generateListOfElement genElement <*> genElement) f
