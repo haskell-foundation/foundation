@@ -36,66 +36,66 @@ data Tuple4 a b c d = Tuple4 !a !b !c !d
 
 -- | Class of product types that have a first element
 class Fstable a where
-    type FstTy a
-    fst :: a -> FstTy a
+    type ProductFirst a
+    fst :: a -> ProductFirst a
 
 -- | Class of product types that have a second element
 class Sndable a where
-    type SndTy a
-    snd :: a -> SndTy a
+    type ProductSecond a
+    snd :: a -> ProductSecond a
 
 -- | Class of product types that have a third element
 class Thdable a where
-    type ThdTy a
-    thd :: a -> ThdTy a
+    type ProductThird a
+    thd :: a -> ProductThird a
 
 instance Fstable (a,b) where
-    type FstTy (a,b) = a
+    type ProductFirst (a,b) = a
     fst (a,_) = a
 instance Fstable (a,b,c) where
-    type FstTy (a,b,c) = a
+    type ProductFirst (a,b,c) = a
     fst (a,_,_) = a
 instance Fstable (a,b,c,d) where
-    type FstTy (a,b,c,d) = a
+    type ProductFirst (a,b,c,d) = a
     fst (a,_,_,_) = a
 instance Fstable (Tuple2 a b) where
-    type FstTy (Tuple2 a b) = a
+    type ProductFirst (Tuple2 a b) = a
     fst (Tuple2 a _) = a
 instance Fstable (Tuple3 a b c) where
-    type FstTy (Tuple3 a b c) = a
+    type ProductFirst (Tuple3 a b c) = a
     fst (Tuple3 a _ _) = a
 instance Fstable (Tuple4 a b c d) where
-    type FstTy (Tuple4 a b c d) = a
+    type ProductFirst (Tuple4 a b c d) = a
     fst (Tuple4 a _ _ _) = a
 
 instance Sndable (a,b) where
-    type SndTy (a,b) = b
+    type ProductSecond (a,b) = b
     snd (_,b) = b
 instance Sndable (a,b,c) where
-    type SndTy (a,b,c) = b
+    type ProductSecond (a,b,c) = b
     snd (_,b,_) = b
 instance Sndable (a,b,c,d) where
-    type SndTy (a,b,c,d) = b
+    type ProductSecond (a,b,c,d) = b
     snd (_,b,_,_) = b
 instance Sndable (Tuple2 a b) where
-    type SndTy (Tuple2 a b) = b
+    type ProductSecond (Tuple2 a b) = b
     snd (Tuple2 _ b) = b
 instance Sndable (Tuple3 a b c) where
-    type SndTy (Tuple3 a b c) = b
+    type ProductSecond (Tuple3 a b c) = b
     snd (Tuple3 _ b _) = b
 instance Sndable (Tuple4 a b c d) where
-    type SndTy (Tuple4 a b c d) = b
+    type ProductSecond (Tuple4 a b c d) = b
     snd (Tuple4 _ b _ _) = b
 
 instance Thdable (a,b,c) where
-    type ThdTy (a,b,c) = c
+    type ProductThird (a,b,c) = c
     thd (_,_,c) = c
 instance Thdable (a,b,c,d) where
-    type ThdTy (a,b,c,d) = c
+    type ProductThird (a,b,c,d) = c
     thd (_,_,c,_) = c
 instance Thdable (Tuple3 a b c) where
-    type ThdTy (Tuple3 a b c) = c
+    type ProductThird (Tuple3 a b c) = c
     thd (Tuple3 _ _ c) = c
 instance Thdable (Tuple4 a b c d) where
-    type ThdTy (Tuple4 a b c d) = c
+    type ProductThird (Tuple4 a b c d) = c
     thd (Tuple4 _ _ c _) = c
