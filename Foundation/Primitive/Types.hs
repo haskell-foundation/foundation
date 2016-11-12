@@ -7,8 +7,12 @@
 --
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
+{-# LANGUAGE CPP #-}
 module Foundation.Primitive.Types
     ( PrimType(..)
+    , primBaIndex
+    , primMbaRead
+    , primMbaWrite
     , primOffsetOfE
     , primOffsetRecast
     , sizeRecast
@@ -27,6 +31,63 @@ import           Foundation.Internal.Types
 import           Foundation.Primitive.Monad
 import qualified Prelude (quot)
 
+#define FOUNDATION_BOUNDS_CHECK
+
+#ifdef FOUNDATION_BOUNDS_CHECK
+
+tyToSize :: PrimType ty => Proxy ty -> Offset ty -> Size8
+tyToSize p _ = primSizeInBytes p
+
+baLenBytes :: ByteArray# -> Int
+baLenBytes ba = I# (sizeofByteArray# ba)
+
+mbaLenBytes :: MutableByteArray# st -> Int
+mbaLenBytes ba = I# (sizeofMutableByteArray# ba)
+
+boundCheckError :: [Char] -> Offset ty -> Int -> a
+boundCheckError ty (Offset ofs) len =
+    error (ty <> " offset=" <> show ofs <> " len=" <> show len)
+
+baCheck :: ByteArray# -> Offset ty -> Bool
+baCheck ba (Offset o) = o < 0 || o >= baLenBytes ba
+
+mbaCheck :: MutableByteArray# st -> Offset ty -> Bool
+mbaCheck mba (Offset o) = o < 0 || o >= mbaLenBytes mba
+
+primBaIndex :: PrimType ty => ByteArray# -> Offset ty -> ty
+primBaIndex ba ofs
+    | baCheck ba ofs = boundCheckError "bytearray-index" ofs (baLenBytes ba)
+    | otherwise      = primBaUIndex ba ofs
+{-# NOINLINE primBaIndex #-}
+
+primMbaRead :: (PrimType ty, PrimMonad prim) => MutableByteArray# (PrimState prim) -> Offset ty -> prim ty
+primMbaRead mba ofs
+    | mbaCheck mba ofs = boundCheckError "mutablebytearray-read" ofs (mbaLenBytes mba)
+    | otherwise        = primMbaURead mba ofs
+{-# NOINLINE primMbaRead #-}
+
+primMbaWrite :: (PrimType ty, PrimMonad prim) => MutableByteArray# (PrimState prim) -> Offset ty -> ty -> prim ()
+primMbaWrite mba ofs ty
+    | mbaCheck mba ofs = boundCheckError "mutablebytearray-write" ofs (mbaLenBytes mba)
+    | otherwise        = primMbaUWrite mba ofs ty
+{-# NOINLINE primMbaWrite #-}
+
+#else
+
+primBaIndex :: PrimType ty => ByteArray# -> Offset ty -> ty
+primBaIndex = primBaUIndex
+{-# INLINE primBaIndex #-}
+
+primMbaRead :: (PrimType ty, PrimMonad prim) => MutableByteArray# (PrimState prim) -> Offset ty -> prim ty
+primMbaRead = primMbaURead
+{-# INLINE primMbaRead #-}
+
+primMbaWrite :: (PrimType ty, PrimMonad prim) => MutableByteArray# (PrimState prim) -> Offset ty -> ty -> prim ()
+primMbaWrite = primMbaUWrite
+{-# INLINE primMbaWrite #-}
+
+#endif
+
 -- | Represent the accessor for types that can be stored in the UArray and MUArray.
 --
 -- Types need to be a instance of storable and have fixed sized.
@@ -39,20 +100,20 @@ class Eq ty => PrimType ty where
     -----
 
     -- | return the element stored at a specific index
-    primBaIndex :: ByteArray# -> Offset ty -> ty
+    primBaUIndex :: ByteArray# -> Offset ty -> ty
 
     -----
     -- MutableByteArray section
     -----
 
     -- | Read an element at an index in a mutable array
-    primMbaRead :: PrimMonad prim
+    primMbaURead :: PrimMonad prim
                 => MutableByteArray# (PrimState prim) -- ^ mutable array to read from
                 -> Offset ty                         -- ^ index of the element to retrieve
                 -> prim ty                           -- ^ the element returned
 
     -- | Write an element to a specific cell in a mutable array.
-    primMbaWrite :: PrimMonad prim
+    primMbaUWrite :: PrimMonad prim
                  => MutableByteArray# (PrimState prim) -- ^ mutable array to modify
                  -> Offset ty                         -- ^ index of the element to modify
                  -> ty                                 -- ^ the new value to store
@@ -78,17 +139,17 @@ class Eq ty => PrimType ty where
                   -> ty
                   -> prim ()
 
-{-# SPECIALIZE [3] primBaIndex :: ByteArray# -> Offset Word8 -> Word8 #-}
+{-# SPECIALIZE [3] primBaUIndex :: ByteArray# -> Offset Word8 -> Word8 #-}
 
 instance PrimType Word8 where
     primSizeInBytes _ = Size 1
     {-# INLINE primSizeInBytes #-}
-    primBaIndex ba (Offset (I# n)) = W8# (indexWord8Array# ba n)
-    {-# INLINE primBaIndex #-}
-    primMbaRead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readWord8Array# mba n s1 in (# s2, W8# r #)
-    {-# INLINE primMbaRead #-}
-    primMbaWrite mba (Offset (I# n)) (W8# w) = primitive $ \s1 -> (# writeWord8Array# mba n w s1, () #)
-    {-# INLINE primMbaWrite #-}
+    primBaUIndex ba (Offset (I# n)) = W8# (indexWord8Array# ba n)
+    {-# INLINE primBaUIndex #-}
+    primMbaURead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readWord8Array# mba n s1 in (# s2, W8# r #)
+    {-# INLINE primMbaURead #-}
+    primMbaUWrite mba (Offset (I# n)) (W8# w) = primitive $ \s1 -> (# writeWord8Array# mba n w s1, () #)
+    {-# INLINE primMbaUWrite #-}
     primAddrIndex addr (Offset (I# n)) = W8# (indexWord8OffAddr# addr n)
     {-# INLINE primAddrIndex #-}
     primAddrRead addr (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readWord8OffAddr# addr n s1 in (# s2, W8# r #)
@@ -99,12 +160,12 @@ instance PrimType Word8 where
 instance PrimType Word16 where
     primSizeInBytes _ = Size 2
     {-# INLINE primSizeInBytes #-}
-    primBaIndex ba (Offset (I# n)) = W16# (indexWord16Array# ba n)
-    {-# INLINE primBaIndex #-}
-    primMbaRead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readWord16Array# mba n s1 in (# s2, W16# r #)
-    {-# INLINE primMbaRead #-}
-    primMbaWrite mba (Offset (I# n)) (W16# w) = primitive $ \s1 -> (# writeWord16Array# mba n w s1, () #)
-    {-# INLINE primMbaWrite #-}
+    primBaUIndex ba (Offset (I# n)) = W16# (indexWord16Array# ba n)
+    {-# INLINE primBaUIndex #-}
+    primMbaURead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readWord16Array# mba n s1 in (# s2, W16# r #)
+    {-# INLINE primMbaURead #-}
+    primMbaUWrite mba (Offset (I# n)) (W16# w) = primitive $ \s1 -> (# writeWord16Array# mba n w s1, () #)
+    {-# INLINE primMbaUWrite #-}
     primAddrIndex addr (Offset (I# n)) = W16# (indexWord16OffAddr# addr n)
     {-# INLINE primAddrIndex #-}
     primAddrRead addr (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readWord16OffAddr# addr n s1 in (# s2, W16# r #)
@@ -114,12 +175,12 @@ instance PrimType Word16 where
 instance PrimType Word32 where
     primSizeInBytes _ = Size 4
     {-# INLINE primSizeInBytes #-}
-    primBaIndex ba (Offset (I# n)) = W32# (indexWord32Array# ba n)
-    {-# INLINE primBaIndex #-}
-    primMbaRead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readWord32Array# mba n s1 in (# s2, W32# r #)
-    {-# INLINE primMbaRead #-}
-    primMbaWrite mba (Offset (I# n)) (W32# w) = primitive $ \s1 -> (# writeWord32Array# mba n w s1, () #)
-    {-# INLINE primMbaWrite #-}
+    primBaUIndex ba (Offset (I# n)) = W32# (indexWord32Array# ba n)
+    {-# INLINE primBaUIndex #-}
+    primMbaURead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readWord32Array# mba n s1 in (# s2, W32# r #)
+    {-# INLINE primMbaURead #-}
+    primMbaUWrite mba (Offset (I# n)) (W32# w) = primitive $ \s1 -> (# writeWord32Array# mba n w s1, () #)
+    {-# INLINE primMbaUWrite #-}
     primAddrIndex addr (Offset (I# n)) = W32# (indexWord32OffAddr# addr n)
     {-# INLINE primAddrIndex #-}
     primAddrRead addr (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readWord32OffAddr# addr n s1 in (# s2, W32# r #)
@@ -129,12 +190,12 @@ instance PrimType Word32 where
 instance PrimType Word64 where
     primSizeInBytes _ = Size 8
     {-# INLINE primSizeInBytes #-}
-    primBaIndex ba (Offset (I# n)) = W64# (indexWord64Array# ba n)
-    {-# INLINE primBaIndex #-}
-    primMbaRead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readWord64Array# mba n s1 in (# s2, W64# r #)
-    {-# INLINE primMbaRead #-}
-    primMbaWrite mba (Offset (I# n)) (W64# w) = primitive $ \s1 -> (# writeWord64Array# mba n w s1, () #)
-    {-# INLINE primMbaWrite #-}
+    primBaUIndex ba (Offset (I# n)) = W64# (indexWord64Array# ba n)
+    {-# INLINE primBaUIndex #-}
+    primMbaURead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readWord64Array# mba n s1 in (# s2, W64# r #)
+    {-# INLINE primMbaURead #-}
+    primMbaUWrite mba (Offset (I# n)) (W64# w) = primitive $ \s1 -> (# writeWord64Array# mba n w s1, () #)
+    {-# INLINE primMbaUWrite #-}
     primAddrIndex addr (Offset (I# n)) = W64# (indexWord64OffAddr# addr n)
     {-# INLINE primAddrIndex #-}
     primAddrRead addr (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readWord64OffAddr# addr n s1 in (# s2, W64# r #)
@@ -144,12 +205,12 @@ instance PrimType Word64 where
 instance PrimType Int8 where
     primSizeInBytes _ = Size 1
     {-# INLINE primSizeInBytes #-}
-    primBaIndex ba (Offset (I# n)) = I8# (indexInt8Array# ba n)
-    {-# INLINE primBaIndex #-}
-    primMbaRead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readInt8Array# mba n s1 in (# s2, I8# r #)
-    {-# INLINE primMbaRead #-}
-    primMbaWrite mba (Offset (I# n)) (I8# w) = primitive $ \s1 -> (# writeInt8Array# mba n w s1, () #)
-    {-# INLINE primMbaWrite #-}
+    primBaUIndex ba (Offset (I# n)) = I8# (indexInt8Array# ba n)
+    {-# INLINE primBaUIndex #-}
+    primMbaURead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readInt8Array# mba n s1 in (# s2, I8# r #)
+    {-# INLINE primMbaURead #-}
+    primMbaUWrite mba (Offset (I# n)) (I8# w) = primitive $ \s1 -> (# writeInt8Array# mba n w s1, () #)
+    {-# INLINE primMbaUWrite #-}
     primAddrIndex addr (Offset (I# n)) = I8# (indexInt8OffAddr# addr n)
     {-# INLINE primAddrIndex #-}
     primAddrRead addr (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readInt8OffAddr# addr n s1 in (# s2, I8# r #)
@@ -159,12 +220,12 @@ instance PrimType Int8 where
 instance PrimType Int16 where
     primSizeInBytes _ = Size 2
     {-# INLINE primSizeInBytes #-}
-    primBaIndex ba (Offset (I# n)) = I16# (indexInt16Array# ba n)
-    {-# INLINE primBaIndex #-}
-    primMbaRead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readInt16Array# mba n s1 in (# s2, I16# r #)
-    {-# INLINE primMbaRead #-}
-    primMbaWrite mba (Offset (I# n)) (I16# w) = primitive $ \s1 -> (# writeInt16Array# mba n w s1, () #)
-    {-# INLINE primMbaWrite #-}
+    primBaUIndex ba (Offset (I# n)) = I16# (indexInt16Array# ba n)
+    {-# INLINE primBaUIndex #-}
+    primMbaURead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readInt16Array# mba n s1 in (# s2, I16# r #)
+    {-# INLINE primMbaURead #-}
+    primMbaUWrite mba (Offset (I# n)) (I16# w) = primitive $ \s1 -> (# writeInt16Array# mba n w s1, () #)
+    {-# INLINE primMbaUWrite #-}
     primAddrIndex addr (Offset (I# n)) = I16# (indexInt16OffAddr# addr n)
     {-# INLINE primAddrIndex #-}
     primAddrRead addr (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readInt16OffAddr# addr n s1 in (# s2, I16# r #)
@@ -174,12 +235,12 @@ instance PrimType Int16 where
 instance PrimType Int32 where
     primSizeInBytes _ = Size 4
     {-# INLINE primSizeInBytes #-}
-    primBaIndex ba (Offset (I# n)) = I32# (indexInt32Array# ba n)
-    {-# INLINE primBaIndex #-}
-    primMbaRead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readInt32Array# mba n s1 in (# s2, I32# r #)
-    {-# INLINE primMbaRead #-}
-    primMbaWrite mba (Offset (I# n)) (I32# w) = primitive $ \s1 -> (# writeInt32Array# mba n w s1, () #)
-    {-# INLINE primMbaWrite #-}
+    primBaUIndex ba (Offset (I# n)) = I32# (indexInt32Array# ba n)
+    {-# INLINE primBaUIndex #-}
+    primMbaURead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readInt32Array# mba n s1 in (# s2, I32# r #)
+    {-# INLINE primMbaURead #-}
+    primMbaUWrite mba (Offset (I# n)) (I32# w) = primitive $ \s1 -> (# writeInt32Array# mba n w s1, () #)
+    {-# INLINE primMbaUWrite #-}
     primAddrIndex addr (Offset (I# n)) = I32# (indexInt32OffAddr# addr n)
     {-# INLINE primAddrIndex #-}
     primAddrRead addr (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readInt32OffAddr# addr n s1 in (# s2, I32# r #)
@@ -189,12 +250,12 @@ instance PrimType Int32 where
 instance PrimType Int64 where
     primSizeInBytes _ = Size 8
     {-# INLINE primSizeInBytes #-}
-    primBaIndex ba (Offset (I# n)) = I64# (indexInt64Array# ba n)
-    {-# INLINE primBaIndex #-}
-    primMbaRead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readInt64Array# mba n s1 in (# s2, I64# r #)
-    {-# INLINE primMbaRead #-}
-    primMbaWrite mba (Offset (I# n)) (I64# w) = primitive $ \s1 -> (# writeInt64Array# mba n w s1, () #)
-    {-# INLINE primMbaWrite #-}
+    primBaUIndex ba (Offset (I# n)) = I64# (indexInt64Array# ba n)
+    {-# INLINE primBaUIndex #-}
+    primMbaURead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readInt64Array# mba n s1 in (# s2, I64# r #)
+    {-# INLINE primMbaURead #-}
+    primMbaUWrite mba (Offset (I# n)) (I64# w) = primitive $ \s1 -> (# writeInt64Array# mba n w s1, () #)
+    {-# INLINE primMbaUWrite #-}
     primAddrIndex addr (Offset (I# n)) = I64# (indexInt64OffAddr# addr n)
     {-# INLINE primAddrIndex #-}
     primAddrRead addr (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readInt64OffAddr# addr n s1 in (# s2, I64# r #)
@@ -205,12 +266,12 @@ instance PrimType Int64 where
 instance PrimType Float where
     primSizeInBytes _ = Size 4
     {-# INLINE primSizeInBytes #-}
-    primBaIndex ba (Offset (I# n)) = F# (indexFloatArray# ba n)
-    {-# INLINE primBaIndex #-}
-    primMbaRead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readFloatArray# mba n s1 in (# s2, F# r #)
-    {-# INLINE primMbaRead #-}
-    primMbaWrite mba (Offset (I# n)) (F# w) = primitive $ \s1 -> (# writeFloatArray# mba n w s1, () #)
-    {-# INLINE primMbaWrite #-}
+    primBaUIndex ba (Offset (I# n)) = F# (indexFloatArray# ba n)
+    {-# INLINE primBaUIndex #-}
+    primMbaURead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readFloatArray# mba n s1 in (# s2, F# r #)
+    {-# INLINE primMbaURead #-}
+    primMbaUWrite mba (Offset (I# n)) (F# w) = primitive $ \s1 -> (# writeFloatArray# mba n w s1, () #)
+    {-# INLINE primMbaUWrite #-}
     primAddrIndex addr (Offset (I# n)) = F# (indexFloatOffAddr# addr n)
     {-# INLINE primAddrIndex #-}
     primAddrRead addr (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readFloatOffAddr# addr n s1 in (# s2, F# r #)
@@ -220,12 +281,12 @@ instance PrimType Float where
 instance PrimType Double where
     primSizeInBytes _ = Size 8
     {-# INLINE primSizeInBytes #-}
-    primBaIndex ba (Offset (I# n)) = D# (indexDoubleArray# ba n)
-    {-# INLINE primBaIndex #-}
-    primMbaRead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readDoubleArray# mba n s1 in (# s2, D# r #)
-    {-# INLINE primMbaRead #-}
-    primMbaWrite mba (Offset (I# n)) (D# w) = primitive $ \s1 -> (# writeDoubleArray# mba n w s1, () #)
-    {-# INLINE primMbaWrite #-}
+    primBaUIndex ba (Offset (I# n)) = D# (indexDoubleArray# ba n)
+    {-# INLINE primBaUIndex #-}
+    primMbaURead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readDoubleArray# mba n s1 in (# s2, D# r #)
+    {-# INLINE primMbaURead #-}
+    primMbaUWrite mba (Offset (I# n)) (D# w) = primitive $ \s1 -> (# writeDoubleArray# mba n w s1, () #)
+    {-# INLINE primMbaUWrite #-}
     primAddrIndex addr (Offset (I# n)) = D# (indexDoubleOffAddr# addr n)
     {-# INLINE primAddrIndex #-}
     primAddrRead addr (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readDoubleOffAddr# addr n s1 in (# s2, D# r #)
@@ -236,12 +297,12 @@ instance PrimType Double where
 instance PrimType Char where
     primSizeInBytes _ = Size 4
     {-# INLINE primSizeInBytes #-}
-    primBaIndex ba (Offset (I# n)) = C# (indexWideCharArray# ba n)
-    {-# INLINE primBaIndex #-}
-    primMbaRead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readWideCharArray# mba n s1 in (# s2, C# r #)
-    {-# INLINE primMbaRead #-}
-    primMbaWrite mba (Offset (I# n)) (C# w) = primitive $ \s1 -> (# writeWideCharArray# mba n w s1, () #)
-    {-# INLINE primMbaWrite #-}
+    primBaUIndex ba (Offset (I# n)) = C# (indexWideCharArray# ba n)
+    {-# INLINE primBaUIndex #-}
+    primMbaURead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readWideCharArray# mba n s1 in (# s2, C# r #)
+    {-# INLINE primMbaURead #-}
+    primMbaUWrite mba (Offset (I# n)) (C# w) = primitive $ \s1 -> (# writeWideCharArray# mba n w s1, () #)
+    {-# INLINE primMbaUWrite #-}
     primAddrIndex addr (Offset (I# n)) = C# (indexWideCharOffAddr# addr n)
     {-# INLINE primAddrIndex #-}
     primAddrRead addr (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readWideCharOffAddr# addr n s1 in (# s2, C# r #)
@@ -252,12 +313,12 @@ instance PrimType Char where
 instance PrimType CChar where
     primSizeInBytes _ = Size 1
     {-# INLINE primSizeInBytes #-}
-    primBaIndex ba (Offset n) = CChar (primBaIndex ba (Offset n :: Offset Int8))
-    {-# INLINE primBaIndex #-}
-    primMbaRead mba (Offset n) = CChar <$> primMbaRead mba (Offset n :: Offset Int8)
-    {-# INLINE primMbaRead #-}
-    primMbaWrite mba (Offset n) (CChar int8) = primMbaWrite mba (Offset n) int8
-    {-# INLINE primMbaWrite #-}
+    primBaUIndex ba (Offset n) = CChar (primBaUIndex ba (Offset n :: Offset Int8))
+    {-# INLINE primBaUIndex #-}
+    primMbaURead mba (Offset n) = CChar <$> primMbaURead mba (Offset n :: Offset Int8)
+    {-# INLINE primMbaURead #-}
+    primMbaUWrite mba (Offset n) (CChar int8) = primMbaUWrite mba (Offset n) int8
+    {-# INLINE primMbaUWrite #-}
     primAddrIndex addr (Offset n) = CChar $ primAddrIndex addr (Offset n :: Offset Int8)
     {-# INLINE primAddrIndex #-}
     primAddrRead addr (Offset n) = CChar <$> primAddrRead addr (Offset n :: Offset Int8)
@@ -267,19 +328,18 @@ instance PrimType CChar where
 instance PrimType CUChar where
     primSizeInBytes _ = Size 1
     {-# INLINE primSizeInBytes #-}
-    primBaIndex ba (Offset n) = CUChar (primBaIndex ba (Offset n :: Offset Word8))
-    {-# INLINE primBaIndex #-}
-    primMbaRead mba (Offset n) = CUChar <$> primMbaRead mba (Offset n :: Offset Word8)
-    {-# INLINE primMbaRead #-}
-    primMbaWrite mba (Offset n) (CUChar w8) = primMbaWrite mba (Offset n) w8
-    {-# INLINE primMbaWrite #-}
+    primBaUIndex ba (Offset n) = CUChar (primBaUIndex ba (Offset n :: Offset Word8))
+    {-# INLINE primBaUIndex #-}
+    primMbaURead mba (Offset n) = CUChar <$> primMbaURead mba (Offset n :: Offset Word8)
+    {-# INLINE primMbaURead #-}
+    primMbaUWrite mba (Offset n) (CUChar w8) = primMbaUWrite mba (Offset n) w8
+    {-# INLINE primMbaUWrite #-}
     primAddrIndex addr (Offset n) = CUChar $ primAddrIndex addr (Offset n :: Offset Word8)
     {-# INLINE primAddrIndex #-}
     primAddrRead addr (Offset n) = CUChar <$> primAddrRead addr (Offset n :: Offset Word8)
     {-# INLINE primAddrRead #-}
     primAddrWrite addr (Offset n) (CUChar w8) = primAddrWrite addr (Offset n) w8
     {-# INLINE primAddrWrite #-}
-
 
 -- | Cast a Size linked to type A (Size A) to a Size linked to type B (Size B)
 sizeRecast :: (PrimType a, PrimType b) => Size a -> Size b
