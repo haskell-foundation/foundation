@@ -35,40 +35,45 @@ import qualified Prelude (quot)
 
 #ifdef FOUNDATION_BOUNDS_CHECK
 
-tyToSize :: PrimType ty => Proxy ty -> Offset ty -> Size8
-tyToSize p _ = primSizeInBytes p
+divBytes :: PrimType ty => Offset ty -> (Int -> Int)
+divBytes ofs = \x -> x `Prelude.quot` (getSize Proxy ofs)
+  where
+    getSize :: PrimType ty => Proxy ty -> Offset ty -> Int
+    getSize p _ = let (Size sz) = primSizeInBytes p in sz
 
-baLenBytes :: ByteArray# -> Int
-baLenBytes ba = I# (sizeofByteArray# ba)
+baLength :: PrimType ty => Offset ty -> ByteArray# -> Int
+baLength ofs ba = divBytes ofs (I# (sizeofByteArray# ba))
 
-mbaLenBytes :: MutableByteArray# st -> Int
-mbaLenBytes ba = I# (sizeofMutableByteArray# ba)
+mbaLength :: PrimType ty => Offset ty -> MutableByteArray# st -> Int
+mbaLength ofs ba = divBytes ofs (I# (sizeofMutableByteArray# ba))
+
 
 boundCheckError :: [Char] -> Offset ty -> Int -> a
 boundCheckError ty (Offset ofs) len =
     error (ty <> " offset=" <> show ofs <> " len=" <> show len)
 
-baCheck :: ByteArray# -> Offset ty -> Bool
-baCheck ba (Offset o) = o < 0 || o >= baLenBytes ba
+baCheck :: PrimType ty => ByteArray# -> Offset ty -> Bool
+baCheck ba ofs@(Offset o) = o < 0 || o >= baLength ofs ba
 
-mbaCheck :: MutableByteArray# st -> Offset ty -> Bool
-mbaCheck mba (Offset o) = o < 0 || o >= mbaLenBytes mba
+mbaCheck :: PrimType ty => MutableByteArray# st -> Offset ty -> Bool
+mbaCheck mba ofs@(Offset o) = o < 0 || o >= mbaLength ofs mba
+
 
 primBaIndex :: PrimType ty => ByteArray# -> Offset ty -> ty
 primBaIndex ba ofs
-    | baCheck ba ofs = boundCheckError "bytearray-index" ofs (baLenBytes ba)
+    | baCheck ba ofs = boundCheckError "bytearray-index" ofs (baLength ofs ba)
     | otherwise      = primBaUIndex ba ofs
 {-# NOINLINE primBaIndex #-}
 
 primMbaRead :: (PrimType ty, PrimMonad prim) => MutableByteArray# (PrimState prim) -> Offset ty -> prim ty
 primMbaRead mba ofs
-    | mbaCheck mba ofs = boundCheckError "mutablebytearray-read" ofs (mbaLenBytes mba)
+    | mbaCheck mba ofs = boundCheckError "mutablebytearray-read" ofs (mbaLength ofs mba)
     | otherwise        = primMbaURead mba ofs
 {-# NOINLINE primMbaRead #-}
 
 primMbaWrite :: (PrimType ty, PrimMonad prim) => MutableByteArray# (PrimState prim) -> Offset ty -> ty -> prim ()
 primMbaWrite mba ofs ty
-    | mbaCheck mba ofs = boundCheckError "mutablebytearray-write" ofs (mbaLenBytes mba)
+    | mbaCheck mba ofs = boundCheckError "mutablebytearray-write" ofs (mbaLength ofs mba)
     | otherwise        = primMbaUWrite mba ofs ty
 {-# NOINLINE primMbaWrite #-}
 
