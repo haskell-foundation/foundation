@@ -34,8 +34,6 @@ import           Foundation.Internal.Types
 import           Foundation.Primitive.Monad
 import qualified Prelude (quot)
 
-#define FOUNDATION_BOUNDS_CHECK
-
 #ifdef FOUNDATION_BOUNDS_CHECK
 
 divBytes :: PrimType ty => Offset ty -> (Int -> Int)

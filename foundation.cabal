@@ -43,6 +43,11 @@ Flag bench-all
   Default:           False
   Manual:            True
 
+Flag bounds-check
+  Description:       Add extra friendly boundary check for unsafe array operations
+  Default:           False
+  Manual:            True
+
 Library
   Exposed-modules:   Foundation
                      Foundation.Numerical
@@ -165,6 +170,8 @@ Library
   default-language:  Haskell2010
   if impl(ghc >= 8.0)
     ghc-options:     -Wno-redundant-constraints
+  if flag(bounds-check)
+    CPP-options: -DFOUNDATION_BOUNDS_CHECK
 
 Test-Suite test-foundation
   type:              exitcode-stdio-1.0
