@@ -124,7 +124,7 @@ primArrayIndex :: Array# ty -> Offset ty -> ty
 primArrayIndex a (Offset (I# ofs)) = let (# v #) = indexArray# a ofs in v
 {-# INLINE primArrayIndex #-}
 
-primMutableArrayRead :: PrimMonad prim => MutableArray# (PrimState prim) ty -> Offset ty -> prim a
+primMutableArrayRead :: PrimMonad prim => MutableArray# (PrimState prim) ty -> Offset ty -> prim ty
 primMutableArrayRead ma (Offset (I# ofs)) = primitive $ \s1 -> readArray# ma ofs s1
 {-# INLINE primMutableArrayRead #-}
 
