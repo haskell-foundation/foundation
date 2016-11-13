@@ -13,6 +13,9 @@ module Foundation.Primitive.Types
     , primBaIndex
     , primMbaRead
     , primMbaWrite
+    , primArrayIndex
+    , primMutableArrayRead
+    , primMutableArrayWrite
     , primOffsetOfE
     , primOffsetRecast
     , sizeRecast
@@ -47,6 +50,11 @@ baLength ofs ba = divBytes ofs (I# (sizeofByteArray# ba))
 mbaLength :: PrimType ty => Offset ty -> MutableByteArray# st -> Int
 mbaLength ofs ba = divBytes ofs (I# (sizeofMutableByteArray# ba))
 
+aLength :: Array# ty -> Int
+aLength ba = I# (sizeofArray# ba)
+
+maLength :: MutableArray# st ty -> Int
+maLength ba = I# (sizeofMutableArray# ba)
 
 boundCheckError :: [Char] -> Offset ty -> Int -> a
 boundCheckError ty (Offset ofs) len =
@@ -58,6 +66,11 @@ baCheck ba ofs@(Offset o) = o < 0 || o >= baLength ofs ba
 mbaCheck :: PrimType ty => MutableByteArray# st -> Offset ty -> Bool
 mbaCheck mba ofs@(Offset o) = o < 0 || o >= mbaLength ofs mba
 
+aCheck :: Array# ty -> Offset ty -> Bool
+aCheck ba (Offset o) = o < 0 || o >= aLength ba
+
+maCheck :: MutableArray# st ty -> Offset ty -> Bool
+maCheck ma (Offset o) = o < 0 || o >= maLength ma
 
 primBaIndex :: PrimType ty => ByteArray# -> Offset ty -> ty
 primBaIndex ba ofs
@@ -77,6 +90,24 @@ primMbaWrite mba ofs ty
     | otherwise        = primMbaUWrite mba ofs ty
 {-# NOINLINE primMbaWrite #-}
 
+primArrayIndex :: Array# ty -> Offset ty -> ty
+primArrayIndex a o@(Offset (I# ofs))
+    | aCheck a o = boundCheckError "array-index" o (aLength a)
+    | otherwise  = let (# v #) = indexArray# a ofs in v
+{-# NOINLINE primArrayIndex #-}
+
+primMutableArrayRead :: PrimMonad prim => MutableArray# (PrimState prim) ty -> Offset ty -> prim ty
+primMutableArrayRead ma o@(Offset (I# ofs))
+    | maCheck ma o = boundCheckError "array-read" o (maLength ma)
+    | otherwise    = primitive $ \s1 -> readArray# ma ofs s1
+{-# NOINLINE primMutableArrayRead #-}
+
+primMutableArrayWrite :: PrimMonad prim => MutableArray# (PrimState prim) ty -> Offset ty -> ty -> prim ()
+primMutableArrayWrite ma o@(Offset (I# ofs)) v
+    | maCheck ma o = boundCheckError "array-write" o (maLength ma)
+    | otherwise    = primitive $ \s1 -> let !s2 = writeArray# ma ofs v s1 in (# s2, () #)
+{-# NOINLINE primMutableArrayWrite #-}
+
 #else
 
 primBaIndex :: PrimType ty => ByteArray# -> Offset ty -> ty
@@ -90,6 +121,19 @@ primMbaRead = primMbaURead
 primMbaWrite :: (PrimType ty, PrimMonad prim) => MutableByteArray# (PrimState prim) -> Offset ty -> ty -> prim ()
 primMbaWrite = primMbaUWrite
 {-# INLINE primMbaWrite #-}
+
+primArrayIndex :: Array# ty -> Offset ty -> ty
+primArrayIndex a (Offset (I# ofs)) = let (# v #) = indexArray# a ofs in v
+{-# INLINE primArrayIndex #-}
+
+primMutableArrayRead :: PrimMonad prim => MutableArray# (PrimState prim) ty -> Offset ty -> prim a
+primMutableArrayRead ma (Offset (I# ofs)) = primitive $ \s1 -> readArray# ma ofs s1
+{-# INLINE primMutableArrayRead #-}
+
+primMutableArrayWrite :: PrimMonad prim => MutableArray# (PrimState prim) ty -> Offset ty -> ty -> prim ()
+primMutableArrayWrite ma (Offset (I# ofs)) v =
+    primitive $ \s1 -> let !s2 = writeArray# ma ofs v s1 in (# s2, () #)
+{-# INLINE primMutableArrayWrite #-}
 
 #endif
 
