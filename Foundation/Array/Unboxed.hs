@@ -589,7 +589,7 @@ splitElem !ty r@(UVecBA start len pinst ba)
     !k = loop start
     loop !i | i < end && t /= ty = loop (i+Offset 1)
             | otherwise          = i
-        where !t                 = primBaIndex ba i
+        where t                  = primBaIndex ba i
 splitElem !ty r@(UVecAddr start len fptr)
     | k == end  = (# r, empty #)
     | otherwise =
@@ -698,7 +698,7 @@ elem !ty (UVecBA start len _ ba)
     !k = loop start
     loop !i | i < end && t /= ty = loop (i+Offset 1)
             | otherwise          = i
-        where !t                 = primBaIndex ba i
+        where t                  = primBaIndex ba i
 elem ty (UVecAddr start len fptr)
     | k == end  = False
     | otherwise = True
