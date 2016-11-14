@@ -133,7 +133,7 @@ install:
   set -ex
   case "$BUILD" in
     stack)
-      stack --no-terminal --install-ghc $ARGS test --coverage --bench --only-dependencies
+      stack --no-terminal --install-ghc $ARGS test --flag foundation:bounds-check --coverage --bench --only-dependencies
       ;;
     cabal)
       cabal --version

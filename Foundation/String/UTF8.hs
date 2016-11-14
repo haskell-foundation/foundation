@@ -162,7 +162,7 @@ instance Buildable String where
   {-# INLINE append #-}
 
   build sizeChunksI sb
-    | sizeChunksI <= 0 = build 64 sb
+    | sizeChunksI <= 3 = build 64 sb
     | otherwise        = do
         first         <- new sizeChunks
         ((), (i, st)) <- runState (runBuilder sb) (Offset 0, BuildingState [] (Size 0) first sizeChunks)

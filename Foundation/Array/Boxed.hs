@@ -214,7 +214,7 @@ index array n
 -- Reading from invalid memory can return unpredictable and invalid values.
 -- use 'index' if unsure.
 unsafeIndex :: Array ty -> Int -> ty
-unsafeIndex (Array (Offset (I# ofs)) _ a) (I# i) = let (# v #) = indexArray# a (ofs +# i) in v
+unsafeIndex (Array start _ a) ofs = primArrayIndex a (start+Offset ofs)
 {-# INLINE unsafeIndex #-}
 
 -- | read a cell in a mutable array.
@@ -232,8 +232,7 @@ read array n
 -- Reading from invalid memory can return unpredictable and invalid values.
 -- use 'read' if unsure.
 unsafeRead :: PrimMonad prim => MArray ty (PrimState prim) -> Int -> prim ty
-unsafeRead (MArray (Offset (I# ofs)) _ ma) (I# i) = primitive $ \s1 -> readArray# ma (ofs +# i) s1
---readArray# :: MutableArray# s a -> Int# -> State# s -> (#State# s, a#)
+unsafeRead (MArray start _ ma) i = primMutableArrayRead ma (start + Offset i)
 {-# INLINE unsafeRead #-}
 
 -- | Write to a cell in a mutable array.
@@ -251,8 +250,8 @@ write array n val
 -- Writing with invalid bounds will corrupt memory and your program will
 -- become unreliable. use 'write' if unsure.
 unsafeWrite :: PrimMonad prim => MArray ty (PrimState prim) -> Int -> ty -> prim ()
-unsafeWrite (MArray (Offset (I# ofs)) _ ma) (I# i) v =
-    primitive $ \s1 -> let !s2 = writeArray# ma (ofs +# i) v s1 in (# s2, () #)
+unsafeWrite (MArray start _ ma) ofs v =
+    primMutableArrayWrite ma (start + Offset ofs) v
 {-# INLINE unsafeWrite #-}
 
 -- | Freeze a mutable array into an array.
