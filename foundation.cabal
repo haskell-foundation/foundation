@@ -126,6 +126,7 @@ Library
                      Foundation.Primitive.Utils
                      Foundation.Primitive.FinalPtr
                      Foundation.Monad.MonadIO
+                     Foundation.Monad.Exception
                      Foundation.Array.Chunked.Unboxed
                      Foundation.Array.Common
                      Foundation.Array.Unboxed
