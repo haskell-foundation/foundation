@@ -55,8 +55,8 @@ instance Applicative m => Applicative (Pipe l i o u m) where
     Leftover p i     <*> fa = Leftover (p <*> fa) i
     {-# INLINE (<*>) #-}
 
-instance Monad m => Monad (Pipe l i o u m) where
-    return = pure
+instance (Functor m, Monad m) => Monad (Pipe l i o u m) where
+    return = Done
     {-# INLINE return #-}
 
     HaveOutput p c o >>= fp = HaveOutput (p >>= fp)            c          o
