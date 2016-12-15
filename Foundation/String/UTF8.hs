@@ -36,6 +36,7 @@ module Foundation.String.UTF8
     , mutableValidate
     , copy
     , ValidationFailure(..)
+    , index
     -- * Legacy utility
     , lines
     , words
@@ -999,6 +1000,17 @@ reverse s@(String ba) = runST $ do
                     C.mutUnsafeWrite mba (d + 3) (Vec.unsafeIndex ba (si + 3))
                 _  -> return () -- impossible
             loop ms (sidx `offsetPlusE` nb) didx'
+
+index :: Int -> String -> Maybe Char
+index n s
+    | ofs >= end = Nothing
+    | otherwise  =
+        let (# c, _ #) = next s ofs
+         in Just c
+  where
+    !nbBytes = size s
+    end = 0 `offsetPlusE` nbBytes
+    ofs = indexN n s
 
 data Encoding
     = ASCII7
