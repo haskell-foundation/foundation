@@ -138,7 +138,11 @@ install:
     cabal)
       cabal --version
       travis_retry cabal update
-      cabal install --only-dependencies --enable-tests --enable-benchmarks --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 $CABALARGS $PACKAGES
+      if [ ${GHCVER} = "7.4.2" ] || [ ${GHCVER} = "7.6.3" ]; then
+        cabal install --only-dependencies --enable-tests --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 $CABALARGS $PACKAGES
+      else
+        cabal install --only-dependencies --enable-tests --enable-benchmarks --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 $CABALARGS $PACKAGES
+      fi
       ;;
   esac
   set +ex
@@ -151,7 +155,11 @@ script:
       stack --no-terminal $ARGS test --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps
       ;;
     cabal)
-      cabal install --enable-tests --enable-benchmarks --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 $CABALARGS $PACKAGES
+      if [ ${GHCVER} = "7.4.2" ] || [ ${GHCVER} = "7.6.3" ]; then
+        cabal install --enable-tests --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 $CABALARGS $PACKAGES
+      else
+        cabal install --enable-tests --enable-benchmarks --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 $CABALARGS $PACKAGES
+      fi
 
       ORIGDIR=$(pwd)
       for dir in $PACKAGES
