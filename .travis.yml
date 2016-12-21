@@ -31,10 +31,10 @@ matrix:
   #- env: BUILD=cabal GHCVER=7.2.2 CABALVER=1.16 HAPPYVER=1.19.5 ALEXVER=3.1.7
   #  compiler: ": #GHC 7.2.2"
   #  addons: {apt: {packages: [cabal-install-1.16,ghc-7.2.2,happy-1.19.5,alex-3.1.7], sources: [hvr-ghc]}}
-  - env: BUILD=cabal GHCVER=7.4.2 CABALVER=1.16 HAPPYVER=1.19.5 ALEXVER=3.1.7
+  - env: BUILD=cabal GHCVER=7.4.2 CABALVER=1.16 HAPPYVER=1.19.5 ALEXVER=3.1.7 RUNBENCH=false
     compiler: ": #GHC 7.4.2"
     addons: {apt: {packages: [cabal-install-1.16,ghc-7.4.2,happy-1.19.5,alex-3.1.7], sources: [hvr-ghc]}}
-  - env: BUILD=cabal GHCVER=7.6.3 CABALVER=1.16 HAPPYVER=1.19.5 ALEXVER=3.1.7
+  - env: BUILD=cabal GHCVER=7.6.3 CABALVER=1.16 HAPPYVER=1.19.5 ALEXVER=3.1.7 RUNBENCH=false
     compiler: ": #GHC 7.6.3"
     addons: {apt: {packages: [cabal-install-1.16,ghc-7.6.3,happy-1.19.5,alex-3.1.7], sources: [hvr-ghc]}}
   - env: BUILD=cabal GHCVER=7.8.4 CABALVER=1.18 HAPPYVER=1.19.5 ALEXVER=3.1.7
@@ -90,7 +90,7 @@ matrix:
     os: osx
 
   allow_failures:
-  - env: BUILD=cabal GHCVER=7.4.2 CABALVER=1.16 HAPPYVER=1.19.5 ALEXVER=3.1.7
+  - env: BUILD=cabal GHCVER=7.4.2 CABALVER=1.16 HAPPYVER=1.19.5 ALEXVER=3.1.7 RUNBENCH=false
   - env: BUILD=cabal GHCVER=head  CABALVER=head HAPPYVER=1.19.5 ALEXVER=3.1.7
   - env: BUILD=stack ARGS="--resolver nightly"
 
@@ -98,9 +98,11 @@ before_install:
 # Using compiler above sets CC to an invalid value, so unset it
 - unset CC
 
-# We want to always allow newer versions of packages when building on GHC HEAD
 - CABALARGS=""
-- if [ "x$GHCVER" = "xhead" ]; then CABALARGS=--allow-newer; fi
+- if [ "x$RUNTEST" = "x" ] || [ "x$RUNTEST" = "xtrue"]; then CABALARGS="${CABALARGS} --enable-tests"; fi
+- if [ "x$RUNBENCH" = "x" ] || [ "x$RUNBENCH" = "xtrue"]; then CABALARGS="${CABALARGS} --enable-benchmarks"; fi
+# We want to always allow newer versions of packages when building on GHC HEAD
+- if [ "x$GHCVER" = "xhead" ]; then CABALARGS="${CABALARGS} --allow-newer"; fi
 
 # Download and unpack the stack executable
 - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$HOME/.local/bin:/opt/alex/$ALEXVER/bin:/opt/happy/$HAPPYVER/bin:$HOME/.cabal/bin:$PATH
@@ -138,11 +140,7 @@ install:
     cabal)
       cabal --version
       travis_retry cabal update
-      if [ ${GHCVER} = "7.4.2" ] || [ ${GHCVER} = "7.6.3" ]; then
-        cabal install --only-dependencies --enable-tests --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 $CABALARGS $PACKAGES
-      else
-        cabal install --only-dependencies --enable-tests --enable-benchmarks --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 $CABALARGS $PACKAGES
-      fi
+      cabal install --only-dependencies --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 $CABALARGS $PACKAGES
       ;;
   esac
   set +ex
@@ -150,16 +148,13 @@ install:
 script:
 - |
   set -ex
+  if [ "x${RUNTEST}" = "xfalse" ]; then exit 0; fi
   case "$BUILD" in
     stack)
       stack --no-terminal $ARGS test --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps
       ;;
     cabal)
-      if [ ${GHCVER} = "7.4.2" ] || [ ${GHCVER} = "7.6.3" ]; then
-        cabal install --enable-tests --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 $CABALARGS $PACKAGES
-      else
-        cabal install --enable-tests --enable-benchmarks --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 $CABALARGS $PACKAGES
-      fi
+      cabal install --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 $CABALARGS $PACKAGES
 
       ORIGDIR=$(pwd)
       for dir in $PACKAGES
