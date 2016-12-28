@@ -79,6 +79,7 @@ Library
                      Foundation.Parser
                      Foundation.Random
                      Foundation.System.Entropy
+                     Foundation.Network.Socket
   Other-modules:     Foundation.String.Internal
                      Foundation.String.UTF8
                      Foundation.String.Encoding.Encoding
@@ -124,6 +125,10 @@ Library
                      Foundation.Numerical.Subtractive
                      Foundation.Numerical.Multiplicative
                      Foundation.Numerical.Floating
+                     Foundation.Network.Socket.Internal
+                     Foundation.Network.Socket.Internal.Family
+                     Foundation.Network.Socket.Internal.Protocol
+                     Foundation.Network.Socket.Internal.Type
                      Foundation.IO.File
                      Foundation.IO.Terminal
                      Foundation.Primitive.Types
@@ -156,6 +161,7 @@ Library
   else
     Other-modules:   Foundation.Foreign.MemoryMap.Posix
                      Foundation.System.Entropy.Unix
+                     Foundation.Network.Socket.Internal.Unix
 
   if impl(ghc >= 7.10)
     Exposed-modules: Foundation.Tuple.Nth
