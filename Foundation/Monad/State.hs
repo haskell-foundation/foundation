@@ -3,7 +3,7 @@ module Foundation.Monad.State
     ( StateT
     ) where
 
-import Foundation.Internal.Base (($))
+import Foundation.Internal.Base (($), (.))
 import Foundation.Monad.Base
 
 -- | State Transformer
@@ -13,7 +13,7 @@ instance Functor m => Functor (StateT s m) where
     fmap f m = StateT $ \s1 -> (\(a, s2) -> (f a, s2)) `fmap` runStateT m s1
     {-# INLINE fmap #-}
 
-instance Monad m => Applicative (StateT s m) where
+instance (Applicative m, Monad m) => Applicative (StateT s m) where
     pure a     = StateT $ \s -> (,s) `fmap` pure a
     {-# INLINE pure #-}
     fab <*> fa = StateT $ \s1 -> do
@@ -22,14 +22,14 @@ instance Monad m => Applicative (StateT s m) where
         return (ab a, s3)
     {-# INLINE (<*>) #-}
 
-instance Monad m => Monad (StateT s m) where
+instance (Functor m, Monad m) => Monad (StateT s m) where
     return a = StateT $ \s -> (,s) `fmap` return a
     {-# INLINE return #-}
     ma >>= mab = StateT $ \s1 -> runStateT ma s1 >>= \(a, s2) -> runStateT (mab a) s2
     {-# INLINE (>>=) #-}
 
 instance MonadTrans (StateT s) where
-    lift f = StateT $ \s -> (,s) `fmap` f
+    lift f = StateT $ \s -> f >>= return . (,s)
     {-# INLINE lift #-}
 
 instance MonadIO m => MonadIO (StateT s m) where
