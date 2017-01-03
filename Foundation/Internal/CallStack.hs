@@ -9,7 +9,7 @@ module Foundation.Internal.CallStack
 
 import GHC.Stack (HasCallStack)
 
-#elif MIN_VERSION_base(4,8,0)
+#elif MIN_VERSION_base(4,8,1)
 
 import qualified GHC.Stack
 
