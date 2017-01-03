@@ -20,7 +20,7 @@ instance Applicative m => Applicative (IdentityT m) where
     {-# INLINE (<*>) #-}
 
 instance Monad m => Monad (IdentityT m) where
-    return = pure
+    return x = IdentityT (return x)
     {-# INLINE return #-}
     ma >>= mb = IdentityT $ runIdentityT ma >>= runIdentityT . mb
     {-# INLINE (>>=) #-}
