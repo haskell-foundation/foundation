@@ -32,7 +32,7 @@ instance MonadTrans (StateT s) where
     lift f = StateT $ \s -> f >>= return . (,s)
     {-# INLINE lift #-}
 
-instance MonadIO m => MonadIO (StateT s m) where
+instance (Functor m, MonadIO m) => MonadIO (StateT s m) where
     liftIO f = lift (liftIO f)
     {-# INLINE liftIO #-}
 
