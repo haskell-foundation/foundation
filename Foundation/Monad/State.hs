@@ -40,7 +40,7 @@ instance (Functor m, MonadFailure m) => MonadFailure (StateT s m) where
     type Failure (StateT s m) = Failure m
     mFail e = StateT $ \s -> ((,s) `fmap` mFail e)
 
-instance MonadThrow m => MonadThrow (StateT s m) where
+instance (Functor m, MonadThrow m) => MonadThrow (StateT s m) where
     throw e = StateT $ \_ -> throw e 
 
 instance (Functor m, MonadCatch m) => MonadCatch (StateT s m) where
