@@ -33,6 +33,10 @@ instance MonadIO m => MonadIO (IdentityT m) where
     liftIO f = lift (liftIO f)
     {-# INLINE liftIO #-}
 
+instance MonadFailure m => MonadFailure (IdentityT m) where
+    type Failure (IdentityT m) = Failure m
+    mFail = IdentityT . mFail
+
 instance MonadThrow m => MonadThrow (IdentityT m) where
     throw e = IdentityT (throw e)
 

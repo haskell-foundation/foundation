@@ -32,8 +32,9 @@ instance MonadIO m => MonadIO (ReaderT r m) where
     liftIO f = lift (liftIO f)
     {-# INLINE liftIO #-}
 
---instance MonadFailure m => MonadTrans (ReaderT r) where
---    type MonadFailure (ReaderT r) = MonadFailure
+instance MonadFailure m => MonadFailure (ReaderT r m) where
+    type Failure (ReaderT r m) = Failure m
+    mFail e = ReaderT $ \_ -> mFail e
 
 instance MonadThrow m => MonadThrow (ReaderT r m) where
     throw e = ReaderT $ \_ -> throw e 

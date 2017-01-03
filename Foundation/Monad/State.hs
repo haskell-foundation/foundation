@@ -36,8 +36,9 @@ instance MonadIO m => MonadIO (StateT s m) where
     liftIO f = lift (liftIO f)
     {-# INLINE liftIO #-}
 
---instance MonadFailure m => MonadTrans (StateT r) where
---    type MonadFailure (StateT r) = MonadFailure
+instance MonadFailure m => MonadFailure (StateT s m) where
+    type Failure (StateT s m) = Failure m
+    mFail e = StateT $ \s -> ((,s) `fmap` mFail e)
 
 instance MonadThrow m => MonadThrow (StateT s m) where
     throw e = StateT $ \_ -> throw e 
