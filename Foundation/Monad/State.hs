@@ -23,7 +23,7 @@ instance Monad m => Applicative (StateT s m) where
     {-# INLINE (<*>) #-}
 
 instance Monad m => Monad (StateT s m) where
-    return = pure
+    return a = StateT $ \s -> (,s) `fmap` return a
     {-# INLINE return #-}
     ma >>= mab = StateT $ \s1 -> runStateT ma s1 >>= \(a, s2) -> runStateT (mab a) s2
     {-# INLINE (>>=) #-}

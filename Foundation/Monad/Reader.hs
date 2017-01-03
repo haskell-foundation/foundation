@@ -19,7 +19,7 @@ instance Applicative m => Applicative (ReaderT r m) where
     {-# INLINE (<*>) #-}
 
 instance Monad m => Monad (ReaderT r m) where
-    return = pure
+    return a = ReaderT $ const (return a)
     {-# INLINE return #-}
     ma >>= mab = ReaderT $ \r -> runReaderT ma r >>= \a -> runReaderT (mab a) r
     {-# INLINE (>>=) #-}
