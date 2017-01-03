@@ -71,6 +71,8 @@ Library
                      Foundation.Collection
                      Foundation.Primitive
                      Foundation.Monad
+                     Foundation.Monad.Reader
+                     Foundation.Monad.State
                      Foundation.System.Info
                      Foundation.Strict
                      Foundation.Parser
@@ -128,6 +130,8 @@ Library
                      Foundation.Monad.MonadIO
                      Foundation.Monad.Exception
                      Foundation.Monad.Transformer
+                     Foundation.Monad.Identity
+                     Foundation.Monad.Base
                      Foundation.Array.Chunked.Unboxed
                      Foundation.Array.Common
                      Foundation.Array.Unboxed
