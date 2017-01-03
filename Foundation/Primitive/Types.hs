@@ -360,15 +360,15 @@ instance PrimType Char where
 instance PrimType CChar where
     primSizeInBytes _ = Size 1
     {-# INLINE primSizeInBytes #-}
-    primBaUIndex ba (Offset n) = CChar (primBaUIndex ba (Offset n :: Offset Int8))
+    primBaUIndex ba (Offset n) = CChar (primBaUIndex ba (Offset n))
     {-# INLINE primBaUIndex #-}
-    primMbaURead mba (Offset n) = CChar <$> primMbaURead mba (Offset n :: Offset Int8)
+    primMbaURead mba (Offset n) = CChar <$> primMbaURead mba (Offset n)
     {-# INLINE primMbaURead #-}
     primMbaUWrite mba (Offset n) (CChar int8) = primMbaUWrite mba (Offset n) int8
     {-# INLINE primMbaUWrite #-}
-    primAddrIndex addr (Offset n) = CChar $ primAddrIndex addr (Offset n :: Offset Int8)
+    primAddrIndex addr (Offset n) = CChar $ primAddrIndex addr (Offset n)
     {-# INLINE primAddrIndex #-}
-    primAddrRead addr (Offset n) = CChar <$> primAddrRead addr (Offset n :: Offset Int8)
+    primAddrRead addr (Offset n) = CChar <$> primAddrRead addr (Offset n)
     {-# INLINE primAddrRead #-}
     primAddrWrite addr (Offset n) (CChar int8) = primAddrWrite addr (Offset n) int8
     {-# INLINE primAddrWrite #-}
