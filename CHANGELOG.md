@@ -1,3 +1,15 @@
+## 0.0.3
+
+Monad:
+
+* Add MonadCatch and MonadThrow classes
+* Add Transformer base class (MonadTrans)
+* Add IdentityT, StateT, ReaderT
+
+Build:
+
+* Fix build on !x86
+
 ## 0.0.2
 
 Classes:
