@@ -42,7 +42,7 @@ import           Foundation.Numerical
 import           Foundation.Primitive.Monad
 import           Foundation.Foreign
 
-import GHC.Int
+import GHC.Word
 import GHC.Types
 import GHC.Prim
 
@@ -51,31 +51,31 @@ import qualified Data.List
 import qualified Prelude
 import Foundation.Class.Bifunctor
 
-ccharToChar :: CChar -> Char
-ccharToChar (CChar (I8# i)) = C# (chr# i)
-charToCChar :: Char -> CChar
-charToCChar (C# i) = CChar (I8# (ord# i))
+cucharToChar :: CUChar -> Char
+cucharToChar (CUChar (W8# i)) = C# (chr# (word2Int# i))
+charToCUChar :: Char -> CUChar
+charToCUChar (C# i) = CUChar (W8# (int2Word# (ord# i)))
 
 -- | Opaque packed array of characters in the ASCII encoding
-newtype AsciiString = AsciiString { toBytes :: UArray CChar }
+newtype AsciiString = AsciiString { toBytes :: UArray CUChar }
     deriving (Typeable, Monoid, Eq, Ord)
 
-newtype MutableAsciiString st = MutableAsciiString (MVec.MUArray CChar st)
+newtype MutableAsciiString st = MutableAsciiString (MVec.MUArray CUChar st)
     deriving (Typeable)
 
 instance Show AsciiString where
-    show = fmap ccharToChar . toList
+    show = fmap cucharToChar . toList
 instance IsString AsciiString where
-    fromString = fromList . fmap charToCChar
+    fromString = fromList . fmap charToCUChar
 instance IsList AsciiString where
-    type Item AsciiString = CChar
+    type Item AsciiString = CUChar
     fromList = sFromList
     toList = sToList
 
-type instance C.Element AsciiString = CChar
+type instance C.Element AsciiString = CUChar
 
 instance C.InnerFunctor AsciiString where
-    imap = ccharMap
+    imap = cucharMap
 instance C.Collection AsciiString where
     null = null
     length = length
@@ -109,7 +109,7 @@ instance C.Zippable AsciiString where
   -- TODO Use a string builder once available
   zipWith f a b = sFromList (C.zipWith f a b)
 
-next :: AsciiString -> Offset CChar -> (# CChar, Offset CChar #)
+next :: AsciiString -> Offset CUChar -> (# CUChar, Offset CUChar #)
 next (AsciiString ba) (Offset n) = (# h, Offset (n + 1) #)
   where
     !h = Vec.unsafeIndex ba n
@@ -121,10 +121,10 @@ freeze (MutableAsciiString mba) = AsciiString `fmap` C.unsafeFreeze mba
 ------------------------------------------------------------------------
 -- real functions
 
-sToList :: AsciiString -> [CChar]
+sToList :: AsciiString -> [CUChar]
 sToList s = loop azero
   where
-    nbBytes :: Size CChar
+    nbBytes :: Size CUChar
     !nbBytes = size s
     !end = azero `offsetPlusE` nbBytes
     loop idx
@@ -132,7 +132,7 @@ sToList s = loop azero
         | otherwise  =
             let (# c , idx' #) = next s idx in c : loop idx'
 
-sFromList :: [CChar] -> AsciiString
+sFromList :: [CUChar] -> AsciiString
 sFromList = AsciiString . fromList
 {-# INLINE [0] sFromList #-}
 
@@ -179,34 +179,34 @@ revSplitAt n v = (drop idx v, take idx v)
 -- > splitOn (== ':') "abc::def"   == ["abc","","def"]
 -- > splitOn (== ':') "::abc::def" == ["","","abc","","def"]
 --
-splitOn :: (CChar -> Bool) -> AsciiString -> [AsciiString]
+splitOn :: (CUChar -> Bool) -> AsciiString -> [AsciiString]
 splitOn predicate = fmap AsciiString . Vec.splitOn predicate . toBytes
 
-break :: (CChar -> Bool) -> AsciiString -> (AsciiString, AsciiString)
+break :: (CUChar -> Bool) -> AsciiString -> (AsciiString, AsciiString)
 break predicate = bimap AsciiString AsciiString . Vec.break predicate . toBytes
 {-# INLINE[0] break #-}
 
 {-# RULES "break (== 'c')" [3] forall c . break (== c) = breakElem c #-}
 
-breakElem :: CChar -> AsciiString -> (AsciiString, AsciiString)
+breakElem :: CUChar -> AsciiString -> (AsciiString, AsciiString)
 breakElem !el (AsciiString ba) =
     let (# v1,v2 #) = Vec.splitElem el ba in (AsciiString v1, AsciiString v2)
 {-# INLINE breakElem #-}
 
-intersperse :: CChar -> AsciiString -> AsciiString
+intersperse :: CUChar -> AsciiString -> AsciiString
 intersperse sep = AsciiString . Vec.intersperse sep . toBytes
 
-span :: (CChar -> Bool) -> AsciiString -> (AsciiString, AsciiString)
+span :: (CUChar -> Bool) -> AsciiString -> (AsciiString, AsciiString)
 span predicate = break (not . predicate)
 
 -- | size in bytes
-size :: AsciiString -> Size CChar
+size :: AsciiString -> Size CUChar
 size = Size . C.length . toBytes
 
 length :: AsciiString -> Int
 length s = let (Size l) = size s in l
 
-replicate :: Int -> CChar -> AsciiString
+replicate :: Int -> CUChar -> AsciiString
 replicate n c = AsciiString $ Vec.create n (const c)
 
 -- | Copy the AsciiString
@@ -215,7 +215,7 @@ copy (AsciiString s) = AsciiString (Vec.copy s)
 
 -- | Allocate a MutableAsciiString of a specific size in bytes.
 new :: PrimMonad prim
-    => Size CChar -- ^ in number of bytes, not of elements.
+    => Size CUChar -- ^ in number of bytes, not of elements.
     -> prim (MutableAsciiString (PrimState prim))
 new n = MutableAsciiString `fmap` MVec.new n
 
@@ -227,28 +227,28 @@ create sz f = do
         then freeze ms
         else C.take filled `fmap` freeze ms
 
-ccharMap :: (CChar -> CChar) -> AsciiString -> AsciiString
-ccharMap f = AsciiString . Vec.map f . toBytes
+cucharMap :: (CUChar -> CUChar) -> AsciiString -> AsciiString
+cucharMap f = AsciiString . Vec.map f . toBytes
 
-snoc :: AsciiString -> CChar -> AsciiString
+snoc :: AsciiString -> CUChar -> AsciiString
 snoc (AsciiString ba) = AsciiString . Vec.snoc ba
 
-cons :: CChar -> AsciiString -> AsciiString
+cons :: CUChar -> AsciiString -> AsciiString
 cons c = AsciiString . Vec.cons c . toBytes
 
-unsnoc :: AsciiString -> Maybe (AsciiString, CChar)
+unsnoc :: AsciiString -> Maybe (AsciiString, CUChar)
 unsnoc str = first AsciiString <$> Vec.unsnoc (toBytes str)
 
-uncons :: AsciiString -> Maybe (CChar, AsciiString)
+uncons :: AsciiString -> Maybe (CUChar, AsciiString)
 uncons str = second AsciiString <$> Vec.uncons (toBytes str)
 
-find :: (CChar -> Bool) -> AsciiString -> Maybe CChar
+find :: (CUChar -> Bool) -> AsciiString -> Maybe CUChar
 find predicate = Vec.find predicate . toBytes
 
-sortBy :: (CChar -> CChar -> Ordering) -> AsciiString -> AsciiString
+sortBy :: (CUChar -> CUChar -> Ordering) -> AsciiString -> AsciiString
 sortBy sortF = AsciiString . Vec.sortBy sortF . toBytes
 
-filter :: (CChar -> Bool) -> AsciiString -> AsciiString
+filter :: (CUChar -> Bool) -> AsciiString -> AsciiString
 filter p s = fromList $ Data.List.filter p $ toList s
 
 reverse :: AsciiString -> AsciiString
@@ -259,7 +259,7 @@ reverse (AsciiString ba) = AsciiString $ Vec.reverse ba
 -- If the input contains invalid sequences, it will trigger runtime async errors when processing data.
 --
 -- In doubt, use 'fromBytes'
-fromBytesUnsafe :: UArray CChar -> AsciiString
+fromBytesUnsafe :: UArray CUChar -> AsciiString
 fromBytesUnsafe = AsciiString
 
 lines :: AsciiString -> [AsciiString]

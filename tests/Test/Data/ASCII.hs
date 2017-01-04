@@ -13,5 +13,5 @@ import Foundation.Foreign
 import Test.Tasty.QuickCheck
 
 -- | a better generator for unicode Character
-genAsciiChar :: Gen CChar
+genAsciiChar :: Gen CUChar
 genAsciiChar = toEnum <$> choose (1, 127)
