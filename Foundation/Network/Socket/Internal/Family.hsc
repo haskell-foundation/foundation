@@ -6,9 +6,7 @@ module Foundation.Network.Socket.Internal.Family
     , Family(..)
 
     , Inet
-    , InetAddress(..), InetPort(..)
-    , inetAddressFromTuple
-    , inetAny
+    , InetPort(..)
     ) where
 
 #include "netinet/in.h"
@@ -20,61 +18,37 @@ import Foundation
 import Foundation.Internal.Base
 import Foundation.Class.Storable
 
+import Foundation.Network.IPv4 (IPv4)
+
 data family SocketAddress f
 
 class Family f where
+    type Address f
     familyCode :: f -> CInt
 
 data Inet
 instance Family Inet where
+    type Address Inet = IPv4
     familyCode _ = (#const AF_INET)
 
 data instance SocketAddress Inet
   = SocketAddressInet
-    { inetAddress   :: InetAddress
+    { inetAddress   :: Address Inet
     , inetPort      :: InetPort
     }
   deriving (Eq, Show)
 
 newtype InetPort = InetPort Word16
   deriving (Eq, Show)
-newtype InetAddress = InetAddress Word32
-  deriving (Eq, Show)
-inetAddressFromTuple :: (Word8, Word8, Word8, Word8) -> InetAddress
-inetAddressFromTuple (w0, w1, w2, w3) =
-    InetAddress $ foldl1' (\x y->x*256+y) [f w0, f w1, f w2, f w3]
-  where
-    f = fromIntegral
-inetAny :: InetAddress
-inetAny = InetAddress 0
 
 instance Storable InetPort where
-  peek ptr    = do
+    peek ptr    = do
       p0 <- peekOff (castPtr ptr) (Offset 0 :: Offset Word8)
       p1 <- peekOff (castPtr ptr) (Offset 1 :: Offset Word8)
       return $ InetPort (fromIntegral p0 * 256 + fromIntegral p1)
-  poke ptr (InetPort w16) = do
-      pokeOff (castPtr ptr) 0 (w16_0 w16)
-      pokeOff (castPtr ptr) 1 (w16_1 w16)
-    where
-      w16_0, w16_1 :: Word16 -> Word8
-      w16_0 x = fromIntegral $ (x `div` 256) `mod` 256
-      w16_1 x = fromIntegral $ x `mod` 256
-
-instance Storable InetAddress where
-    peek ptr    = do
-        i0  <- peekOff (castPtr ptr) (Offset 0 :: Offset Word8)
-        i1  <- peekOff (castPtr ptr) (Offset 1 :: Offset Word8)
-        i2  <- peekOff (castPtr ptr) (Offset 2 :: Offset Word8)
-        i3  <- peekOff (castPtr ptr) (Offset 3 :: Offset Word8)
-        return $ InetAddress $ (((((f i0 * 256) + f i1) * 256) + f i2) * 256) + f i3
-      where
-        f = fromIntegral
-    poke ptr (InetAddress a) = do
-        pokeOff (castPtr ptr) 0 (fromIntegral $ mod (a `div` (256*256*256)) 256 :: Word8)
-        pokeOff (castPtr ptr) 1 (fromIntegral $ mod (a `div`     (256*256)) 256 :: Word8)
-        pokeOff (castPtr ptr) 2 (fromIntegral $ mod (a `div`           256) 256 :: Word8)
-        pokeOff (castPtr ptr) 3 (fromIntegral $ mod a $ 256 :: Word8)
+    poke ptr (InetPort w16) = do
+      CUShort w16' <- c_htons $ CUShort w16
+      poke (castPtr ptr) w16'
 
 instance Storable (SocketAddress Inet) where
     peek ptr    = do
@@ -102,3 +76,5 @@ instance StorableFixed (SocketAddress Inet) where
     alignment _ = (#alignment struct sockaddr_in)
 foreign import ccall unsafe "memset"
     c_memset :: Ptr a -> CInt -> CSize -> IO ()
+foreign import ccall unsafe "htons"
+    c_htons :: CUShort -> IO CUShort

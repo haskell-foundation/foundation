@@ -80,6 +80,7 @@ Library
                      Foundation.Random
                      Foundation.System.Entropy
                      Foundation.Network.Socket
+                     Foundation.Network.IPv4
   Other-modules:     Foundation.String.Internal
                      Foundation.String.UTF8
                      Foundation.String.Encoding.Encoding

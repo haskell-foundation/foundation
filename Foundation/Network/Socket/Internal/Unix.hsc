@@ -24,40 +24,26 @@ module Foundation.Network.Socket.Internal.Unix
     , recvfrom
     ) where
 
+#include <sys/socket.h>
+
 import Foreign.C.Types
+import Foreign.C.String
 import Foreign.C.Error hiding (throwErrno)
 import System.Posix.Types (Fd(..))
+import System.IO.Unsafe (unsafePerformIO)
 
 import Foundation.Internal.Base
 
-data SocketError =
-      SocketError_ConnectionRefused
-    | SocketError_ConnectionReset
-    | SocketError_AddressInUse
-    | SocketError_AddressNotAvailable
-    | SocketError_AddressCannotBeUseWithSocketType
-    | SocketError_InvalidDescriptor
-    | SocketError_NetworkFailure
-    | SocketError_System CInt
-    deriving (Show,Eq,Typeable)
+newtype SocketError = SocketError Errno
+    deriving (Eq,Typeable)
+instance Show SocketError where
+    show (SocketError (Errno errno)) = unsafePerformIO $ c_strerrno errno >>= peekCString
 instance Exception SocketError
-
-errnoToSocketError :: Errno -> SocketError
-errnoToSocketError errno@(Errno errnoVal)
-    | errno == eADDRINUSE      = SocketError_AddressInUse
-    | errno == eADDRNOTAVAIL   = SocketError_AddressNotAvailable
-    | errno == eAFNOSUPPORT    = SocketError_AddressCannotBeUseWithSocketType
-    | errno == eBADF           = SocketError_InvalidDescriptor
-    | errno == eCONNREFUSED    = SocketError_ConnectionRefused
-    | errno == eCONNRESET      = SocketError_ConnectionReset
-    | errno == eNETDOWN        = SocketError_NetworkFailure
-    | errno == eNETRESET       = SocketError_NetworkFailure
-    | errno == eNETUNREACH     = SocketError_NetworkFailure
-    | errno == eNOTSOCK        = SocketError_InvalidDescriptor
-    | otherwise = SocketError_System errnoVal
+foreign import ccall unsafe "strerror"
+    c_strerrno :: CInt -> IO CString
 
 throwErrno :: Errno -> IO a
-throwErrno = throwIO . errnoToSocketError
+throwErrno = throwIO . SocketError
 
 checkRet :: (Integral ret, Eq ret)
          => (ret -> a) -> IO ret -> IO (Either Errno a)
@@ -116,7 +102,7 @@ recv :: Fd -> Ptr Word8 -> CSize -> CInt -> IO (Either Errno CInt)
 recv fd buf sz flags =
     checkRet
         id
-        (c_recv fd buf sz flags)
+        (c_recv fd buf sz (#const MSG_WAITALL))--flags)
 
 recvfrom :: Fd
          -> Ptr Word8 -> CSize
