@@ -21,6 +21,7 @@ import GHC.Types (Double, Float)
 
 import Foreign.Ptr (castPtr)
 import qualified Foreign.Ptr
+import qualified Foreign.Storable (peek, poke, sizeOf, alignment)
 
 import Foundation.Internal.Base
 import Foundation.Internal.Types
@@ -90,6 +91,9 @@ instance Storable Word32 where
 instance Storable Word64 where
     peek (Ptr addr) = primAddrRead addr (Offset 0)
     poke (Ptr addr) = primAddrWrite addr (Offset 0)
+instance Storable (Ptr a) where
+    peek = Foreign.Storable.peek
+    poke = Foreign.Storable.poke
 
 instance StorableFixed Char where
     size      = primSizeInBytes . toProxy
@@ -124,3 +128,9 @@ instance StorableFixed Word32 where
 instance StorableFixed Word64 where
     size      = primSizeInBytes . toProxy
     alignment = primSizeInBytes . toProxy
+instance StorableFixed (Ptr a) where
+    size      = Size . Foreign.Storable.sizeOf    . toUndefined
+    alignment = Size . Foreign.Storable.alignment . toUndefined
+
+toUndefined :: proxy a -> a
+toUndefined _ = undefined
