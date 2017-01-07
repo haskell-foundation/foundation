@@ -59,7 +59,9 @@ import           GHC.Prim
 import           GHC.ST
 import           GHC.Types
 import           GHC.Word
+#if MIN_VERSION_base(4,9,0)
 import           GHC.Char
+#endif
 
  -- temporary
 import qualified Data.List
