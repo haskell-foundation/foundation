@@ -27,11 +27,11 @@ data Pipe leftOver input output upstream monad result =
       -- | Provide new output to be sent downstream. This constructor has three
       -- fields: the next @Pipe@ to be used, a finalization function, and the
       -- output value.
-      HaveOutput (Pipe leftOver input output upstream monad result) (monad ()) output
+      Yield (Pipe leftOver input output upstream monad result) (monad ()) output
       -- | Request more input from upstream. The first field takes a new input
       -- value and provides a new @Pipe@. The second takes an upstream result
       -- value, which indicates that upstream is producing no more results.
-    | NeedInput (input -> Pipe leftOver input output upstream monad result)
+    | Await (input -> Pipe leftOver input output upstream monad result)
                 (upstream -> Pipe leftOver input output upstream monad result)
       -- | Processing with this @Pipe@ is complete, providing the final result.
     | Done result
@@ -48,27 +48,25 @@ instance Applicative m => Applicative (Pipe l i o u m) where
     pure = Done
     {-# INLINE pure #-}
 
-    HaveOutput p c o <*> fa = HaveOutput (p <*> fa) c o
-    NeedInput p c    <*> fa = NeedInput (\i -> p i <*> fa) (\o -> c o <*> fa)
-    Done r           <*> fa = r <$> fa
-    PipeM mp         <*> fa = PipeM ((<*> fa) <$> mp)
-    Leftover p i     <*> fa = Leftover (p <*> fa) i
+    Yield p c o  <*> fa = Yield (p <*> fa) c o
+    Await p c    <*> fa = Await (\i -> p i <*> fa) (\o -> c o <*> fa)
+    Done r       <*> fa = r <$> fa
+    PipeM mp     <*> fa = PipeM ((<*> fa) <$> mp)
+    Leftover p i <*> fa = Leftover (p <*> fa) i
     {-# INLINE (<*>) #-}
 
 instance (Functor m, Monad m) => Monad (Pipe l i o u m) where
     return = Done
     {-# INLINE return #-}
 
-    HaveOutput p c o >>= fp = HaveOutput (p >>= fp)            c          o
-    NeedInput p c    >>= fp = NeedInput  (p >=> fp)            (c >=> fp)
-    Done x           >>= fp = fp x
-    PipeM mp         >>= fp = PipeM      ((>>= fp) <$> mp)
-    Leftover p i     >>= fp = Leftover   (p >>= fp)            i
+    Yield p c o  >>= fp = Yield    (p >>= fp)            c          o
+    Await p c    >>= fp = Await    (p >=> fp)            (c >=> fp)
+    Done x       >>= fp = fp x
+    PipeM mp     >>= fp = PipeM    ((>>= fp) <$> mp)
+    Leftover p i >>= fp = Leftover (p >>= fp)            i
 
 newtype Conduit input output monad result = Conduit
-    { unConduit :: forall a .
-                 (result -> Pipe input input output () monad a)
-                 -> Pipe input input output () monad a
+    { unConduit :: forall a .  (result -> Pipe input input output () monad a) -> Pipe input input output () monad a
     }
 
 instance Functor (Conduit i o m) where
