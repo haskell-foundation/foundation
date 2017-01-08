@@ -102,7 +102,7 @@ recv :: Fd -> Ptr Word8 -> CSize -> CInt -> IO (Either Errno CInt)
 recv fd buf sz flags =
     checkRet
         id
-        (c_recv fd buf sz (#const MSG_WAITALL))--flags)
+        (c_recv fd buf sz 0)-- (#const MSG_WAITALL))--flags)
 
 recvfrom :: Fd
          -> Ptr Word8 -> CSize
