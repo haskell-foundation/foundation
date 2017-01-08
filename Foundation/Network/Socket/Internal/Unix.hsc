@@ -1,5 +1,6 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE CPP #-}
 
 module Foundation.Network.Socket.Internal.Unix
     ( CSockAddr
@@ -8,6 +9,10 @@ module Foundation.Network.Socket.Internal.Unix
       -- * Error
     , SocketError(..), throwErrno
     , Errno
+
+      -- * Flags
+    , Flag
+    , flagWaitAll, flagOutOfBand, flagNoSignal, flagEndOfRecord
 
       -- * Socket
     , Fd(..)
@@ -26,6 +31,8 @@ module Foundation.Network.Socket.Internal.Unix
 
 #include <sys/socket.h>
 
+import Data.Bits ((.|.))
+
 import Foreign.C.Types
 import Foreign.C.String
 import Foreign.C.Error hiding (throwErrno)
@@ -33,6 +40,10 @@ import System.Posix.Types (Fd(..))
 import System.IO.Unsafe (unsafePerformIO)
 
 import Foundation.Internal.Base
+
+#ifndef MSG_NOSIGNAL
+#define MSG_NOSIGNAL           0
+#endif
 
 newtype SocketError = SocketError Errno
     deriving (Eq,Typeable)
@@ -55,6 +66,24 @@ checkRet mapper action = do
 
 type CSockAddr = Ptr Word8
 type CSockLen  = CInt
+
+newtype Flag = Flag CInt
+  deriving (Show, Eq, Ord, Typeable)
+instance Monoid Flag where
+    mempty = Flag 0
+    mappend (Flag c1) (Flag c2) = Flag $ c1 .|. c2
+
+flagWaitAll :: Flag
+flagWaitAll = Flag (#const MSG_WAITALL)
+
+flagOutOfBand :: Flag
+flagOutOfBand = Flag (#const MSG_OOB)
+
+flagNoSignal :: Flag
+flagNoSignal = Flag (#const MSG_NOSIGNAL)
+
+flagEndOfRecord :: Flag
+flagEndOfRecord = Flag (#const MSG_EOR)
 
 socket :: CInt -> CInt -> CInt -> IO (Either Errno Fd)
 socket f t p =
@@ -98,30 +127,30 @@ accept fd addr lenptr =
         Fd
         (c_accept fd addr lenptr)
 
-recv :: Fd -> Ptr Word8 -> CSize -> CInt -> IO (Either Errno CInt)
-recv fd buf sz flags =
+recv :: Fd -> Ptr Word8 -> CSize -> Flag -> IO (Either Errno CInt)
+recv fd buf sz (Flag flags) =
     checkRet
         id
-        (c_recv fd buf sz 0)-- (#const MSG_WAITALL))--flags)
+        (c_recv fd buf sz flags)
 
 recvfrom :: Fd
          -> Ptr Word8 -> CSize
-         -> CInt
+         -> Flag
          -> CSockAddr -> CSockLen
          -> IO (Either Errno CInt)
-recvfrom fd buf sz flags add len =
+recvfrom fd buf sz (Flag flags) add len =
     checkRet
         id
         (c_recvfrom fd buf sz flags add len)
 
-send :: Fd -> Ptr Word8 -> CSize -> CInt -> IO (Either Errno CInt)
-send fd addr size flags =
+send :: Fd -> Ptr Word8 -> CSize -> Flag -> IO (Either Errno CInt)
+send fd addr size (Flag flags) =
     checkRet
         id
         (c_send fd addr size flags)
 
-sendto :: Fd -> Ptr Word8 -> CSize -> CInt -> CSockAddr -> CSockLen -> IO (Either Errno CInt)
-sendto fd buf sz flags addr len =
+sendto :: Fd -> Ptr Word8 -> CSize -> Flag -> CSockAddr -> CSockLen -> IO (Either Errno CInt)
+sendto fd buf sz (Flag flags) addr len =
     checkRet
         id
         (c_sendto fd buf sz flags addr len)

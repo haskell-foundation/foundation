@@ -14,6 +14,10 @@ module Foundation.Network.Socket
     , Protocol(..)
     , TCP, UDP
 
+      -- * Flags
+    , Flag
+    , flagWaitAll, flagOutOfBand, flagNoSignal, flagEndOfRecord
+
       -- * operations
     , socket
     , close
@@ -32,7 +36,7 @@ import Control.Concurrent.MVar
 import Control.Monad (when)
 import Foreign.C.Error hiding (throwErrno)
 import Foreign.C.Types
-import Foreign.Marshal.Alloc (allocaBytes)
+import Foreign.Marshal.Alloc (allocaBytes, alloca)
 import GHC.Conc (closeFdWith, threadWaitRead, threadWaitWrite)
 
 import Foundation.Collection
@@ -50,6 +54,8 @@ import Foundation.Network.Socket.Internal
             , Type(..), Raw, SequentialPacket, Datagram, Stream
             , Family(..), Inet, InetPort(..)
             , SocketAddress(..)
+            , Flag
+            , flagWaitAll, flagOutOfBand, flagNoSignal, flagEndOfRecord
             )
 
 newtype Socket f t p = Socket (MVar I.Fd)
@@ -126,17 +132,38 @@ listen s sz =
 accept :: (Family f, StorableFixed (SocketAddress f))
        => Socket f t p
        -> IO (Socket f t p, SocketAddress f)
-accept = undefined
+accept s =
+    allocaAddr s Proxy $ \addrPtr (CInt sz) ->
+      alloca $ \addrLenPtr -> do
+        poke addrLenPtr sz
+        fd' <- retryWith s [eWOULDBLOCK, eAGAIN] threadWaitRead $ \fd -> do
+                when (fd < I.Fd 0) (I.throwErrno eBADF)
+                I.accept fd (castPtr addrPtr) (castPtr addrLenPtr)
+        addr <- peek addrPtr
+        mvar <- newMVar fd'
+        _ <- mkWeakMVar mvar (close (Socket mvar))
+        return (Socket mvar, addr)
+  where
+    allocaAddr :: (Family f, StorableFixed (SocketAddress f))
+               => Socket f t p
+               -> Proxy (SocketAddress f)
+               -> (Ptr (SocketAddress f) -> CInt -> IO a)
+               -> IO a
+    allocaAddr _ p f =
+        let (Size sz) = size p
+         in allocaBytes sz $ \ptr -> f (castPtr ptr) (fromIntegral sz)
+
 
 send :: PrimType ty
      => Socket f t p
+     -> Flag
      -> UArray ty
      -> IO (Size ty)
-send s array = do
+send s flag array = do
     (CInt i) <- withPtr array $ \ptr ->
         retryWith s [eAGAIN, eWOULDBLOCK] threadWaitWrite $ \fd -> do
             when (fd < I.Fd 0) (I.throwErrno eBADF)
-            I.send fd (castPtr ptr) (fromInteger $ toInteger $ num `scale` sz) 0 -- TODO add
+            I.send fd (castPtr ptr) (fromInteger $ toInteger $ num `scale` sz) flag
     return $ Size $ fromInteger $ toInteger i
   where
     num :: Size ty
@@ -147,9 +174,10 @@ send s array = do
 
 recv :: (Show ty, PrimType ty)
      => Socket f t p
+     -> Flag
      -> Size ty
      -> IO (UArray ty)
-recv s num = do
+recv s flag num = do
     -- TODO use mutable ByteArray
     --      fix the bug in withMutableByteArrayPtr  which copies a temporary
     --      ByteArray#
@@ -158,7 +186,7 @@ recv s num = do
                  retryWith s [eAGAIN, eWOULDBLOCK] threadWaitRead $ \fd -> do
                     when (fd < I.Fd 0) (I.throwErrno eBADF)
                     let numBytes = fromInteger $ toInteger $ num `scale` primSizeInBytes (toProxy array)
-                    I.recv fd (castPtr ptr) numBytes 0
+                    I.recv fd (castPtr ptr) numBytes flag
     let sz' = fromInteger $ toInteger sz
     return $ take sz' array
   where
