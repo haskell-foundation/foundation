@@ -17,6 +17,7 @@ import Foreign.C.Types
 import Foundation
 import Foundation.Internal.Base
 import Foundation.Class.Storable
+import Foundation.Bits (htons)
 
 import Foundation.Network.IPv4 (IPv4)
 
@@ -46,9 +47,7 @@ instance Storable InetPort where
       p0 <- peekOff (castPtr ptr) (Offset 0 :: Offset Word8)
       p1 <- peekOff (castPtr ptr) (Offset 1 :: Offset Word8)
       return $ InetPort (fromIntegral p0 * 256 + fromIntegral p1)
-    poke ptr (InetPort w16) = do
-      CUShort w16' <- c_htons $ CUShort w16
-      poke (castPtr ptr) w16'
+    poke ptr (InetPort w16) = poke (castPtr ptr) (htons w16)
 
 instance Storable (SocketAddress Inet) where
     peek ptr    = do
@@ -74,7 +73,6 @@ instance Storable (SocketAddress Inet) where
 instance StorableFixed (SocketAddress Inet) where
     size      _ = (#const sizeof(struct sockaddr_in))
     alignment _ = (#alignment struct sockaddr_in)
+
 foreign import ccall unsafe "memset"
     c_memset :: Ptr a -> CInt -> CSize -> IO ()
-foreign import ccall unsafe "htons"
-    c_htons :: CUShort -> IO CUShort

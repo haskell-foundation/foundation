@@ -6,7 +6,6 @@ module Foundation.Network.IPv4
     , fromString, toString
     , fromLString, toLString
     , fromTuple, toTuple
-    , htonl, ntohl
     ) where
 
 import Prelude (fromIntegral)
@@ -18,6 +17,7 @@ import Foundation.Class.Storable
 import Foundation.Internal.Base
 import Foundation.Numerical
 import Foundation.String (String)
+import Foundation.Bits (htonl, ntohl)
 
 newtype IPv4 = IPv4 Word32
   deriving (Eq, Ord, Typeable)
@@ -43,12 +43,12 @@ toLString ipv4 =
 
 fromTuple :: (Word8, Word8, Word8, Word8) -> IPv4
 fromTuple (i1, i2, i3, i4) =
-     htonl $ (((((f i1 * 256) + f i2) * 256) + f i3) * 256) + f i4
+     IPv4 $ htonl $ (((((f i1 * 256) + f i2) * 256) + f i3) * 256) + f i4
   where
     f = fromIntegral
 
 toTuple :: IPv4 -> (Word8, Word8, Word8, Word8)
-toTuple ipv4 =
+toTuple (IPv4 ipv4) =
     let n = ntohl ipv4
         i4 =  n                          `mod` 256
         i3 = (n `div`  256)              `mod` 256
@@ -58,14 +58,5 @@ toTuple ipv4 =
   where
     f = fromIntegral
 
-htonl :: Word32 -> IPv4
-htonl w = unsafePerformIO (IPv4 <$> c_htonl w)
-ntohl :: IPv4 -> Word32
-ntohl (IPv4 w) = unsafePerformIO $ c_ntohl w
-
-foreign import ccall unsafe "htonl"
-    c_htonl :: Word32 -> IO Word32
-foreign import ccall unsafe "ntohl"
-    c_ntohl :: Word32 -> IO Word32
 foreign import ccall unsafe "inet_addr"
     c_inet_addr :: CString -> IO Word32
