@@ -106,28 +106,22 @@ bind :: (Family f, StorableFixed (SocketAddress f))
      => Socket f t p
      -> SocketAddress f
      -> IO ()
-bind (Socket mvar) addr =
+bind s addr =
     let (Size sz) = size (Just addr) in
-    withMVar mvar $ \fd -> do
-        when (fd < I.Fd 0) (I.throwErrno eBADF)
-        allocaBytes sz $ \addrptr -> do
-            poke addrptr addr
-            e <- I.bind fd (castPtr addrptr) (fromIntegral sz)
-            case e of
-                Left err -> I.throwErrno err
-                Right () -> return ()
+    allocaBytes sz $ \addrptr -> do
+        poke addrptr addr
+        retryWith s [] (\_ -> return ()) $ \fd -> do
+            when (fd < I.Fd 0) (I.throwErrno eBADF)
+            I.bind fd (castPtr addrptr) (fromIntegral sz)
 
 listen :: (Family f, StorableFixed (SocketAddress f))
      => Socket f t p
      -> Int
      -> IO ()
-listen (Socket mvar) sz =
-    withMVar mvar $ \fd -> do
+listen s sz =
+    retryWith s [] (\_ -> return ()) $ \fd -> do
         when (fd < I.Fd 0) (I.throwErrno eBADF)
-        e <- I.listen fd (fromIntegral sz)
-        case e of
-            Left err -> I.throwErrno err
-            Right () -> return ()
+        I.listen fd (fromIntegral sz)
 
 accept :: (Family f, StorableFixed (SocketAddress f))
        => Socket f t p
