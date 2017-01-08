@@ -1012,6 +1012,19 @@ index n s
     end = 0 `offsetPlusE` nbBytes
     ofs = indexN n s
 
+findIndex :: (Char -> Bool) -> String -> Maybe Int
+findIndex predicate s = loop (Offset 0)
+  where
+    !sz = size s
+    end = Offset 0 `offsetPlusE` sz
+    loop idx
+        | idx == end = Nothing
+        | otherwise =
+            let (# c, idx' #) = next s idx
+             in case predicate c of
+                    True  -> let (Offset r) = idx in Just r
+                    False -> loop idx'
+
 data Encoding
     = ASCII7
     | UTF8
