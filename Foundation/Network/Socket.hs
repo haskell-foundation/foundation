@@ -90,23 +90,17 @@ connect :: (Family f, StorableFixed (SocketAddress f))
         => Socket f t p
         -> SocketAddress f
         -> IO ()
-connect (Socket mvar) addr =
+connect s addr =
     let (Size sz) = size (Just addr) :: Size Word8 in
-    withMVar mvar $ \fd -> do
-        when (fd < I.Fd 0) (I.throwErrno eBADF)
-        allocaBytes sz $ \addrptr -> do
-            poke addrptr addr
+    allocaBytes sz $ \addrptr -> do
+        poke addrptr addr
+        retryWith s [eAGAIN, eWOULDBLOCK, eINTR] threadWaitRead $ \fd -> do
+            when (fd < I.Fd 0) (I.throwErrno eBADF)
             e <- I.connect fd (castPtr addrptr) (fromIntegral sz)
-            case e of
-                Left err | err == eWOULDBLOCK || err == eINPROGRESS -> do
-                    threadWaitWrite fd
-                    e' <- I.connect fd (castPtr addrptr) (fromIntegral sz)
-                    case e' of
-                        Right () -> return ()
-                        Left err' | err' == eISCONN -> return ()
-                                  | otherwise      -> I.throwErrno err'
-                Left err -> I.throwErrno err
-                Right () -> return ()
+            return $ case e of
+                Left e | e == eISCONN -> Right ()
+                Left e                -> Left e
+                Right a               -> Right a
 
 bind :: (Family f, StorableFixed (SocketAddress f))
      => Socket f t p
@@ -146,7 +140,7 @@ send :: PrimType ty
      -> IO (Size ty)
 send s array = do
     (CInt i) <- withPtr array $ \ptr ->
-        retryWith s threadWaitWrite $ \fd -> do
+        retryWith s [eAGAIN, eWOULDBLOCK] threadWaitWrite $ \fd -> do
             when (fd < I.Fd 0) (I.throwErrno eBADF)
             I.send fd (castPtr ptr) (fromInteger $ toInteger $ num `scale` sz) 0 -- TODO add
     return $ Size $ fromInteger $ toInteger i
@@ -167,7 +161,7 @@ recv s num = do
     --      ByteArray#
     array <- newPinned num >>= unsafeFreeze
     CInt sz <- withPtr array $ \ptr ->
-                 retryWith s threadWaitRead $ \fd -> do
+                 retryWith s [eAGAIN, eWOULDBLOCK] threadWaitRead $ \fd -> do
                     when (fd < I.Fd 0) (I.throwErrno eBADF)
                     let numBytes = fromInteger $ toInteger $ num `scale` primSizeInBytes (toProxy array)
                     I.recv fd (castPtr ptr) numBytes 0
@@ -177,14 +171,15 @@ recv s num = do
     toProxy :: PrimType ty => UArray ty -> Proxy ty
     toProxy _ = Proxy
 
-retryWith :: Socket f t p -> (I.Fd -> IO ()) -> (I.Fd -> IO (Either Errno a)) -> IO a
-retryWith s@(Socket mvar) waitFunction action = do
+retryWith :: Socket f t p -> [Errno] -> (I.Fd -> IO ()) -> (I.Fd -> IO (Either Errno a)) -> IO a
+retryWith s@(Socket mvar) cases waitFunction action = do
     e <- withMVar mvar $ \fd -> do
             e <- action fd
             case e of
-                Left err | err == eAGAIN || err == eWOULDBLOCK -> return $ Left (waitFunction fd)
+                Left err | err `elem` cases ->
+                               return $ Left (waitFunction fd)
                          | otherwise -> I.throwErrno err
                 Right a -> return $ Right a
     case e of
-        Left wait -> wait >> retryWith s waitFunction action
+        Left wait -> wait >> retryWith s cases waitFunction action
         Right a   -> return a
