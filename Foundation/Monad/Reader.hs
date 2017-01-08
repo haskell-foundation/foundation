@@ -1,5 +1,6 @@
 module Foundation.Monad.Reader
     ( ReaderT
+    , runReaderT
     ) where
 
 import Foundation.Internal.Base (($), (.), const)
@@ -37,7 +38,7 @@ instance MonadFailure m => MonadFailure (ReaderT r m) where
     mFail e = ReaderT $ \_ -> mFail e
 
 instance MonadThrow m => MonadThrow (ReaderT r m) where
-    throw e = ReaderT $ \_ -> throw e 
+    throw e = ReaderT $ \_ -> throw e
 
 instance MonadCatch m => MonadCatch (ReaderT r m) where
     catch (ReaderT m) c = ReaderT $ \r -> m r `catch` (\e -> runReaderT (c e) r)

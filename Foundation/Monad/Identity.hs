@@ -1,5 +1,6 @@
 module Foundation.Monad.Identity
     ( IdentityT
+    , runIdentityT
     ) where
 
 import Foundation.Internal.Base hiding (throw)
