@@ -1001,8 +1001,8 @@ reverse s@(String ba) = runST $ do
                 _  -> return () -- impossible
             loop ms (sidx `offsetPlusE` nb) didx'
 
-index :: Int -> String -> Maybe Char
-index n s
+index :: String -> Int -> Maybe Char
+index s n
     | ofs >= end = Nothing
     | otherwise  =
         let (# c, _ #) = next s ofs
