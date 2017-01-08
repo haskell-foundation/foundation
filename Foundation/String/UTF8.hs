@@ -134,6 +134,9 @@ instance C.Sequential String where
     find = find
     sortBy = sortBy
     singleton = fromList . (:[])
+instance C.IndexedCollection String where
+    (!) = index
+    findIndex = findIndex
 
 instance C.Zippable String where
   zipWith f as bs = runST $ build 64 $ go f (toList as) (toList bs)
