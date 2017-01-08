@@ -11,7 +11,7 @@
 {-# LANGUAGE Rank2Types #-}
 module Foundation.Conduit.Internal
     ( Pipe(..)
-    , ConduitM(..)
+    , Conduit(..)
     ) where
 
 import Foundation.Internal.Base
@@ -65,22 +65,22 @@ instance (Functor m, Monad m) => Monad (Pipe l i o u m) where
     PipeM mp         >>= fp = PipeM      ((>>= fp) <$> mp)
     Leftover p i     >>= fp = Leftover   (p >>= fp)            i
 
-newtype ConduitM input output monad result = ConduitM
-    { unConduitM :: forall a .
+newtype Conduit input output monad result = Conduit
+    { unConduit :: forall a .
                  (result -> Pipe input input output () monad a)
                  -> Pipe input input output () monad a
     }
 
-instance Functor (ConduitM i o m) where
-    fmap f (ConduitM c) = ConduitM $ \resPipe -> c (resPipe . f)
+instance Functor (Conduit i o m) where
+    fmap f (Conduit c) = Conduit $ \resPipe -> c (resPipe . f)
 
-instance Applicative (ConduitM i o m) where
-    pure x = ConduitM ($ x)
+instance Applicative (Conduit i o m) where
+    pure x = Conduit ($ x)
     {-# INLINE pure #-}
 
     fab <*> fa = fab >>= \ab -> fa >>= \a -> pure (ab a)
     {-# INLINE (<*>) #-}
 
-instance Monad (ConduitM i o m) where
+instance Monad (Conduit i o m) where
     return = pure
-    ConduitM f >>= g = ConduitM $ \h -> f $ \a -> unConduitM (g a) h
+    Conduit f >>= g = Conduit $ \h -> f $ \a -> unConduit (g a) h

@@ -1,5 +1,5 @@
 module Foundation.Conduit
-    ( ConduitM
+    ( Conduit
     ) where
 
 import Foundation.Conduit.Internal
