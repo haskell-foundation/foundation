@@ -19,13 +19,21 @@ module Foundation.Network.Socket
     , flagWaitAll, flagOutOfBand, flagNoSignal, flagEndOfRecord
 
       -- * operations
-    , socket
+      -- ** socket
+    , socket, SocketError(..)
+      -- ** close
     , close
+      -- ** connect
     , connect
+      -- ** bind
     , bind
+      -- ** listen
     , listen
+      -- ** accept
     , accept
+      -- ** send
     , send
+      -- ** recv
     , recv
     ) where
 
@@ -37,7 +45,7 @@ import Control.Monad (when)
 import Foreign.C.Error hiding (throwErrno)
 import Foreign.C.Types
 import Foreign.Marshal.Alloc (allocaBytes, alloca)
-import GHC.Conc (closeFdWith, threadWaitRead, threadWaitWrite)
+import GHC.Conc (threadWaitRead, threadWaitWrite)
 
 import Foundation.Collection
 import Foundation.Array.Unboxed (withPtr, UArray)
@@ -56,41 +64,11 @@ import Foundation.Network.Socket.Internal
             , SocketAddress(..)
             , Flag
             , flagWaitAll, flagOutOfBand, flagNoSignal, flagEndOfRecord
+            , Socket(..)
             )
 
-newtype Socket f t p = Socket (MVar I.Fd)
-
-socket :: (Family f, Type t, Protocol p)
-       => IO (Socket f t p)
-socket = socket_ undefined undefined undefined
-  where
-    socket_ :: (Family f, Type t, Protocol p)
-            => f -> t -> p -> IO (Socket f t p)
-    socket_ f t p = do
-        efd <- I.socket (familyCode f) (typeCode t) (protocolCode p)
-        case efd of
-            Left errno -> I.throwErrno errno
-            Right fd   -> do
-                mvar <- newMVar fd
-                _ <- mkWeakMVar mvar (close (Socket mvar))
-                return $ Socket mvar
-
-close :: Socket f t p -> IO ()
-close (Socket mvar) = modifyMVarMasked_ mvar close_
-  where
-    close_ :: I.Fd -> IO I.Fd
-    close_ fd
-        | fd == I.Fd (-1)  = return fd
-        | otherwise = do
-            closeFdWith
-              (const $ fix $ \retry -> do
-                e <- I.close fd
-                case e of
-                    Left err | err /= eINTR -> I.throwErrno err
-                             | otherwise    -> retry
-                    Right ()                -> return ()
-              ) fd
-            return (I.Fd (-1))
+import Foundation.Network.Socket.Socket
+import Foundation.Network.Socket.Close
 
 connect :: (Family f, StorableFixed (SocketAddress f))
         => Socket f t p
@@ -104,9 +82,9 @@ connect s addr =
             when (fd < I.Fd 0) (I.throwErrno eBADF)
             e <- I.connect fd (castPtr addrptr) (fromIntegral sz)
             return $ case e of
-                Left e | e == eISCONN -> Right ()
-                Left e                -> Left e
-                Right a               -> Right a
+                Left err | err == eISCONN -> Right ()
+                         | otherwise      -> Left err
+                Right a                   -> Right a
 
 bind :: (Family f, StorableFixed (SocketAddress f))
      => Socket f t p

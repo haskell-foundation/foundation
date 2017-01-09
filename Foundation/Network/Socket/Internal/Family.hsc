@@ -11,7 +11,6 @@ module Foundation.Network.Socket.Internal.Family
 
 #include "netinet/in.h"
 
-import Data.List (foldl1')
 import Foreign.C.Types
 
 import Foundation
