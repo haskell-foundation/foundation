@@ -20,11 +20,19 @@ import           GHC.Exception (errorCallWithCallStackException)
 error :: forall (r :: RuntimeRep) . forall (a :: TYPE r) . HasCallStack => String -> a
 error s = raise# (errorCallWithCallStackException (sToList s) ?callstack)
 
-#else
+#elif MIN_VERSION_base(4,7,0)
 
 import           GHC.Exception (errorCallException)
 
 error :: String -> a
 error s = raise# (errorCallException (sToList s))
+
+#else
+
+import           GHC.Types
+import           GHC.Exception
+
+error :: String -> a
+error s = throw (ErrorCall $ sToList s)
 
 #endif
