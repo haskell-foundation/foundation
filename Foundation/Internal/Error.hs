@@ -8,12 +8,12 @@ module Foundation.Internal.Error
     ) where
 
 import           GHC.Prim
-import           GHC.Types (RuntimeRep)
 import           Foundation.String.UTF8
 import           Foundation.Internal.CallStack
 
 #if MIN_VERSION_base(4,9,0)
 
+import           GHC.Types (RuntimeRep)
 import           GHC.Exception (errorCallWithCallStackException)
 
 -- | stop execution and displays an error message
