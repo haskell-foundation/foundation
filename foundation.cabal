@@ -106,6 +106,7 @@ Library
                      Foundation.Internal.Base
                      Foundation.Internal.CallStack
                      Foundation.Internal.Environment
+                     Foundation.Internal.Error
                      Foundation.Internal.Primitive
                      Foundation.Internal.IsList
                      Foundation.Internal.Identity

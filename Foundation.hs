@@ -27,7 +27,7 @@ module Foundation
     , Prelude.either
     , Prelude.flip
     , Prelude.const
-    , Prelude.error
+    , Foundation.Internal.Error.error
     , Foundation.IO.Terminal.putStr
     , Foundation.IO.Terminal.putStrLn
     --, print
@@ -158,6 +158,7 @@ import qualified Foundation.IO.Terminal
 import           GHC.Exts (IsString(..))
 import           Foundation.Internal.IsList
 import qualified Foundation.Internal.Proxy
+import qualified Foundation.Internal.Error
 
 import qualified Foundation.Numerical
 import qualified Foundation.Partial
