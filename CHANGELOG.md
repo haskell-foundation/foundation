@@ -4,6 +4,7 @@
 * Export internal withPtr for optimisation
 * Export `ifThenElse`
 * Use the proper `String` type for error instead of `[Char]`
+* Add `any` and `all` to `Collection`
 
 ## 0.0.3
 

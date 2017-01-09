@@ -152,6 +152,12 @@ testCollectionOps proxy genElement = testGroup "Collection"
     , testProperty "notElem" $ withListAndElement $ \(l,e) -> notElem e (fromListP proxy l) == notElem e l
     , testProperty "minimum" $ withNonEmptyElements $ \els -> minimum (fromListNonEmptyP proxy els) === minimum els
     , testProperty "maximum" $ withNonEmptyElements $ \els -> maximum (fromListNonEmptyP proxy els) === maximum els
+    , testProperty "all" $ withListAndElement $ \(l, e) ->
+        all (/= e) (fromListP proxy l) == all (/= e) l &&
+        all (== e) (fromListP proxy l) == all (== e) l
+    , testProperty "any" $ withListAndElement $ \(l, e) ->
+        any (/= e) (fromListP proxy l) == any (/= e) l &&
+        any (== e) (fromListP proxy l) == any (== e) l
     ]
   where
     withElements f = forAll (generateListOfElement genElement) f
