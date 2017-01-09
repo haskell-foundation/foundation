@@ -33,6 +33,6 @@ import           GHC.Types
 import           GHC.Exception
 
 error :: String -> a
-error s = throw (ErrorCall $ sToList s)
+error s = throw (ErrorCall (sToList s))
 
 #endif
