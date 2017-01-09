@@ -24,7 +24,7 @@ module Foundation.Network.Socket
       -- ** close
     , close
       -- ** connect
-    , connect
+    , connect, ConnectError(..)
       -- ** bind
     , bind
       -- ** listen
@@ -69,22 +69,7 @@ import Foundation.Network.Socket.Internal
 
 import Foundation.Network.Socket.Socket
 import Foundation.Network.Socket.Close
-
-connect :: (Family f, StorableFixed (SocketAddress f))
-        => Socket f t p
-        -> SocketAddress f
-        -> IO ()
-connect s addr =
-    let (Size sz) = size (Just addr) :: Size Word8 in
-    allocaBytes sz $ \addrptr -> do
-        poke addrptr addr
-        retryWith s [eAGAIN, eWOULDBLOCK, eINTR] threadWaitRead $ \fd -> do
-            when (fd < I.Fd 0) (I.throwErrno eBADF)
-            e <- I.connect fd (castPtr addrptr) (fromIntegral sz)
-            return $ case e of
-                Left err | err == eISCONN -> Right ()
-                         | otherwise      -> Left err
-                Right a                   -> Right a
+import Foundation.Network.Socket.Connect
 
 bind :: (Family f, StorableFixed (SocketAddress f))
      => Socket f t p

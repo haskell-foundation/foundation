@@ -132,6 +132,7 @@ Library
                      Foundation.Network.Socket.Internal.Type
                      Foundation.Network.Socket.Socket
                      Foundation.Network.Socket.Close
+                     Foundation.Network.Socket.Connect
                      Foundation.IO.File
                      Foundation.IO.Terminal
                      Foundation.Primitive.Types
