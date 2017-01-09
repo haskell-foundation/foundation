@@ -36,6 +36,7 @@ module Foundation.String.UTF8
     , mutableValidate
     , copy
     , ValidationFailure(..)
+    , index
     -- * Legacy utility
     , lines
     , words
@@ -133,6 +134,9 @@ instance C.Sequential String where
     find = find
     sortBy = sortBy
     singleton = fromList . (:[])
+instance C.IndexedCollection String where
+    (!) = index
+    findIndex = findIndex
 
 instance C.Zippable String where
   zipWith f as bs = runST $ build 64 $ go f (toList as) (toList bs)
@@ -999,6 +1003,30 @@ reverse s@(String ba) = runST $ do
                     C.mutUnsafeWrite mba (d + 3) (Vec.unsafeIndex ba (si + 3))
                 _  -> return () -- impossible
             loop ms (sidx `offsetPlusE` nb) didx'
+
+index :: String -> Int -> Maybe Char
+index s n
+    | ofs >= end = Nothing
+    | otherwise  =
+        let (# c, _ #) = next s ofs
+         in Just c
+  where
+    !nbBytes = size s
+    end = 0 `offsetPlusE` nbBytes
+    ofs = indexN n s
+
+findIndex :: (Char -> Bool) -> String -> Maybe Int
+findIndex predicate s = loop (Offset 0)
+  where
+    !sz = size s
+    end = Offset 0 `offsetPlusE` sz
+    loop idx
+        | idx == end = Nothing
+        | otherwise =
+            let (# c, idx' #) = next s idx
+             in case predicate c of
+                    True  -> let (Offset r) = idx in Just r
+                    False -> loop idx'
 
 data Encoding
     = ASCII7
