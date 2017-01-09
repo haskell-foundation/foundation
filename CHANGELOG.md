@@ -1,3 +1,10 @@
+## 0.0.4
+
+* Expose Sequential from Foundation
+* Export internal withPtr for optimisation
+* Export `ifThenElse`
+* Use the proper `String` type for error instead of `[Char]`
+
 ## 0.0.3
 
 Monad:

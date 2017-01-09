@@ -98,6 +98,7 @@ module Foundation
     , (<>)
       -- ** Collection
     , Collection(..)
+    , Sequential(..)
     , NonEmpty
     , nonEmpty
       -- ** Folds
@@ -153,7 +154,7 @@ import           Data.Word (Word8, Word16, Word32, Word64, Word)
 import           Data.Int (Int8, Int16, Int32, Int64)
 import           Foundation.String (String)
 import           Foundation.Array (UArray, Array, PrimType)
-import           Foundation.Collection (Collection(..), NonEmpty, nonEmpty, Foldable(..))
+import           Foundation.Collection (Collection(..), Sequential(..), NonEmpty, nonEmpty, Foldable(..))
 import qualified Foundation.IO.Terminal
 
 import           GHC.Exts (IsString(..))

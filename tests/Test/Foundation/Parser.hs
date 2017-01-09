@@ -6,7 +6,8 @@ module Test.Foundation.Parser
   ) where
 
 import Foundation
-import Foundation.Parser
+import           Foundation.Parser
+import qualified Foundation.Parser as P
 
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -58,10 +59,10 @@ parseTestCases = testGroup "units"
         , testCase "MoreFail" $ parseTestCase ""    anyElement $ TestCaseMore Nothing TestCaseFail
         ]
     , testGroup "take"
-        [ testCase "OK" $ parseTestCase "a" (take 1) (TestCaseOk "" "a")
-        , testCase "OkRemains" $ parseTestCase "abc" (take 2) (TestCaseOk "c" "ab")
-        , testCase "MoreOk" $ parseTestCase "" (take 2) $ TestCaseMore (Just "abc")(TestCaseOk "c" "ab")
-        , testCase "MoreFail" $ parseTestCase "a" (take 2) $ TestCaseMore Nothing TestCaseFail
+        [ testCase "OK" $ parseTestCase "a" (P.take 1) (TestCaseOk "" "a")
+        , testCase "OkRemains" $ parseTestCase "abc" (P.take 2) (TestCaseOk "c" "ab")
+        , testCase "MoreOk" $ parseTestCase "" (P.take 2) $ TestCaseMore (Just "abc")(TestCaseOk "c" "ab")
+        , testCase "MoreFail" $ parseTestCase "a" (P.take 2) $ TestCaseMore Nothing TestCaseFail
         ]
     , testGroup "takeWhile"
         [ testCase "OK" $ parseTestCase "a " (takeWhile (' ' /=)) (TestCaseOk " " "a")
