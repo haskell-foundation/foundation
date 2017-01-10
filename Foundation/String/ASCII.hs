@@ -83,6 +83,8 @@ instance C.Collection AsciiString where
     maximum = Data.List.maximum . toList . C.getNonEmpty -- TODO faster implementation
     elem x = Data.List.elem x . toList
     notElem x = Data.List.notElem x . toList
+    all p = Data.List.all p . toList
+    any p = Data.List.any p . toList
 instance C.Sequential AsciiString where
     take = take
     drop = drop

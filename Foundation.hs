@@ -27,7 +27,7 @@ module Foundation
     , Prelude.either
     , Prelude.flip
     , Prelude.const
-    , Prelude.error
+    , Foundation.Internal.Error.error
     , Foundation.IO.Terminal.putStr
     , Foundation.IO.Terminal.putStrLn
     --, print
@@ -98,6 +98,7 @@ module Foundation
     , (<>)
       -- ** Collection
     , Collection(..)
+    , Sequential(..)
     , NonEmpty
     , nonEmpty
       -- ** Folds
@@ -134,6 +135,7 @@ module Foundation
     , Foundation.Partial.partial
     , Foundation.Partial.PartialError
     , Foundation.Partial.fromPartial
+    , Foundation.Internal.Base.ifThenElse
       -- ** Old Prelude Strings as [Char] with bridge back and forth
     , LString
     ) where
@@ -152,12 +154,14 @@ import           Data.Word (Word8, Word16, Word32, Word64, Word)
 import           Data.Int (Int8, Int16, Int32, Int64)
 import           Foundation.String (String)
 import           Foundation.Array (UArray, Array, PrimType)
-import           Foundation.Collection (Collection(..), NonEmpty, nonEmpty, Foldable(..))
+import           Foundation.Collection (Collection(..), Sequential(..), NonEmpty, nonEmpty, Foldable(..))
 import qualified Foundation.IO.Terminal
 
 import           GHC.Exts (IsString(..))
 import           Foundation.Internal.IsList
+import qualified Foundation.Internal.Base (ifThenElse)
 import qualified Foundation.Internal.Proxy
+import qualified Foundation.Internal.Error
 
 import qualified Foundation.Numerical
 import qualified Foundation.Partial

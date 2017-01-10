@@ -63,7 +63,7 @@ instance Collection c => IsList (NonEmpty c) where
 
 -- | A set of methods for ordered colection
 class (IsList c, Item c ~ Element c) => Collection c where
-    {-# MINIMAL null, length, (elem | notElem), minimum, maximum #-}
+    {-# MINIMAL null, length, (elem | notElem), minimum, maximum, all, any #-}
     -- | Check if a collection is empty
     null :: c -> Bool
     -- | Length of a collection (number of Element c)
@@ -84,6 +84,12 @@ class (IsList c, Item c ~ Element c) => Collection c where
     -- | Get the minimum element of a collection
     minimum :: forall a . (Ord a, a ~ Element c) => NonEmpty c -> Element c
 
+    -- | Determine is any elements of the collection satisfy the predicate
+    any :: (Element c -> Bool) -> c -> Bool
+
+    -- | Determine is all elements of the collection satisfy the predicate
+    all :: (Element c -> Bool) -> c -> Bool
+
 instance Collection [a] where
     null = Data.List.null
     length = Data.List.length
@@ -94,12 +100,17 @@ instance Collection [a] where
     minimum = Data.List.minimum . getNonEmpty
     maximum = Data.List.maximum . getNonEmpty
 
+    any = Data.List.any
+    all = Data.List.all
+
 instance UV.PrimType ty => Collection (UV.UArray ty) where
     null = UV.null
     length = UV.length
     elem = UV.elem
     minimum = Data.List.minimum . toList . getNonEmpty
     maximum = Data.List.maximum . toList . getNonEmpty
+    all p = Data.List.all p . toList
+    any p = Data.List.any p . toList
 
 instance Collection c => Collection (NonEmpty c) where
     null _ = False
@@ -107,3 +118,5 @@ instance Collection c => Collection (NonEmpty c) where
     elem e = elem e . getNonEmpty
     maximum = maximum . getNonEmpty
     minimum = minimum . getNonEmpty
+    all p = all p . getNonEmpty
+    any p = any p . getNonEmpty

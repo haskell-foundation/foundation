@@ -37,6 +37,7 @@ module Foundation.String.UTF8
     , copy
     , ValidationFailure(..)
     , index
+    , sToList
     -- * Legacy utility
     , lines
     , words
@@ -113,6 +114,8 @@ instance C.Collection String where
     elem = elem
     minimum = Data.List.minimum . toList . C.getNonEmpty -- TODO faster implementation
     maximum = Data.List.maximum . toList . C.getNonEmpty -- TODO faster implementation
+    all p = Data.List.all p . toList
+    any p = Data.List.any p . toList
 instance C.Sequential String where
     take = take
     drop = drop

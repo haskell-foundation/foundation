@@ -14,6 +14,7 @@
 module Foundation.Array.Internal
     ( UArray(..)
     , fromForeignPtr
+    , withPtr
     , recast
     ) where
 

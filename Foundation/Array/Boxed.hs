@@ -97,6 +97,8 @@ instance C.Collection (Array ty) where
     elem e = Data.List.elem e . toList
     minimum = Data.List.minimum . toList . C.getNonEmpty -- TODO
     maximum = Data.List.maximum . toList . C.getNonEmpty -- TODO
+    all p = Data.List.all p . toList
+    any p = Data.List.any p . toList
 instance C.Sequential (Array ty) where
     take = take
     drop = drop

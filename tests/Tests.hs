@@ -73,7 +73,7 @@ transEq unWrap f g s =
 assertEq :: (Eq a, Show a) => a -> a -> Bool
 assertEq got expected
     | got == expected = True
-    | otherwise       = error $ toList ("got: " <> show got <> " expected: " <> show expected)
+    | otherwise       = error ("got: " <> show got <> " expected: " <> show expected)
 
 -- | Set in front of tests to make them verbose
 qcv :: TestTree -> TestTree

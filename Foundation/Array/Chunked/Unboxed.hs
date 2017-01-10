@@ -59,6 +59,8 @@ instance PrimType ty => C.Collection (ChunkedUArray ty) where
     elem   = elem
     minimum = minimum
     maximum = maximum
+    all p = Data.List.all p . toList
+    any p = Data.List.any p . toList
 
 instance PrimType ty => C.Sequential (ChunkedUArray ty) where
     take = take
