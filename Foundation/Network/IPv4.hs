@@ -26,15 +26,15 @@ instance Show IPv4 where
 instance IsString IPv4 where
     fromString = fromLString . toList
 instance Storable IPv4 where
-    peek ptr = IPv4 <$> peek (castPtr ptr)
-    poke ptr (IPv4 w) = poke (castPtr ptr) w
+    peek ptr = IPv4 . ntohl <$> peek (castPtr ptr)
+    poke ptr (IPv4 w) = poke (castPtr ptr) (htonl w)
 
 toString :: IPv4 -> String
 toString = fromList . toLString
 
 fromLString :: [Char] -> IPv4
 fromLString str = unsafePerformIO $ withCString str $ \cstr ->
-    IPv4 <$> c_inet_addr cstr
+    IPv4 . ntohl <$> c_inet_addr cstr
 
 toLString :: IPv4 -> [Char]
 toLString ipv4 =
@@ -43,14 +43,13 @@ toLString ipv4 =
 
 fromTuple :: (Word8, Word8, Word8, Word8) -> IPv4
 fromTuple (i1, i2, i3, i4) =
-     IPv4 $ htonl $ (((((f i1 * 256) + f i2) * 256) + f i3) * 256) + f i4
+     IPv4 $ (((((f i1 * 256) + f i2) * 256) + f i3) * 256) + f i4
   where
     f = fromIntegral
 
 toTuple :: IPv4 -> (Word8, Word8, Word8, Word8)
-toTuple (IPv4 ipv4) =
-    let n = ntohl ipv4
-        i4 =  n                          `mod` 256
+toTuple (IPv4 n) =
+    let i4 =  n                          `mod` 256
         i3 = (n `div`  256)              `mod` 256
         i2 = (n `div` (256 * 256))       `mod` 256
         i1 = (n `div` (256 * 256 * 256)) `mod` 256
