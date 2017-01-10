@@ -133,6 +133,11 @@ Library
                      Foundation.Network.Socket.Socket
                      Foundation.Network.Socket.Close
                      Foundation.Network.Socket.Connect
+                     Foundation.Network.Socket.Bind
+                     Foundation.Network.Socket.Listen
+                     Foundation.Network.Socket.Accept
+                     Foundation.Network.Socket.Send
+                     Foundation.Network.Socket.Recv
                      Foundation.IO.File
                      Foundation.IO.Terminal
                      Foundation.Primitive.Types
