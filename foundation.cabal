@@ -193,6 +193,7 @@ Test-Suite test-foundation
                      Test.Data.Unicode
                      Test.Data.ASCII
                      Test.Foundation.Collection
+                     Test.Foundation.Conduit
                      Test.Foundation.Bits
                      Test.Foundation.ChunkedUArray
                      Test.Foundation.Number

@@ -17,6 +17,7 @@ module Foundation.IO
     , Foundation.IO.File.closeFile
     , Foundation.IO.File.withFile
     , Foundation.IO.File.hGet
+    , Foundation.IO.File.hPut
     , Foundation.IO.File.readFile
     , Foundation.IO.File.foldTextFile
     ) where

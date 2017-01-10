@@ -13,6 +13,7 @@ module Foundation.IO.File
     , hGet
     , hGetNonBlocking
     , hGetSome
+    , hPut
     , readFile
     , foldTextFile
     ) where
@@ -26,6 +27,7 @@ import           Foundation.Internal.Types
 import           Foundation.Internal.Base
 import           Foundation.String
 import           Foundation.Array
+import           Foundation.Array.Internal
 import           Foundation.Numerical
 import qualified Foundation.Array.Unboxed.Mutable as V
 import qualified Foundation.Array.Unboxed as V
@@ -79,6 +81,9 @@ hGetSome :: Handle -> Int -> IO (UArray Word8)
 hGetSome h size
     | size < 0  = invalidBufferSize "hGetSome" h size
     | otherwise = V.createFromIO size $ \p -> S.hGetBufSome h p size
+
+hPut :: Handle -> (UArray Word8) -> IO ()
+hPut h arr = withPtr arr $ \ptr -> S.hPutBuf h ptr (length arr)
 
 invalidBufferSize :: [Char] -> Handle -> Int -> IO a
 invalidBufferSize functionName handle size =
