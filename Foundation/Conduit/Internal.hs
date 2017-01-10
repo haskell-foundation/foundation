@@ -29,7 +29,6 @@ import Foundation.Internal.Base hiding (throw)
 import Foundation.Monad.Base
 import Control.Monad ((>=>), liftM)
 import Data.Functor.Identity (Identity (..))
-import Data.Void (absurd)
 
 -- | A pipe producing and consuming values
 --
@@ -254,6 +253,11 @@ instance Monad m => Applicative (ZipSink i m) where
             (\() -> go f (cx ()))
 
       in go (injectLeftovers (f0 Done)) (injectLeftovers (x0 Done))
+
+data Void
+
+absurd :: Void -> a
+absurd _ = error "Foundation.Conduit.Internal.absurd"
 
 injectLeftovers :: Monad m => Pipe i i o u m r -> Pipe l i o u m r
 injectLeftovers =
