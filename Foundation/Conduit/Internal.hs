@@ -26,9 +26,8 @@ module Foundation.Conduit.Internal
     ) where
 
 import Foundation.Internal.Base hiding (throw)
-import Foundation.Monad.Base
+import Foundation.Monad
 import Control.Monad ((>=>), liftM)
-import Data.Functor.Identity (Identity (..))
 
 -- | A pipe producing and consuming values
 --
