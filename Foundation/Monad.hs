@@ -21,7 +21,6 @@ import Data.Functor.Identity
 
 import Control.Monad.Fix
 import Control.Monad.Zip
-import Data.Coerce
 import Foundation.Internal.Base
 import GHC.Generics (Generic1)
 
@@ -32,11 +31,11 @@ newtype Identity a = Identity { runIdentity :: a }
     deriving (Eq, Ord, Data, Generic, Generic1, Typeable)
 
 instance Functor Identity where
-    fmap     = coerce
+    fmap f (Identity x) = Identity (f x)
 
 instance Applicative Identity where
     pure     = Identity
-    (<*>)    = coerce
+    Identity f <*> Identity x = Identity (f x)
 
 instance Monad Identity where
     return   = Identity
@@ -46,7 +45,7 @@ instance MonadFix Identity where
     mfix f   = Identity (fix (runIdentity . f))
 
 instance MonadZip Identity where
-    mzipWith = coerce
-    munzip   = coerce
+    mzipWith f (Identity x) (Identity y) = Identity (f x y)
+    munzip (Identity (x, y)) = (Identity x, Identity y)
 
 #endif
