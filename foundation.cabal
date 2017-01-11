@@ -167,6 +167,7 @@ Library
   if os(windows)
     Other-modules:   Foundation.Foreign.MemoryMap.Windows
                      Foundation.System.Entropy.Windows
+                     Foundation.Network.Socket.Internal.Windows
   else
     Other-modules:   Foundation.Foreign.MemoryMap.Posix
                      Foundation.System.Entropy.Unix

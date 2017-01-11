@@ -9,7 +9,11 @@ module Foundation.Network.Socket.Internal.Family
     , InetPort(..)
     ) where
 
+#ifdef mingw32_HOST_OS
+#include <winsock2.h>
+#else
 #include "netinet/in.h"
+#endif
 
 import Foreign.C.Types
 
