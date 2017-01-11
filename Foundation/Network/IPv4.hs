@@ -48,11 +48,11 @@ fromTuple (i1, i2, i3, i4) =
     f = fromIntegral
 
 toTuple :: IPv4 -> (Word8, Word8, Word8, Word8)
-toTuple (IPv4 n) =
-    let i4 =  n                          `mod` 256
-        i3 = (n `div`  256)              `mod` 256
-        i2 = (n `div` (256 * 256))       `mod` 256
-        i1 = (n `div` (256 * 256 * 256)) `mod` 256
+toTuple (IPv4 n4) =
+    let (i4, n3) = n4 `divMod` 256
+        (i3, n2) = n3 `divMod` 256
+        (i2, n1) = n2 `divMod` 256
+        i1       = n1 `mod` 256
      in (f i1, f i2, f i3, f i4)
   where
     f = fromIntegral
