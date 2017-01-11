@@ -56,7 +56,7 @@ listenErrorFromErrno err
 {-# INLINE listenErrorFromErrno #-}
 
 listen :: (Family f, StorableFixed (SocketAddress f))
-     => Socket f t p
+     => Socket f
      -> Int
      -> IO ()
 listen s sz =

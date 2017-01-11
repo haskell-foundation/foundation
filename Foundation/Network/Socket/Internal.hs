@@ -22,11 +22,11 @@ import Foreign.C.Error hiding (throwErrno)
 import Foundation.Internal.Base
 import Foundation.Collection
 
-newtype Socket f t p = Socket (MVar Fd)
+newtype Socket s = Socket (MVar Fd)
 
 data Return a = Error Errno | Retry (IO ()) | Ok a
 
-retryWith :: Socket f t p
+retryWith :: Socket s
           -> (Errno -> IO a)
           -> (X.Fd -> IO ())
           -> (X.Fd -> IO (Either Errno a))

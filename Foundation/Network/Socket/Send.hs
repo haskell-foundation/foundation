@@ -69,7 +69,7 @@ sendErrorFromErrno err
 {-# INLINE sendErrorFromErrno #-}
 
 send :: PrimType ty
-     => Socket f t p
+     => Socket f
      -> Flag
      -> UArray ty
      -> IO (Size ty)

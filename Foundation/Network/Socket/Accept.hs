@@ -70,8 +70,8 @@ connectErrorFromErrno err
 {-# INLINE connectErrorFromErrno #-}
 
 accept :: (Family f, StorableFixed (SocketAddress f))
-       => Socket f t p
-       -> IO (Socket f t p, SocketAddress f)
+       => Socket f
+       -> IO (Socket f, SocketAddress f)
 accept s =
     allocaAddr s Proxy $ \addrPtr (CInt sz) ->
       alloca $ \addrLenPtr -> do
@@ -85,7 +85,7 @@ accept s =
         return (Socket mvar, addr)
   where
     allocaAddr :: (Family f, StorableFixed (SocketAddress f))
-               => Socket f t p
+               => Socket f
                -> Proxy (SocketAddress f)
                -> (Ptr (SocketAddress f) -> CInt -> IO a)
                -> IO a

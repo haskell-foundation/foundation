@@ -70,7 +70,7 @@ recvErrorFromErrno err
 {-# INLINE recvErrorFromErrno #-}
 
 recv :: (Show ty, PrimType ty)
-     => Socket f t p
+     => Socket f
      -> Flag
      -> Size ty
      -> IO (UArray ty)

@@ -90,14 +90,14 @@ socketErrorFromErrno err
 --
 -- Socket will be close when garbage collected or you can also close it
 -- manually with @close@.
-socket :: (Family f, Type t, Protocol p)
-       => IO (Socket f t p)
-socket = socket_ undefined undefined undefined
+socket :: (Family f, Type f, Protocol f)
+       => IO (Socket f)
+socket = socket_ undefined
   where
-    socket_ :: (Family f, Type t, Protocol p)
-            => f -> t -> p -> IO (Socket f t p)
-    socket_ f t p = do
-        efd <- I.socket (familyCode f) (typeCode t) (protocolCode p)
+    socket_ :: (Family f, Type f, Protocol f)
+            => f -> IO (Socket f)
+    socket_ f = do
+        efd <- I.socket (familyCode f) (typeCode f) (protocolCode f)
         case efd of
             Left errno -> throwIO (socketErrorFromErrno errno)
             Right fd   -> do

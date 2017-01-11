@@ -149,7 +149,7 @@ connectErrorFromErrno err
 
 -- | connect the @Socket@ to the given @SocketAddress@.
 connect :: (Family f, StorableFixed (SocketAddress f))
-        => Socket f t p
+        => Socket f
         -> SocketAddress f
         -> IO ()
 connect s addr =

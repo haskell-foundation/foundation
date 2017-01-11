@@ -59,7 +59,7 @@ bindErrorFromErrno err
 
 -- | bind the given @SocketAddress@ to the @Socket@
 bind :: (Family f, StorableFixed (SocketAddress f))
-     => Socket f t p
+     => Socket f
      -> SocketAddress f
      -> IO ()
 bind s addr =

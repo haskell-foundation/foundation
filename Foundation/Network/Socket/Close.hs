@@ -16,7 +16,7 @@ import Foundation.Network.Socket.Internal (Socket(..))
 
 data CloseError = CloseError
 
-close :: Socket f t p -> IO ()
+close :: Socket f -> IO ()
 close (Socket mvar) = modifyMVarMasked_ mvar close_
   where
     close_ :: I.Fd -> IO I.Fd
