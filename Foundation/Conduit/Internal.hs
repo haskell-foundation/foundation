@@ -126,6 +126,7 @@ instance MonadCatch m => MonadCatch (Conduit i o m) where
 -- | Await for a value from upstream.
 await :: Conduit i o m (Maybe i)
 await = Conduit $ \f -> Await (f . Just) (const (f Nothing))
+{-# NOINLINE[1] await  #-}
 
 await' :: Conduit i o m r
        -> (i -> Conduit i o m r)
@@ -134,7 +135,7 @@ await' f g = Conduit $ \rest -> Await
     (\i -> unConduit (g i) rest)
     (const $ unConduit f rest)
 {-# INLINE await' #-}
-{-# RULES "conduit: await >>= maybe" forall x y. await >>= maybe x y = await' x y #-}
+{-# RULES "conduit: await >>= maybe" [2] forall x y. await >>= maybe x y = await' x y #-}
 
 -- | Send a value downstream.
 yield :: Monad m => o -> Conduit i o m ()
