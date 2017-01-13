@@ -1,5 +1,6 @@
 ## 0.0.4
 
+* Add Conduit for all your streaming needs
 * Expose Sequential from Foundation
 * Export internal withPtr for optimisation
 * Export `ifThenElse`
