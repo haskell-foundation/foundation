@@ -4,7 +4,6 @@ TODO - To make Foundation complete (might not be exhaustive :) )
 General Purpose:
 ----------------
 
-* Stream api : probably conduit
 * Process
 * Time
 * Benchmarks
