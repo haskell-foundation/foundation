@@ -162,6 +162,7 @@ library
                      Foundation.Numerical.Floating
                      Foundation.IO.File
                      Foundation.IO.Terminal
+                     Foundation.IO.Terminal.ANSI
                      Foundation.Primitive.Base16
                      Foundation.Primitive.Block.Base
                      Foundation.Primitive.Block.Mutable
