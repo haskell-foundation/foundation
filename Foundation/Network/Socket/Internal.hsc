@@ -1,14 +1,14 @@
-{-# LANGUAGE ForeignFunctionInterface #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE CPP #-}
 
-module Foundation.Network.Socket.Internal.Windows
-    ( CSockAddr
+module Foundation.Network.Socket.Internal
+    ( Socket(..)
+    , retryWith
+
+    , CSockAddr
     , CSockLen
 
       -- * Error
-    , SocketError(..), throwErrno
-    , Errno
+    , module E
 
       -- * Flags
     , Flag
@@ -19,7 +19,6 @@ module Foundation.Network.Socket.Internal.Windows
     , socket
     , close
     , connect
-    , shutdown
     , bind
     , listen
     , accept
@@ -27,52 +26,52 @@ module Foundation.Network.Socket.Internal.Windows
     , sendto
     , recv
     , recvfrom
+
+    , module X
     ) where
 
-#ifdef mingw32_HOST_OS
-#include <winsock2.h>
-#else
-#include "netinet/in.h"
-#endif
-
-
+import Control.Monad (when)
+import Control.Concurrent.MVar
 import Data.Bits ((.|.))
-
 import Foreign.C.Types
-import Foreign.C.String
-import Foreign.C.Error hiding (throwErrno)
 import System.Posix.Types (Fd(..))
-import System.IO.Unsafe (unsafePerformIO)
 
 import Foundation.Internal.Base
+import Foundation.Collection
+import Foundation.Network.Socket.Internal.Protocol as X
+import Foundation.Network.Socket.Internal.Type as X
+import Foundation.Network.Socket.Internal.Family as X
+import Foundation.Network.Socket.Internal.Error as E
+
+#include "foundation_network.h"
 
 #ifndef MSG_NOSIGNAL
 #define MSG_NOSIGNAL           0
 #endif
 
-#ifndef MSG_EOR
-#define MSG_EOR                0
-#endif
+newtype Socket s = Socket (MVar Fd)
 
+data Return a = Error SocketError | Retry (IO ()) | Ok a
 
-newtype SocketError = SocketError Errno
-    deriving (Eq,Typeable)
-instance Show SocketError where
-    show (SocketError (Errno errno)) = unsafePerformIO $ c_strerrno errno >>= peekCString
-instance Exception SocketError
-foreign import ccall unsafe "strerror"
-    c_strerrno :: CInt -> IO CString
-
-throwErrno :: Errno -> IO a
-throwErrno = throwIO . SocketError
-
-checkRet :: (Integral ret, Eq ret)
-         => (ret -> a) -> IO ret -> IO (Either Errno a)
-checkRet mapper action = do
-    r <- action
-    if r == fromInteger (-1)
-        then Left <$> getErrno
-        else return $ Right $ mapper r
+retryWith :: Socket s
+          -> (SocketError -> IO a)
+          -> (Fd -> IO ())
+          -> (Fd -> IO (Either SocketError a))
+          -> IO a
+retryWith s@(Socket mvar) handleErr waitFunction action = do
+    e <- withMVar mvar $ \fd -> do
+            when (fd < Fd 0) (E.throwSocketError E.eBadFileDescriptor)
+            e <- action fd
+            return $ case e of
+                Left err | err == eAgain       -> Retry (waitFunction fd)
+                         | err == eWouldBlock  -> Retry (waitFunction fd)
+                         | err == eInterrupted -> Retry (waitFunction fd)
+                         | otherwise -> Error err
+                Right a -> Ok a
+    case e of
+        Retry wait -> wait >> retryWith s handleErr waitFunction action
+        Error err  -> handleErr err
+        Ok a       -> return a
 
 type CSockAddr = Ptr Word8
 type CSockLen  = CInt
@@ -95,49 +94,43 @@ flagNoSignal = Flag (#const MSG_NOSIGNAL)
 flagEndOfRecord :: Flag
 flagEndOfRecord = Flag (#const MSG_EOR)
 
-socket :: CInt -> CInt -> CInt -> IO (Either Errno Fd)
+socket :: CInt -> CInt -> CInt -> IO (Either SocketError Fd)
 socket f t p =
     checkRet
         Fd
         (c_socket f t p)
 
-close :: Fd -> IO (Either Errno ())
+close :: Fd -> IO (Either SocketError ())
 close fd =
     checkRet
         (const ())
         (c_close fd)
 
-connect :: Fd -> CSockAddr -> CSockLen -> IO (Either Errno ())
+connect :: Fd -> CSockAddr -> CSockLen -> IO (Either SocketError ())
 connect fd addr len =
     checkRet
         (const ())
         (c_connect fd addr len)
 
-shutdown :: Fd -> CInt -> IO (Either Errno ())
-shutdown fd how =
-    checkRet
-        (const ())
-        (c_shutdown fd how)
-
-bind :: Fd -> CSockAddr -> CSockLen -> IO (Either Errno ())
+bind :: Fd -> CSockAddr -> CSockLen -> IO (Either SocketError ())
 bind fd addr len =
     checkRet
         (const ())
         (c_bind fd addr len)
 
-listen :: Fd -> CInt -> IO (Either Errno ())
+listen :: Fd -> CInt -> IO (Either SocketError ())
 listen fd backlog =
     checkRet
         (const ())
         (c_listen fd backlog)
 
-accept :: Fd -> CSockAddr -> Ptr CSockLen -> IO (Either Errno Fd)
+accept :: Fd -> CSockAddr -> Ptr CSockLen -> IO (Either SocketError Fd)
 accept fd addr lenptr =
     checkRet
         Fd
         (c_accept fd addr lenptr)
 
-recv :: Fd -> Ptr Word8 -> CSize -> Flag -> IO (Either Errno CInt)
+recv :: Fd -> Ptr Word8 -> CSize -> Flag -> IO (Either SocketError CInt)
 recv fd buf sz (Flag flags) =
     checkRet
         id
@@ -147,53 +140,50 @@ recvfrom :: Fd
          -> Ptr Word8 -> CSize
          -> Flag
          -> CSockAddr -> CSockLen
-         -> IO (Either Errno CInt)
+         -> IO (Either SocketError CInt)
 recvfrom fd buf sz (Flag flags) add len =
     checkRet
         id
         (c_recvfrom fd buf sz flags add len)
 
-send :: Fd -> Ptr Word8 -> CSize -> Flag -> IO (Either Errno CInt)
+send :: Fd -> Ptr Word8 -> CSize -> Flag -> IO (Either SocketError CInt)
 send fd addr size (Flag flags) =
     checkRet
         id
         (c_send fd addr size flags)
 
-sendto :: Fd -> Ptr Word8 -> CSize -> Flag -> CSockAddr -> CSockLen -> IO (Either Errno CInt)
+sendto :: Fd -> Ptr Word8 -> CSize -> Flag -> CSockAddr -> CSockLen -> IO (Either SocketError CInt)
 sendto fd buf sz (Flag flags) addr len =
     checkRet
         id
         (c_sendto fd buf sz flags addr len)
 
-foreign import ccall unsafe "socket"
+foreign import ccall unsafe "hs_socket"
     c_socket :: CInt -> CInt -> CInt -> IO CInt
 
-foreign import ccall unsafe "close"
+foreign import ccall unsafe "hs_close"
     c_close :: Fd -> IO CInt
 
-foreign import ccall unsafe "bind"
+foreign import ccall unsafe "hs_bind"
     c_bind :: Fd -> CSockAddr -> CSockLen -> IO CInt
 
-foreign import ccall unsafe "connect"
+foreign import ccall unsafe "hs_connect"
     c_connect :: Fd -> CSockAddr -> CSockLen -> IO CInt
 
-foreign import ccall unsafe "accept"
+foreign import ccall unsafe "hs_accept"
     c_accept :: Fd -> CSockAddr -> Ptr CSockLen -> IO CInt
 
-foreign import ccall unsafe "listen"
+foreign import ccall unsafe "hs_listen"
     c_listen :: Fd -> CInt -> IO CInt
 
-foreign import ccall unsafe "send"
+foreign import ccall unsafe "hs_send"
     c_send :: Fd -> Ptr a -> CSize -> CInt -> IO CInt -- == CSSize
 
-foreign import ccall unsafe "shutdown"
-    c_shutdown :: Fd -> CInt -> IO CInt
-
-foreign import ccall unsafe "sendto"
+foreign import ccall unsafe "hs_sendto"
     c_sendto :: Fd -> Ptr Word8 -> CSize -> CInt -> CSockAddr -> CSockLen -> IO CInt
 
-foreign import ccall unsafe "recv"
+foreign import ccall unsafe "hs_recv"
     c_recv :: Fd -> Ptr Word8 -> CSize -> CInt -> IO CInt
 
-foreign import ccall unsafe "recvfrom"
+foreign import ccall unsafe "hs_recvfrom"
     c_recvfrom :: Fd -> Ptr Word8 -> CSize -> CInt -> CSockAddr -> CSockLen -> IO CInt

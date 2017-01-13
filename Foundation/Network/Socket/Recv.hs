@@ -5,10 +5,8 @@ module Foundation.Network.Socket.Recv
     , RecvError(..)
     ) where
 
-import Control.Monad (when)
 import GHC.Conc (threadWaitRead)
 
-import Foreign.C.Error hiding (throwErrno)
 import Foreign.C.Types
 
 import Foundation.Array.Unboxed (withPtr, UArray)
@@ -30,44 +28,20 @@ import Foundation.Network.Socket.Internal
 -- | error that can be thrown by the command @connect@
 --
 data RecvError
-    = RecvError_PermissionError
-        -- ^ The destination address is a broadcast address and the socket
-        -- option SO_BROADCAST is not set.
-    | RecvError_AddressInUse
-        -- ^ The address is already in use.
-    | RecvError_AddressNotAvailable
-        -- ^ The specified address is not available on this machine.
-    | RecvError_AddressNotCompatibleWithFamily
-        -- ^ Addresses in the specified address family cannot be used with this
-        -- socket.
-    | RecvError_Other Errno
+    = RecvError_Other I.SocketError
         -- ^ If a new protocol family is defined, the socreate process is free
         -- to return any desired error code. The socket() system call will pass
         -- this error code along (even if it is undefined).
   deriving (Eq, Typeable)
 instance Show RecvError where
-    show RecvError_PermissionError
-        = "The destination address is a broadcast address and the socket\
-          \ option SO_BROADCAST is not set."
-    show RecvError_AddressInUse
-        = "The address is already in use."
-    show RecvError_AddressNotAvailable
-        = "The specified address is not available on this machine."
-    show RecvError_AddressNotCompatibleWithFamily
-        = "Addresses in the specified address family cannot be used with this\
-          \ socket."
     show (RecvError_Other errno)
-        = "RecvError_Other: " <> show (I.SocketError errno)
+        = "RecvError_Other: " <> show errno
 instance Exception RecvError
 
-recvErrorFromErrno :: Errno -> RecvError
-recvErrorFromErrno err
-    | err == eACCES          = RecvError_PermissionError
-    | err == eADDRINUSE      = RecvError_AddressInUse
-    | err == eADDRNOTAVAIL   = RecvError_AddressNotAvailable
-    | err == eAFNOSUPPORT    = RecvError_AddressNotCompatibleWithFamily
-    | otherwise              = RecvError_Other err
-{-# INLINE recvErrorFromErrno #-}
+recvErrorFromSocketError :: I.SocketError -> RecvError
+recvErrorFromSocketError = RecvError_Other
+{-# INLINE recvErrorFromSocketError #-}
+
 
 recv :: (Show ty, PrimType ty)
      => Socket f
@@ -80,10 +54,9 @@ recv s flag num = do
     --      ByteArray#
     array <- newPinned num >>= unsafeFreeze
     CInt sz <- withPtr array $ \ptr ->
-                 retryWith s (throwIO . recvErrorFromErrno) threadWaitRead $ \fd -> do
-                    when (fd < I.Fd 0) (I.throwErrno eBADF)
+                 retryWith s (throwIO . recvErrorFromSocketError) threadWaitRead $ \fd ->
                     let numBytes = fromInteger $ toInteger $ num `scale` primSizeInBytes (toProxy array)
-                    I.recv fd (castPtr ptr) numBytes flag
+                     in I.recv fd (castPtr ptr) numBytes flag
     let sz' = fromInteger $ toInteger sz
     return $ take sz' array
   where

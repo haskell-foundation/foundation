@@ -130,6 +130,7 @@ Library
                      Foundation.Network.Socket.Internal.Family
                      Foundation.Network.Socket.Internal.Protocol
                      Foundation.Network.Socket.Internal.Type
+                     Foundation.Network.Socket.Internal.Error
                      Foundation.Network.Socket.Socket
                      Foundation.Network.Socket.Close
                      Foundation.Network.Socket.Connect
@@ -163,15 +164,15 @@ Library
 
   include-dirs:      cbits
   C-sources:         cbits/foundation_random.c
+                     cbits/foundation_network.c
 
   if os(windows)
+    extra-libraries: ws2_32
     Other-modules:   Foundation.Foreign.MemoryMap.Windows
                      Foundation.System.Entropy.Windows
-                     Foundation.Network.Socket.Internal.Windows
   else
     Other-modules:   Foundation.Foreign.MemoryMap.Posix
                      Foundation.System.Entropy.Unix
-                     Foundation.Network.Socket.Internal.Unix
 
   if impl(ghc >= 7.10)
     Exposed-modules: Foundation.Tuple.Nth

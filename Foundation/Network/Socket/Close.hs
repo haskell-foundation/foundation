@@ -6,29 +6,32 @@ module Foundation.Network.Socket.Close
 import Data.Function
 import Control.Concurrent.MVar
 
-import Foreign.C.Error hiding (throwErrno)
-
 import GHC.Conc (closeFdWith)
 import Foundation.Internal.Base
 
-import qualified Foundation.Network.Socket.Internal as I
-import Foundation.Network.Socket.Internal (Socket(..))
+import qualified Foundation.Network.Socket.Internal as I (close)
+import Foundation.Network.Socket.Internal
+    ( throwSocketError
+    , eInterrupted
+    , Fd(..)
+    , Socket(..)
+    )
 
 data CloseError = CloseError
 
 close :: Socket f -> IO ()
 close (Socket mvar) = modifyMVarMasked_ mvar close_
   where
-    close_ :: I.Fd -> IO I.Fd
+    close_ :: Fd -> IO Fd
     close_ fd
-        | fd == I.Fd (-1)  = return fd
+        | fd == Fd (-1)  = return fd
         | otherwise = do
             closeFdWith
               (const $ fix $ \retry -> do
                 e <- I.close fd
                 case e of
-                    Left err | err /= eINTR -> I.throwErrno err
+                    Left err | err /= eInterrupted -> throwSocketError err
                              | otherwise    -> retry
                     Right ()                -> return ()
               ) fd
-            return (I.Fd (-1))
+            return (Fd (-1))
