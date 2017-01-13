@@ -20,6 +20,7 @@ import Test.Data.Unicode
 import Test.Data.List
 
 import Test.Foundation.Collection
+import Test.Foundation.Conduit
 import Test.Foundation.Number
 import Test.Foundation.Array
 import Test.Foundation.ChunkedUArray
@@ -317,6 +318,7 @@ tests =
     , testParsers
     , testForeignStorableRefs
     , testRandom
+    , testConduit
     ]
 
 testCaseModifiedUTF8 :: [Char] -> String -> Assertion
