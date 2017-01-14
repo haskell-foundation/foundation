@@ -5,8 +5,6 @@ module Foundation.Network.Socket.Recv
     , RecvError(..)
     ) where
 
-import GHC.Conc (threadWaitRead)
-
 import Foreign.C.Types
 
 import Foundation.Array.Unboxed (withPtr, UArray)
@@ -22,7 +20,7 @@ import Foundation.Primitive
 import qualified Foundation.Network.Socket.Internal as I
 import Foundation.Network.Socket.Internal
     ( Socket, Flag
-    , retryWith
+    , retryWith, socketWaitRead
     )
 
 -- | error that can be thrown by the command @connect@
@@ -54,7 +52,7 @@ recv s flag num = do
     --      ByteArray#
     array <- newPinned num >>= unsafeFreeze
     CInt sz <- withPtr array $ \ptr ->
-                 retryWith s (throwIO . recvErrorFromSocketError) threadWaitRead $ \fd ->
+                 retryWith s (throwIO . recvErrorFromSocketError) socketWaitRead $ \fd ->
                     let numBytes = fromInteger $ toInteger $ num `scale` primSizeInBytes (toProxy array)
                      in I.recv fd (castPtr ptr) numBytes flag
     let sz' = fromInteger $ toInteger sz

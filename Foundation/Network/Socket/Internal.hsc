@@ -1,5 +1,3 @@
-{-# LANGUAGE CPP #-}
-
 module Foundation.Network.Socket.Internal
     ( Socket(..)
     , retryWith
@@ -28,7 +26,12 @@ module Foundation.Network.Socket.Internal
     , recvfrom
 
     , module X
+    , socketWaitRead
+    , socketWaitWrite
+    , socketWaitConnect
     ) where
+
+#include "foundation_network.h"
 
 import Control.Monad (when)
 import Control.Concurrent.MVar
@@ -37,16 +40,16 @@ import Foreign.C.Types
 import System.Posix.Types (Fd(..))
 
 import Foundation.Internal.Base
-import Foundation.Collection
 import Foundation.Network.Socket.Internal.Protocol as X
 import Foundation.Network.Socket.Internal.Type as X
 import Foundation.Network.Socket.Internal.Family as X
 import Foundation.Network.Socket.Internal.Error as E
 
-#include "foundation_network.h"
-
-#ifndef MSG_NOSIGNAL
-#define MSG_NOSIGNAL           0
+#if defined(FOUNDATION_SYSTEM_WINDOWS)
+import Foreign.C.Types (CInt(..))
+import Control.Concurrent (threadDelay)
+#elif defined(FOUNDATION_SYSTEM_UNIX)
+import GHC.Conc (threadWaitRead, threadWaitWrite)
 #endif
 
 newtype Socket s = Socket (MVar Fd)
@@ -158,6 +161,32 @@ sendto fd buf sz (Flag flags) addr len =
         id
         (c_sendto fd buf sz flags addr len)
 
+socketWaitRead :: Fd -> IO ()
+#if defined(FOUNDATION_SYSTEM_WINDOWS)
+socketWaitRead _ = threadDelay 1
+#elif defined(FOUNDATION_SYSTEM_UNIX)
+socketWaitRead = threadWaitRead
+#endif
+
+socketWaitWrite :: Fd -> IO ()
+#if defined(FOUNDATION_SYSTEM_WINDOWS)
+socketWaitWrite _ = threadDelay 1
+#elif defined(FOUNDATION_SYSTEM_UNIX)
+socketWaitWrite = threadWaitWrite
+#endif
+
+socketWaitConnect :: Fd -> IO ()
+#if defined(FOUNDATION_SYSTEM_WINDOWS)
+socketWaitConnect fd = do
+    st <- c_connect_status fd
+    case st of
+        0 -> return () -- connected
+        1 -> threadDelay 100 >> socketWaitConnect fd
+        _ -> socketErrno >>= throwSocketError
+#elif defined(FOUNDATION_SYSTEM_UNIX)
+socketWaitConnect = threadWaitWrite
+#endif
+
 foreign import ccall unsafe "hs_socket"
     c_socket :: CInt -> CInt -> CInt -> IO CInt
 
@@ -187,3 +216,8 @@ foreign import ccall unsafe "hs_recv"
 
 foreign import ccall unsafe "hs_recvfrom"
     c_recvfrom :: Fd -> Ptr Word8 -> CSize -> CInt -> CSockAddr -> CSockLen -> IO CInt
+
+#if defined(FOUNDATION_SYSTEM_WINDOWS)
+foreign import ccall unsafe "hs_connect_status"
+    c_connect_status :: Fd -> IO CInt
+#endif // ! defined(FOUNDATION_SYSTEM_WINDOWS)

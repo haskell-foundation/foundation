@@ -1,6 +1,4 @@
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE CPP #-}
-{-# LANGUAGE ForeignFunctionInterface #-}
 
 module Foundation.Network.Socket.Connect
     ( connect
@@ -8,7 +6,6 @@ module Foundation.Network.Socket.Connect
     ) where
 
 import Prelude (fromIntegral)
-import GHC.Conc (threadWaitRead)
 
 import Foreign.Marshal.Alloc (allocaBytes)
 
@@ -20,7 +17,7 @@ import qualified Foundation.Network.Socket.Internal as I
 import Foundation.Network.Socket.Internal
     ( Socket(..), SocketAddress
     , Family(..)
-    , retryWith
+    , retryWith, socketWaitConnect
     )
 
 -- | error that can be thrown by the command @connect@
@@ -40,18 +37,6 @@ connectErrorFromSocketError :: I.SocketError -> ConnectError
 connectErrorFromSocketError = ConnectError_Other
 {-# INLINE connectErrorFromSocketError #-}
 
-connectWaitConnected :: I.Fd -> IO ()
-#ifdef mingw32_HOST_OS
-connectWaitConnected fd = do
-    st <- c_connect_status fd
-    case st of
-        0 -> return () -- connected
-        1 -> threadDelay 100 >> connectWaitConnected fd
-        _ -> socketErrno >>= throwSocketError
-#else
-connectWaitConnected = threadWaitRead
-#endif
-
 
 -- | connect the @Socket@ to the given @SocketAddress@.
 connect :: (Family f, StorableFixed (SocketAddress f))
@@ -62,15 +47,10 @@ connect s addr =
     let (Size sz) = size (Just addr) :: Size Word8 in
     allocaBytes sz $ \addrptr -> do
         poke addrptr addr
-        retryWith s (throwIO . connectErrorFromSocketError) connectWaitConnected $ \fd -> do
+        retryWith s (throwIO . connectErrorFromSocketError) I.socketWaitConnect $ \fd -> do
             e <- I.connect fd (castPtr addrptr) (fromIntegral sz)
             return $ case e of
                 Left err | err == I.eIsConnected -> Right ()
                          | err == I.eInProgress ->  Left I.eAgain
                          | otherwise      -> Left err
                 Right a                   -> Right a
-
-#ifdef mingw32_HOST_OS
-foreign import ccall unsafe "hs_connect_status"
-    c_connect_status :: Fd -> IO CInt
-#endif

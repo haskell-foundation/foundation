@@ -6,7 +6,6 @@ module Foundation.Network.Socket.Accept
     ) where
 
 import Prelude (fromIntegral)
-import GHC.Conc (threadWaitRead)
 
 import Foreign.C.Types
 import Foreign.Marshal.Alloc (alloca, allocaBytes)
@@ -20,7 +19,7 @@ import qualified Foundation.Network.Socket.Internal as I
 import Foundation.Network.Socket.Internal
     ( Socket(..), SocketAddress
     , Family(..)
-    , retryWith
+    , retryWith, socketWaitRead
     )
 import Control.Concurrent.MVar
 import Foundation.Network.Socket.Close
@@ -49,7 +48,7 @@ accept s =
     allocaAddr s Proxy $ \addrPtr (CInt sz) ->
       alloca $ \addrLenPtr -> do
         poke addrLenPtr sz
-        fd' <- retryWith s (throwIO . connectErrorFromSocketError) threadWaitRead $ \fd ->
+        fd' <- retryWith s (throwIO . connectErrorFromSocketError) socketWaitRead $ \fd ->
                 I.accept fd (castPtr addrPtr) (castPtr addrLenPtr)
         addr <- peek addrPtr
         mvar <- newMVar fd'

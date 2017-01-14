@@ -5,8 +5,6 @@ module Foundation.Network.Socket.Send
     , SendError(..)
     ) where
 
-import GHC.Conc (threadWaitWrite)
-
 import Foreign.C.Types
 
 import Foundation.Array.Unboxed (withPtr, UArray)
@@ -21,7 +19,7 @@ import Foundation.Primitive
 import qualified Foundation.Network.Socket.Internal as I
 import Foundation.Network.Socket.Internal
     ( Socket, Flag
-    , retryWith
+    , retryWith, socketWaitWrite
     )
 
 -- | error that can be thrown by the command @connect@
@@ -48,7 +46,7 @@ send :: PrimType ty
      -> IO (Size ty)
 send s flag array = do
     (CInt i) <- withPtr array $ \ptr ->
-        retryWith s (throwIO . sendErrorFromSocketError) threadWaitWrite $ \fd ->
+        retryWith s (throwIO . sendErrorFromSocketError) socketWaitWrite $ \fd ->
             I.send fd (castPtr ptr) (fromInteger $ toInteger $ num `scale` sz) flag
     return $ Size $ fromInteger $ toInteger i
   where
