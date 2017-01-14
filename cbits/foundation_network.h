@@ -118,6 +118,8 @@
 #  define SEMSGSIZE              WSAEMSGSIZE
 #  define SEDESTADDRREQ          WSAEDESTADDRREQ
 
+int hs_connect_status(int fd);
+
 # elif defined(FOUNDATION_SYSTEM_UNIX)
 
 #  include <stdint.h>

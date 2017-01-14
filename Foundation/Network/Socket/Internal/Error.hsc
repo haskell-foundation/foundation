@@ -17,12 +17,15 @@ instance Exception SocketError
 throwSocketError :: SocketError -> IO a
 throwSocketError = throwIO
 
+socketErrno :: IO SocketError
+socketErrno = SocketError <$> c_sockerrno
+
 checkRet :: (Integral ret, Eq ret)
          => (ret -> a) -> IO ret -> IO (Either SocketError a)
 checkRet mapper action = do
     r <- action
     if r == fromInteger (-1)
-        then Left . SocketError <$> c_sockerrno
+        then Left <$> socketErrno
         else return $ Right $ mapper r
 
 eOk                         :: SocketError
