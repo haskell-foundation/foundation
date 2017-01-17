@@ -148,6 +148,9 @@ instance C.Zippable String where
       go _  _        []       = return ()
       go f' (a':as') (b':bs') = append (f' a' b') >> go f' as' bs'
 
+instance C.Copy String where
+    copy = copy
+
 instance Buildable String where
   type Mutable String = MutableString
   type Step String = Word8

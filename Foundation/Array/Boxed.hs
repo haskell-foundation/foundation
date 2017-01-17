@@ -91,6 +91,9 @@ instance C.Foldable (Array ty) where
     foldr = aFoldr
     foldl' = aFoldl'
 
+instance C.Copy (Array ty) where
+    copy = copy
+
 instance C.Collection (Array ty) where
     null = null
     length = length
