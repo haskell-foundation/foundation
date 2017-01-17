@@ -1,5 +1,5 @@
 -- |
--- Module      : Foundation.Array.List
+-- Module      : Foundation.Collection.List
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental

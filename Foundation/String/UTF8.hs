@@ -493,6 +493,9 @@ unsafeFreezeShrink (MutableString mba) s = String <$> Vec.unsafeFreezeShrink mba
 ------------------------------------------------------------------------
 -- real functions
 
+-- | Convert a String to a list of characters
+--
+-- The list is lazily created as evaluation needed
 sToList :: String -> [Char]
 sToList s = loop azero
   where
@@ -512,6 +515,11 @@ sToList s = loop azero
   sFromList (unpackCStringUtf8# s) = String $ fromModified s
   #-}
 
+-- | Create a new String from a list of characters
+--
+-- The list is strictly and fully evaluated before
+-- creating the new String, as the size need to be
+-- computed before filling.
 sFromList :: [Char] -> String
 sFromList l = runST (new bytes >>= startCopy)
   where

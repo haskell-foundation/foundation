@@ -1,3 +1,8 @@
+-- |
+-- The Reader monad transformer.
+--
+-- This is useful to keep a non-modifiable value
+-- in a context
 module Foundation.Monad.Reader
     ( ReaderT
     , runReaderT
