@@ -15,6 +15,7 @@ module Foundation.Collection.Buildable
 
 import           Foundation.Array.Unboxed
 import           Foundation.Array.Unboxed.Mutable
+import qualified Foundation.Array.Boxed as BA
 import           Foundation.Collection.Element
 import           Foundation.Internal.Base
 import           Foundation.Primitive.Monad
@@ -53,9 +54,18 @@ class Buildable col where
           -> prim col
 
 instance PrimType ty => Buildable (UArray ty) where
-  type Mutable (UArray ty) = MUArray ty
-  type Step (UArray ty) = ty
-  append = builderAppend
-  {-# INLINE append #-}
-  build = builderBuild
-  {-# INLINE build #-}
+    type Mutable (UArray ty) = MUArray ty
+    type Step (UArray ty) = ty
+    append = builderAppend
+    {-# INLINE append #-}
+    build = builderBuild
+    {-# INLINE build #-}
+
+instance Buildable (BA.Array ty) where
+    type Mutable (BA.Array ty) = BA.MArray ty
+    type Step (BA.Array ty) = ty
+
+    append = BA.builderAppend
+    {-# INLINE append #-}
+    build = BA.builderBuild
+    {-# INLINE build #-}

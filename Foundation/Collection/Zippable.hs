@@ -17,7 +17,7 @@ module Foundation.Collection.Zippable
     ) where
 
 import qualified Foundation.Array.Unboxed as UV
-import           Foundation.Collection.Buildable
+import qualified Foundation.Array.Boxed as BA
 import           Foundation.Collection.Element
 import           Foundation.Collection.Sequential
 import           Foundation.Internal.Base
@@ -76,11 +76,19 @@ class Sequential col => Zippable col where
 instance Zippable [c]
 
 instance UV.PrimType ty => Zippable (UV.UArray ty) where
-  zipWith f as bs = runST $ build 64 $ go f (toList as) (toList bs)
+  zipWith f as bs = runST $ UV.builderBuild 64 $ go f (toList as) (toList bs)
     where
       go _  []       _        = return ()
       go _  _        []       = return ()
-      go f' (a':as') (b':bs') = append (f' a' b') >> go f' as' bs'
+      go f' (a':as') (b':bs') = UV.builderAppend (f' a' b') >> go f' as' bs'
+
+instance Zippable (BA.Array ty) where
+  zipWith f as bs = runST $ BA.builderBuild 64 $ go f (toList as) (toList bs)
+    where
+      go _  []       _        = return ()
+      go _  _        []       = return ()
+      go f' (a':as') (b':bs') = BA.builderAppend (f' a' b') >> go f' as' bs'
+
 
 class Zippable col => BoxedZippable col where
 
@@ -183,6 +191,8 @@ class Zippable col => BoxedZippable col where
               in (a `cons` as, b `cons` bs, c `cons` cs, d `cons` ds, e `cons` es, f `cons` fs, g `cons` gs)
 
 instance BoxedZippable [a]
+instance BoxedZippable (BA.Array ty)
+
 
 -- * Tuple helper functions
 

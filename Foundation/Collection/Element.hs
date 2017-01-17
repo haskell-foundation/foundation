@@ -10,8 +10,10 @@ module Foundation.Collection.Element
     ) where
 
 import Foundation.Array.Unboxed (UArray)
+import Foundation.Array.Boxed (Array)
 
 -- | Element type of a collection
 type family Element container
 type instance Element [a] = a
 type instance Element (UArray ty) = ty
+type instance Element (Array ty) = ty

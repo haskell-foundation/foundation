@@ -14,6 +14,7 @@ module Foundation.Array.Boxed
     ( Array
     , MArray
     , empty
+    , length
     , copy
     , copyAt
     , unsafeCopyAtRO
@@ -23,7 +24,38 @@ module Foundation.Array.Boxed
     , unsafeThaw
     , freeze
     , unsafeWrite
+    , unsafeRead
     , unsafeIndex
+    , write
+    , read
+    , index
+    , singleton
+    , null
+    , take
+    , drop
+    , splitAt
+    , revTake
+    , revDrop
+    , revSplitAt
+    , splitOn
+    , sub
+    , intersperse
+    , span
+    , break
+    , cons
+    , snoc
+    , uncons
+    , unsnoc
+    -- , findIndex
+    , sortBy
+    , filter
+    , reverse
+    , find
+    , foldl'
+    , foldr
+    , foldl
+    , builderAppend
+    , builderBuild
     ) where
 
 import           GHC.Prim
@@ -36,10 +68,9 @@ import           Foundation.Internal.Types
 import           Foundation.Primitive.Types
 import           Foundation.Primitive.Monad
 import           Foundation.Array.Common
-import qualified Foundation.Collection as C
-import qualified Foundation.Collection.Buildable as CB
+import           Foundation.Boot.Builder
+import qualified Foundation.Boot.List as List
 import qualified Prelude
-import qualified Data.List
 
 -- | Array of a
 data Array a = Array {-# UNPACK #-} !(Offset a)
@@ -77,127 +108,10 @@ instance Eq a => Eq (Array a) where
 instance Ord a => Ord (Array a) where
     compare = vCompare
 
-type instance C.Element (Array ty) = ty
-
 instance IsList (Array ty) where
     type Item (Array ty) = ty
     fromList = vFromList
     toList = vToList
-
-instance C.InnerFunctor (Array ty)
-
-instance C.Foldable (Array ty) where
-    foldl = aFoldl
-    foldr = aFoldr
-    foldl' = aFoldl'
-
-instance C.Copy (Array ty) where
-    copy = copy
-
-instance C.Collection (Array ty) where
-    null = null
-    length = length
-    elem e = Data.List.elem e . toList
-    minimum = Data.List.minimum . toList . C.getNonEmpty -- TODO
-    maximum = Data.List.maximum . toList . C.getNonEmpty -- TODO
-    all p = Data.List.all p . toList
-    any p = Data.List.any p . toList
-instance C.Sequential (Array ty) where
-    take = take
-    drop = drop
-    splitAt = splitAt
-    revTake = revTake
-    revDrop = revDrop
-    revSplitAt = revSplitAt
-    splitOn = splitOn
-    break = break
-    intersperse = intersperse
-    span = span
-    reverse = reverse
-    filter = filter
-    unsnoc = unsnoc
-    uncons = uncons
-    snoc = snoc
-    cons = cons
-    find = find
-    sortBy = sortBy
-    singleton = fromList . (:[])
-
-instance C.MutableCollection (MArray ty) where
-    type MutableFreezed (MArray ty) = Array ty
-    type MutableKey (MArray ty) = Int
-    type MutableValue (MArray ty) = ty
-
-    thaw = thaw
-    freeze = freeze
-    unsafeThaw = unsafeThaw
-    unsafeFreeze = unsafeFreeze
-
-    mutNew n = new (Size n)
-    mutUnsafeWrite = unsafeWrite
-    mutUnsafeRead = unsafeRead
-    mutWrite = write
-    mutRead = read
-
-instance C.IndexedCollection (Array ty) where
-    (!) l n
-        | n < 0 || n >= length l = Nothing
-        | otherwise              = Just $ index l n
-    findIndex predicate c = loop 0
-      where
-        !len = length c
-        loop i
-            | i == len  = Nothing
-            | otherwise =
-                if predicate (unsafeIndex c i) then Just i else Nothing
-
-instance C.Zippable (Array ty) where
-  zipWith f as bs = runST $ CB.build 64 $ go f (toList as) (toList bs)
-    where
-      go _  []       _        = return ()
-      go _  _        []       = return ()
-      go f' (a':as') (b':bs') = CB.append (f' a' b') >> go f' as' bs'
-
-instance C.BoxedZippable (Array ty)
-
-instance CB.Buildable (Array ty) where
-  type Mutable (Array ty) = MArray ty
-  type Step (Array ty) = ty
-
-  append v = CB.Builder $ State $ \(i, st) ->
-      if offsetAsSize i == CB.chunkSize st
-          then do
-              cur      <- unsafeFreeze (CB.curChunk st)
-              newChunk <- new (CB.chunkSize st)
-              unsafeWrite newChunk 0 v
-              return ((), (Offset 1, st { CB.prevChunks     = cur : CB.prevChunks st
-                                        , CB.prevChunksSize = CB.chunkSize st + CB.prevChunksSize st
-                                        , CB.curChunk       = newChunk
-                                        }))
-          else do
-              let (Offset i') = i
-              unsafeWrite (CB.curChunk st) i' v
-              return ((), (i + Offset 1, st))
-  {-# INLINE append #-}
-
-  build sizeChunksI ab
-    | sizeChunksI <= 0 = CB.build 64 ab
-    | otherwise        = do
-        first         <- new sizeChunks
-        ((), (i, st)) <- runState (CB.runBuilder ab) (Offset 0, CB.BuildingState [] (Size 0) first sizeChunks)
-        cur           <- unsafeFreezeShrink (CB.curChunk st) (offsetAsSize i)
-        -- Build final array
-        let totalSize = CB.prevChunksSize st + offsetAsSize i
-        new totalSize >>= fillFromEnd totalSize (cur : CB.prevChunks st) >>= unsafeFreeze
-    where
-      sizeChunks = Size sizeChunksI
-
-      fillFromEnd _   []     mua = return mua
-      fillFromEnd !end (x:xs) mua = do
-          let sz = lengthSize x
-          unsafeCopyAtRO mua (sizeAsOffset (end - sz)) x (Offset 0) sz
-          fillFromEnd (end - sz) xs mua
-  {-# INLINE build #-}
 
 -- | return the numbers of elements in a mutable array
 mutableLength :: MArray ty st -> Int
@@ -410,7 +324,7 @@ lengthSize (Array _ sz _) = sz
 vFromList :: [a] -> Array a
 vFromList l = runST (new len >>= loop 0 l)
   where
-    len = Size $ C.length l
+    len = Size $ List.length l
     loop _ []     ma = unsafeFreeze ma
     loop i (x:xs) ma = unsafeWrite ma i x >> loop (i+1) xs ma
 
@@ -571,9 +485,15 @@ mapIndex :: (Int -> a -> b) -> Array a -> Array b
 mapIndex f a = create (length a) (\i -> f i $ unsafeIndex a i)
 -}
 
-cons ::  ty -> Array ty -> Array ty
+singleton :: ty -> Array ty
+singleton e = runST $ do
+    a <- new 1
+    unsafeWrite a 0 e
+    unsafeFreeze a
+
+cons :: ty -> Array ty -> Array ty
 cons e vec
-    | len == Size 0 = C.singleton e
+    | len == Size 0 = singleton e
     | otherwise     = runST $ do
         mv <- new (len + Size 1)
         unsafeWrite mv 0 e
@@ -584,7 +504,7 @@ cons e vec
 
 snoc ::  Array ty -> ty -> Array ty
 snoc vec e
-    | len == Size 0 = C.singleton e
+    | len == Size 0 = singleton e
     | otherwise     = runST $ do
         mv <- new (len + Size 1)
         unsafeCopyAtRO mv (Offset 0) vec (Offset 0) len
@@ -682,26 +602,61 @@ reverse a = create len toEnd
     len = length a
     toEnd i = unsafeIndex a (len - i - 1)
 
-aFoldl :: (a -> ty -> a) -> a -> Array ty -> a
-aFoldl f initialAcc vec = loop 0 initialAcc
+foldl :: (a -> ty -> a) -> a -> Array ty -> a
+foldl f initialAcc vec = loop 0 initialAcc
   where
     len = length vec
     loop !i acc
         | i == len  = acc
         | otherwise = loop (i+1) (f acc (unsafeIndex vec i))
 
-aFoldr :: (ty -> a -> a) -> a -> Array ty -> a
-aFoldr f initialAcc vec = loop 0
+foldr :: (ty -> a -> a) -> a -> Array ty -> a
+foldr f initialAcc vec = loop 0
   where
     len = length vec
     loop !i
         | i == len  = initialAcc
         | otherwise = unsafeIndex vec i `f` loop (i+1)
 
-aFoldl' :: (a -> ty -> a) -> a -> Array ty -> a
-aFoldl' f initialAcc vec = loop 0 initialAcc
+foldl' :: (a -> ty -> a) -> a -> Array ty -> a
+foldl' f initialAcc vec = loop 0 initialAcc
   where
     len = length vec
     loop !i !acc
         | i == len  = acc
         | otherwise = loop (i+1) (f acc (unsafeIndex vec i))
+
+builderAppend :: PrimMonad state => ty -> Builder (Array ty) (MArray ty) ty state ()
+builderAppend v = Builder $ State $ \(i, st) ->
+    if offsetAsSize i == chunkSize st
+        then do
+            cur      <- unsafeFreeze (curChunk st)
+            newChunk <- new (chunkSize st)
+            unsafeWrite newChunk 0 v
+            return ((), (Offset 1, st { prevChunks     = cur : prevChunks st
+                                      , prevChunksSize = chunkSize st + prevChunksSize st
+                                      , curChunk       = newChunk
+                                      }))
+        else do
+            let (Offset i') = i
+            unsafeWrite (curChunk st) i' v
+            return ((), (i + Offset 1, st))
+
+builderBuild :: PrimMonad m => Int -> Builder (Array ty) (MArray ty) ty m () -> m (Array ty)
+builderBuild sizeChunksI ab
+    | sizeChunksI <= 0 = builderBuild 64 ab
+    | otherwise        = do
+        first         <- new sizeChunks
+        ((), (i, st)) <- runState (runBuilder ab) (Offset 0, BuildingState [] (Size 0) first sizeChunks)
+        cur           <- unsafeFreezeShrink (curChunk st) (offsetAsSize i)
+        -- Build final array
+        let totalSize = prevChunksSize st + offsetAsSize i
+        new totalSize >>= fillFromEnd totalSize (cur : prevChunks st) >>= unsafeFreeze
+  where
+    sizeChunks = Size sizeChunksI
+
+    fillFromEnd _   []     mua = return mua
+    fillFromEnd !end (x:xs) mua = do
+        let sz = lengthSize x
+        unsafeCopyAtRO mua (sizeAsOffset (end - sz)) x (Offset 0) sz
+        fillFromEnd (end - sz) xs mua

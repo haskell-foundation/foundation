@@ -31,6 +31,7 @@ import           Foundation.Internal.Base
 import           Foundation.Collection.Element
 import qualified Data.List
 import qualified Foundation.Array.Unboxed as UV
+import qualified Foundation.Array.Boxed as BA
 
 -- | NonEmpty property for any Collection
 --
@@ -109,6 +110,15 @@ instance UV.PrimType ty => Collection (UV.UArray ty) where
     elem = UV.elem
     minimum = Data.List.minimum . toList . getNonEmpty
     maximum = Data.List.maximum . toList . getNonEmpty
+    all p = Data.List.all p . toList
+    any p = Data.List.any p . toList
+
+instance Collection (BA.Array ty) where
+    null = BA.null
+    length = BA.length
+    elem e = Data.List.elem e . toList
+    minimum = Data.List.minimum . toList . getNonEmpty -- TODO
+    maximum = Data.List.maximum . toList . getNonEmpty -- TODO
     all p = Data.List.all p . toList
     any p = Data.List.any p . toList
 

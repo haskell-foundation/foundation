@@ -15,6 +15,7 @@ import           Foundation.Internal.Base
 import           Foundation.Collection.Element
 import qualified Data.List
 import qualified Foundation.Array.Unboxed as UV
+import qualified Foundation.Array.Boxed as BA
 
 -- | Collection of elements that can indexed by int
 class IndexedCollection c where
@@ -40,3 +41,15 @@ instance UV.PrimType ty => IndexedCollection (UV.UArray ty) where
             | i == len                       = Nothing
             | predicate (UV.unsafeIndex c i) = Just i
             | otherwise                      = Nothing
+
+instance IndexedCollection (BA.Array ty) where
+    (!) l n
+        | n < 0 || n >= BA.length l = Nothing
+        | otherwise                 = Just $ BA.index l n
+    findIndex predicate c = loop 0
+      where
+        !len = BA.length c
+        loop i
+            | i == len  = Nothing
+            | otherwise =
+                if predicate (BA.unsafeIndex c i) then Just i else Nothing

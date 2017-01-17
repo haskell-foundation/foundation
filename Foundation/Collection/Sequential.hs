@@ -22,6 +22,7 @@ import           Foundation.Collection.Collection
 import qualified Foundation.Collection.List as ListExtra
 import qualified Data.List
 import qualified Foundation.Array.Unboxed as UV
+import qualified Foundation.Array.Boxed as BA
 
 -- | A set of methods for ordered colection
 class (IsList c, Item c ~ Element c, Monoid c, Collection c) => Sequential c where
@@ -206,4 +207,25 @@ instance UV.PrimType ty => Sequential (UV.UArray ty) where
     cons = UV.cons
     find = UV.find
     sortBy = UV.sortBy
+    singleton = fromList . (:[])
+
+instance Sequential (BA.Array ty) where
+    take = BA.take
+    drop = BA.drop
+    splitAt = BA.splitAt
+    revTake = BA.revTake
+    revDrop = BA.revDrop
+    revSplitAt = BA.revSplitAt
+    splitOn = BA.splitOn
+    break = BA.break
+    intersperse = BA.intersperse
+    span = BA.span
+    reverse = BA.reverse
+    filter = BA.filter
+    unsnoc = BA.unsnoc
+    uncons = BA.uncons
+    snoc = BA.snoc
+    cons = BA.cons
+    find = BA.find
+    sortBy = BA.sortBy
     singleton = fromList . (:[])

@@ -80,6 +80,7 @@ Library
                      Foundation.Random
                      Foundation.System.Entropy
   Other-modules:     Foundation.Boot.Builder
+                     Foundation.Boot.List
                      Foundation.String.Internal
                      Foundation.String.UTF8
                      Foundation.String.Encoding.Encoding
