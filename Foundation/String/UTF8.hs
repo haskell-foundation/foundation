@@ -152,46 +152,13 @@ instance C.Copy String where
     copy = copy
 
 instance Buildable String where
-  type Mutable String = MutableString
-  type Step String = Word8
+    type Mutable String = MutableString
+    type Step String = Word8
 
-  append c = Builder $ State $ \(i, st) ->
-      if offsetAsSize i + nbBytes >= chunkSize st
-          then do
-              cur      <- unsafeFreezeShrink (curChunk st) (offsetAsSize i)
-              newChunk <- new (chunkSize st)
-              writeUTF8Char newChunk (Offset 0) utf8Char
-              return ((), (sizeAsOffset nbBytes, st { prevChunks     = cur : prevChunks st
-                                                    , prevChunksSize = offsetAsSize i + prevChunksSize st
-                                                    , curChunk       = newChunk
-                                                    }))
-          else do
-              writeUTF8Char (curChunk st) i utf8Char
-              return ((), (i + sizeAsOffset nbBytes, st))
-    where
-      utf8Char = asUTF8Char c
-      nbBytes  = numBytes utf8Char
-  {-# INLINE append #-}
-
-  build sizeChunksI sb
-    | sizeChunksI <= 3 = build 64 sb
-    | otherwise        = do
-        first         <- new sizeChunks
-        ((), (i, st)) <- runState (runBuilder sb) (Offset 0, BuildingState [] (Size 0) first sizeChunks)
-        cur           <- unsafeFreezeShrink (curChunk st) (offsetAsSize i)
-        -- Build final array
-        let totalSize = prevChunksSize st + offsetAsSize i
-        final <- Vec.new totalSize >>= fillFromEnd totalSize (cur : prevChunks st) >>= Vec.unsafeFreeze
-        return $ String final
-    where
-      sizeChunks = Size sizeChunksI
-
-      fillFromEnd _   []            mba = return mba
-      fillFromEnd !end (String x:xs) mba = do
-          let sz = Vec.lengthSize x
-          Vec.unsafeCopyAtRO mba (sizeAsOffset (end - sz)) x (Offset 0) sz
-          fillFromEnd (end - sz) xs mba
-  {-# INLINE build #-}
+    append = builderAppend
+    {-# INLINE append #-}
+    build = builderBuild
+    {-# INLINE build #-}
 
 data ValidationFailure = InvalidHeader
                        | InvalidContinuation
@@ -359,7 +326,7 @@ nextWithIndexer getter off =
 
 writeWithBuilder :: (PrimMonad st, Monad st)
                  => Char
-                 -> Builder (UArray Word8) st ()
+                 -> Builder (UArray Word8) (MVec.MUArray Word8) Word8 st ()
 writeWithBuilder c =
     if      bool# (ltWord# x 0x80##   ) then encode1
     else if bool# (ltWord# x 0x800##  ) then encode2
@@ -1168,3 +1135,41 @@ lines = fmap fromList . Prelude.lines . toList
 
 words :: String -> [String]
 words = fmap fromList . Prelude.words . toList
+
+builderAppend :: PrimMonad state => Char -> Builder String MutableString Word8 state ()
+builderAppend c = Builder $ State $ \(i, st) ->
+    if offsetAsSize i + nbBytes >= chunkSize st
+        then do
+            cur      <- unsafeFreezeShrink (curChunk st) (offsetAsSize i)
+            newChunk <- new (chunkSize st)
+            writeUTF8Char newChunk (Offset 0) utf8Char
+            return ((), (sizeAsOffset nbBytes, st { prevChunks     = cur : prevChunks st
+                                                  , prevChunksSize = offsetAsSize i + prevChunksSize st
+                                                  , curChunk       = newChunk
+                                                  }))
+        else do
+            writeUTF8Char (curChunk st) i utf8Char
+            return ((), (i + sizeAsOffset nbBytes, st))
+  where
+    utf8Char = asUTF8Char c
+    nbBytes  = numBytes utf8Char
+
+builderBuild :: PrimMonad m => Int -> Builder String MutableString Word8 m () -> m String
+builderBuild sizeChunksI sb
+    | sizeChunksI <= 3 = builderBuild 64 sb
+    | otherwise        = do
+        first         <- new sizeChunks
+        ((), (i, st)) <- runState (runBuilder sb) (Offset 0, BuildingState [] (Size 0) first sizeChunks)
+        cur           <- unsafeFreezeShrink (curChunk st) (offsetAsSize i)
+        -- Build final array
+        let totalSize = prevChunksSize st + offsetAsSize i
+        final <- Vec.new totalSize >>= fillFromEnd totalSize (cur : prevChunks st) >>= Vec.unsafeFreeze
+        return $ String final
+  where
+    sizeChunks = Size sizeChunksI
+
+    fillFromEnd _   []            mba = return mba
+    fillFromEnd !end (String x:xs) mba = do
+        let sz = Vec.lengthSize x
+        Vec.unsafeCopyAtRO mba (sizeAsOffset (end - sz)) x (Offset 0) sz
+        fillFromEnd (end - sz) xs mba

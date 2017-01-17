@@ -80,6 +80,8 @@ module Foundation.Array.Unboxed
     , foldl'
     , foreignMem
     , fromForeignPtr
+    , builderAppend
+    , builderBuild
     ) where
 
 import           GHC.Prim
@@ -93,6 +95,7 @@ import           Foundation.Internal.Base
 import           Foundation.Internal.Primitive
 import           Foundation.Internal.Proxy
 import           Foundation.Internal.Types
+import           Foundation.Internal.MonadTrans
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
 import           Foundation.Primitive.FinalPtr
@@ -100,6 +103,7 @@ import           Foundation.Primitive.Utils
 import           Foundation.Array.Common
 import           Foundation.Array.Unboxed.Mutable
 import           Foundation.Numerical
+import           Foundation.Boot.Builder
 import qualified Data.List
 
 -- | An array of type built on top of GHC primitive.
@@ -870,3 +874,38 @@ foldl' f initialAcc vec = loop 0 initialAcc
     loop i !acc
         | i == len  = acc
         | otherwise = loop (i+1) (f acc (unsafeIndex vec i))
+
+builderAppend :: (PrimType ty, PrimMonad state) => ty -> Builder (UArray ty) (MUArray ty) ty state ()
+builderAppend v = Builder $ State $ \(i, st) ->
+    if offsetAsSize i == chunkSize st
+        then do
+            cur      <- unsafeFreeze (curChunk st)
+            newChunk <- new (chunkSize st)
+            unsafeWrite newChunk 0 v
+            return ((), (Offset 1, st { prevChunks     = cur : prevChunks st
+                                      , prevChunksSize = chunkSize st + prevChunksSize st
+                                      , curChunk       = newChunk
+                                      }))
+        else do
+            let Offset i' = i
+            unsafeWrite (curChunk st) i' v
+            return ((), (i + Offset 1, st))
+
+builderBuild :: (PrimType ty, PrimMonad m) => Int -> Builder (UArray ty) (MUArray ty) ty m () -> m (UArray ty)
+builderBuild sizeChunksI ab
+    | sizeChunksI <= 0 = builderBuild 64 ab
+    | otherwise        = do
+        first         <- new sizeChunks
+        ((), (i, st)) <- runState (runBuilder ab) (Offset 0, BuildingState [] (Size 0) first sizeChunks)
+        cur           <- unsafeFreezeShrink (curChunk st) (offsetAsSize i)
+        -- Build final array
+        let totalSize = prevChunksSize st + offsetAsSize i
+        new totalSize >>= fillFromEnd totalSize (cur : prevChunks st) >>= unsafeFreeze
+  where
+      sizeChunks = Size sizeChunksI
+
+      fillFromEnd _   []     mua = return mua
+      fillFromEnd !end (x:xs) mua = do
+          let sz = lengthSize x
+          unsafeCopyAtRO mua (sizeAsOffset (end - sz)) x (Offset 0) sz
+          fillFromEnd (end - sz) xs mua

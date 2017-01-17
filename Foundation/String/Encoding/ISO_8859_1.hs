@@ -22,6 +22,7 @@ import GHC.Prim
 import GHC.Word
 import GHC.Types
 import Foundation.Array.Unboxed
+import Foundation.Array.Unboxed.Mutable (MUArray)
 import Foundation.Collection.Buildable
 
 import Foundation.String.Encoding.Encoding
@@ -54,7 +55,7 @@ next getter off = Right (toChar w, off + aone)
 
 write :: (PrimMonad st, Monad st)
       => Char
-      -> Builder (UArray Word8) st ()
+      -> Builder (UArray Word8) (MUArray Word8) Word8 st ()
 write c@(C# ch)
     | c <= toEnum 0xFF = append (W8# x)
     | otherwise        = throw $ NotISO_8859_1 c

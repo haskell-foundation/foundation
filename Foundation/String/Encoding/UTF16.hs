@@ -21,6 +21,7 @@ import Foundation.Numerical
 import Data.Bits
 import qualified Prelude
 import Foundation.Array.Unboxed
+import Foundation.Array.Unboxed.Mutable (MUArray)
 import Foundation.Collection.Buildable
 
 import Foundation.String.Encoding.Encoding
@@ -76,7 +77,7 @@ next getter off
 
 write :: (PrimMonad st, Monad st)
       => Char
-      -> Builder (UArray Word16) st ()
+      -> Builder (UArray Word16) (MUArray Word16) Word16 st ()
 write c
     | c < toEnum 0xd800   = append $ w16 c
     | c > toEnum 0x10000  = let (w1, w2) = wHigh c in append w1 >> append w2
