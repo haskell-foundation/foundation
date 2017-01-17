@@ -16,6 +16,7 @@ module Foundation.Collection.Buildable
 import           Foundation.Array.Unboxed
 import           Foundation.Array.Unboxed.Mutable
 import qualified Foundation.Array.Boxed as BA
+import qualified Foundation.String.UTF8 as S
 import           Foundation.Collection.Element
 import           Foundation.Internal.Base
 import           Foundation.Primitive.Monad
@@ -68,4 +69,13 @@ instance Buildable (BA.Array ty) where
     append = BA.builderAppend
     {-# INLINE append #-}
     build = BA.builderBuild
+    {-# INLINE build #-}
+
+instance Buildable S.String where
+    type Mutable S.String = S.MutableString
+    type Step S.String = Word8
+
+    append = S.builderAppend
+    {-# INLINE append #-}
+    build = S.builderBuild
     {-# INLINE build #-}

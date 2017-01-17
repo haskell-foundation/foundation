@@ -5,6 +5,7 @@ module Foundation.Collection.InnerFunctor
 
 import Foundation.Internal.Base
 import Foundation.Collection.Element
+import qualified Foundation.String.UTF8 as S
 import qualified Foundation.Array.Unboxed as UV
 import           Foundation.Array.Boxed (Array)
 
@@ -20,3 +21,6 @@ instance UV.PrimType ty => InnerFunctor (UV.UArray ty) where
     imap = UV.map
 
 instance InnerFunctor (Array ty)
+
+instance InnerFunctor S.String where
+    imap = S.charMap

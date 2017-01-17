@@ -23,7 +23,7 @@ import GHC.Word
 import GHC.Types
 import Foundation.Array.Unboxed
 import Foundation.Array.Unboxed.Mutable (MUArray)
-import Foundation.Collection.Buildable
+import Foundation.Boot.Builder
 
 import Foundation.String.Encoding.Encoding
 
@@ -81,7 +81,7 @@ write :: (PrimMonad st, Monad st)
            -- otherwise this function will throw an exception
       -> Builder (UArray Word8) (MUArray Word8) Word8 st ()
 write c
-    | c < toEnum 0x80 = append $ w8 c
+    | c < toEnum 0x80 = builderAppend $ w8 c
     | otherwise       = throw $ CharNotAscii c
   where
     w8 :: Char -> Word8

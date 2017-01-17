@@ -23,9 +23,10 @@
 {-# LANGUAGE CPP                        #-}
 module Foundation.String.UTF8
     ( String(..)
-    --, Buffer
+    , MutableString(..)
     , create
     , replicate
+    , length
     -- * Binary conversion
     , Encoding(..)
     , fromBytes
@@ -38,6 +39,33 @@ module Foundation.String.UTF8
     , ValidationFailure(..)
     , index
     , sToList
+    , null
+    , drop
+    , take
+    , splitAt
+    , revDrop
+    , revTake
+    , revSplitAt
+    , splitOn
+    , sub
+    , elem
+    , intersperse
+    , span
+    , break
+    , breakElem
+    , singleton
+    , charMap
+    , snoc
+    , cons
+    , unsnoc
+    , uncons
+    , find
+    , findIndex
+    , sortBy
+    , filter
+    , reverse
+    , builderAppend
+    , builderBuild
     -- * Legacy utility
     , lines
     , words
@@ -45,10 +73,9 @@ module Foundation.String.UTF8
 
 import           Foundation.Array.Unboxed           (UArray)
 import qualified Foundation.Array.Unboxed           as Vec
+import qualified Foundation.Array.Unboxed           as C
 import           Foundation.Array.Unboxed.ByteArray (MutableByteArray)
 import qualified Foundation.Array.Unboxed.Mutable   as MVec
-import qualified Foundation.Collection              as C
-import           Foundation.Collection.Buildable
 import           Foundation.Internal.Base
 import           Foundation.Internal.MonadTrans
 import           Foundation.Internal.Primitive
@@ -56,6 +83,8 @@ import           Foundation.Internal.Types
 import           Foundation.Numerical
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
+import           Foundation.Boot.Builder
+import qualified Foundation.Boot.List as List
 import           Foundation.String.UTF8Table
 import           GHC.Prim
 import           GHC.ST
@@ -103,62 +132,6 @@ instance IsList String where
     type Item String = Char
     fromList = sFromList
     toList = sToList
-
-type instance C.Element String = Char
-
-instance C.InnerFunctor String where
-    imap = charMap
-instance C.Collection String where
-    null = null
-    length = length
-    elem = elem
-    minimum = Data.List.minimum . toList . C.getNonEmpty -- TODO faster implementation
-    maximum = Data.List.maximum . toList . C.getNonEmpty -- TODO faster implementation
-    all p = Data.List.all p . toList
-    any p = Data.List.any p . toList
-instance C.Sequential String where
-    take = take
-    drop = drop
-    splitAt = splitAt
-    revTake = revTake
-    revDrop = revDrop
-    revSplitAt = revSplitAt
-    splitOn = splitOn
-    break = break
-    breakElem = breakElem
-    intersperse = intersperse
-    span = span
-    filter = filter
-    reverse = reverse
-    unsnoc = unsnoc
-    uncons = uncons
-    snoc = snoc
-    cons = cons
-    find = find
-    sortBy = sortBy
-    singleton = fromList . (:[])
-instance C.IndexedCollection String where
-    (!) = index
-    findIndex = findIndex
-
-instance C.Zippable String where
-  zipWith f as bs = runST $ build 64 $ go f (toList as) (toList bs)
-    where
-      go _  []       _        = return ()
-      go _  _        []       = return ()
-      go f' (a':as') (b':bs') = append (f' a' b') >> go f' as' bs'
-
-instance C.Copy String where
-    copy = copy
-
-instance Buildable String where
-    type Mutable String = MutableString
-    type Step String = Word8
-
-    append = builderAppend
-    {-# INLINE append #-}
-    build = builderBuild
-    {-# INLINE build #-}
 
 data ValidationFailure = InvalidHeader
                        | InvalidContinuation
@@ -247,7 +220,7 @@ mutableValidate mba ofsStart sz = do
                 (pos, Just failure) -> return (pos, Just failure)
 
     one pos = do
-        h <- C.mutUnsafeRead mba pos
+        h <- Vec.unsafeRead mba pos
         let nbConts = getNbBytes h
         if nbConts == 0xff
             then return (pos, Just InvalidHeader)
@@ -257,20 +230,20 @@ mutableValidate mba ofsStart sz = do
                     case nbConts of
                         0 -> return (pos + 1, Nothing)
                         1 -> do
-                            c1 <- C.mutUnsafeRead mba (pos + 1)
+                            c1 <- Vec.unsafeRead mba (pos + 1)
                             if isContinuation c1
                                 then return (pos + 2, Nothing)
                                 else return (pos, Just InvalidContinuation)
                         2 -> do
-                            c1 <- C.mutUnsafeRead mba (pos + 1)
-                            c2 <- C.mutUnsafeRead mba (pos + 2)
+                            c1 <- Vec.unsafeRead mba (pos + 1)
+                            c2 <- Vec.unsafeRead mba (pos + 2)
                             if isContinuation c1 && isContinuation c2
                                 then return (pos + 3, Nothing)
                                 else return (pos, Just InvalidContinuation)
                         3 -> do
-                            c1 <- C.mutUnsafeRead mba (pos + 1)
-                            c2 <- C.mutUnsafeRead mba (pos + 2)
-                            c3 <- C.mutUnsafeRead mba (pos + 3)
+                            c1 <- Vec.unsafeRead mba (pos + 1)
+                            c2 <- Vec.unsafeRead mba (pos + 2)
+                            c3 <- Vec.unsafeRead mba (pos + 3)
                             if isContinuation c1 && isContinuation c2 && isContinuation c3
                                 then return (pos + 4, Nothing)
                                 else return (pos, Just InvalidContinuation)
@@ -336,25 +309,25 @@ writeWithBuilder c =
     !(I# xi) = fromEnum c
     !x       = int2Word# xi
 
-    encode1 = append (W8# x)
+    encode1 = Vec.builderAppend (W8# x)
 
     encode2 = do
         let x1  = or# (uncheckedShiftRL# x 6#) 0xc0##
             x2  = toContinuation x
-        append (W8# x1) >> append (W8# x2)
+        Vec.builderAppend (W8# x1) >> Vec.builderAppend (W8# x2)
 
     encode3 = do
         let x1  = or# (uncheckedShiftRL# x 12#) 0xe0##
             x2  = toContinuation (uncheckedShiftRL# x 6#)
             x3  = toContinuation x
-        append (W8# x1) >> append (W8# x2) >> append (W8# x3)
+        Vec.builderAppend (W8# x1) >> Vec.builderAppend (W8# x2) >> Vec.builderAppend (W8# x3)
 
     encode4 = do
         let x1  = or# (uncheckedShiftRL# x 18#) 0xf0##
             x2  = toContinuation (uncheckedShiftRL# x 12#)
             x3  = toContinuation (uncheckedShiftRL# x 6#)
             x4  = toContinuation x
-        append (W8# x1) >> append (W8# x2) >> append (W8# x3) >> append (W8# x4)
+        Vec.builderAppend (W8# x1) >> Vec.builderAppend (W8# x2) >> Vec.builderAppend (W8# x3) >> Vec.builderAppend (W8# x4)
 
     toContinuation :: Word# -> Word#
     toContinuation w = or# (and# w 0x3f##) 0x80##
@@ -441,19 +414,19 @@ numBytes UTF8_4{} = Size 4
 
 writeUTF8Char :: PrimMonad prim => MutableString (PrimState prim) -> Offset8 -> UTF8Char -> prim ()
 writeUTF8Char (MutableString mba) (Offset i) (UTF8_1 x1) =
-        C.mutUnsafeWrite mba i     x1
+    Vec.unsafeWrite mba i     x1
 writeUTF8Char (MutableString mba) (Offset i) (UTF8_2 x1 x2) = do
-        C.mutUnsafeWrite mba i     x1
-        C.mutUnsafeWrite mba (i+1) x2
+    Vec.unsafeWrite mba i     x1
+    Vec.unsafeWrite mba (i+1) x2
 writeUTF8Char (MutableString mba) (Offset i) (UTF8_3 x1 x2 x3) = do
-        C.mutUnsafeWrite mba i     x1
-        C.mutUnsafeWrite mba (i+1) x2
-        C.mutUnsafeWrite mba (i+2) x3
+    Vec.unsafeWrite mba i     x1
+    Vec.unsafeWrite mba (i+1) x2
+    Vec.unsafeWrite mba (i+2) x3
 writeUTF8Char (MutableString mba) (Offset i) (UTF8_4 x1 x2 x3 x4) = do
-        C.mutUnsafeWrite mba i     x1
-        C.mutUnsafeWrite mba (i+1) x2
-        C.mutUnsafeWrite mba (i+2) x3
-        C.mutUnsafeWrite mba (i+3) x4
+    Vec.unsafeWrite mba i     x1
+    Vec.unsafeWrite mba (i+1) x2
+    Vec.unsafeWrite mba (i+2) x3
+    Vec.unsafeWrite mba (i+3) x4
 {-# INLINE writeUTF8Char #-}
 
 write :: PrimMonad prim => MutableString (PrimState prim) -> Offset8 -> Char -> prim Offset8
@@ -466,22 +439,22 @@ write (MutableString mba) (Offset i) c =
     !(I# xi) = fromEnum c
     !x       = int2Word# xi
 
-    encode1 = C.mutUnsafeWrite mba i (W8# x) >> return (Offset $ i + 1)
+    encode1 = Vec.unsafeWrite mba i (W8# x) >> return (Offset $ i + 1)
 
     encode2 = do
         let x1  = or# (uncheckedShiftRL# x 6#) 0xc0##
             x2  = toContinuation x
-        C.mutUnsafeWrite mba i     (W8# x1)
-        C.mutUnsafeWrite mba (i+1) (W8# x2)
+        Vec.unsafeWrite mba i     (W8# x1)
+        Vec.unsafeWrite mba (i+1) (W8# x2)
         return $ Offset (i + 2)
 
     encode3 = do
         let x1  = or# (uncheckedShiftRL# x 12#) 0xe0##
             x2  = toContinuation (uncheckedShiftRL# x 6#)
             x3  = toContinuation x
-        C.mutUnsafeWrite mba i     (W8# x1)
-        C.mutUnsafeWrite mba (i+1) (W8# x2)
-        C.mutUnsafeWrite mba (i+2) (W8# x3)
+        Vec.unsafeWrite mba i     (W8# x1)
+        Vec.unsafeWrite mba (i+1) (W8# x2)
+        Vec.unsafeWrite mba (i+2) (W8# x3)
         return $ Offset (i + 3)
 
     encode4 = do
@@ -489,10 +462,10 @@ write (MutableString mba) (Offset i) c =
             x2  = toContinuation (uncheckedShiftRL# x 12#)
             x3  = toContinuation (uncheckedShiftRL# x 6#)
             x4  = toContinuation x
-        C.mutUnsafeWrite mba i     (W8# x1)
-        C.mutUnsafeWrite mba (i+1) (W8# x2)
-        C.mutUnsafeWrite mba (i+2) (W8# x3)
-        C.mutUnsafeWrite mba (i+3) (W8# x4)
+        Vec.unsafeWrite mba i     (W8# x1)
+        Vec.unsafeWrite mba (i+1) (W8# x2)
+        Vec.unsafeWrite mba (i+2) (W8# x3)
+        Vec.unsafeWrite mba (i+3) (W8# x4)
         return $ Offset (i + 4)
 
     toContinuation :: Word# -> Word#
@@ -533,7 +506,7 @@ sFromList :: [Char] -> String
 sFromList l = runST (new bytes >>= startCopy)
   where
     -- count how many bytes
-    !bytes = C.foldl' (+) (Size 0) $ fmap (charToBytes . fromEnum) l
+    !bytes = List.sum $ fmap (charToBytes . fromEnum) l
 
     startCopy :: MutableString (PrimState (ST st)) -> ST st String
     startCopy ms = loop azero l
@@ -804,6 +777,15 @@ replicate n c = runST (new nbBytes >>= fill)
 copy :: String -> String
 copy (String s) = String (Vec.copy s)
 
+-- | Create a single element String
+singleton :: Char -> String
+singleton c = runST $ do
+    ms <- new nbBytes
+    _  <- write ms (Offset 0) c
+    freeze ms
+  where
+    !nbBytes = charToBytes (fromEnum c)
+
 -- | Allocate a MutableString of a specific size in bytes.
 new :: PrimMonad prim
     => Size8 -- ^ in number of bytes, not of elements.
@@ -816,7 +798,7 @@ create sz f = do
     filled <- f ms
     if filled == sz
         then freeze ms
-        else C.take filled `fmap` freeze ms
+        else take filled `fmap` freeze ms
 
 charToBytes :: Int -> Size8
 charToBytes c
@@ -887,7 +869,7 @@ charMap f src =
 
 snoc :: String -> Char -> String
 snoc s@(String ba) c
-    | len == Size 0 = C.singleton c
+    | len == Size 0 = singleton c
     | otherwise     = runST $ do
         ms@(MutableString mba) <- new (len + nbBytes)
         Vec.unsafeCopyAtRO mba (Offset 0) ba (Offset 0) len
@@ -899,7 +881,7 @@ snoc s@(String ba) c
 
 cons :: Char -> String -> String
 cons c s@(String ba)
-  | len == Size 0 = C.singleton c
+  | len == Size 0 = singleton c
   | otherwise     = runST $ do
       ms@(MutableString mba) <- new (len + nbBytes)
       idx <- write ms (Offset 0) c
@@ -961,19 +943,19 @@ reverse s@(String ba) = runST $ do
                 !nb = Size (getNbBytes h + 1)
                 didx'@(Offset d) = didx `offsetMinusE` nb
             case nb of
-                Size 1 -> C.mutUnsafeWrite mba d      h
+                Size 1 -> Vec.unsafeWrite mba d      h
                 Size 2 -> do
-                    C.mutUnsafeWrite mba d       h
-                    C.mutUnsafeWrite mba (d + 1) (Vec.unsafeIndex ba (si + 1))
+                    Vec.unsafeWrite mba d       h
+                    Vec.unsafeWrite mba (d + 1) (Vec.unsafeIndex ba (si + 1))
                 Size 3 -> do
-                    C.mutUnsafeWrite mba d       h
-                    C.mutUnsafeWrite mba (d + 1) (Vec.unsafeIndex ba (si + 1))
-                    C.mutUnsafeWrite mba (d + 2) (Vec.unsafeIndex ba (si + 2))
+                    Vec.unsafeWrite mba d       h
+                    Vec.unsafeWrite mba (d + 1) (Vec.unsafeIndex ba (si + 1))
+                    Vec.unsafeWrite mba (d + 2) (Vec.unsafeIndex ba (si + 2))
                 Size 4 -> do
-                    C.mutUnsafeWrite mba d       h
-                    C.mutUnsafeWrite mba (d + 1) (Vec.unsafeIndex  ba (si + 1))
-                    C.mutUnsafeWrite mba (d + 2) (Vec.unsafeIndex ba (si + 2))
-                    C.mutUnsafeWrite mba (d + 3) (Vec.unsafeIndex ba (si + 3))
+                    Vec.unsafeWrite mba d       h
+                    Vec.unsafeWrite mba (d + 1) (Vec.unsafeIndex  ba (si + 1))
+                    Vec.unsafeWrite mba (d + 2) (Vec.unsafeIndex ba (si + 2))
+                    Vec.unsafeWrite mba (d + 3) (Vec.unsafeIndex ba (si + 3))
                 _  -> return () -- impossible
             loop ms (sidx `offsetPlusE` nb) didx'
 

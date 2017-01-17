@@ -32,6 +32,7 @@ import           Foundation.Collection.Element
 import qualified Data.List
 import qualified Foundation.Array.Unboxed as UV
 import qualified Foundation.Array.Boxed as BA
+import qualified Foundation.String.UTF8 as S
 
 -- | NonEmpty property for any Collection
 --
@@ -119,6 +120,15 @@ instance Collection (BA.Array ty) where
     elem e = Data.List.elem e . toList
     minimum = Data.List.minimum . toList . getNonEmpty -- TODO
     maximum = Data.List.maximum . toList . getNonEmpty -- TODO
+    all p = Data.List.all p . toList
+    any p = Data.List.any p . toList
+
+instance Collection S.String where
+    null = S.null
+    length = S.length
+    elem = S.elem
+    minimum = Data.List.minimum . toList . getNonEmpty -- TODO faster implementation
+    maximum = Data.List.maximum . toList . getNonEmpty -- TODO faster implementation
     all p = Data.List.all p . toList
     any p = Data.List.any p . toList
 

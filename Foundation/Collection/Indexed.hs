@@ -16,6 +16,7 @@ import           Foundation.Collection.Element
 import qualified Data.List
 import qualified Foundation.Array.Unboxed as UV
 import qualified Foundation.Array.Boxed as BA
+import qualified Foundation.String.UTF8 as S
 
 -- | Collection of elements that can indexed by int
 class IndexedCollection c where
@@ -53,3 +54,7 @@ instance IndexedCollection (BA.Array ty) where
             | i == len  = Nothing
             | otherwise =
                 if predicate (BA.unsafeIndex c i) then Just i else Nothing
+
+instance IndexedCollection S.String where
+    (!) = S.index
+    findIndex = S.findIndex

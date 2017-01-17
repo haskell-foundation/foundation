@@ -28,7 +28,6 @@ import           Foundation.Internal.Base
 import           Foundation.Internal.Types
 import qualified Foundation.Array.Unboxed as Vec
 import           Foundation.Array.Unboxed (UArray)
-import           Foundation.Collection.Buildable
 import           Foundation.Numerical
 import           Foundation.Primitive.FinalPtr
 import           Foundation.String.UTF8Table
@@ -62,13 +61,13 @@ fromModified addr = runST $ do
     ba <- buildByteArray addr
     Vec.unsafeIndexer ba buildWithBytes
   where
-    buildWithBytes getAt = build 64 $ loopBuilder getAt (Offset 0)
+    buildWithBytes getAt = Vec.builderBuild 64 $ loopBuilder getAt (Offset 0)
     loopBuilder getAt offset =
         case bs of
             [] -> internalError "ModifiedUTF8.fromModified"
             [0x00] -> return ()
-            [b1,b2] | b1 == 0xC0 && b2 == 0x80 -> append 0x00 >> loopBuilder getAt noffset
-            _ -> mapM_ append bs >> loopBuilder getAt noffset
+            [b1,b2] | b1 == 0xC0 && b2 == 0x80 -> Vec.builderAppend 0x00 >> loopBuilder getAt noffset
+            _ -> mapM_ Vec.builderAppend bs >> loopBuilder getAt noffset
       where
         (bs, noffset) = accessBytes offset getAt
 

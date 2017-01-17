@@ -11,7 +11,6 @@ import Foundation.Array.Common
 import Foundation.Array.Unboxed.Mutable
 import Foundation.Numerical
 import Control.Monad (forM_)
-import qualified Foundation.Collection as C
 
 -- | Mutable Byte Array alias
 type MutableByteArray st = MUArray Word8 st
@@ -19,7 +18,7 @@ type MutableByteArray st = MUArray Word8 st
 mutableByteArraySet :: PrimMonad prim => MUArray Word8 (PrimState prim) -> Word8 -> prim ()
 mutableByteArraySet mba val = do
     -- naive haskell way. TODO: call memset or a 32-bit/64-bit method
-    forM_ [0..(len-1)] $ \i -> C.mutUnsafeWrite mba i val
+    forM_ [0..(len-1)] $ \i -> unsafeWrite mba i val
   where
     len = mutableLength mba
 
@@ -29,7 +28,7 @@ mutableByteArraySetBetween mba val offset size
     | offset > len || offset+size > len = throw (OutOfBound OOB_MemSet (offset+size) len)
     | otherwise =
         -- TODO same as mutableByteArraySet
-        forM_ [offset..(offset+size-1)] $ \i -> C.mutUnsafeWrite mba i val
+        forM_ [offset..(offset+size-1)] $ \i -> unsafeWrite mba i val
   where
     len = mutableLength mba
 

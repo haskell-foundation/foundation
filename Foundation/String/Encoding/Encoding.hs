@@ -13,13 +13,12 @@ module Foundation.String.Encoding.Encoding
     , convertFromTo
     ) where
 
-import Foundation.Internal.Base
-import Foundation.Internal.Types
-import Foundation.Primitive.Monad
-import Foundation.Primitive.Types
-import Foundation.Numerical
-import qualified Foundation.Collection as C
-import           Foundation.Collection.Buildable
+import           Foundation.Internal.Base
+import           Foundation.Internal.Types
+import           Foundation.Primitive.Monad
+import           Foundation.Primitive.Types
+import           Foundation.Boot.Builder
+import           Foundation.Numerical
 import           Foundation.Array.Unboxed (UArray)
 import           Foundation.Array.Unboxed.Mutable (MUArray)
 import qualified Foundation.Array.Unboxed as Vec
@@ -92,10 +91,10 @@ convertFromTo :: ( PrimMonad st, Monad st
                 -- ^ the input raw array
               -> st (UArray (Unit output))
 convertFromTo inputEncodingTy outputEncodingTy bytes
-    | C.null bytes = return mempty
-    | otherwise    = Vec.unsafeIndexer bytes $ \t -> build 64 (loop azero t)
+    | Vec.null bytes = return mempty
+    | otherwise      = Vec.unsafeIndexer bytes $ \t -> Vec.builderBuild 64 (loop azero t)
   where
-    lastUnit = Offset $ C.length bytes
+    lastUnit = Offset $ Vec.length bytes
 
     loop off getter
       | off >= lastUnit = return ()

@@ -22,7 +22,7 @@ import Data.Bits
 import qualified Prelude
 import Foundation.Array.Unboxed
 import Foundation.Array.Unboxed.Mutable (MUArray)
-import Foundation.Collection.Buildable
+import Foundation.Boot.Builder
 
 import Foundation.String.Encoding.Encoding
 
@@ -79,10 +79,10 @@ write :: (PrimMonad st, Monad st)
       => Char
       -> Builder (UArray Word16) (MUArray Word16) Word16 st ()
 write c
-    | c < toEnum 0xd800   = append $ w16 c
-    | c > toEnum 0x10000  = let (w1, w2) = wHigh c in append w1 >> append w2
+    | c < toEnum 0xd800   = builderAppend $ w16 c
+    | c > toEnum 0x10000  = let (w1, w2) = wHigh c in builderAppend w1 >> builderAppend w2
     | c > toEnum 0x10ffff = throw $ InvalidUnicode c
-    | c >= toEnum 0xe000  = append $ w16 c
+    | c >= toEnum 0xe000  = builderAppend $ w16 c
     | otherwise = throw $ InvalidUnicode c
   where
     w16 :: Char -> Word16

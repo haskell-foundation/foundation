@@ -18,6 +18,7 @@ module Foundation.Collection.Zippable
 
 import qualified Foundation.Array.Unboxed as UV
 import qualified Foundation.Array.Boxed as BA
+import qualified Foundation.String.UTF8 as S
 import           Foundation.Collection.Element
 import           Foundation.Collection.Sequential
 import           Foundation.Internal.Base
@@ -89,6 +90,12 @@ instance Zippable (BA.Array ty) where
       go _  _        []       = return ()
       go f' (a':as') (b':bs') = BA.builderAppend (f' a' b') >> go f' as' bs'
 
+instance Zippable S.String where
+  zipWith f as bs = runST $ S.builderBuild 64 $ go f (toList as) (toList bs)
+    where
+      go _  []       _        = return ()
+      go _  _        []       = return ()
+      go f' (a':as') (b':bs') = S.builderAppend (f' a' b') >> go f' as' bs'
 
 class Zippable col => BoxedZippable col where
 
