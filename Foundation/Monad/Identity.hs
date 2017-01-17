@@ -1,3 +1,8 @@
+-- |
+-- The identity monad transformer.
+--
+-- This is useful for functions parameterized by a monad transformer.
+--
 module Foundation.Monad.Identity
     ( IdentityT
     , runIdentityT
@@ -8,6 +13,7 @@ import Foundation.Monad.MonadIO
 import Foundation.Monad.Exception
 import Foundation.Monad.Transformer
 
+-- | Identity Transformer
 newtype IdentityT m a = IdentityT { runIdentityT :: m a }
 
 instance Functor m => Functor (IdentityT m) where

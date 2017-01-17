@@ -47,6 +47,9 @@ class (Additive a, Multiplicative a) => IDivisible a where
     divMod :: a -> a -> (a, a)
     divMod a b = (div a b, mod a b)
 
+-- | Support for division between same types
+--
+-- This is likely to change to represent specific mathematic divisions
 class Multiplicative a => Divisible a where
     {-# MINIMAL (/) #-}
     (/) :: a -> a -> a
