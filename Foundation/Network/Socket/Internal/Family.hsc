@@ -9,6 +9,10 @@ module Foundation.Network.Socket.Internal.Family
     , InetPort(..)
     ) where
 
+#if ! MIN_VERSION_base(4,9,0)
+#let alignment t = "%lu", (unsigned long)offsetof(struct {char x__; t (y__); }, y__)
+#endif
+
 #ifdef mingw32_HOST_OS
 #include <winsock2.h>
 #else
