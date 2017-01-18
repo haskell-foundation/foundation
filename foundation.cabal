@@ -79,6 +79,8 @@ Library
                      Foundation.Parser
                      Foundation.Random
                      Foundation.System.Entropy
+                     Foundation.Network.Socket
+                     Foundation.Network.IPv4
   Other-modules:     Foundation.String.Internal
                      Foundation.String.UTF8
                      Foundation.String.Encoding.Encoding
@@ -106,6 +108,7 @@ Library
                      Foundation.Collection.Zippable
                      Foundation.Conduit.Internal
                      Foundation.Internal.Base
+                     Foundation.Internal.ByteSwap
                      Foundation.Internal.CallStack
                      Foundation.Internal.Environment
                      Foundation.Internal.Error
@@ -124,6 +127,19 @@ Library
                      Foundation.Numerical.Subtractive
                      Foundation.Numerical.Multiplicative
                      Foundation.Numerical.Floating
+                     Foundation.Network.Socket.Internal
+                     Foundation.Network.Socket.Internal.Family
+                     Foundation.Network.Socket.Internal.Protocol
+                     Foundation.Network.Socket.Internal.Type
+                     Foundation.Network.Socket.Internal.Error
+                     Foundation.Network.Socket.Socket
+                     Foundation.Network.Socket.Close
+                     Foundation.Network.Socket.Connect
+                     Foundation.Network.Socket.Bind
+                     Foundation.Network.Socket.Listen
+                     Foundation.Network.Socket.Accept
+                     Foundation.Network.Socket.Send
+                     Foundation.Network.Socket.Recv
                      Foundation.IO.File
                      Foundation.IO.Terminal
                      Foundation.Primitive.Types
@@ -149,8 +165,10 @@ Library
 
   include-dirs:      cbits
   C-sources:         cbits/foundation_random.c
+                     cbits/foundation_network.c
 
   if os(windows)
+    extra-libraries: ws2_32
     Other-modules:   Foundation.Foreign.MemoryMap.Windows
                      Foundation.System.Entropy.Windows
   else
