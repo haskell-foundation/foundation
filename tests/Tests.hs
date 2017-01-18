@@ -28,6 +28,7 @@ import Test.Foundation.String
 import Test.Foundation.Parser
 import Test.Foundation.Storable
 import Test.Foundation.Random
+import Test.Foundation.Network.IPv4
 import qualified Test.Foundation.Bits as Bits
 
 data CharMap = CharMap LUString Prelude.Int
@@ -319,6 +320,7 @@ tests =
     , testForeignStorableRefs
     , testRandom
     , testConduit
+    , testNetworkIPv4
     ]
 
 testCaseModifiedUTF8 :: [Char] -> String -> Assertion
