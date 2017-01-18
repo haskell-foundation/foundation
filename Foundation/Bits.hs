@@ -5,11 +5,16 @@ module Foundation.Bits
     , Bits(..)
     , alignRoundUp
     , alignRoundDown
+    , htonl, htons
+    , ntohl, ntohs
     ) where
 
 import Foundation.Internal.Base
+import Foundation.Internal.ByteSwap
 import Foundation.Numerical
+import Foundation.System.Info (Endianness(..), endianness)
 import Data.Bits
+import Data.Word (Word16, Word32)
 
 -- | Unsafe Shift Left Operator
 (.<<.) :: Bits a => a -> Int -> a
@@ -40,3 +45,27 @@ alignRoundDown :: Int -- ^ Number to Align
                -> Int -- ^ Alignment (power of 2)
                -> Int
 alignRoundDown m alignment = m .&. complement (alignment-1)
+
+-- | perform conversion from Host to Network endianness
+htons :: Word16 -> Word16
+htons w = case endianness of
+    LittleEndian -> byteSwap16 w
+    BigEndian    -> w
+
+-- | perform conversion from Network to Host endianness
+ntohs :: Word16 -> Word16
+ntohs w = case endianness of
+    LittleEndian -> byteSwap16 w
+    BigEndian    -> w
+
+-- | perform conversion from Host to Network endianness
+htonl :: Word32 -> Word32
+htonl w = case endianness of
+    LittleEndian -> byteSwap32 w
+    BigEndian    -> w
+
+-- | perform conversion from Network to Host endianness
+ntohl :: Word32 -> Word32
+ntohl w = case endianness of
+    LittleEndian -> byteSwap32 w
+    BigEndian    -> w
