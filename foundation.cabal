@@ -108,6 +108,7 @@ Library
                      Foundation.Collection.Zippable
                      Foundation.Conduit.Internal
                      Foundation.Internal.Base
+                     Foundation.Internal.ByteSwap
                      Foundation.Internal.CallStack
                      Foundation.Internal.Environment
                      Foundation.Internal.Error
