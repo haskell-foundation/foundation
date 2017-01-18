@@ -9,10 +9,11 @@ module Foundation.Bits
     ) where
 
 import Foundation.Internal.Base
+import Foundation.Internal.ByteSwap
 import Foundation.Numerical
 import Foundation.System.Info (Endianness(..), endianness)
 import Data.Bits
-import Data.Word (Word16, Word32, byteSwap16, byteSwap32)
+import Data.Word (Word16, Word32)
 
 -- | Unsafe Shift Left Operator
 (.<<.) :: Bits a => a -> Int -> a

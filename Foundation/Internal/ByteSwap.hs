@@ -20,7 +20,9 @@ import Data.Word (byteSwap16, byteSwap32, byteSwap64)
 
 #else
 
-import Data.Bits (.|., .&, unsafeShiftL, unsafeShiftR)
+import Foundation.Internal.Base (fromInteger)
+
+import Data.Bits ((.|.), (.&.), unsafeShiftL, unsafeShiftR)
 
 import Data.Word (Word16, Word32, Word64)
 
