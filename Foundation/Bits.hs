@@ -2,6 +2,7 @@
 module Foundation.Bits
     ( (.<<.)
     , (.>>.)
+    , Bits(..)
     , alignRoundUp
     , alignRoundDown
     ) where
