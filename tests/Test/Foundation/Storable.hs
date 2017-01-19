@@ -5,6 +5,7 @@
 {-# LANGUAGE TypeFamilies        #-}
 module Test.Foundation.Storable
     ( testForeignStorableRefs
+    , testPropertyStorable, testPropertyStorableFixed
     ) where
 
 import Foundation

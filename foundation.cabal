@@ -74,6 +74,7 @@ Library
                      Foundation.Monad
                      Foundation.Monad.Reader
                      Foundation.Monad.State
+                     Foundation.Network.IPv4
                      Foundation.System.Info
                      Foundation.Strict
                      Foundation.Parser
@@ -109,6 +110,7 @@ Library
                      Foundation.Collection.Zippable
                      Foundation.Conduit.Internal
                      Foundation.Internal.Base
+                     Foundation.Internal.ByteSwap
                      Foundation.Internal.CallStack
                      Foundation.Internal.Environment
                      Foundation.Internal.Error
@@ -193,12 +195,14 @@ Test-Suite test-foundation
   Main-is:           Tests.hs
   Other-modules:     Test.Utils.Foreign
                      Test.Data.List
+                     Test.Data.Network
                      Test.Data.Unicode
                      Test.Data.ASCII
                      Test.Foundation.Collection
                      Test.Foundation.Conduit
                      Test.Foundation.Bits
                      Test.Foundation.ChunkedUArray
+                     Test.Foundation.Network.IPv4
                      Test.Foundation.Number
                      Test.Foundation.Encoding
                      Test.Foundation.Parser
