@@ -79,7 +79,9 @@ Library
                      Foundation.Parser
                      Foundation.Random
                      Foundation.System.Entropy
-  Other-modules:     Foundation.String.Internal
+  Other-modules:     Foundation.Boot.Builder
+                     Foundation.Boot.List
+                     Foundation.String.Internal
                      Foundation.String.UTF8
                      Foundation.String.Encoding.Encoding
                      Foundation.String.Encoding.UTF16
@@ -98,6 +100,7 @@ Library
                      Foundation.Collection.Element
                      Foundation.Collection.InnerFunctor
                      Foundation.Collection.Collection
+                     Foundation.Collection.Copy
                      Foundation.Collection.Sequential
                      Foundation.Collection.Keyed
                      Foundation.Collection.Indexed

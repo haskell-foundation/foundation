@@ -50,12 +50,16 @@ xor64 :: Word64 -> Word8 -> Word64
 xor64 !a !b = a `xor` Prelude.fromIntegral b
 {-# INLINE xor64 #-}
 
+-- | FNV1 32 bit state
 newtype FNV1_32 = FNV1_32 Word
 
+-- | FNV1 64 bit state
 newtype FNV1_64 = FNV1_64 Word64
 
+-- | FNV1a 32 bit state
 newtype FNV1a_32 = FNV1a_32 Word
 
+-- | FNV1a 64 bit state
 newtype FNV1a_64 = FNV1a_64 Word64
 
 fnv1_32_Mix8 :: Word8 -> FNV1_32 -> FNV1_32

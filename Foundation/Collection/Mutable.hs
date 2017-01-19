@@ -15,6 +15,7 @@ import Foundation.Internal.Types
 
 import qualified Foundation.Array.Unboxed.Mutable as MUV
 import qualified Foundation.Array.Unboxed as UV
+import qualified Foundation.Array.Boxed as BA
 
 -- | Collection of things that can be made mutable, modified and then freezed into an MutableFreezed collection
 class MutableCollection c where
@@ -55,3 +56,19 @@ instance UV.PrimType ty => MutableCollection (MUV.MUArray ty) where
     mutUnsafeRead = MUV.unsafeRead
     mutWrite = MUV.write
     mutRead = MUV.read
+
+instance MutableCollection (BA.MArray ty) where
+    type MutableFreezed (BA.MArray ty) = BA.Array ty
+    type MutableKey (BA.MArray ty) = Int
+    type MutableValue (BA.MArray ty) = ty
+
+    thaw = BA.thaw
+    freeze = BA.freeze
+    unsafeThaw = BA.unsafeThaw
+    unsafeFreeze = BA.unsafeFreeze
+
+    mutNew n = BA.new (Size n)
+    mutUnsafeWrite = BA.unsafeWrite
+    mutUnsafeRead = BA.unsafeRead
+    mutWrite = BA.write
+    mutRead = BA.read

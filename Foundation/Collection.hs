@@ -28,6 +28,7 @@ module Foundation.Collection
     , Buildable(..)
     , Builder(..)
     , BuildingState(..)
+    , Copy(..)
     ) where
 
 import           Foundation.Collection.Buildable
@@ -40,3 +41,4 @@ import           Foundation.Collection.Mutable
 import           Foundation.Collection.Collection
 import           Foundation.Collection.Sequential
 import           Foundation.Collection.Zippable
+import           Foundation.Collection.Copy

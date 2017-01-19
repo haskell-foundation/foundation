@@ -12,12 +12,14 @@ import GHC.Word
 import GHC.Int
 import qualified Prelude
 
+-- | Convert an 'Int' into a 'Word'
 intToWord :: Int -> Word
 intToWord (I# i) = W# (int2Word# i)
 {-# INLINE intToWord #-}
 
+-- | Various conversion between integral number
 class IntegralConvert a b where
-    -- lossless integral convertion
+    -- | lossless integral convertion
     integralConvert :: a -> b
 
 instance IntegralConvert Int8 Word8 where

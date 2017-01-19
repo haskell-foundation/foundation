@@ -23,9 +23,10 @@
 {-# LANGUAGE CPP                        #-}
 module Foundation.String.UTF8
     ( String(..)
-    --, Buffer
+    , MutableString(..)
     , create
     , replicate
+    , length
     -- * Binary conversion
     , Encoding(..)
     , fromBytes
@@ -38,6 +39,33 @@ module Foundation.String.UTF8
     , ValidationFailure(..)
     , index
     , sToList
+    , null
+    , drop
+    , take
+    , splitAt
+    , revDrop
+    , revTake
+    , revSplitAt
+    , splitOn
+    , sub
+    , elem
+    , intersperse
+    , span
+    , break
+    , breakElem
+    , singleton
+    , charMap
+    , snoc
+    , cons
+    , unsnoc
+    , uncons
+    , find
+    , findIndex
+    , sortBy
+    , filter
+    , reverse
+    , builderAppend
+    , builderBuild
     -- * Legacy utility
     , lines
     , words
@@ -45,10 +73,9 @@ module Foundation.String.UTF8
 
 import           Foundation.Array.Unboxed           (UArray)
 import qualified Foundation.Array.Unboxed           as Vec
+import qualified Foundation.Array.Unboxed           as C
 import           Foundation.Array.Unboxed.ByteArray (MutableByteArray)
 import qualified Foundation.Array.Unboxed.Mutable   as MVec
-import qualified Foundation.Collection              as C
-import           Foundation.Collection.Buildable
 import           Foundation.Internal.Base
 import           Foundation.Internal.MonadTrans
 import           Foundation.Internal.Primitive
@@ -56,6 +83,8 @@ import           Foundation.Internal.Types
 import           Foundation.Numerical
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
+import           Foundation.Boot.Builder
+import qualified Foundation.Boot.List as List
 import           Foundation.String.UTF8Table
 import           GHC.Prim
 import           GHC.ST
@@ -92,6 +121,13 @@ instance Data String where
 stringType :: DataType
 stringType = mkNoRepType "Foundation.String"
 
+-- | Mutable String Buffer.
+--
+-- Note that it's hard to use properly since the UTF8 encoding
+-- is variable, and thus you can't mutable previously filled
+-- data without potentially have to move all the data around.
+--
+-- See 'charMap' for an idea of the scale of the problem
 newtype MutableString st = MutableString (MutableByteArray st)
     deriving (Typeable)
 
@@ -104,92 +140,7 @@ instance IsList String where
     fromList = sFromList
     toList = sToList
 
-type instance C.Element String = Char
-
-instance C.InnerFunctor String where
-    imap = charMap
-instance C.Collection String where
-    null = null
-    length = length
-    elem = elem
-    minimum = Data.List.minimum . toList . C.getNonEmpty -- TODO faster implementation
-    maximum = Data.List.maximum . toList . C.getNonEmpty -- TODO faster implementation
-    all p = Data.List.all p . toList
-    any p = Data.List.any p . toList
-instance C.Sequential String where
-    take = take
-    drop = drop
-    splitAt = splitAt
-    revTake = revTake
-    revDrop = revDrop
-    revSplitAt = revSplitAt
-    splitOn = splitOn
-    break = break
-    breakElem = breakElem
-    intersperse = intersperse
-    span = span
-    filter = filter
-    reverse = reverse
-    unsnoc = unsnoc
-    uncons = uncons
-    snoc = snoc
-    cons = cons
-    find = find
-    sortBy = sortBy
-    singleton = fromList . (:[])
-instance C.IndexedCollection String where
-    (!) = index
-    findIndex = findIndex
-
-instance C.Zippable String where
-  zipWith f as bs = runST $ build 64 $ go f (toList as) (toList bs)
-    where
-      go _  []       _        = return ()
-      go _  _        []       = return ()
-      go f' (a':as') (b':bs') = append (f' a' b') >> go f' as' bs'
-
-instance Buildable String where
-  type Mutable String = MutableString
-  type Step String = Word8
-
-  append c = Builder $ State $ \(i, st) ->
-      if offsetAsSize i + nbBytes >= chunkSize st
-          then do
-              cur      <- unsafeFreezeShrink (curChunk st) (offsetAsSize i)
-              newChunk <- new (chunkSize st)
-              writeUTF8Char newChunk (Offset 0) utf8Char
-              return ((), (sizeAsOffset nbBytes, st { prevChunks     = cur : prevChunks st
-                                                    , prevChunksSize = offsetAsSize i + prevChunksSize st
-                                                    , curChunk       = newChunk
-                                                    }))
-          else do
-              writeUTF8Char (curChunk st) i utf8Char
-              return ((), (i + sizeAsOffset nbBytes, st))
-    where
-      utf8Char = asUTF8Char c
-      nbBytes  = numBytes utf8Char
-  {-# INLINE append #-}
-
-  build sizeChunksI sb
-    | sizeChunksI <= 3 = build 64 sb
-    | otherwise        = do
-        first         <- new sizeChunks
-        ((), (i, st)) <- runState (runBuilder sb) (Offset 0, BuildingState [] (Size 0) first sizeChunks)
-        cur           <- unsafeFreezeShrink (curChunk st) (offsetAsSize i)
-        -- Build final array
-        let totalSize = prevChunksSize st + offsetAsSize i
-        final <- Vec.new totalSize >>= fillFromEnd totalSize (cur : prevChunks st) >>= Vec.unsafeFreeze
-        return $ String final
-    where
-      sizeChunks = Size sizeChunksI
-
-      fillFromEnd _   []            mba = return mba
-      fillFromEnd !end (String x:xs) mba = do
-          let sz = Vec.lengthSize x
-          Vec.unsafeCopyAtRO mba (sizeAsOffset (end - sz)) x (Offset 0) sz
-          fillFromEnd (end - sz) xs mba
-  {-# INLINE build #-}
-
+-- | Possible failure related to validating bytes of UTF8 sequences.
 data ValidationFailure = InvalidHeader
                        | InvalidContinuation
                        | MissingByte
@@ -197,6 +148,7 @@ data ValidationFailure = InvalidHeader
 
 instance Exception ValidationFailure
 
+-- | UTF8 Encoder
 data EncoderUTF8 = EncoderUTF8
 
 instance Encoder.Encoding EncoderUTF8 where
@@ -257,6 +209,7 @@ validate ba ofsStart sz = runST (Vec.unsafeIndexer ba go)
             !nbContsE@(Size nbConts) = Size $ getNbBytes h
     {-# INLINE go #-}
 
+-- | Similar to 'validate' but works on a 'MutableByteArray'
 mutableValidate :: PrimMonad prim
                 => MutableByteArray (PrimState prim)
                 -> Int
@@ -277,7 +230,7 @@ mutableValidate mba ofsStart sz = do
                 (pos, Just failure) -> return (pos, Just failure)
 
     one pos = do
-        h <- C.mutUnsafeRead mba pos
+        h <- Vec.unsafeRead mba pos
         let nbConts = getNbBytes h
         if nbConts == 0xff
             then return (pos, Just InvalidHeader)
@@ -287,20 +240,20 @@ mutableValidate mba ofsStart sz = do
                     case nbConts of
                         0 -> return (pos + 1, Nothing)
                         1 -> do
-                            c1 <- C.mutUnsafeRead mba (pos + 1)
+                            c1 <- Vec.unsafeRead mba (pos + 1)
                             if isContinuation c1
                                 then return (pos + 2, Nothing)
                                 else return (pos, Just InvalidContinuation)
                         2 -> do
-                            c1 <- C.mutUnsafeRead mba (pos + 1)
-                            c2 <- C.mutUnsafeRead mba (pos + 2)
+                            c1 <- Vec.unsafeRead mba (pos + 1)
+                            c2 <- Vec.unsafeRead mba (pos + 2)
                             if isContinuation c1 && isContinuation c2
                                 then return (pos + 3, Nothing)
                                 else return (pos, Just InvalidContinuation)
                         3 -> do
-                            c1 <- C.mutUnsafeRead mba (pos + 1)
-                            c2 <- C.mutUnsafeRead mba (pos + 2)
-                            c3 <- C.mutUnsafeRead mba (pos + 3)
+                            c1 <- Vec.unsafeRead mba (pos + 1)
+                            c2 <- Vec.unsafeRead mba (pos + 2)
+                            c3 <- Vec.unsafeRead mba (pos + 3)
                             if isContinuation c1 && isContinuation c2 && isContinuation c3
                                 then return (pos + 4, Nothing)
                                 else return (pos, Just InvalidContinuation)
@@ -356,7 +309,7 @@ nextWithIndexer getter off =
 
 writeWithBuilder :: (PrimMonad st, Monad st)
                  => Char
-                 -> Builder (UArray Word8) st ()
+                 -> Builder (UArray Word8) (MVec.MUArray Word8) Word8 st ()
 writeWithBuilder c =
     if      bool# (ltWord# x 0x80##   ) then encode1
     else if bool# (ltWord# x 0x800##  ) then encode2
@@ -366,25 +319,25 @@ writeWithBuilder c =
     !(I# xi) = fromEnum c
     !x       = int2Word# xi
 
-    encode1 = append (W8# x)
+    encode1 = Vec.builderAppend (W8# x)
 
     encode2 = do
         let x1  = or# (uncheckedShiftRL# x 6#) 0xc0##
             x2  = toContinuation x
-        append (W8# x1) >> append (W8# x2)
+        Vec.builderAppend (W8# x1) >> Vec.builderAppend (W8# x2)
 
     encode3 = do
         let x1  = or# (uncheckedShiftRL# x 12#) 0xe0##
             x2  = toContinuation (uncheckedShiftRL# x 6#)
             x3  = toContinuation x
-        append (W8# x1) >> append (W8# x2) >> append (W8# x3)
+        Vec.builderAppend (W8# x1) >> Vec.builderAppend (W8# x2) >> Vec.builderAppend (W8# x3)
 
     encode4 = do
         let x1  = or# (uncheckedShiftRL# x 18#) 0xf0##
             x2  = toContinuation (uncheckedShiftRL# x 12#)
             x3  = toContinuation (uncheckedShiftRL# x 6#)
             x4  = toContinuation x
-        append (W8# x1) >> append (W8# x2) >> append (W8# x3) >> append (W8# x4)
+        Vec.builderAppend (W8# x1) >> Vec.builderAppend (W8# x2) >> Vec.builderAppend (W8# x3) >> Vec.builderAppend (W8# x4)
 
     toContinuation :: Word# -> Word#
     toContinuation w = or# (and# w 0x3f##) 0x80##
@@ -471,19 +424,19 @@ numBytes UTF8_4{} = Size 4
 
 writeUTF8Char :: PrimMonad prim => MutableString (PrimState prim) -> Offset8 -> UTF8Char -> prim ()
 writeUTF8Char (MutableString mba) (Offset i) (UTF8_1 x1) =
-        C.mutUnsafeWrite mba i     x1
+    Vec.unsafeWrite mba i     x1
 writeUTF8Char (MutableString mba) (Offset i) (UTF8_2 x1 x2) = do
-        C.mutUnsafeWrite mba i     x1
-        C.mutUnsafeWrite mba (i+1) x2
+    Vec.unsafeWrite mba i     x1
+    Vec.unsafeWrite mba (i+1) x2
 writeUTF8Char (MutableString mba) (Offset i) (UTF8_3 x1 x2 x3) = do
-        C.mutUnsafeWrite mba i     x1
-        C.mutUnsafeWrite mba (i+1) x2
-        C.mutUnsafeWrite mba (i+2) x3
+    Vec.unsafeWrite mba i     x1
+    Vec.unsafeWrite mba (i+1) x2
+    Vec.unsafeWrite mba (i+2) x3
 writeUTF8Char (MutableString mba) (Offset i) (UTF8_4 x1 x2 x3 x4) = do
-        C.mutUnsafeWrite mba i     x1
-        C.mutUnsafeWrite mba (i+1) x2
-        C.mutUnsafeWrite mba (i+2) x3
-        C.mutUnsafeWrite mba (i+3) x4
+    Vec.unsafeWrite mba i     x1
+    Vec.unsafeWrite mba (i+1) x2
+    Vec.unsafeWrite mba (i+2) x3
+    Vec.unsafeWrite mba (i+3) x4
 {-# INLINE writeUTF8Char #-}
 
 write :: PrimMonad prim => MutableString (PrimState prim) -> Offset8 -> Char -> prim Offset8
@@ -496,22 +449,22 @@ write (MutableString mba) (Offset i) c =
     !(I# xi) = fromEnum c
     !x       = int2Word# xi
 
-    encode1 = C.mutUnsafeWrite mba i (W8# x) >> return (Offset $ i + 1)
+    encode1 = Vec.unsafeWrite mba i (W8# x) >> return (Offset $ i + 1)
 
     encode2 = do
         let x1  = or# (uncheckedShiftRL# x 6#) 0xc0##
             x2  = toContinuation x
-        C.mutUnsafeWrite mba i     (W8# x1)
-        C.mutUnsafeWrite mba (i+1) (W8# x2)
+        Vec.unsafeWrite mba i     (W8# x1)
+        Vec.unsafeWrite mba (i+1) (W8# x2)
         return $ Offset (i + 2)
 
     encode3 = do
         let x1  = or# (uncheckedShiftRL# x 12#) 0xe0##
             x2  = toContinuation (uncheckedShiftRL# x 6#)
             x3  = toContinuation x
-        C.mutUnsafeWrite mba i     (W8# x1)
-        C.mutUnsafeWrite mba (i+1) (W8# x2)
-        C.mutUnsafeWrite mba (i+2) (W8# x3)
+        Vec.unsafeWrite mba i     (W8# x1)
+        Vec.unsafeWrite mba (i+1) (W8# x2)
+        Vec.unsafeWrite mba (i+2) (W8# x3)
         return $ Offset (i + 3)
 
     encode4 = do
@@ -519,10 +472,10 @@ write (MutableString mba) (Offset i) c =
             x2  = toContinuation (uncheckedShiftRL# x 12#)
             x3  = toContinuation (uncheckedShiftRL# x 6#)
             x4  = toContinuation x
-        C.mutUnsafeWrite mba i     (W8# x1)
-        C.mutUnsafeWrite mba (i+1) (W8# x2)
-        C.mutUnsafeWrite mba (i+2) (W8# x3)
-        C.mutUnsafeWrite mba (i+3) (W8# x4)
+        Vec.unsafeWrite mba i     (W8# x1)
+        Vec.unsafeWrite mba (i+1) (W8# x2)
+        Vec.unsafeWrite mba (i+2) (W8# x3)
+        Vec.unsafeWrite mba (i+3) (W8# x4)
         return $ Offset (i + 4)
 
     toContinuation :: Word# -> Word#
@@ -540,6 +493,9 @@ unsafeFreezeShrink (MutableString mba) s = String <$> Vec.unsafeFreezeShrink mba
 ------------------------------------------------------------------------
 -- real functions
 
+-- | Convert a String to a list of characters
+--
+-- The list is lazily created as evaluation needed
 sToList :: String -> [Char]
 sToList s = loop azero
   where
@@ -559,11 +515,16 @@ sToList s = loop azero
   sFromList (unpackCStringUtf8# s) = String $ fromModified s
   #-}
 
+-- | Create a new String from a list of characters
+--
+-- The list is strictly and fully evaluated before
+-- creating the new String, as the size need to be
+-- computed before filling.
 sFromList :: [Char] -> String
 sFromList l = runST (new bytes >>= startCopy)
   where
     -- count how many bytes
-    !bytes = C.foldl' (+) (Size 0) $ fmap (charToBytes . fromEnum) l
+    !bytes = List.sum $ fmap (charToBytes . fromEnum) l
 
     startCopy :: MutableString (PrimState (ST st)) -> ST st String
     startCopy ms = loop azero l
@@ -572,12 +533,13 @@ sFromList l = runST (new bytes >>= startCopy)
         loop idx (c:xs) = write ms idx c >>= \idx' -> loop idx' xs
 {-# INLINE [0] sFromList #-}
 
+-- | Check if a String is null
 null :: String -> Bool
 null (String ba) = C.length ba == 0
 
 -- | Create a string composed of a number @n of Chars (Unicode code points).
 --
--- if the input @s contains less characters than required, then
+-- if the input @s contains less characters than required, then the input string is returned.
 take :: Int -> String -> String
 take n s@(String ba)
     | n <= 0           = mempty
@@ -591,6 +553,8 @@ drop n s@(String ba)
     | n >= C.length ba = mempty
     | otherwise        = let (Offset o) = indexN n s in String $ Vec.drop o ba
 
+-- | Split a string at the Offset specified (in Char) returning both
+-- the leading part and the remaining part.
 splitAt :: Int -> String -> (String, String)
 splitAt nI s@(String ba)
     | nI <= 0           = (mempty, s)
@@ -634,12 +598,15 @@ indexN nI (String ba) = Vec.unsafeDewrap goVec goAddr ba
 -- rev{Take,Drop,SplitAt} TODO optimise:
 -- we can process the string from the end using a skipPrev instead of getting the length
 
+-- | Similar to 'take' but from the end
 revTake :: Int -> String -> String
 revTake nbElems v = drop (length v - nbElems) v
 
+-- | Similar to 'drop' but from the end
 revDrop :: Int -> String -> String
 revDrop nbElems v = take (length v - nbElems) v
 
+-- | Similar to 'splitAt' but from the end
 revSplitAt :: Int -> String -> (String, String)
 revSplitAt n v = (drop idx v, take idx v)
   where idx = length v - n
@@ -669,14 +636,22 @@ splitOn predicate s
                     then sub s prevIdx idx : loop idx' idx'
                     else loop prevIdx idx'
 
+-- | Internal call to make a substring given offset in bytes.
+--
+-- This is unsafe considering that one can create a substring
+-- starting and/or ending on the middle of a UTF8 sequence.
 sub :: String -> Offset8 -> Offset8 -> String
 sub (String ba) (Offset start) (Offset end) = String $ Vec.sub ba start end
 
--- | Split at a given index.
+-- | Internal call to split at a given index in offset of bytes.
+--
+-- This is unsafe considering that one can split in the middle of a
+-- UTF8 sequence, so use with care.
 splitIndex :: Offset8 -> String -> (String, String)
 splitIndex (Offset idx) (String ba) = (String v1, String v2)
   where (v1,v2) = C.splitAt idx ba
 
+-- | Break a string into 2 strings at the location where the predicate return True
 break :: (Char -> Bool) -> String -> (String, String)
 break predicate s@(String ba) = runST $ Vec.unsafeIndexer ba go
   where
@@ -703,6 +678,7 @@ break predicate s@(String ba) = runST $ Vec.unsafeIndexer ba go
 {-# RULES "break (== 'c')" [3] forall c . break (== c) = breakElem c #-}
 #endif
 
+-- | Break a string into 2 strings at the first occurence of the character
 breakElem :: Char -> String -> (String, String)
 breakElem !el s@(String ba) =
     case asUTF8Char el of
@@ -724,6 +700,12 @@ breakElem !el s@(String ba) =
                     True  -> return $ splitIndex idx s
                     False -> loop idx'
 
+-- | Apply a @predicate@ to the string to return the longest prefix that satisfy the predicate and
+-- the remaining
+span :: (Char -> Bool) -> String -> (String, String)
+span predicate s = break (not . predicate) s
+
+-- | Return whereas the string contains a specific character or not
 elem :: Char -> String -> Bool
 elem !el s@(String ba) =
     case asUTF8Char el of
@@ -745,6 +727,10 @@ elem !el s@(String ba) =
                     True  -> return True
                     False -> loop idx'
 
+-- | Intersperse the character @sep@ between each character in the string
+--
+-- > intersperse ' ' "Hello Foundation"
+-- "H e l l o   F o u n d a t i o n"
 intersperse :: Char -> String -> String
 intersperse sep src
     | srcLen <= 1 = src
@@ -786,13 +772,15 @@ unsafeCopyFrom src dstBytes f = new dstBytes >>= fill (Offset 0) (Offset 0) (Off
         | otherwise = do (nextSrcIdx, nextDstIdx) <- f' src srcI srcIdx dst' dstIdx
                          fill (srcI + Offset 1) nextSrcIdx nextDstIdx f' dst'
 
-span :: (Char -> Bool) -> String -> (String, String)
-span predicate s = break (not . predicate) s
-
--- | size in bytes
+-- | size in bytes.
+--
+-- this size is available in o(1)
 size :: String -> Size8
 size (String ba) = Size $ C.length ba
 
+-- | Length of a String using Size
+--
+-- this size is available in o(n)
 lengthSize :: String -> Size Char
 lengthSize (String ba)
     | C.null ba = Size 0
@@ -814,9 +802,11 @@ lengthSize (String ba)
             | otherwise  = loop (idx `offsetPlusE` d) (i + Size 1)
           where d = skipNextHeaderValue (primAddrIndex ptr idx)
 
+-- | Length of a string in number of characters
 length :: String -> Int
 length s = let (Size sz) = lengthSize s in sz
 
+-- | Replicate a character @c@ @n@ times to create a string of length @n@
 replicate :: Int -> Char -> String
 replicate n c = runST (new nbBytes >>= fill)
   where
@@ -831,8 +821,20 @@ replicate n c = runST (new nbBytes >>= fill)
             | otherwise  = write ms idx c >>= loop
 
 -- | Copy the String
+--
+-- The slice of memory is copied to a new slice, making the new string
+-- independent from the original string..
 copy :: String -> String
 copy (String s) = String (Vec.copy s)
+
+-- | Create a single element String
+singleton :: Char -> String
+singleton c = runST $ do
+    ms <- new nbBytes
+    _  <- write ms (Offset 0) c
+    freeze ms
+  where
+    !nbBytes = charToBytes (fromEnum c)
 
 -- | Allocate a MutableString of a specific size in bytes.
 new :: PrimMonad prim
@@ -840,13 +842,18 @@ new :: PrimMonad prim
     -> prim (MutableString (PrimState prim))
 new n = MutableString `fmap` MVec.new n
 
+-- | Unsafely create a string of up to @sz@ bytes.
+--
+-- The callback @f@ needs to return the number of bytes filled in the underlaying
+-- bytes buffer. No check is made on the callback return values, and if it's not
+-- contained without the bounds, bad things will happen.
 create :: PrimMonad prim => Int -> (MutableString (PrimState prim) -> prim Int) -> prim String
 create sz f = do
     ms     <- new (Size sz)
     filled <- f ms
     if filled == sz
         then freeze ms
-        else C.take filled `fmap` freeze ms
+        else take filled `fmap` freeze ms
 
 charToBytes :: Int -> Size8
 charToBytes c
@@ -856,6 +863,7 @@ charToBytes c
     | c < 0x110000 = Size 4
     | otherwise    = error ("invalid code point: " `mappend` show c)
 
+-- | Monomorphically map the character in a string and return the transformed one
 charMap :: (Char -> Char) -> String -> String
 charMap f src =
     let !(elems, nbBytes) = allocateAndFill [] (Offset 0) (Size 0)
@@ -915,9 +923,10 @@ charMap f src =
         Vec.unsafeCopyAtRO mba start ba (Offset 0) sz
         copyLoop ms xs start
 
+-- | Append a Char to the end of the String and return this new String
 snoc :: String -> Char -> String
 snoc s@(String ba) c
-    | len == Size 0 = C.singleton c
+    | len == Size 0 = singleton c
     | otherwise     = runST $ do
         ms@(MutableString mba) <- new (len + nbBytes)
         Vec.unsafeCopyAtRO mba (Offset 0) ba (Offset 0) len
@@ -927,9 +936,10 @@ snoc s@(String ba) c
     !len     = size s
     !nbBytes = charToBytes (fromEnum c)
 
+-- | Prepend a Char to the beginning of the String and return this new String
 cons :: Char -> String -> String
 cons c s@(String ba)
-  | len == Size 0 = C.singleton c
+  | len == Size 0 = singleton c
   | otherwise     = runST $ do
       ms@(MutableString mba) <- new (len + nbBytes)
       idx <- write ms (Offset 0) c
@@ -939,6 +949,9 @@ cons c s@(String ba)
     !len     = size s
     !nbBytes = charToBytes (fromEnum c)
 
+-- | Extract the String stripped of the last character and the last character if not empty
+--
+-- If empty, Nothing is returned
 unsnoc :: String -> Maybe (String, Char)
 unsnoc s
     | null s    = Nothing
@@ -948,6 +961,9 @@ unsnoc s
                 [c] -> Just (s2, c)
                 _   -> internalError "unsnoc"
 
+-- | Extract the First character of a string, and the String stripped of the first character.
+--
+-- If empty, Nothing is returned
 uncons :: String -> Maybe (Char, String)
 uncons s
     | null s    = Nothing
@@ -957,6 +973,7 @@ uncons s
                 [c] -> Just (c, s2)
                 _   -> internalError "uncons"
 
+-- | Look for a predicate in the String and return the matched character, if any.
 find :: (Char -> Bool) -> String -> Maybe Char
 find predicate s = loop (Offset 0)
   where
@@ -970,12 +987,15 @@ find predicate s = loop (Offset 0)
                     True  -> Just c
                     False -> loop idx'
 
+-- | Sort the character in a String using a specific sort function
 sortBy :: (Char -> Char -> Ordering) -> String -> String
 sortBy sortF s = fromList $ Data.List.sortBy sortF $ toList s -- FIXME for tests
 
+-- | Filter characters of a string using the predicate
 filter :: (Char -> Bool) -> String -> String
 filter p s = fromList $ Data.List.filter p $ toList s
 
+-- | Reverse a string
 reverse :: String -> String
 reverse s@(String ba) = runST $ do
     ms <- new len
@@ -991,22 +1011,26 @@ reverse s@(String ba) = runST $ do
                 !nb = Size (getNbBytes h + 1)
                 didx'@(Offset d) = didx `offsetMinusE` nb
             case nb of
-                Size 1 -> C.mutUnsafeWrite mba d      h
+                Size 1 -> Vec.unsafeWrite mba d      h
                 Size 2 -> do
-                    C.mutUnsafeWrite mba d       h
-                    C.mutUnsafeWrite mba (d + 1) (Vec.unsafeIndex ba (si + 1))
+                    Vec.unsafeWrite mba d       h
+                    Vec.unsafeWrite mba (d + 1) (Vec.unsafeIndex ba (si + 1))
                 Size 3 -> do
-                    C.mutUnsafeWrite mba d       h
-                    C.mutUnsafeWrite mba (d + 1) (Vec.unsafeIndex ba (si + 1))
-                    C.mutUnsafeWrite mba (d + 2) (Vec.unsafeIndex ba (si + 2))
+                    Vec.unsafeWrite mba d       h
+                    Vec.unsafeWrite mba (d + 1) (Vec.unsafeIndex ba (si + 1))
+                    Vec.unsafeWrite mba (d + 2) (Vec.unsafeIndex ba (si + 2))
                 Size 4 -> do
-                    C.mutUnsafeWrite mba d       h
-                    C.mutUnsafeWrite mba (d + 1) (Vec.unsafeIndex  ba (si + 1))
-                    C.mutUnsafeWrite mba (d + 2) (Vec.unsafeIndex ba (si + 2))
-                    C.mutUnsafeWrite mba (d + 3) (Vec.unsafeIndex ba (si + 3))
+                    Vec.unsafeWrite mba d       h
+                    Vec.unsafeWrite mba (d + 1) (Vec.unsafeIndex  ba (si + 1))
+                    Vec.unsafeWrite mba (d + 2) (Vec.unsafeIndex ba (si + 2))
+                    Vec.unsafeWrite mba (d + 3) (Vec.unsafeIndex ba (si + 3))
                 _  -> return () -- impossible
             loop ms (sidx `offsetPlusE` nb) didx'
 
+-- | Return the nth character in a String
+--
+-- Compared to an array, the string need to be scanned from the beginning
+-- since the UTF8 encoding is variable.
 index :: String -> Int -> Maybe Char
 index s n
     | ofs >= end = Nothing
@@ -1018,6 +1042,9 @@ index s n
     end = 0 `offsetPlusE` nbBytes
     ofs = indexN n s
 
+-- | Return the index in unit of Char of the first occurence of the predicate returning True
+--
+-- If not found, Nothing is returned
 findIndex :: (Char -> Bool) -> String -> Maybe Int
 findIndex predicate s = loop (Offset 0)
   where
@@ -1031,13 +1058,14 @@ findIndex predicate s = loop (Offset 0)
                     True  -> let (Offset r) = idx in Just r
                     False -> loop idx'
 
+-- | Various String Encoding that can be use to convert to and from bytes
 data Encoding
     = ASCII7
     | UTF8
     | UTF16
     | UTF32
     | ISO_8859_1
-  deriving (Typeable, Data, Eq, Ord, Show, Enum, Bounded)
+    deriving (Typeable, Data, Eq, Ord, Show, Enum, Bounded)
 
 fromEncoderBytes :: ( Encoder.Encoding encoding
                     , Exception (Encoder.Error encoding)
@@ -1114,6 +1142,10 @@ fromBytesLenient bytes
     replacement :: String
     !replacement = fromBytesUnsafe $ fromList [0xef,0xbf,0xbd]
 
+-- | Decode a stream of binary chunks containing UTF8 encoding in a list of valid String
+--
+-- Chunk not necessarily contains a valid string, as
+-- a UTF8 sequence could be split over 2 chunks.
 fromChunkBytes :: [UArray Word8] -> [String]
 fromChunkBytes l = loop l
   where
@@ -1160,8 +1192,53 @@ toBytes ISO_8859_1 (String bytes) = toEncoderBytes Encoder.ISO_8859_1 bytes
 toBytes UTF16      (String bytes) = toEncoderBytes Encoder.UTF16      bytes
 toBytes UTF32      (String bytes) = toEncoderBytes Encoder.UTF32      bytes
 
+-- | Split lines in a string using newline as separation
 lines :: String -> [String]
 lines = fmap fromList . Prelude.lines . toList
 
+-- | Split words in a string using spaces as separation
+--
+-- > words "Hello Foundation"
+-- [ "Hello", "Foundation" ]
 words :: String -> [String]
 words = fmap fromList . Prelude.words . toList
+
+-- | Append a character to a String builder
+builderAppend :: PrimMonad state => Char -> Builder String MutableString Word8 state ()
+builderAppend c = Builder $ State $ \(i, st) ->
+    if offsetAsSize i + nbBytes >= chunkSize st
+        then do
+            cur      <- unsafeFreezeShrink (curChunk st) (offsetAsSize i)
+            newChunk <- new (chunkSize st)
+            writeUTF8Char newChunk (Offset 0) utf8Char
+            return ((), (sizeAsOffset nbBytes, st { prevChunks     = cur : prevChunks st
+                                                  , prevChunksSize = offsetAsSize i + prevChunksSize st
+                                                  , curChunk       = newChunk
+                                                  }))
+        else do
+            writeUTF8Char (curChunk st) i utf8Char
+            return ((), (i + sizeAsOffset nbBytes, st))
+  where
+    utf8Char = asUTF8Char c
+    nbBytes  = numBytes utf8Char
+
+-- | Create a new String builder using chunks of @sizeChunksI@
+builderBuild :: PrimMonad m => Int -> Builder String MutableString Word8 m () -> m String
+builderBuild sizeChunksI sb
+    | sizeChunksI <= 3 = builderBuild 64 sb
+    | otherwise        = do
+        first         <- new sizeChunks
+        ((), (i, st)) <- runState (runBuilder sb) (Offset 0, BuildingState [] (Size 0) first sizeChunks)
+        cur           <- unsafeFreezeShrink (curChunk st) (offsetAsSize i)
+        -- Build final array
+        let totalSize = prevChunksSize st + offsetAsSize i
+        final <- Vec.new totalSize >>= fillFromEnd totalSize (cur : prevChunks st) >>= Vec.unsafeFreeze
+        return $ String final
+  where
+    sizeChunks = Size sizeChunksI
+
+    fillFromEnd _   []            mba = return mba
+    fillFromEnd !end (String x:xs) mba = do
+        let sz = Vec.lengthSize x
+        Vec.unsafeCopyAtRO mba (sizeAsOffset (end - sz)) x (Offset 0) sz
+        fillFromEnd (end - sz) xs mba
