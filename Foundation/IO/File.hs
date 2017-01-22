@@ -6,7 +6,8 @@
 -- Portability : portable
 --
 module Foundation.IO.File
-    ( openFile
+    ( FilePath
+    , openFile
     , closeFile
     , IOMode(..)
     , withFile
