@@ -6,6 +6,8 @@ module Foundation.Numerical.Number
 import           Foundation.Internal.Base
 import           Foundation.Internal.Natural
 import qualified Prelude
+import           Foreign.C.Types
+import           System.Posix.Types
 
 -- | Number literals, convertible through the generic Integer type.
 --
@@ -44,6 +46,8 @@ instance IsIntegral Word32 where
     toInteger i = Prelude.toInteger i
 instance IsIntegral Word64 where
     toInteger i = Prelude.toInteger i
+instance IsIntegral CSize where
+    toInteger i = Prelude.toInteger i
 
 instance IsNatural Natural where
     toNatural i = i
@@ -56,4 +60,6 @@ instance IsNatural Word16 where
 instance IsNatural Word32 where
     toNatural i = Prelude.fromIntegral i
 instance IsNatural Word64 where
+    toNatural i = Prelude.fromIntegral i
+instance IsNatural CSize where
     toNatural i = Prelude.fromIntegral i
