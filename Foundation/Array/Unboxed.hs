@@ -344,18 +344,18 @@ create n initializer
 
 -- | Create a pinned array that is filled by a 'filler' function (typically an IO call like hGetBuf)
 createFromIO :: PrimType ty
-             => Int                -- ^ the size of the array
-             -> (Ptr ty -> IO Int) -- ^ filling function that
+             => Size ty                  -- ^ the size of the array
+             -> (Ptr ty -> IO (Size ty)) -- ^ filling function that
              -> IO (UArray ty)
 createFromIO size filler
     | size == 0 = return empty
     | otherwise = do
-        mba <- newPinned (Size size)
+        mba <- newPinned size
         r   <- withMutablePtr mba $ \p -> filler p
         case r of
             0             -> return empty -- make sure we don't keep our array referenced by using empty
             _ | r < 0     -> error "filler returned negative number"
-              | otherwise -> unsafeFreezeShrink mba (Size r)
+              | otherwise -> unsafeFreezeShrink mba r
 
 -----------------------------------------------------------------------
 -- higher level collection implementation

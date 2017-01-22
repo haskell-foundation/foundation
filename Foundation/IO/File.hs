@@ -60,7 +60,7 @@ closeFile = S.hClose
 hGet :: Handle -> Int -> IO (UArray Word8)
 hGet h size
     | size < 0   = invalidBufferSize "hGet" h size
-    | otherwise  = V.createFromIO size $ \p -> S.hGetBuf h p size
+    | otherwise  = V.createFromIO (Size size) $ \p -> (Size <$> S.hGetBuf h p size)
 
 -- | hGetNonBlocking is similar to 'hGet', except that it will never block
 -- waiting for data to become available, instead it returns only whatever data
@@ -71,7 +71,7 @@ hGet h size
 hGetNonBlocking :: Handle -> Int -> IO (UArray Word8)
 hGetNonBlocking h size
     | size < 0  = invalidBufferSize "hGetNonBlocking" h size
-    | otherwise = V.createFromIO size $ \p -> S.hGetBufNonBlocking h p size
+    | otherwise = V.createFromIO (Size size) $ \p -> (Size <$> S.hGetBufNonBlocking h p size)
 
 -- | Like 'hGet', except that a shorter array may be returned
 -- if there are not enough bytes immediately available to satisfy the
@@ -81,7 +81,7 @@ hGetNonBlocking h size
 hGetSome :: Handle -> Int -> IO (UArray Word8)
 hGetSome h size
     | size < 0  = invalidBufferSize "hGetSome" h size
-    | otherwise = V.createFromIO size $ \p -> S.hGetBufSome h p size
+    | otherwise = V.createFromIO (Size size) $ \p -> (Size <$> S.hGetBufSome h p size)
 
 hPut :: Handle -> (UArray Word8) -> IO ()
 hPut h arr = withPtr arr $ \ptr -> S.hPutBuf h ptr (length arr)
