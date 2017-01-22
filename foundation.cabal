@@ -80,6 +80,7 @@ library
                      Foundation.String.Builder
                      Foundation.IO
                      Foundation.IO.FileMap
+                     Foundation.IO.Handle
                      Foundation.IO.Terminal
                      Foundation.VFS
                      Foundation.VFS.Path
