@@ -25,10 +25,18 @@ module Foundation.Primitive.Types.OffsetSize
     , Size(..)
     , Size8
     , sizeOfE
+    , csizeOfSize
+    , sizeOfCSSize
+    , plusPtrSize
     ) where
 
 import GHC.Types
 import GHC.Word
+import GHC.Int
+import GHC.Prim
+import Foreign.C.Types
+import Foreign.Ptr (plusPtr)
+import System.Posix.Types (CSsize (..))
 import Foundation.Internal.Base
 import Foundation.Internal.Proxy
 import Foundation.Numerical.Primitives
@@ -147,3 +155,17 @@ newtype Size ty = Size Int
 
 sizeOfE :: Size8 -> Size ty -> Size8
 sizeOfE (Size sz) (Size ty) = Size (ty * sz)
+
+-- when #if WORD_SIZE_IN_BITS < 64 the 2 following are wrong
+-- instead of using FromIntegral and being silently wrong
+-- explicit pattern match to sort it out.
+
+csizeOfSize :: Size8 -> CSize
+csizeOfSize (Size (I# sz)) = CSize (W64# (int2Word# sz))
+
+sizeOfCSSize :: CSsize -> Size8
+sizeOfCSSize (CSsize (-1))               = error "invalid size: CSSize is -1"
+sizeOfCSSize (CSsize (I64# sz)) = Size (I# sz)
+
+plusPtrSize :: Ptr ty -> Size ty -> Ptr ty
+plusPtrSize ptr (Size z) = ptr `plusPtr` z
