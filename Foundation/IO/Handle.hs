@@ -10,7 +10,7 @@ module Foundation.IO.Handle
 
 import           GHC.MVar
 import           Control.Monad (when)
-import           Control.Concurrent.MVar (withMVar, modifyMVar)
+import           Control.Concurrent.MVar (withMVar, modifyMVar, readMVar)
 import           Foreign.C.Types
 import           Foreign.C.Error hiding (throwErrno)
 import           System.Posix.Internals hiding (FD)
