@@ -15,6 +15,7 @@ testConduit :: TestTree
 testConduit = testGroup "Conduit"
     [ testCase "sourceHandle gives same data as readFile" testSourceFile
     , testCase "sourceHandle/sinkHandle copies data" testCopyFile
+    , testCase "sourceFile/sinkFile copies data" testCopyFileRes
     ]
   where
     testSourceFile :: Assertion
@@ -31,6 +32,15 @@ testConduit = testGroup "Conduit"
             dst = "temp-file" -- FIXME some temp file API?
         withFile src ReadMode $ \hin -> withFile dst WriteMode $ \hout ->
             runConduit $ sourceHandle hin .| sinkHandle hout
+        orig <- readFile src
+        new <- readFile dst
+        assertEqual "copied foundation.cabal contents" orig new
+
+    testCopyFileRes :: Assertion
+    testCopyFileRes = do
+        let src = "foundation.cabal"
+            dst = "temp-file" -- FIXME some temp file API?
+        runConduitRes $ sourceFile src .| sinkFile dst
         orig <- readFile src
         new <- readFile dst
         assertEqual "copied foundation.cabal contents" orig new

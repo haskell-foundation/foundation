@@ -6,6 +6,7 @@ module Foundation.Monad
     , MonadFailure(..)
     , MonadThrow(..)
     , MonadCatch(..)
+    , MonadBracket(..)
     , MonadTrans(..)
     , Identity(..)
     ) where

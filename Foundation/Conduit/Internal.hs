@@ -7,27 +7,34 @@
 -- Taken from the conduit package almost verbatim, and
 -- Copyright (c) 2012 Michael Snoyman
 --
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE Rank2Types #-}
 module Foundation.Conduit.Internal
     ( Pipe(..)
     , Conduit(..)
     , ZipSink(..)
-    --, ResourceT(..)
+    , ResourceT(..)
+    , MonadResource(..)
+    , runResourceT
     , await
     , yield
     , yieldOr
     , leftover
     , runConduit
-    --, runConduitRes
+    , runConduitRes
     , runConduitPure
     , fuse
-    --, bracketConduit
+    , bracketConduit
     ) where
 
 import Foundation.Internal.Base hiding (throw)
 import Foundation.Monad
-import Control.Monad ((>=>), liftM)
+import Foundation.Numerical
+import Foundation.Primitive.Monad
+import Control.Monad ((>=>), liftM, void, mapM_, join)
+import Control.Exception (SomeException, mask_)
+import Data.IORef (atomicModifyIORef)
 
 -- | A pipe producing and consuming values
 --
@@ -161,6 +168,21 @@ runConduit (Conduit f) = runPipe (f Done)
 runConduitPure :: Conduit () () Identity r -> r
 runConduitPure = runIdentity . runConduit
 
+-- | Run a conduit pipeline in a 'ResourceT' context for acquiring resources.
+runConduitRes :: (MonadBracket m, MonadIO m) => Conduit () () (ResourceT m) r -> m r
+runConduitRes = runResourceT . runConduit
+
+bracketConduit :: MonadResource m
+               => IO a
+               -> (a -> IO b)
+               -> (a -> Conduit i o m r)
+               -> Conduit i o m r
+bracketConduit acquire cleanup inner = do
+    (resource, release) <- allocate acquire cleanup
+    result <- inner resource
+    release
+    return result
+
 -- | Internal: run a @Pipe@
 runPipe :: Monad m => Pipe () () () () m r -> m r
 runPipe =
@@ -269,3 +291,100 @@ injectLeftovers =
     go _ (Done r) = Done r
     go ls (PipeM mp) = PipeM (liftM (go ls) mp)
     go ls (Leftover p l) = go (l:ls) p
+
+---------------------
+-- ResourceT
+---------------------
+newtype ResourceT m a = ResourceT { unResourceT :: PrimVar IO ReleaseMap -> m a }
+instance Functor m => Functor (ResourceT m) where
+    fmap f (ResourceT m) = ResourceT $ \r -> fmap f (m r)
+instance Applicative m => Applicative (ResourceT m) where
+    pure = ResourceT . const . pure
+    ResourceT mf <*> ResourceT ma = ResourceT $ \r ->
+        mf r <*> ma r
+instance Monad m => Monad (ResourceT m) where
+#if !MIN_VERSION_base(4,8,0)
+    return = ResourceT . const . return
+#endif
+    ResourceT ma >>= f = ResourceT $ \r -> do
+        a <- ma r
+        let ResourceT f' = f a
+        f' r
+instance MonadTrans ResourceT where
+    lift = ResourceT . const
+instance MonadIO m => MonadIO (ResourceT m) where
+    liftIO = lift . liftIO
+instance MonadThrow m => MonadThrow (ResourceT m) where
+    throw = lift . throw
+instance MonadCatch m => MonadCatch (ResourceT m) where
+    catch (ResourceT f) g = ResourceT $ \env -> f env `catch` \e -> unResourceT (g e) env
+instance MonadBracket m => MonadBracket (ResourceT m) where
+    generalBracket acquire onSuccess onExc inner = ResourceT $ \env -> generalBracket
+        (unResourceT acquire env)
+        (\x y -> unResourceT (onSuccess x y) env)
+        (\x y -> unResourceT (onExc x y) env)
+        (\x -> unResourceT (inner x) env)
+
+data ReleaseMap =
+    ReleaseMap !NextKey !RefCount ![(Word, (ReleaseType -> IO ()))] -- FIXME use a proper Map?
+  | ReleaseMapClosed
+
+data ReleaseType = ReleaseEarly
+                 | ReleaseNormal
+                 | ReleaseException
+
+type RefCount = Word
+type NextKey = Word
+
+runResourceT :: (MonadBracket m, MonadIO m) => ResourceT m a -> m a
+runResourceT (ResourceT inner) = generalBracket
+    (liftIO $ primVarNew $ ReleaseMap maxBound (minBound + 1) [])
+    (\state _res -> liftIO $ cleanup state ReleaseNormal)
+    (\state _exc -> liftIO $ cleanup state ReleaseException)
+    inner
+  where
+    cleanup istate rtype = do
+        mm <- atomicModifyIORef istate $ \rm ->
+            case rm of
+                ReleaseMap nk rf m ->
+                    let rf' = rf - 1
+                    in if rf' == minBound
+                            then (ReleaseMapClosed, Just m)
+                            else (ReleaseMap nk rf' m, Nothing)
+                ReleaseMapClosed -> error "runResourceT: cleanup on ReleaseMapClosed"
+        case mm of
+            Just m -> mapM_ (\(_, x) -> ignoreExceptions (x rtype)) m
+            Nothing -> return ()
+      where
+        ignoreExceptions io = void io `catch` (\(_ :: SomeException) -> return ())
+
+allocate :: (MonadResource m, MonadIO n) => IO a -> (a -> IO b) -> m (a, n ())
+allocate acquire release = liftResourceT $ ResourceT $ \istate -> liftIO $ mask_ $ do
+    a <- acquire
+    key <- atomicModifyIORef istate $ \rm ->
+        case rm of
+            ReleaseMap key rf m ->
+                ( ReleaseMap (key - 1) rf ((key, const $ void $ release a) : m)
+                , key
+                )
+            ReleaseMapClosed -> error "allocate: ReleaseMapClosed"
+    let release' = join $ atomicModifyIORef istate $ \rm ->
+            case rm of
+                ReleaseMap nextKey rf m ->
+                    let loop front [] = (ReleaseMap nextKey rf (front []), return ())
+                        loop front ((key', action):rest)
+                            | key == key' =
+                                ( ReleaseMap nextKey rf (front rest)
+                                , action ReleaseEarly
+                                )
+                            | otherwise = loop (front . ((key', action):)) rest
+                     in loop id m
+                ReleaseMapClosed -> error "allocate: ReleaseMapClosed (2)"
+    return (a, liftIO release')
+
+class MonadIO m => MonadResource m where
+    liftResourceT :: ResourceT IO a -> m a
+instance MonadIO m => MonadResource (ResourceT m) where
+    liftResourceT (ResourceT f) = ResourceT (liftIO . f)
+instance MonadResource m => MonadResource (Conduit i o m) where
+    liftResourceT = lift . liftResourceT
