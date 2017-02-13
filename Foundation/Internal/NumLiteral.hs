@@ -104,6 +104,14 @@ instance HasNegation Word64 where
     negate = Prelude.negate
 instance HasNegation CInt where
     negate = Prelude.negate
+instance HasNegation Float where
+    negate = Prelude.negate
+instance HasNegation Double where
+    negate = Prelude.negate
+instance HasNegation CFloat where
+    negate = Prelude.negate
+instance HasNegation CDouble where
+    negate = Prelude.negate
 
 instance Fractional Rational where
     fromRational a = Prelude.fromRational a
