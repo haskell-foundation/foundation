@@ -182,6 +182,8 @@ import qualified Data.List
 
 import           Data.Monoid ((<>))
 
+default (Prelude.Integer, Prelude.Double)
+
 -- | Alias to Prelude String ([Char]) for compatibility purpose
 type LString = Prelude.String
 
