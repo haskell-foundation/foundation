@@ -6,6 +6,8 @@
 * Export `ifThenElse`
 * Use the proper `String` type for error instead of `[Char]`
 * Add `any` and `all` to `Collection`
+* Add defaulting to Integer and Double for numerical types
+* Add negation for Double and Float (and their associated C types)
 
 ## 0.0.3
 
