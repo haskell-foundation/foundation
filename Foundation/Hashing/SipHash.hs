@@ -17,6 +17,7 @@ module Foundation.Hashing.SipHash
     , Sip2_4
     ) where
 
+import           Data.Bits
 import           Foundation.Internal.Base
 import           Foundation.Internal.Types
 import           Foundation.Primitive.Types
@@ -25,7 +26,6 @@ import qualified Foundation.Array.Unboxed as A
 import           Foundation.Array
 import           Foundation.Numerical
 import           Foundation.Bits
-import           Data.Bits
 import qualified Prelude
 import           GHC.ST
 import           GHC.Prim
