@@ -131,6 +131,7 @@ Library
                      Foundation.Numerical.Floating
                      Foundation.IO.File
                      Foundation.IO.Terminal
+                     Foundation.Primitive.Base16
                      Foundation.Primitive.Types
                      Foundation.Primitive.Monad
                      Foundation.Primitive.Utils
@@ -210,6 +211,7 @@ Test-Suite test-foundation
                      Test.Foundation.String
                      Test.Foundation.Storable
                      Test.Foundation.Random
+                     Test.Foundation.Misc
                      Imports
   Default-Extensions: NoImplicitPrelude
                       RebindableSyntax

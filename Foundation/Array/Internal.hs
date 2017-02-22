@@ -16,6 +16,7 @@ module Foundation.Array.Internal
     , fromForeignPtr
     , withPtr
     , recast
+    , toHexadecimal
     ) where
 
 import           Foundation.Array.Unboxed
