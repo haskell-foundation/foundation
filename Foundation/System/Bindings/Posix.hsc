@@ -118,3 +118,6 @@ sysPosixMunlock _ _ = return (-1)
 
 foreign import ccall unsafe "sysconf"
     sysPosixSysconf :: CSysconfName -> CLong
+
+foreign import ccall unsafe "ftruncate"
+    sysPosixFtruncate :: CFd -> COff -> IO CInt
