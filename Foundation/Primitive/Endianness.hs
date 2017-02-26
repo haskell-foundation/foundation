@@ -29,11 +29,15 @@ import Foundation.System.Info (endianness, Endianness(..))
 
 -- | Little Endian value
 newtype LE a = LE { unLE :: a }
-  deriving (Show, Eq, Ord, Typeable)
+  deriving (Show, Eq, Typeable)
+instance (ByteSwap a, Ord a) => Ord (LE a) where
+    compare e1 e2 = compare (fromLE e1) (fromLE e2)
 
 -- | Big Endian value
 newtype BE a = BE { unBE :: a }
-  deriving (Show, Eq, Ord, Typeable)
+  deriving (Show, Eq, Typeable)
+instance (ByteSwap a, Ord a) => Ord (BE a) where
+    compare e1 e2 = compare (fromBE e1) (fromBE e2)
 
 -- | Convert a value in cpu endianess to big endian
 toBE :: ByteSwap a => a -> BE a
