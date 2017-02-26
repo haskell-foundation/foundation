@@ -132,6 +132,7 @@ Library
                      Foundation.IO.File
                      Foundation.IO.Terminal
                      Foundation.Primitive.Base16
+                     Foundation.Primitive.Endianness
                      Foundation.Primitive.Types
                      Foundation.Primitive.Monad
                      Foundation.Primitive.Utils
