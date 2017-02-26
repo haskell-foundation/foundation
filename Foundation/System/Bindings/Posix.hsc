@@ -116,6 +116,9 @@ sysPosixMunlock :: Ptr a -> CSize -> IO CInt
 sysPosixMunlock _ _ = return (-1)
 #endif
 
+sysPosix_SC_PAGESIZE :: CSysconfName
+sysPosix_SC_PAGESIZE = (#const _SC_PAGESIZE)
+
 foreign import ccall unsafe "sysconf"
     sysPosixSysconf :: CSysconfName -> CLong
 
