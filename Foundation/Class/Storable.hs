@@ -9,6 +9,8 @@
 --
 --
 
+{-# LANGUAGE FlexibleInstances #-}
+
 module Foundation.Class.Storable
     ( Storable(..)
     , StorableFixed(..)
@@ -27,6 +29,7 @@ import Foundation.Internal.Base
 import Foundation.Internal.Types
 import Foundation.Internal.Proxy
 import Foundation.Primitive.Types
+import Foundation.Primitive.Endianness
 import Foundation.Numerical
 
 toProxy :: proxy ty -> Proxy ty
@@ -85,12 +88,30 @@ instance Storable Word8 where
 instance Storable Word16 where
     peek (Ptr addr) = primAddrRead addr (Offset 0)
     poke (Ptr addr) = primAddrWrite addr (Offset 0)
+instance Storable (BE Word16) where
+    peek (Ptr addr) = BE <$> primAddrRead addr (Offset 0)
+    poke (Ptr addr) = primAddrWrite addr (Offset 0) . unBE
+instance Storable (LE Word16) where
+    peek (Ptr addr) = LE <$> primAddrRead addr (Offset 0)
+    poke (Ptr addr) = primAddrWrite addr (Offset 0) . unLE
 instance Storable Word32 where
     peek (Ptr addr) = primAddrRead addr (Offset 0)
     poke (Ptr addr) = primAddrWrite addr (Offset 0)
+instance Storable (BE Word32) where
+    peek (Ptr addr) = BE <$> primAddrRead addr (Offset 0)
+    poke (Ptr addr) = primAddrWrite addr (Offset 0) . unBE
+instance Storable (LE Word32) where
+    peek (Ptr addr) = LE <$> primAddrRead addr (Offset 0)
+    poke (Ptr addr) = primAddrWrite addr (Offset 0) . unLE
 instance Storable Word64 where
     peek (Ptr addr) = primAddrRead addr (Offset 0)
     poke (Ptr addr) = primAddrWrite addr (Offset 0)
+instance Storable (BE Word64) where
+    peek (Ptr addr) = BE <$> primAddrRead addr (Offset 0)
+    poke (Ptr addr) = primAddrWrite addr (Offset 0) . unBE
+instance Storable (LE Word64) where
+    peek (Ptr addr) = LE <$> primAddrRead addr (Offset 0)
+    poke (Ptr addr) = primAddrWrite addr (Offset 0) . unLE
 instance Storable (Ptr a) where
     peek = Foreign.Storable.peek
     poke = Foreign.Storable.poke
@@ -122,10 +143,28 @@ instance StorableFixed Word8 where
 instance StorableFixed Word16 where
     size      = primSizeInBytes . toProxy
     alignment = primSizeInBytes . toProxy
+instance StorableFixed (BE Word16) where
+    size      = primSizeInBytes . toProxy
+    alignment = primSizeInBytes . toProxy
+instance StorableFixed (LE Word16) where
+    size      = primSizeInBytes . toProxy
+    alignment = primSizeInBytes . toProxy
 instance StorableFixed Word32 where
     size      = primSizeInBytes . toProxy
     alignment = primSizeInBytes . toProxy
+instance StorableFixed (BE Word32) where
+    size      = primSizeInBytes . toProxy
+    alignment = primSizeInBytes . toProxy
+instance StorableFixed (LE Word32) where
+    size      = primSizeInBytes . toProxy
+    alignment = primSizeInBytes . toProxy
 instance StorableFixed Word64 where
+    size      = primSizeInBytes . toProxy
+    alignment = primSizeInBytes . toProxy
+instance StorableFixed (BE Word64) where
+    size      = primSizeInBytes . toProxy
+    alignment = primSizeInBytes . toProxy
+instance StorableFixed (LE Word64) where
     size      = primSizeInBytes . toProxy
     alignment = primSizeInBytes . toProxy
 instance StorableFixed (Ptr a) where
