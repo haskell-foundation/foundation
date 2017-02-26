@@ -18,6 +18,7 @@ import Foundation.Hashing.Hashable
 import Foundation.Internal.Base
 import Foundation.Internal.Proxy
 import Foundation.String (String)
+import Foundation.Primitive
 import Foundation.Bits
 
 -- | IPv4 data type
@@ -28,8 +29,8 @@ instance Show IPv4 where
 instance IsString IPv4 where
     fromString = fromLString
 instance Storable IPv4 where
-    peek ptr = IPv4 . ntohl <$> peek (castPtr ptr)
-    poke ptr (IPv4 w) = poke (castPtr ptr) (htonl w)
+    peek ptr = IPv4 . fromBE <$> peek (castPtr ptr)
+    poke ptr (IPv4 w) = poke (castPtr ptr) (toBE w)
 instance StorableFixed IPv4 where
     size      _ = size      (Proxy :: Proxy Word32)
     alignment _ = alignment (Proxy :: Proxy Word32)
@@ -39,7 +40,7 @@ toString = fromList . toLString
 
 fromLString :: [Char] -> IPv4
 fromLString str = unsafePerformIO $ withCString str $ \cstr ->
-    IPv4 . ntohl <$> c_inet_addr cstr
+    IPv4 . fromBE <$> c_inet_addr cstr
 
 toLString :: IPv4 -> [Char]
 toLString ipv4 =
@@ -73,4 +74,4 @@ toTuple (IPv4 w) =
 
 
 foreign import ccall unsafe "inet_addr"
-    c_inet_addr :: CString -> IO Word32
+    c_inet_addr :: CString -> IO (BE Word32)
