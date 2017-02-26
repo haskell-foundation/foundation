@@ -72,6 +72,12 @@ instance Signed Int32 where
 instance Signed Int64 where
     abs = Prelude.abs
     signum = orderingToSign . compare 0
+instance Signed Float where
+    abs = Prelude.abs
+    signum = orderingToSign . compare 0
+instance Signed Double where
+    abs = Prelude.abs
+    signum = orderingToSign . compare 0
 
 class IntegralRounding a where
     -- | Round up, to the next integral.
