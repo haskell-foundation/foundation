@@ -12,7 +12,11 @@ module Foundation.Internal.ByteSwap
     ( byteSwap16
     , byteSwap32
     , byteSwap64
+    , ByteSwap
+    , byteSwap
     ) where
+
+import Foundation.Internal.Base (Word16, Word32, Word64)
 
 #if MIN_VERSION_base(4,7,0)
 
@@ -64,3 +68,15 @@ byteSwap64 w = w1 .|. w2 .|. w3 .|. w4 .|. w5 .|. w6 .|. w7 .|. w8
     w7 = (w `unsafeShiftL`  8) .&. 0x000000FF00000000
     w8 = (w `unsafeShiftR`  8) .&. 0x00000000FF000000
 #endif
+
+-- | Class of types that can be byte-swapped.
+--
+-- e.g. Word16, Word32, Word64
+class ByteSwap a where
+    byteSwap :: a -> a
+instance ByteSwap Word16 where
+    byteSwap = byteSwap16
+instance ByteSwap Word32 where
+    byteSwap = byteSwap32
+instance ByteSwap Word64 where
+    byteSwap = byteSwap64
