@@ -12,6 +12,7 @@ import Foundation
 import Foundation.Collection
 import Foundation.Array
 import Foundation.Foreign
+import Foundation.Class.Storable
 
 import Test.Tasty
 import Test.Tasty.QuickCheck
@@ -64,7 +65,7 @@ testChunkedUArrayRefs = testGroup "ChunkedArray"
         ]
     ]
 
-testUnboxedForeign :: (PrimType e, Show e, Element a ~ e, Storable e)
+testUnboxedForeign :: (PrimType e, Show e, Element a ~ e, StorableFixed e)
                    => Proxy a -> Gen e -> [TestTree]
 testUnboxedForeign proxy genElement =
     [ testProperty "equal" $ withElementsM $ \fptr l ->

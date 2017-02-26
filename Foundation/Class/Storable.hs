@@ -24,6 +24,7 @@ import GHC.Types (Double, Float)
 import Foreign.Ptr (castPtr)
 import qualified Foreign.Ptr
 import qualified Foreign.Storable (peek, poke, sizeOf, alignment)
+import           Foreign.C.Types (CChar, CUChar)
 
 import Foundation.Internal.Base
 import Foundation.Internal.Types
@@ -61,6 +62,12 @@ peekOff ptr off = peek (ptr `plusPtr` offsetAsSize off)
 pokeOff :: StorableFixed a => Ptr a -> Offset a -> a -> IO ()
 pokeOff ptr off = poke (ptr `plusPtr` offsetAsSize off)
 
+instance Storable CChar where
+    peek (Ptr addr) = primAddrRead addr (Offset 0)
+    poke (Ptr addr) = primAddrWrite addr (Offset 0)
+instance Storable CUChar where
+    peek (Ptr addr) = primAddrRead addr (Offset 0)
+    poke (Ptr addr) = primAddrWrite addr (Offset 0)
 instance Storable Char where
     peek (Ptr addr) = primAddrRead addr (Offset 0)
     poke (Ptr addr) = primAddrWrite addr (Offset 0)
@@ -116,6 +123,12 @@ instance Storable (Ptr a) where
     peek = Foreign.Storable.peek
     poke = Foreign.Storable.poke
 
+instance StorableFixed CChar where
+    size      = primSizeInBytes . toProxy
+    alignment = primSizeInBytes . toProxy
+instance StorableFixed CUChar where
+    size      = primSizeInBytes . toProxy
+    alignment = primSizeInBytes . toProxy
 instance StorableFixed Char where
     size      = primSizeInBytes . toProxy
     alignment = primSizeInBytes . toProxy

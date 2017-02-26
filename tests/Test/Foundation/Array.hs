@@ -11,6 +11,7 @@ import Control.Monad
 import Foundation
 import Foundation.Collection
 import Foundation.Foreign
+import Foundation.Class.Storable
 
 import Test.Tasty
 import Test.Tasty.QuickCheck
@@ -66,10 +67,16 @@ testArrayRefs = testGroup "Array"
         , testCollection "Array(Integer)" (Proxy :: Proxy (Array Integer)) arbitrary
         , testCollection "Array(CChar)"   (Proxy :: Proxy (Array CChar))  (CChar <$> arbitrary)
         , testCollection "Array(CUChar)"  (Proxy :: Proxy (Array CUChar)) (CUChar <$> arbitrary)
+        , testCollection "Array(BE W16)"  (Proxy :: Proxy (Array (BE Word16))) (toBE <$> arbitrary)
+        , testCollection "Array(BE W32)"  (Proxy :: Proxy (Array (BE Word32))) (toBE <$> arbitrary)
+        , testCollection "Array(BE W64)"  (Proxy :: Proxy (Array (BE Word64))) (toBE <$> arbitrary)
+        , testCollection "Array(LE W16)"  (Proxy :: Proxy (Array (LE Word16))) (toLE <$> arbitrary)
+        , testCollection "Array(LE W32)"  (Proxy :: Proxy (Array (LE Word32))) (toLE <$> arbitrary)
+        , testCollection "Array(LE W64)"  (Proxy :: Proxy (Array (LE Word64))) (toLE <$> arbitrary)
         ]
     ]
 
-testUnboxedForeign :: (PrimType e, Show e, Element a ~ e, Storable e)
+testUnboxedForeign :: (PrimType e, Show e, Element a ~ e, StorableFixed e)
                    => Proxy a -> Gen e -> [TestTree]
 testUnboxedForeign proxy genElement =
     [ testProperty "equal" $ withElementsM $ \fptr l ->
