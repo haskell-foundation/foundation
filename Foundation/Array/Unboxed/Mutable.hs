@@ -12,6 +12,7 @@
 --
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Foundation.Array.Unboxed.Mutable
     ( MUArray(..)
     -- * Property queries
@@ -30,6 +31,7 @@ module Foundation.Array.Unboxed.Mutable
     , unsafeRead
     , write
     , read
+    , withMutablePtr
     ) where
 
 import           GHC.Prim
@@ -65,6 +67,9 @@ mutableArrayProxyTy _ = Proxy
 sizeInMutableBytesOfContent :: PrimType ty => MUArray ty s -> Size8
 sizeInMutableBytesOfContent = primSizeInBytes . mutableArrayProxyTy
 {-# INLINE sizeInMutableBytesOfContent #-}
+
+mvectorProxyTy :: MUArray ty s -> Proxy ty
+mvectorProxyTy _ = Proxy
 
 -- | read a cell in a mutable array.
 --
@@ -219,3 +224,49 @@ copyAddr (MUVecAddr start _ fptr) od src os sz =
 mutableLength :: PrimType ty => MUArray ty st -> Int
 mutableLength (MUVecMA _ (Size end) _ _) = end
 mutableLength (MUVecAddr _ (Size end) _) = end
+
+withMutablePtrHint :: (PrimMonad prim, PrimType ty)
+                   => Bool
+                   -> Bool
+                   -> MUArray ty (PrimState prim)
+                   -> (Ptr ty -> prim a)
+                   -> prim a
+withMutablePtrHint _ _ vec@(MUVecAddr start _ fptr)  f =
+    withFinalPtr fptr (\ptr -> f (ptr `plusPtr` os))
+  where
+    sz           = primSizeInBytes (mvectorProxyTy vec)
+    !(Offset os) = offsetOfE sz start
+withMutablePtrHint skipCopy skipCopyBack vec@(MUVecMA start vecSz pstatus a) f
+    | isPinned pstatus = mutableByteArrayContent a >>= \ptr -> f (ptr `plusPtr` os)
+    | otherwise        = do
+        trampoline <- newPinned vecSz
+        if not skipCopy
+            then copyAt trampoline 0 vec 0 vecSz
+            else pure ()
+        r <- withMutablePtr trampoline f
+        if not skipCopyBack
+            then copyAt vec 0 trampoline 0 vecSz
+            else pure ()
+        pure r
+  where
+    !(Offset os) = offsetOfE sz start
+    sz           = primSizeInBytes (mvectorProxyTy vec)
+
+    mutableByteArrayContent :: PrimMonad prim => MutableByteArray# (PrimState prim) -> prim (Ptr ty)
+    mutableByteArrayContent mba = primitive $ \s1 ->
+        case unsafeFreezeByteArray# mba s1 of
+            (# s2, ba #) -> (# s2, Ptr (byteArrayContents# ba) #)
+
+-- | Create a pointer on the beginning of the mutable array
+-- and call a function 'f'.
+--
+-- The mutable buffer can be mutated by the 'f' function
+-- and the change will be reflected in the mutable array
+--
+-- If the mutable array is unpinned, a trampoline buffer
+-- is created and the data is only copy when 'f' return.
+withMutablePtr :: (PrimMonad prim, PrimType ty)
+               => MUArray ty (PrimState prim)
+               -> (Ptr ty -> prim a)
+               -> prim a
+withMutablePtr = withMutablePtrHint False False

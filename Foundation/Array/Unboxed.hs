@@ -510,14 +510,6 @@ withPtr vec@(UVecBA start _ pstatus a) f
     sz           = primSizeInBytes (vectorProxyTy vec)
     !(Offset os) = offsetOfE sz start
 
-withMutablePtr :: (PrimMonad prim, PrimType ty)
-               => MUArray ty (PrimState prim)
-               -> (Ptr ty -> prim a)
-               -> prim a
-withMutablePtr muvec f = do
-    v <- unsafeFreeze muvec
-    withPtr v f
-
 recast :: (PrimType a, PrimType b) => UArray a -> UArray b
 recast = recast_ Proxy Proxy
   where
