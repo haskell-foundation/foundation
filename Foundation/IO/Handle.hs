@@ -17,9 +17,11 @@ import           System.Posix.Internals hiding (FD)
 import           System.Posix.Types (CSsize(..), CMode(..))
 import           Foundation.Internal.Base
 import           Foundation.Internal.Types
+import           Foundation.Primitive.Monad
 import           Foundation.Numerical
 import qualified Foundation.Array.Unboxed as UA
 import           Foundation.Array.Unboxed
+import           Foundation.Array.Unboxed.Mutable
 import           Foundation.String.UTF8
 import           Foundation.VFS.FilePath
 
@@ -68,51 +70,52 @@ withHandle (Handle handle) f = withMVar handle $ \cfd -> do
     when (cfd == invalidFD) $ throwIO HandleClosed
     f cfd
 
-hGet :: Handle -> Size Word8 -> IO (UArray Word8)
-hGet handle sz =
-    withHandle handle $ \cfd ->
-    createFromIO sz $ \ptr -> do
-        loop cfd c_read ptr sz
+ioPtrRetryLoop :: (Ptr Word8 -> CSize -> IO CSsize)
+               -> Ptr Word8
+               -> Size Word8
+               -> IO (Size Word8)
+ioPtrRetryLoop ioFct ptr sz = loop ptr sz
   where
-    loop cfd !readFct !p !remaining
+    loop !p !remaining
         | remaining == 0   = return sz
         | otherwise        = do
-            ssz <- readFct cfd p (csizeOfSize remaining)
+            ssz <- ioFct p (csizeOfSize remaining)
             if ssz == minus1SSize
                 then do
                     err <- getErrno
                     case err of
-                        _ | err == eAGAIN      -> loop cfd readFct p remaining
-                          | err == eINTR       -> loop cfd readFct p remaining
-                          | err == eWOULDBLOCK -> loop cfd readFct p remaining
+                        _ | err == eAGAIN      -> loop p remaining
+                          | err == eINTR       -> loop p remaining
+                          | err == eWOULDBLOCK -> loop p remaining
                           | otherwise          -> throwErrno err
                 else if ssz == CSsize 0
                         then return (sz - remaining)
                         else
-                            let read = sizeOfCSSize ssz
-                             in loop cfd readFct (p `plusPtrSize` read) (remaining - read)
+                            let got = sizeOfCSSize ssz
+                             in loop (p `plusPtrSize` got) (remaining - got)
+
+hGetBuf :: Handle -> MUArray Word8 (PrimState IO) -> Size Word8 -> IO (Size Word8)
+hGetBuf handle buf sz =
+    -- check out of bounds
+    withHandle handle $ \cfd ->
+    withMutablePtr buf $ \ptr ->
+        ioPtrRetryLoop (c_read cfd) ptr sz
+
+hGet :: Handle -> Size Word8 -> IO (UArray Word8)
+hGet handle sz =
+    withHandle handle $ \cfd ->
+    createFromIO sz $ \ptr -> do
+        ioPtrRetryLoop (c_read cfd) ptr sz
 
 hPut :: Handle -> UArray Word8 -> IO ()
 hPut handle ba =
     withHandle handle $ \cfd ->
-    withPtr ba        $ \ptr ->
-        loop cfd ptr (Size $ UA.length ba)
+    withPtr ba        $ \ptr -> do
+        r <- ioPtrRetryLoop (c_write cfd) ptr totalSize
+        -- TODO check returned sized
+        return ()
   where
-    loop !cfd !p !remaining
-        | remaining == 0 = return ()
-        | otherwise      = do
-            ssz <- c_write cfd p (csizeOfSize remaining)
-            if ssz == minus1SSize
-                then do
-                    err <- getErrno
-                    case err of
-                        _ | err == eAGAIN      -> loop cfd p remaining
-                          | err == eINTR       -> loop cfd p remaining
-                          | err == eWOULDBLOCK -> loop cfd p remaining
-                          | otherwise          -> throwErrno err
-                else
-                    let written = sizeOfCSSize ssz
-                     in loop cfd (p `plusPtrSize` written) (remaining - written)
+    totalSize = Size $ UA.length ba
 
 data SeekParam = SeekFromBeginning
                | SeekFromEnd
