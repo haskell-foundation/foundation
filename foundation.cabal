@@ -80,6 +80,7 @@ Library
                      Foundation.Parser
                      Foundation.Random
                      Foundation.System.Entropy
+                     Foundation.System.Bindings
   Other-modules:     Foundation.Boot.Builder
                      Foundation.Boot.List
                      Foundation.String.Internal
@@ -157,11 +158,15 @@ Library
   C-sources:         cbits/foundation_random.c
 
   if os(windows)
+    Exposed-modules: Foundation.System.Bindings.Windows
     Other-modules:   Foundation.Foreign.MemoryMap.Windows
                      Foundation.System.Entropy.Windows
   else
+    Exposed-modules: Foundation.System.Bindings.Posix
     Other-modules:   Foundation.Foreign.MemoryMap.Posix
                      Foundation.System.Entropy.Unix
+  if os(linux)
+    Exposed-modules: Foundation.System.Bindings.Linux
 
   if impl(ghc >= 7.10)
     Exposed-modules: Foundation.Tuple.Nth
