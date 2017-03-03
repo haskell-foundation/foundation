@@ -8,6 +8,7 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE CPP #-}
 module Foundation.Primitive.Types
     ( PrimType(..)
@@ -221,36 +222,6 @@ instance PrimType Word16 where
     {-# INLINE primAddrRead #-}
     primAddrWrite addr (Offset (I# n)) (W16# w) = primitive $ \s1 -> (# writeWord16OffAddr# addr n w s1, () #)
     {-# INLINE primAddrWrite #-}
-instance PrimType (BE Word16) where
-    primSizeInBytes _ = Size 2
-    {-# INLINE primSizeInBytes #-}
-    primBaUIndex ba (Offset a) = BE $ primBaUIndex ba (Offset a)
-    {-# INLINE primBaUIndex #-}
-    primMbaURead ba (Offset a) = BE <$> primMbaURead ba (Offset a)
-    {-# INLINE primMbaURead #-}
-    primMbaUWrite mba (Offset a) (BE w) = primMbaUWrite mba (Offset a) w
-    {-# INLINE primMbaUWrite #-}
-    primAddrIndex addr (Offset a) = BE $ primAddrIndex addr (Offset a)
-    {-# INLINE primAddrIndex #-}
-    primAddrRead addr (Offset a) = BE <$> primAddrRead addr (Offset a)
-    {-# INLINE primAddrRead #-}
-    primAddrWrite addr (Offset a) (BE w) = primAddrWrite addr (Offset a) w
-    {-# INLINE primAddrWrite #-}
-instance PrimType (LE Word16) where
-    primSizeInBytes _ = Size 2
-    {-# INLINE primSizeInBytes #-}
-    primBaUIndex ba (Offset a) = LE $ primBaUIndex ba (Offset a)
-    {-# INLINE primBaUIndex #-}
-    primMbaURead ba (Offset a) = LE <$> primMbaURead ba (Offset a)
-    {-# INLINE primMbaURead #-}
-    primMbaUWrite mba (Offset a) (LE w) = primMbaUWrite mba (Offset a) w
-    {-# INLINE primMbaUWrite #-}
-    primAddrIndex addr (Offset a) = LE $ primAddrIndex addr (Offset a)
-    {-# INLINE primAddrIndex #-}
-    primAddrRead addr (Offset a) = LE <$> primAddrRead addr (Offset a)
-    {-# INLINE primAddrRead #-}
-    primAddrWrite addr (Offset a) (LE w) = primAddrWrite addr (Offset a) w
-    {-# INLINE primAddrWrite #-}
 instance PrimType Word32 where
     primSizeInBytes _ = Size 4
     {-# INLINE primSizeInBytes #-}
@@ -266,36 +237,6 @@ instance PrimType Word32 where
     {-# INLINE primAddrRead #-}
     primAddrWrite addr (Offset (I# n)) (W32# w) = primitive $ \s1 -> (# writeWord32OffAddr# addr n w s1, () #)
     {-# INLINE primAddrWrite #-}
-instance PrimType (BE Word32) where
-    primSizeInBytes _ = Size 4
-    {-# INLINE primSizeInBytes #-}
-    primBaUIndex ba (Offset a) = BE $ primBaUIndex ba (Offset a)
-    {-# INLINE primBaUIndex #-}
-    primMbaURead ba (Offset a) = BE <$> primMbaURead ba (Offset a)
-    {-# INLINE primMbaURead #-}
-    primMbaUWrite mba (Offset a) (BE w) = primMbaUWrite mba (Offset a) w
-    {-# INLINE primMbaUWrite #-}
-    primAddrIndex addr (Offset a) = BE $ primAddrIndex addr (Offset a)
-    {-# INLINE primAddrIndex #-}
-    primAddrRead addr (Offset a) = BE <$> primAddrRead addr (Offset a)
-    {-# INLINE primAddrRead #-}
-    primAddrWrite addr (Offset a) (BE w) = primAddrWrite addr (Offset a) w
-    {-# INLINE primAddrWrite #-}
-instance PrimType (LE Word32) where
-    primSizeInBytes _ = Size 4
-    {-# INLINE primSizeInBytes #-}
-    primBaUIndex ba (Offset a) = LE $ primBaUIndex ba (Offset a)
-    {-# INLINE primBaUIndex #-}
-    primMbaURead ba (Offset a) = LE <$> primMbaURead ba (Offset a)
-    {-# INLINE primMbaURead #-}
-    primMbaUWrite mba (Offset a) (LE w) = primMbaUWrite mba (Offset a) w
-    {-# INLINE primMbaUWrite #-}
-    primAddrIndex addr (Offset a) = LE $ primAddrIndex addr (Offset a)
-    {-# INLINE primAddrIndex #-}
-    primAddrRead addr (Offset a) = LE <$> primAddrRead addr (Offset a)
-    {-# INLINE primAddrRead #-}
-    primAddrWrite addr (Offset a) (LE w) = primAddrWrite addr (Offset a) w
-    {-# INLINE primAddrWrite #-}
 instance PrimType Word64 where
     primSizeInBytes _ = Size 8
     {-# INLINE primSizeInBytes #-}
@@ -310,36 +251,6 @@ instance PrimType Word64 where
     primAddrRead addr (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readWord64OffAddr# addr n s1 in (# s2, W64# r #)
     {-# INLINE primAddrRead #-}
     primAddrWrite addr (Offset (I# n)) (W64# w) = primitive $ \s1 -> (# writeWord64OffAddr# addr n w s1, () #)
-    {-# INLINE primAddrWrite #-}
-instance PrimType (BE Word64) where
-    primSizeInBytes _ = Size 8
-    {-# INLINE primSizeInBytes #-}
-    primBaUIndex ba (Offset a) = BE $ primBaUIndex ba (Offset a)
-    {-# INLINE primBaUIndex #-}
-    primMbaURead ba (Offset a) = BE <$> primMbaURead ba (Offset a)
-    {-# INLINE primMbaURead #-}
-    primMbaUWrite mba (Offset a) (BE w) = primMbaUWrite mba (Offset a) w
-    {-# INLINE primMbaUWrite #-}
-    primAddrIndex addr (Offset a) = BE $ primAddrIndex addr (Offset a)
-    {-# INLINE primAddrIndex #-}
-    primAddrRead addr (Offset a) = BE <$> primAddrRead addr (Offset a)
-    {-# INLINE primAddrRead #-}
-    primAddrWrite addr (Offset a) (BE w) = primAddrWrite addr (Offset a) w
-    {-# INLINE primAddrWrite #-}
-instance PrimType (LE Word64) where
-    primSizeInBytes _ = Size 8
-    {-# INLINE primSizeInBytes #-}
-    primBaUIndex ba (Offset a) = LE $ primBaUIndex ba (Offset a)
-    {-# INLINE primBaUIndex #-}
-    primMbaURead ba (Offset a) = LE <$> primMbaURead ba (Offset a)
-    {-# INLINE primMbaURead #-}
-    primMbaUWrite mba (Offset a) (LE w) = primMbaUWrite mba (Offset a) w
-    {-# INLINE primMbaUWrite #-}
-    primAddrIndex addr (Offset a) = LE $ primAddrIndex addr (Offset a)
-    {-# INLINE primAddrIndex #-}
-    primAddrRead addr (Offset a) = LE <$> primAddrRead addr (Offset a)
-    {-# INLINE primAddrRead #-}
-    primAddrWrite addr (Offset a) (LE w) = primAddrWrite addr (Offset a) w
     {-# INLINE primAddrWrite #-}
 instance PrimType Int8 where
     primSizeInBytes _ = Size 1
@@ -479,6 +390,38 @@ instance PrimType CUChar where
     {-# INLINE primAddrRead #-}
     primAddrWrite addr (Offset n) (CUChar w8) = primAddrWrite addr (Offset n) w8
     {-# INLINE primAddrWrite #-}
+
+instance PrimType a => PrimType (LE a) where
+    primSizeInBytes _ = primSizeInBytes (Proxy :: Proxy a)
+    {-# INLINE primSizeInBytes #-}
+    primBaUIndex ba (Offset a) = LE $ primBaUIndex ba (Offset a)
+    {-# INLINE primBaUIndex #-}
+    primMbaURead ba (Offset a) = LE <$> primMbaURead ba (Offset a)
+    {-# INLINE primMbaURead #-}
+    primMbaUWrite mba (Offset a) (LE w) = primMbaUWrite mba (Offset a) w
+    {-# INLINE primMbaUWrite #-}
+    primAddrIndex addr (Offset a) = LE $ primAddrIndex addr (Offset a)
+    {-# INLINE primAddrIndex #-}
+    primAddrRead addr (Offset a) = LE <$> primAddrRead addr (Offset a)
+    {-# INLINE primAddrRead #-}
+    primAddrWrite addr (Offset a) (LE w) = primAddrWrite addr (Offset a) w
+    {-# INLINE primAddrWrite #-}
+instance PrimType a => PrimType (BE a) where
+    primSizeInBytes _ = primSizeInBytes (Proxy :: Proxy a)
+    {-# INLINE primSizeInBytes #-}
+    primBaUIndex ba (Offset a) = BE $ primBaUIndex ba (Offset a)
+    {-# INLINE primBaUIndex #-}
+    primMbaURead ba (Offset a) = BE <$> primMbaURead ba (Offset a)
+    {-# INLINE primMbaURead #-}
+    primMbaUWrite mba (Offset a) (BE w) = primMbaUWrite mba (Offset a) w
+    {-# INLINE primMbaUWrite #-}
+    primAddrIndex addr (Offset a) = BE $ primAddrIndex addr (Offset a)
+    {-# INLINE primAddrIndex #-}
+    primAddrRead addr (Offset a) = BE <$> primAddrRead addr (Offset a)
+    {-# INLINE primAddrRead #-}
+    primAddrWrite addr (Offset a) (BE w) = primAddrWrite addr (Offset a) w
+    {-# INLINE primAddrWrite #-}
+
 
 -- | Cast a Size linked to type A (Size A) to a Size linked to type B (Size B)
 sizeRecast :: (PrimType a, PrimType b) => Size a -> Size b
