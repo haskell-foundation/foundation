@@ -10,6 +10,7 @@ module Test.Foundation.Storable
 
 import Foundation
 import Foundation.Class.Storable
+import Foundation.Primitive
 
 import qualified Foreign.Storable
 import qualified Foreign.Marshal.Alloc
@@ -47,7 +48,27 @@ testForeignStorableRefs = testGroup "Storable"
         , testPropertyStorableFixed "Double" (Proxy :: Proxy Double)
         , testPropertyStorableFixed "Float" (Proxy :: Proxy Float)
         ]
+    , testGroup "Endianness"
+        [ testPropertyBE "Word16" (Proxy :: Proxy Word16)
+        , testPropertyBE "Word32" (Proxy :: Proxy Word32)
+        , testPropertyBE "Word64" (Proxy :: Proxy Word64)
+        ]
     ]
+
+testPropertyBE :: (ByteSwap a, StorableFixed a, Arbitrary a, Eq a, Show a)
+               => LString
+               -> Proxy a
+               -> TestTree
+testPropertyBE name p = testGroup name
+    [ testProperty "fromBE . toBE == id" $ withProxy p $ \a ->
+        fromBE (toBE a) === a
+    , testProperty "fromLE . toLE == id" $ withProxy p $ \a ->
+        fromLE (toLE a) === a
+    ]
+  where
+    withProxy :: (ByteSwap a, StorableFixed a, Arbitrary a, Show a, Eq a)
+              => Proxy a -> (a -> Property) -> (a -> Property)
+    withProxy _ f = f
 
 testPropertyStorable :: (Storable a, Foreign.Storable.Storable a, Arbitrary a, Eq a, Show a)
                      => LString

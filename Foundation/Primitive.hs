@@ -13,7 +13,13 @@
 module Foundation.Primitive
     ( PrimType(..)
     , PrimMonad(..)
+
+    -- * endianess
+    , ByteSwap
+    , LE(..), toLE, fromLE
+    , BE(..), toBE, fromBE
     ) where
 
 import Foundation.Primitive.Types
 import Foundation.Primitive.Monad
+import Foundation.Primitive.Endianness

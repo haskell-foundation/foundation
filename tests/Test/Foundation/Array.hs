@@ -11,6 +11,8 @@ import Control.Monad
 import Foundation
 import Foundation.Collection
 import Foundation.Foreign
+import Foundation.Primitive
+import Foundation.Class.Storable
 
 import Test.Tasty
 import Test.Tasty.QuickCheck
@@ -35,6 +37,12 @@ testArrayRefs = testGroup "Array"
         , testCollection "UArray(F64)" (Proxy :: Proxy (UArray Double)) arbitrary
         , testCollection "UArray(CChar)"  (Proxy :: Proxy (UArray CChar))  (CChar <$> arbitrary)
         , testCollection "UArray(CUChar)" (Proxy :: Proxy (UArray CUChar)) (CUChar <$> arbitrary)
+        , testCollection "UArray(BE W16)" (Proxy :: Proxy (UArray (BE Word16))) (toBE <$> arbitrary)
+        , testCollection "UArray(BE W32)" (Proxy :: Proxy (UArray (BE Word32))) (toBE <$> arbitrary)
+        , testCollection "UArray(BE W64)" (Proxy :: Proxy (UArray (BE Word64))) (toBE <$> arbitrary)
+        , testCollection "UArray(LE W16)" (Proxy :: Proxy (UArray (LE Word16))) (toLE <$> arbitrary)
+        , testCollection "UArray(LE W32)" (Proxy :: Proxy (UArray (LE Word32))) (toLE <$> arbitrary)
+        , testCollection "UArray(LE W64)" (Proxy :: Proxy (UArray (LE Word64))) (toLE <$> arbitrary)
         ]
     , testGroup "Unboxed-Foreign"
         [ testGroup "UArray(W8)"  (testUnboxedForeign (Proxy :: Proxy (UArray Word8))  arbitrary)
@@ -49,6 +57,12 @@ testArrayRefs = testGroup "Array"
         , testGroup "UArray(F64)" (testUnboxedForeign (Proxy :: Proxy (UArray Double)) arbitrary)
         , testGroup "UArray(CChar)"  (testUnboxedForeign (Proxy :: Proxy (UArray CChar))  (CChar <$> arbitrary))
         , testGroup "UArray(CUChar)" (testUnboxedForeign (Proxy :: Proxy (UArray CUChar)) (CUChar <$> arbitrary))
+        , testGroup "UArray(BE W16)" (testUnboxedForeign (Proxy :: Proxy (UArray (BE Word16))) (toBE <$> arbitrary))
+        , testGroup "UArray(BE W32)" (testUnboxedForeign (Proxy :: Proxy (UArray (BE Word32))) (toBE <$> arbitrary))
+        , testGroup "UArray(BE W64)" (testUnboxedForeign (Proxy :: Proxy (UArray (BE Word64))) (toBE <$> arbitrary))
+        , testGroup "UArray(LE W16)" (testUnboxedForeign (Proxy :: Proxy (UArray (LE Word16))) (toLE <$> arbitrary))
+        , testGroup "UArray(LE W32)" (testUnboxedForeign (Proxy :: Proxy (UArray (LE Word32))) (toLE <$> arbitrary))
+        , testGroup "UArray(LE W64)" (testUnboxedForeign (Proxy :: Proxy (UArray (LE Word64))) (toLE <$> arbitrary))
         ]
     , testGroup "Boxed"
         [ testCollection "Array(W8)"  (Proxy :: Proxy (Array Word8))  arbitrary
@@ -66,10 +80,16 @@ testArrayRefs = testGroup "Array"
         , testCollection "Array(Integer)" (Proxy :: Proxy (Array Integer)) arbitrary
         , testCollection "Array(CChar)"   (Proxy :: Proxy (Array CChar))  (CChar <$> arbitrary)
         , testCollection "Array(CUChar)"  (Proxy :: Proxy (Array CUChar)) (CUChar <$> arbitrary)
+        , testCollection "Array(BE W16)"  (Proxy :: Proxy (Array (BE Word16))) (toBE <$> arbitrary)
+        , testCollection "Array(BE W32)"  (Proxy :: Proxy (Array (BE Word32))) (toBE <$> arbitrary)
+        , testCollection "Array(BE W64)"  (Proxy :: Proxy (Array (BE Word64))) (toBE <$> arbitrary)
+        , testCollection "Array(LE W16)"  (Proxy :: Proxy (Array (LE Word16))) (toLE <$> arbitrary)
+        , testCollection "Array(LE W32)"  (Proxy :: Proxy (Array (LE Word32))) (toLE <$> arbitrary)
+        , testCollection "Array(LE W64)"  (Proxy :: Proxy (Array (LE Word64))) (toLE <$> arbitrary)
         ]
     ]
 
-testUnboxedForeign :: (PrimType e, Show e, Element a ~ e, Storable e)
+testUnboxedForeign :: (PrimType e, Show e, Element a ~ e, StorableFixed e)
                    => Proxy a -> Gen e -> [TestTree]
 testUnboxedForeign proxy genElement =
     [ testProperty "equal" $ withElementsM $ \fptr l ->

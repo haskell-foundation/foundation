@@ -6,7 +6,6 @@ module Test.Foundation.Bits
 import Foundation.Bits
 import Imports
 import Foundation
-import Foundation.Numerical
 
 tests = testGroup "Bits"
     [ testProperty "round-up" $ \(Positive m) n' -> n' >= 1 ==>
