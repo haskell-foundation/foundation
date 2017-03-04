@@ -75,6 +75,7 @@ Library
                      Foundation.Monad.Reader
                      Foundation.Monad.State
                      Foundation.Network.IPv4
+                     Foundation.Network.IPv6
                      Foundation.System.Info
                      Foundation.Strict
                      Foundation.Parser
