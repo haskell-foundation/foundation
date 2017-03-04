@@ -103,7 +103,7 @@ import           Foundation.Primitive.Types
 import           Foundation.Primitive.FinalPtr
 import           Foundation.Primitive.Utils
 import           Foundation.Array.Common
-import           Foundation.Array.Unboxed.Mutable
+import           Foundation.Array.Unboxed.Mutable hiding (sub)
 import           Foundation.Numerical
 import           Foundation.Boot.Builder
 import qualified Data.List

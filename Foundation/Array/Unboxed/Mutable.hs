@@ -25,6 +25,7 @@ module Foundation.Array.Unboxed.Mutable
     , newNative
     , mutableForeignMem
     , copyAt
+    , sub
     -- , copyAddr
     -- * Reading and Writing cells
     , unsafeWrite
@@ -135,6 +136,9 @@ newUnpinned n = newFake n Proxy
                 !(Size (I# bytes)) = sizeOfE (primSizeInBytes ty) sz
         {-# INLINE newFake #-}
 
+empty :: (PrimMonad prim, PrimType ty) => prim (MUArray ty (PrimState prim))
+empty = newUnpinned 0
+
 -- | Create a new mutable array of size @n.
 --
 -- When memory for a new array is allocated, we decide if that memory region
@@ -203,6 +207,26 @@ copyAt dst od src os n = loop od os
     loop !(Offset d) !(Offset i)
         | i == endIndex = return ()
         | otherwise     = unsafeRead src i >>= unsafeWrite dst d >> loop (Offset $ d+1) (Offset $ i+1)
+
+sub :: (PrimMonad prim, PrimType ty)
+    => MUArray ty (PrimState prim)
+    -> Int -- The number of elements to drop ahead
+    -> Int -- Then the number of element to retain
+    -> prim (MUArray ty (PrimState prim))
+sub (MUVecMA start sz pstatus mba) dropElems' takeElems
+    | takeElems <= 0 = empty
+    | resultEmpty    = empty
+    | otherwise      = return $ MUVecMA (start `offsetPlusE` dropElems) (min (Size takeElems) (sz - dropElems)) pstatus mba
+  where
+    dropElems = max 0 (Size dropElems')
+    resultEmpty = dropElems >= sz
+sub (MUVecAddr start sz addr) dropElems' takeElems
+    | takeElems <= 0 = empty
+    | resultEmpty    = empty
+    | otherwise      = return $ MUVecAddr (start `offsetPlusE` dropElems) (min (Size takeElems) (sz - dropElems)) addr
+  where
+    dropElems = max 0 (Size dropElems')
+    resultEmpty = dropElems >= sz
 
 {-
 copyAddr :: (PrimMonad prim, PrimType ty)
