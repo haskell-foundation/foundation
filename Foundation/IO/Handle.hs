@@ -2,6 +2,7 @@ module Foundation.IO.Handle
     ( Handle
     , openFile
     , close
+    , hGetBuf
     , hGet
     , hPut
     , hSeek
