@@ -23,8 +23,6 @@ import Foundation.Collection (intercalate, span)
 import Foundation.String (String)
 import Foundation.Bits
 
-type LString = [Char]
-
 -- | IPv6 data type
 data IPv6 = IPv6 {-# UNPACK #-} !Word64 {-# UNPACK #-} !Word64
   deriving (Eq, Ord, Typeable)
@@ -90,23 +88,23 @@ fromLString s =
         Left err        -> error err
         Right (addr, _) -> addr
     where
-        parseInt' :: Either LString (Word16, LString)
+        parseInt' :: Either [Char] (Word16, [Char])
                   -> [Word16]
-                  -> Either LString (IPv6, LString)
+                  -> Either [Char] (IPv6, [Char])
         parseInt' (Left err)           _          = Left err
         parseInt' (Right (w8, xs))     [w7,w6,w5,w4,w3,w2,w1] = Right (fromTuple (w1, w2, w3, w4, w5, w6, w7, w8), xs)
         parseInt' (Right (_,  []))     _          = Left "Not an ipv6 addr"
         parseInt' (Right (w,  ':':xs)) acc        = parseInt' (parseHex xs) (w:acc)
         parseInt' (Right (_,    c:_ )) _          = Left $ "Not an ipv6 addr: unexpected char '" <> [c] <> "'"
 
-        parseHex :: LString
-                 -> Either LString (Word16, LString)
+        parseHex :: [Char]
+                 -> Either [Char] (Word16, [Char])
         parseHex buf =
             case span isHexDigit buf of
                 ([], x:xs) -> case x of
                                 ':' -> Right (0, x:xs)
                                 _   -> Left $ "Not an ipv6 addr: unexpected char '" <> [x] <> "'"
-                (l , xs)   -> let lhs = readHex l :: [(Word16, LString)]
+                (l , xs)   -> let lhs = readHex l :: [(Word16, [Char])]
                               in  case lhs of
                                     [(w, [])] -> Right (w, xs)
                                     _ -> Left "can't fall here"
