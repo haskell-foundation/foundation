@@ -211,6 +211,7 @@ Test-Suite test-foundation
                      Test.Foundation.Bits
                      Test.Foundation.ChunkedUArray
                      Test.Foundation.Network.IPv4
+                     Test.Foundation.Network.IPv6
                      Test.Foundation.Number
                      Test.Foundation.Encoding
                      Test.Foundation.Parser
