@@ -82,7 +82,7 @@ showHex4 c
   | otherwise  = showHex c
 
 showHex :: Word16 -> [Char]
-showHex = Base.printf "%03xh"
+showHex = Base.printf "%03x"
 
 fromLString :: [Char] -> IPv6
 fromLString s =
