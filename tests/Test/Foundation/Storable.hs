@@ -102,7 +102,7 @@ testPropertyStorablePeek _ v = monadicIO $ do
     v' <- run $ Foreign.Marshal.Alloc.alloca $ \ptr -> do
             Foreign.Storable.poke ptr v
             peek ptr
-    assert $ v == v'
+    assertEq v v'
 
 testPropertyStorablePoke :: (Storable a, Foreign.Storable.Storable a, Arbitrary a, Eq a, Show a)
                          => Proxy a
@@ -112,7 +112,13 @@ testPropertyStorablePoke _ v = monadicIO $ do
     v' <- run $ Foreign.Marshal.Alloc.alloca $ \ptr -> do
             poke ptr v
             Foreign.Storable.peek ptr
-    assert $ v == v'
+    assertEq v v'
+
+assertEq a b
+  | a == b = assert True
+  | otherwise = do
+      run $ putStrLn $ show a <> " /= " <> show b
+      assert False
 
 data SomeWhereInArray a = SomeWhereInArray a Int Int
     deriving (Show, Eq)
