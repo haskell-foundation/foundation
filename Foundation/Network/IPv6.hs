@@ -1,3 +1,12 @@
+-- |
+-- Module      : Foundation.Network.IPv6
+-- License     : BSD-style
+-- Maintainer  : Nicolas Di Prima <nicolas@primetype.co.uk>
+-- Stability   : experimental
+-- Portability : portable
+--
+-- IPv6 data type
+--
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -64,6 +73,9 @@ instance StorableFixed IPv6 where
     size      _ = (size      (Proxy :: Proxy Word64)) `scale` 2
     alignment _ = alignment (Proxy :: Proxy Word64)
 
+-- | serialise to human readable IPv6
+--
+-- >>> toString (fromString "0:0:0:0:0:0:0:1" :: IPv6)
 toString :: IPv6 -> String
 toString = fromList . toLString
 
@@ -110,7 +122,7 @@ fromLString s =
                                     _ -> Left "can't fall here"
 
 
-
+-- | create an IPv6 from the given tuple
 fromTuple :: (Word16, Word16, Word16, Word16, Word16, Word16, Word16, Word16)
           -> IPv6
 fromTuple (i1, i2, i3, i4, i5, i6, i7, i8) = IPv6 hi low
@@ -127,6 +139,7 @@ fromTuple (i1, i2, i3, i4, i5, i6, i7, i8) = IPv6 hi low
         .|. (f i7 .<<. 16) .&. 0x00000000FFFF0000
         .|. (f i8        ) .&. 0x000000000000FFFF
 
+-- | decompose an IPv6 into a tuple
 toTuple :: IPv6 -> (Word16,Word16,Word16,Word16,Word16,Word16,Word16,Word16)
 toTuple (IPv6 hi low) =
     (f w1, f w2, f w3, f w4, f w5, f w6, f w7, f w8)
