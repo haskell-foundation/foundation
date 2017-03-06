@@ -140,6 +140,7 @@ library
                      Foundation.Conduit.Internal
                      Foundation.Numerical.Floating
                      Foundation.IO.File
+                     Foundation.IO.Handle.Common
                      Foundation.Monad.MonadIO
                      Foundation.Monad.Exception
                      Foundation.Monad.Transformer

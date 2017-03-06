@@ -5,20 +5,16 @@ module Foundation.IO.Handle.Posix
     , ioWrite
     ) where
 
-import           Foundation.Internal.Base
-import           Foundation.Internal.Types
-import           Foundation.Numerical
+import           Basement.Imports
+import           Basement.Types.OffsetSize
+import           Basement.Types.Ptr
 import           Foreign.C.Types
-import           Foreign.C.Error
-import           Foundation.String
 import           System.Posix.Internals hiding (FD)
-import           System.Posix.Types (CSsize(..), CMode(..))
+import           System.Posix.Types (CSsize(..)) -- , CMode(..))
 import           Foundation.System.Bindings.Hs (sysHsCoreGetErrno)
 import           Foundation.System.Bindings.Posix
+import           Foundation.IO.Handle.Common
 
-data HandleError = HandleError String CInt
-    deriving (Show,Eq,Typeable)
-instance Exception HandleError
 
 -- we don't want CSsize to be HasNegative because technically this is just 1 value.
 minus1SSize :: CSsize
@@ -32,8 +28,8 @@ ioWrite = c_write
 
 ioPtrRetryLoop :: (Ptr Word8 -> CSize -> IO CSsize)
                -> Ptr Word8
-               -> Size Word8
-               -> IO (Size Word8)
+               -> CountOf Word8
+               -> IO (CountOf Word8)
 ioPtrRetryLoop ioFct ptr sz = loop ptr sz
   where
     loop !p !remaining
@@ -47,9 +43,9 @@ ioPtrRetryLoop ioFct ptr sz = loop ptr sz
                         _ | err == sysPosix_EAGAIN      -> loop p remaining
                           | err == sysPosix_EINTR       -> loop p remaining
                           | err == sysPosix_EWOULDBLOCK -> loop p remaining
-                          | otherwise                   -> throwIO (HandleError "io" err)
+                          | otherwise                   -> throwIO (HandleIOError "io" err)
                 else if ssz == CSsize 0
-                        then return (sz - remaining)
+                        then return (sz `sizeSub` remaining)
                         else
                             let got = sizeOfCSSize ssz
-                             in loop (p `plusPtrSize` got) (remaining - got)
+                             in loop (p `ptrPlusSz` got) (remaining `sizeSub` got)

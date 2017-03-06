@@ -16,13 +16,10 @@ import           Control.Concurrent.MVar (withMVar, modifyMVar, readMVar)
 import           Foreign.C.Types
 import           System.Posix.Internals hiding (FD)
 import           System.Posix.Types (CMode(..))
-import           Foundation.Internal.Base
-import           Foundation.Internal.Types
-import           Foundation.Primitive.Monad
-import qualified Foundation.Array.Unboxed as UA
-import           Foundation.Array.Unboxed
-import           Foundation.Array.Unboxed.Mutable
-import           Foundation.String.UTF8
+import           Basement.Imports
+import qualified Basement.UArray as UA
+import           Basement.Monad
+import           Basement.UArray.Mutable
 import           Foundation.VFS.FilePath
 
 #if defined(mingw32_HOST_OS)
@@ -69,28 +66,28 @@ withHandle (Handle handle) f = withMVar handle $ \cfd -> do
     when (cfd == invalidFD) $ throwIO HandleClosed
     f cfd
 
-hGetBuf :: Handle -> MUArray Word8 (PrimState IO) -> Size Word8 -> IO (Size Word8)
+hGetBuf :: Handle -> MUArray Word8 (PrimState IO) -> CountOf Word8 -> IO (CountOf Word8)
 hGetBuf handle buf sz =
     -- check out of bounds
     withHandle handle $ \cfd ->
     withMutablePtr buf $ \ptr ->
         ioPtrRetryLoop (ioRead cfd) ptr sz
 
-hGet :: Handle -> Size Word8 -> IO (UArray Word8)
+hGet :: Handle -> CountOf Word8 -> IO (UArray Word8)
 hGet handle sz =
-    withHandle handle $ \cfd ->
-    createFromIO sz $ \ptr -> do
+    withHandle handle  $ \cfd ->
+    UA.createFromIO sz $ \ptr -> do
         ioPtrRetryLoop (ioRead cfd) ptr sz
 
 hPut :: Handle -> UArray Word8 -> IO ()
 hPut handle ba =
     withHandle handle $ \cfd ->
-    withPtr ba        $ \ptr -> do
+    UA.withPtr ba     $ \ptr -> do
         r <- ioPtrRetryLoop (ioWrite cfd) ptr totalSize
         -- TODO check returned sized
         return ()
   where
-    totalSize = Size $ UA.length ba
+    totalSize = UA.length ba
 
 data SeekParam = SeekFromBeginning
                | SeekFromEnd
