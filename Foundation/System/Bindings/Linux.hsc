@@ -20,7 +20,11 @@ import Foreign.C.Types
 import Foundation.System.Bindings.PosixDef
 import Foundation.System.Bindings.Posix
 
+#define __USE_GNU
+
+#include <sys/types.h>
 #include <sys/inotify.h>
+#include <fcntl.h>
 
 type CInotifyFlags = CInt
 type CInotifyMask = CInt
@@ -28,7 +32,7 @@ type CWatchDescriptor = CInt
 
 sysLinux_O_TMPFILE
     :: COpenFlags
-sysLinux_O_TMPFILE   = (#const O_TMPFILE)
+sysLinux_O_TMPFILE   = (#const __O_TMPFILE)
 
 sysLinux_IN_NONBLOCK
     , sysLinux_IN_CLOEXEC :: CInotifyFlags
