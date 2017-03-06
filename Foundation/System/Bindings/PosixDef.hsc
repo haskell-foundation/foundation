@@ -1,7 +1,7 @@
 
 module Foundation.System.Bindings.PosixDef
-    (
-      CFd
+    ( CErrno
+    , CFd
     , CMemProtFlags
     , CMemMappingFlags
     , CMemAdvice
@@ -15,6 +15,7 @@ module Foundation.System.Bindings.PosixDef
 import Foreign.C.Types
 import System.Posix.Types (COff(..), CMode(..))
 
+type CErrno = CInt
 type CFd = CInt
 type CMemProtFlags = CInt
 type CMemMappingFlags = CInt
