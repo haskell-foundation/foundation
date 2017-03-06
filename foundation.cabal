@@ -173,11 +173,13 @@ library
     exposed-modules: Foundation.System.Bindings.Windows
     other-modules:   Foundation.Foreign.MemoryMap.Windows
                      Foundation.System.Entropy.Windows
+                     Foundation.IO.Handle.Windows
   else
     exposed-modules: Foundation.System.Bindings.Posix
                      Foundation.System.Bindings.PosixDef
     other-modules:   Foundation.Foreign.MemoryMap.Posix
                      Foundation.System.Entropy.Unix
+                     Foundation.IO.Handle.Posix
   if os(linux)
     exposed-modules: Foundation.System.Bindings.Linux
   if os(osx)
