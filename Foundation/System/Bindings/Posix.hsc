@@ -16,24 +16,14 @@ module Foundation.System.Bindings.Posix
    where
 
 import Foundation.Internal.Base
-import Foreign.Ptr
 import Foreign.C.Types
-import Foreign.C.Error
 import Data.Bits
-import System.Posix.Types (COff(..), CMode(..))
+import Foundation.System.Bindings.PosixDef
 
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
-
-type CFd = CInt
-type CMemProtFlags = CInt
-type CMemMappingFlags = CInt
-type CMemAdvice = CInt
-type CMemSyncFlags = CInt
-type CSysconfName = CInt
-type COpenFlags = CInt
 
 data CDir
 data CDirent
@@ -46,11 +36,7 @@ sysPosix_O_RDONLY
     , sysPosix_O_CREAT
     , sysPosix_O_TRUNC
     , sysPosix_O_EXCL
-    , sysPosix_O_SHLOCK
-    , sysPosix_O_EXLOCK
     , sysPosix_O_NOFOLLOW
-    , sysPosix_O_SYMLINK
-    , sysPosix_O_EVTONLY
     , sysPosix_O_CLOEXEC :: COpenFlags
 sysPosix_O_RDONLY   = (#const O_RDONLY)
 sysPosix_O_WRONLY   = (#const O_WRONLY)
@@ -60,11 +46,7 @@ sysPosix_O_APPEND   = (#const O_APPEND)
 sysPosix_O_CREAT    = (#const O_CREAT)
 sysPosix_O_TRUNC    = (#const O_TRUNC)
 sysPosix_O_EXCL     = (#const O_EXCL)
-sysPosix_O_SHLOCK   = (#const O_SHLOCK)
-sysPosix_O_EXLOCK   = (#const O_EXLOCK)
 sysPosix_O_NOFOLLOW = (#const O_NOFOLLOW)
-sysPosix_O_SYMLINK  = (#const O_SYMLINK)
-sysPosix_O_EVTONLY  = (#const O_EVTONLY)
 sysPosix_O_CLOEXEC  = (#const O_CLOEXEC)
 
 sysPosix_PROT_NONE

@@ -17,6 +17,7 @@ module Foundation.System.Bindings.Linux
 
 import Foundation.Internal.Base
 import Foreign.C.Types
+import Foundation.System.Bindings.PosixDef
 import Foundation.System.Bindings.Posix
 
 #include <sys/inotify.h>
@@ -24,6 +25,10 @@ import Foundation.System.Bindings.Posix
 type CInotifyFlags = CInt
 type CInotifyMask = CInt
 type CWatchDescriptor = CInt
+
+sysLinux_O_TMPFILE
+    :: COpenFlags
+sysLinux_O_TMPFILE   = (#const O_TMPFILE)
 
 sysLinux_IN_NONBLOCK
     , sysLinux_IN_CLOEXEC :: CInotifyFlags
