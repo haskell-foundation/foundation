@@ -166,6 +166,7 @@ Library
   else
     Exposed-modules: Foundation.System.Bindings.Posix
                      Foundation.System.Bindings.PosixDef
+                     Foundation.System.Bindings.Hs
     Other-modules:   Foundation.Foreign.MemoryMap.Posix
                      Foundation.System.Entropy.Unix
   if os(linux)
