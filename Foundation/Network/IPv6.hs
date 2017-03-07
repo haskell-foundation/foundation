@@ -15,12 +15,18 @@ module Foundation.Network.IPv6
     ( IPv6
     , fromString, toString
     , fromTuple, toTuple
+      -- * parsers
+    , ipv6Parser
+    , ipv6ParserPreferred
+    , ipv6ParserCompressed
+    , ipv6ParserIpv4Embedded
     ) where
 
-import Prelude (fromIntegral)
+import Prelude (fromIntegral, replicate, read)
 import qualified Text.Printf as Base
-import Data.Char (isSeparator, isHexDigit)
+import Data.Char (isHexDigit, isDigit)
 import Numeric (readHex)
+import Control.Monad (when)
 
 import Foundation.Class.Storable
 import Foundation.Hashing.Hashable
@@ -28,7 +34,9 @@ import Foundation.Numerical.Additive (scale)
 import Foundation.Internal.Base
 import Foundation.Internal.Proxy
 import Foundation.Primitive
-import Foundation.Collection (intercalate, span)
+import Foundation.Numerical
+import Foundation.Collection
+import Foundation.Parser
 import Foundation.String (String)
 import Foundation.Bits
 
@@ -85,41 +93,13 @@ toLString ipv4 =
      in intercalate ":" $ showHex4 <$> [i1,i2,i3,i4,i5,i6,i7,i8]
 
 showHex4 :: Word16 -> [Char]
-showHex4 c
-  | c < 0x10   = '0':'0':'0':showHex c
-  | c < 0x100  = '0':'0':showHex c
-  | c < 0x1000 = '0':showHex c
-  | otherwise  = showHex c
+showHex4 = showHex
 
 showHex :: Word16 -> [Char]
-showHex = Base.printf "%03x"
+showHex = Base.printf "%04x"
 
 fromLString :: [Char] -> IPv6
-fromLString s =
-    case parseInt' (parseHex $ snd $ span isSeparator s) [] of
-        Left err        -> error err
-        Right (addr, _) -> addr
-    where
-        parseInt' :: Either [Char] (Word16, [Char])
-                  -> [Word16]
-                  -> Either [Char] (IPv6, [Char])
-        parseInt' (Left err)           _          = Left err
-        parseInt' (Right (w8, xs))     [w7,w6,w5,w4,w3,w2,w1] = Right (fromTuple (w1, w2, w3, w4, w5, w6, w7, w8), xs)
-        parseInt' (Right (_,  []))     _          = Left "Not an ipv6 addr"
-        parseInt' (Right (w,  ':':xs)) acc        = parseInt' (parseHex xs) (w:acc)
-        parseInt' (Right (_,    c:_ )) _          = Left $ "Not an ipv6 addr: unexpected char '" <> [c] <> "'"
-
-        parseHex :: [Char]
-                 -> Either [Char] (Word16, [Char])
-        parseHex buf =
-            case span isHexDigit buf of
-                ([], x:xs) -> case x of
-                                ':' -> Right (0, x:xs)
-                                _   -> Left $ "Not an ipv6 addr: unexpected char '" <> [x] <> "'"
-                (l , xs)   -> let lhs = readHex l :: [(Word16, [Char])]
-                              in  case lhs of
-                                    [(w, [])] -> Right (w, xs)
-                                    _ -> Left "can't fall here"
+fromLString = parseOnly ipv6Parser
 
 
 -- | create an IPv6 from the given tuple
@@ -155,3 +135,122 @@ toTuple (IPv6 hi low) =
     w6 = low .>>. 32
     w7 = low .>>. 16
     w8 = low
+
+-- | IPv6 Parser as described in RFC4291
+--
+-- for more details: https://tools.ietf.org/html/rfc4291.html#section-2.2
+--
+-- which is exactly:
+--
+-- ```
+--     ipv6ParserPreferred
+-- <|> ipv6ParserIPv4Embedded
+-- <|> ipv6ParserCompressed
+-- ```
+--
+ipv6Parser :: (Sequential input, Element input ~ Char)
+           => Parser input IPv6
+ipv6Parser =  ipv6ParserPreferred
+          <|> ipv6ParserIpv4Embedded
+          <|> ipv6ParserCompressed
+
+-- | IPv6 parser as described in RFC4291 section 2.2.1
+--
+-- The preferred form is x:x:x:x:x:x:x:x, where the 'x's are one to
+-- four hexadecimal digits of the eight 16-bit pieces of the address.
+--
+-- * `ABCD:EF01:2345:6789:ABCD:EF01:2345:6789`
+-- * `2001:DB8:0:0:8:800:200C:417A`
+--
+ipv6ParserPreferred :: (Sequential input, Element input ~ Char)
+                    => Parser input IPv6
+ipv6ParserPreferred = do
+    i1 <- takeAWord16 <* skipColon
+    i2 <- takeAWord16 <* skipColon
+    i3 <- takeAWord16 <* skipColon
+    i4 <- takeAWord16 <* skipColon
+    i5 <- takeAWord16 <* skipColon
+    i6 <- takeAWord16 <* skipColon
+    i7 <- takeAWord16 <* skipColon
+    i8 <- takeAWord16
+    return $ fromTuple (i1,i2,i3,i4,i5,i6,i7,i8)
+
+-- | IPv6 address with embedded IPv4 address
+--
+-- when dealing with a mixed environment of IPv4 and IPv6 nodes is
+-- x:x:x:x:x:x:d.d.d.d, where the 'x's are the hexadecimal values of
+-- the six high-order 16-bit pieces of the address, and the 'd's are
+-- the decimal values of the four low-order 8-bit pieces of the
+-- address (standard IPv4 representation).
+--
+-- * `0:0:0:0:0:0:13.1.68.3`
+-- * `0:0:0:0:0:FFFF:129.144.52.38`
+-- * `::13.1.68.3`
+-- * `::FFFF:129.144.52.38`
+--
+ipv6ParserIpv4Embedded :: (Sequential input, Element input ~ Char)
+                       => Parser input IPv6
+ipv6ParserIpv4Embedded = do
+    bs1 <- repeat (Between Never (toEnum 6)) $
+              takeAWord16 <* skipColon
+    _ <- optional skipColon
+    _ <- optional skipColon
+    bs2 <- repeat (Between Never (toEnum $ 6 - length bs1)) $
+              takeAWord16 <* skipColon
+    _ <- optional skipColon
+    [i1,i2,i3,i4,i5,i6] <- format 6 bs1 bs2
+    m1 <- takeAWord8 <* skipDot
+    m2 <- takeAWord8 <* skipDot
+    m3 <- takeAWord8 <* skipDot
+    m4 <- takeAWord8
+    return $ fromTuple ( i1,i2,i3,i4,i5,i6
+                       , m1 `shiftL` 8 .|. m2
+                       , m3 `shiftL` 8 .|. m4
+                       )
+
+-- | IPv6 parser as described in RFC4291 section 2.2.2
+--
+-- The use of "::" indicates one or more groups of 16 bits of zeros.
+-- The "::" can only appear once in an address.  The "::" can also be
+-- used to compress leading or trailing zeros in an address.
+--
+-- * `2001:DB8::8:800:200C:417A`
+-- * `FF01::101`
+-- * `::1`
+-- * `::`
+--
+ipv6ParserCompressed :: (Sequential input, Element input ~ Char)
+                     => Parser input IPv6
+ipv6ParserCompressed = do
+    bs1 <- repeat (Between Never (toEnum 8)) $
+              takeAWord16 <* skipColon
+    when (null bs1) skipColon
+    bs2 <- repeat (Between Never (toEnum $ 8 - length bs1)) $
+              skipColon *> takeAWord16
+    [i1,i2,i3,i4,i5,i6,i7,i8] <- format 8 bs1 bs2
+    return $ fromTuple (i1,i2,i3,i4,i5,i6,i7,i8)
+
+format :: (Integral a, Monad m) => Int -> [a] -> [a] -> m [a]
+format sz bs1 bs2 = do
+    let len = sz - length bs1 - length bs2
+    when (len < 1) $ fail "invalid compressed IPv6 addressed"
+    return $ bs1 <> replicate len 0 <> bs2
+
+skipColon :: (Sequential input, Element input ~ Char)
+          => Parser input ()
+skipColon = element ':'
+skipDot :: (Sequential input, Element input ~ Char)
+        => Parser input ()
+skipDot = element '.'
+takeAWord8 :: (Sequential input, Element input ~ Char)
+           => Parser input Word16
+takeAWord8 = do
+    read <$> repeat (Between Once (toEnum 3)) (satisfy isDigit)
+takeAWord16 :: (Sequential input, Element input ~ Char)
+            => Parser input Word16
+takeAWord16 = do
+    l <- repeat (Between Once (toEnum 4)) (satisfy isHexDigit)
+    let lhs = readHex l
+     in case lhs of
+          [(w, [])] -> return w
+          _ -> fail "can't fall here"
