@@ -130,14 +130,14 @@ fromTuple (i1, i2, i3, i4, i5, i6, i7, i8) = IPv6 hi low
     f :: Word16 -> Word64
     f = fromIntegral
     hi, low :: Word64
-    hi =    (f i1 .<<. 48) .&. 0xFFFF000000000000
-        .|. (f i2 .<<. 32) .&. 0x0000FFFF00000000
-        .|. (f i3 .<<. 16) .&. 0x00000000FFFF0000
-        .|. (f i4        ) .&. 0x000000000000FFFF
-    low =   (f i5 .<<. 48) .&. 0xFFFF000000000000
-        .|. (f i6 .<<. 32) .&. 0x0000FFFF00000000
-        .|. (f i7 .<<. 16) .&. 0x00000000FFFF0000
-        .|. (f i8        ) .&. 0x000000000000FFFF
+    hi =    (f i1 .<<. 48)
+        .|. (f i2 .<<. 32)
+        .|. (f i3 .<<. 16)
+        .|. (f i4        )
+    low =   (f i5 .<<. 48)
+        .|. (f i6 .<<. 32)
+        .|. (f i7 .<<. 16)
+        .|. (f i8        )
 
 -- | decompose an IPv6 into a tuple
 toTuple :: IPv6 -> (Word16,Word16,Word16,Word16,Word16,Word16,Word16,Word16)
@@ -147,11 +147,11 @@ toTuple (IPv6 hi low) =
     f :: Word64 -> Word16
     f = fromIntegral
     w1, w2, w3, w4, w5, w6, w7, w8 :: Word64
-    w1 = hi  .>>. 48 .&. 0x0000FFFF
-    w2 = hi  .>>. 32 .&. 0x0000FFFF
-    w3 = hi  .>>. 16 .&. 0x0000FFFF
-    w4 = hi          .&. 0x0000FFFF
-    w5 = low .>>. 48 .&. 0x0000FFFF
-    w6 = low .>>. 32 .&. 0x0000FFFF
-    w7 = low .>>. 16 .&. 0x0000FFFF
-    w8 = low         .&. 0x0000FFFF
+    w1 = hi  .>>. 48
+    w2 = hi  .>>. 32
+    w3 = hi  .>>. 16
+    w4 = hi
+    w5 = low .>>. 48
+    w6 = low .>>. 32
+    w7 = low .>>. 16
+    w8 = low
