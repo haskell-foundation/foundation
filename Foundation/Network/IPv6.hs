@@ -44,28 +44,28 @@ instance IsString IPv6 where
 instance Storable IPv6 where
     peek ptr = fromTuple <$>
         (   (,,,,,,,)
-        <$> (fromBE <$> peekOff ptr' 1)
+        <$> (fromBE <$> peekOff ptr' 0)
+        <*> (fromBE <$> peekOff ptr' 1)
         <*> (fromBE <$> peekOff ptr' 2)
         <*> (fromBE <$> peekOff ptr' 3)
         <*> (fromBE <$> peekOff ptr' 4)
         <*> (fromBE <$> peekOff ptr' 5)
         <*> (fromBE <$> peekOff ptr' 6)
         <*> (fromBE <$> peekOff ptr' 7)
-        <*> (fromBE <$> peekOff ptr' 8)
         )
       where
         ptr' :: Ptr (BE Word16)
         ptr' = castPtr ptr
     poke ptr ipv6 = do
         let (i1,i2,i3,i4,i5,i6,i7,i8) = toTuple ipv6
-         in pokeOff ptr' 1 (toBE i1)
-         >> pokeOff ptr' 2 (toBE i2)
-         >> pokeOff ptr' 3 (toBE i3)
-         >> pokeOff ptr' 4 (toBE i4)
-         >> pokeOff ptr' 5 (toBE i5)
-         >> pokeOff ptr' 6 (toBE i6)
-         >> pokeOff ptr' 7 (toBE i7)
-         >> pokeOff ptr' 8 (toBE i8)
+         in pokeOff ptr' 0 (toBE i1)
+         >> pokeOff ptr' 1 (toBE i2)
+         >> pokeOff ptr' 2 (toBE i3)
+         >> pokeOff ptr' 3 (toBE i4)
+         >> pokeOff ptr' 4 (toBE i5)
+         >> pokeOff ptr' 5 (toBE i6)
+         >> pokeOff ptr' 6 (toBE i7)
+         >> pokeOff ptr' 7 (toBE i8)
       where
         ptr' :: Ptr (BE Word16)
         ptr' = castPtr ptr
