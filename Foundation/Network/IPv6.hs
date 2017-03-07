@@ -36,7 +36,7 @@ import Foundation.Bits
 data IPv6 = IPv6 {-# UNPACK #-} !Word64 {-# UNPACK #-} !Word64
   deriving (Eq, Ord, Typeable)
 instance Hashable IPv6 where
-    hashMix (IPv6 w1 w2) = hashMix (w1, w2)
+    hashMix (IPv6 w1 w2) = hashMix w1 . hashMix w2
 instance Show IPv6 where
     show = toLString
 instance IsString IPv6 where
