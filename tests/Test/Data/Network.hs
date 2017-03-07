@@ -13,10 +13,14 @@ module Test.Data.Network
     ( genIPv4
     , genIPv4Tuple
     , genIPv4String
+    , genIPv6
+    , genIPv6Tuple
+    , genIPv6String
     ) where
 
 import Foundation
-import Foundation.Network.IPv4
+import Foundation.Network.IPv4 as IPv4
+import Foundation.Network.IPv6 as IPv6
 import Foundation.Class.Storable as F
 import Test.Tasty.QuickCheck
 import qualified Foreign.Storable as Foreign
@@ -24,6 +28,13 @@ import qualified Foreign.Storable as Foreign
 instance Arbitrary IPv4 where
     arbitrary = genIPv4
 instance Foreign.Storable IPv4 where
+    sizeOf a = let Size b = F.size (Just a) in b
+    alignment a = let Size b = F.alignment (Just a) in b
+    peek = F.peek
+    poke = F.poke
+instance Arbitrary IPv6 where
+    arbitrary = genIPv6
+instance Foreign.Storable IPv6 where
     sizeOf a = let Size b = F.size (Just a) in b
     alignment a = let Size b = F.alignment (Just a) in b
     peek = F.peek
@@ -36,11 +47,28 @@ genIPv4Tuple =
           <*> choose (0, 255)
           <*> choose (0, 255)
 
+genIPv6Tuple :: Gen (Word16, Word16, Word16, Word16, Word16, Word16, Word16, Word16)
+genIPv6Tuple =
+    (,,,,,,,) <$> arbitrary
+              <*> arbitrary
+              <*> arbitrary
+              <*> arbitrary
+              <*> arbitrary
+              <*> arbitrary
+              <*> arbitrary
+              <*> arbitrary
+
 genIPv4String :: Gen String
 genIPv4String = do
     (w1, w2, w3, w4) <- genIPv4Tuple
     return $ show w1 <> "." <> show w2 <> "." <> show w3 <> "." <> show w4
 
+genIPv6String :: Gen String
+genIPv6String = IPv6.toString <$> genIPv6
+
+genIPv6 :: Gen IPv6
+genIPv6 = IPv6.fromTuple <$> genIPv6Tuple
+
 -- | a better generator for unicode Character
 genIPv4 :: Gen IPv4
-genIPv4 = fromTuple <$> genIPv4Tuple
+genIPv4 = IPv4.fromTuple <$> genIPv4Tuple

@@ -75,6 +75,7 @@ Library
                      Foundation.Monad.Reader
                      Foundation.Monad.State
                      Foundation.Network.IPv4
+                     Foundation.Network.IPv6
                      Foundation.System.Info
                      Foundation.Strict
                      Foundation.Parser
@@ -210,6 +211,7 @@ Test-Suite test-foundation
                      Test.Foundation.Bits
                      Test.Foundation.ChunkedUArray
                      Test.Foundation.Network.IPv4
+                     Test.Foundation.Network.IPv6
                      Test.Foundation.Number
                      Test.Foundation.Encoding
                      Test.Foundation.Parser
