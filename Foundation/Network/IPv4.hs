@@ -1,4 +1,3 @@
-{-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
@@ -6,12 +5,10 @@ module Foundation.Network.IPv4
     ( IPv4
     , fromString, toString
     , fromTuple, toTuple
+    , ipv4Parser
     ) where
 
-import Prelude (fromIntegral)
-
-import System.IO.Unsafe (unsafePerformIO)
-import Foreign.C.String (withCString, CString)
+import Prelude (fromIntegral,read)
 
 import Foundation.Class.Storable
 import Foundation.Hashing.Hashable
@@ -20,6 +17,8 @@ import Foundation.Internal.Proxy
 import Foundation.String (String)
 import Foundation.Primitive
 import Foundation.Bits
+import Foundation.Parser
+import Foundation.Collection
 
 -- | IPv4 data type
 newtype IPv4 = IPv4 Word32
@@ -39,8 +38,7 @@ toString :: IPv4 -> String
 toString = fromList . toLString
 
 fromLString :: [Char] -> IPv4
-fromLString str = unsafePerformIO $ withCString str $ \cstr ->
-    IPv4 . fromBE <$> c_inet_addr cstr
+fromLString = parseOnly ipv4Parser
 
 toLString :: IPv4 -> [Char]
 toLString ipv4 =
@@ -72,6 +70,21 @@ toTuple (IPv4 w) =
     w3 = w .>>.  8 .&. 0x000000FF
     w4 = w         .&. 0x000000FF
 
-
-foreign import ccall unsafe "inet_addr"
-    c_inet_addr :: CString -> IO (BE Word32)
+-- | Parse a IPv4 address
+ipv4Parser :: (Sequential input, Element input ~ Char) => Parser input IPv4
+ipv4Parser = do
+    i1 <- takeAWord8
+    element '.'
+    i2 <- takeAWord8
+    element '.'
+    i3 <- takeAWord8
+    element '.'
+    i4 <- takeAWord8
+    return $ fromTuple (i1, i2, i3, i4)
+  where
+    takeAWord8 :: (Sequential input, Element input ~ Char)
+               => Parser input Word8
+    takeAWord8 =
+        read <$> repeat (Between Once (toEnum 3)) (satisfy isAsciiDecimal)
+    isAsciiDecimal :: Char -> Bool
+    isAsciiDecimal = flip elem ['0'..'9']
