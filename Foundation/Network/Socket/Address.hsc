@@ -1,3 +1,12 @@
+-- |
+-- Module      : Foundation.Network.Socket.Address
+-- License     : BSD-style
+-- Maintainer  : Nicolas Di Prima <nicolas@primetype.co.uk>
+-- Stability   : experimental
+-- Portability : portable
+--
+-- SocketAddress and low level network address types
+--
 {-# LANGUAGE FlexibleInstances #-}
 
 module Foundation.Network.Socket.Address
@@ -27,10 +36,13 @@ newtype PortNumber = PortNumber Word16
 
 data family SocketAddress f
 
+-- | Domain Family (Inet, Inet6)
 class Family f where
     type Address f
     type Port f
     familyCode :: f -> CInt
+
+-- | Protocol and Type
 class Family f => Protocol f where
     protocolCode :: f -> CInt
     typeCode :: f -> CInt
@@ -89,9 +101,8 @@ instance Storable (SocketAddress (Inet protocol)) where
         ptrIPv4 = castPtr ptr
         ptrPort :: Ptr PortNumber
         ptrPort = castPtr $ ptrIPv4 `plusPtr` 1
-    poke ptr (SocketAddressInet addr port) = do
-        poke ptrIPv4 addr
-        poke ptrPort port
+    poke ptr (SocketAddressInet addr port) =
+        poke ptrIPv4 addr >> poke ptrPort port
       where
         ptrIPv4 :: Ptr IPv4
         ptrIPv4 = castPtr ptr
@@ -105,9 +116,8 @@ instance Storable (SocketAddress (Inet6 protocol)) where
         ptrIPv6 = castPtr ptr
         ptrPort :: Ptr PortNumber
         ptrPort = castPtr $ ptrIPv6 `plusPtr` 1
-    poke ptr (SocketAddressInet6 addr port) = do
-        poke ptrIPv6 addr
-        poke ptrPort port
+    poke ptr (SocketAddressInet6 addr port) =
+        poke ptrIPv6 addr >> poke ptrPort port
       where
         ptrIPv6 :: Ptr IPv6
         ptrIPv6 = castPtr ptr
