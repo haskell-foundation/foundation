@@ -26,9 +26,11 @@ module Foundation.Parser
     -- * run the Parser
     , parse
     , parseFeed
+    , parseOnly
     -- * Parser methods
     , hasMore
     , element
+    , satisfy
     , anyElement
     , elements
     , string
@@ -38,9 +40,10 @@ module Foundation.Parser
     , skip
     , skipWhile
     , skipAll
-    -- utils
+    -- * utils
     , optional
-    , many, some
+    , many, some, (<|>)
+    , Count(..), Condition(..), repeat
     ) where
 
 import           Control.Applicative (Alternative, empty, (<|>), many, some, optional)
@@ -57,6 +60,8 @@ data ParserError input
         , receivedInput :: !input
            -- ^ but received this data
         }
+    | DoesNotSatify
+        -- ^ some bytes didn't satisfy predicate
     | NotEnough
         -- ^ not enough data to complete the parser
     | MonadFail String
@@ -132,6 +137,25 @@ parseFeed feeder p initial = loop $ parse p initial
 parse :: Sequential input
       => Parser input a -> input -> Result input a
 parse p s = runParser p s (\_ msg -> ParseFail msg) ParseOK
+
+-- | parse only the given input
+--
+-- The left-over `Element input` will be ignored, if the parser call for more
+-- data it will be continuously fed with `Nothing` (up to 256 iterations).
+--
+parseOnly :: (Typeable input, Show input, Sequential input, Element input ~ Char)
+          => Parser input a
+          -> input
+          -> a
+parseOnly p i = continuously maximumIterations (parse p i)
+  where
+    maximumIterations :: Int
+    maximumIterations = 256
+    continuously _ (ParseOK _ a) = a
+    continuously _ (ParseFail err) = throw err
+    continuously n (ParseMore f)
+        | n == 0 = error "Foundation.Parser.parseOnly: not enough (please report error)"
+        | otherwise = continuously (n - 1) (f Nothing)
 
 -- When needing more data, getMore append the next data
 -- to the current buffer. if no further data, then
@@ -240,6 +264,14 @@ take n = Parser $ \buf err ok ->
         then let (b1,b2) = splitAt n buf in ok b2 b1
         else runParser (getMore >> take n) buf err ok
 
+-- | take one element if satisfy the given predicate
+satisfy :: Sequential input => (Element input -> Bool) -> Parser input (Element input)
+satisfy predicate = Parser $ \buf err ok ->
+    case uncons buf of
+        Nothing      -> runParser (getMore >> satisfy predicate) buf err ok
+        Just (c1,b2) | predicate c1 -> ok b2 c1
+                     | otherwise -> err buf DoesNotSatify
+
 -- | Take elements while the @predicate hold from the current position in the
 -- stream
 takeWhile :: Sequential input => (Element input -> Bool) -> Parser input input
@@ -276,3 +308,76 @@ skipWhile p = Parser $ \buf err ok ->
 -- stream
 skipAll :: Sequential input => Parser input ()
 skipAll = Parser $ \buf err ok -> runParser flushAll buf err ok
+
+data Count = Never | Once | Twice | Other Int
+  deriving (Show)
+instance Enum Count where
+    toEnum 0 = Never
+    toEnum 1 = Once
+    toEnum 2 = Twice
+    toEnum n
+        | n > 2 = Other n
+        | otherwise = Never
+    fromEnum Never = 0
+    fromEnum Once = 1
+    fromEnum Twice = 2
+    fromEnum (Other n) = n
+    succ Never = Once
+    succ Once = Twice
+    succ Twice = Other 3
+    succ (Other n)
+        | n == 0 = Once
+        | n == 1 = Twice
+        | otherwise = Other (succ n)
+    pred Never = Never
+    pred Once = Never
+    pred Twice = Once
+    pred (Other n)
+        | n == 2 = Once
+        | n == 3 = Twice
+        | otherwise = Other (pred n)
+
+data Condition = Exactly Count
+               | Between Count Count
+  deriving (Show)
+
+shouldStop :: Condition -> Bool
+shouldStop (Exactly   Never) = True
+shouldStop (Between _ Never) = True
+shouldStop _                 = False
+
+canStop :: Condition -> Bool
+canStop (Exactly Never)   = True
+canStop (Between Never _) = True
+canStop _                 = False
+
+decrement :: Condition -> Condition
+decrement (Exactly n)   = Exactly (pred n)
+decrement (Between a b) = Between (pred a) (pred b)
+
+-- | repeat the given Parser a given amount of time
+--
+-- If you know you want it to exactly perform a given amount of time:
+--
+-- ```
+-- repeat (Exactly Twice) (element 'a')
+-- ```
+--
+-- If you know your parser must performs from 0 to 8 times:
+--
+-- ```
+-- repeat (Between Never (Other 8))
+-- ```
+--
+-- *This interface is still WIP* but went handy when writting the IPv4/IPv6
+-- parsers.
+--
+repeat :: Sequential input => Condition -> Parser input a -> Parser input [a]
+repeat c p
+    | shouldStop c = return []
+    | otherwise = do
+        ma <- optional p
+        case ma of
+            Nothing | canStop c -> return []
+                    | otherwise -> fail $ "Not enough..." <> show c
+            Just a -> (:) a <$> repeat (decrement c) p
