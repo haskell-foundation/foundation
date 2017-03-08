@@ -249,7 +249,7 @@ Test-Suite doctest
   default-language:  Haskell2010
   Main-is:           DocTest.hs
   Build-Depends:     base >= 3 && < 5
-                   , doctest >= 0.11
+                   , doctest >= 0.9
   Default-Extensions: NoImplicitPrelude
                       RebindableSyntax
   if impl(ghc < 7.6)
