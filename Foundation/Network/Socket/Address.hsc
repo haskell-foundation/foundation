@@ -7,6 +7,37 @@
 --
 -- SocketAddress and low level network address types
 --
+-- A network socket is constrained by its underlying domain, protocols and types.
+-- Here, we are not trying to be 100% accurate, we are trying to bring together the
+-- known constraints.
+--
+-- Inet6 and Inet are socket using respectively IPv6 and IPv6 addresses.
+--
+-- Network Protocols and Network Types are also linked together based on:
+--
+-- * UDP -> Datagram network type;
+-- * TCP -> Stream network type.
+--
+-- Here, using strong types, type family and associated types we are providing a safe,
+-- easy to use interface to manipulate Socket Addresses. You can only create what is
+-- provided as safe.
+--
+-- * `SocketAddress (Inet TCP)`: socket address, using *IPv4* addresses, TCP protocol
+--   and Stream network type.
+-- * `SocketAddress (Inet6 TCP)`: socket address, using *IPv6* addresses, TCP protocol
+--   and Stream network type.
+-- * `SocketAddress (Inet UDP)`: socket address, using *IPv4* addresses, UDP protocol
+--   and Datagram network type.
+-- * `SocketAddress (Inet6 UDP)`: socket address, using *IPv6* addresses, UDP protocol
+--   and Datagram network type.
+--
+-- Advanced developers can safely extend the type family to include missing domains.
+--
+-- ```
+-- let ipv4addr = SocketAddressInet  "8.8.8.8" 53 :: SocketAddressInt   UDP
+-- let ipv6addr = SocketAddressInet6     "::1" 80 :: SocketAddressInet6 TCP
+-- ```
+--
 {-# LANGUAGE FlexibleInstances #-}
 
 module Foundation.Network.Socket.Address
