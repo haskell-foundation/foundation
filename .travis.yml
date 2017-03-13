@@ -73,11 +73,13 @@ script:
   case "$BUILD" in
     stack)
       rm stack.yaml && ln -sv .travis/stack-${RESOLVER}.yaml stack.yaml
-      stack --no-terminal test --install-ghc
+      stack --no-terminal test --flag foundation:bounds-check --install-ghc --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps
       ;;
     cabal)
-      cabal install --force-reinstalls --only-dependencies --enable-test
+      cabal install --only-dependencies --enable-tests --enable-benchmarks
       cabal test
+      cabal check
+      cabal sdist
       ;;
   esac
   set +ex
