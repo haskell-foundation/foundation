@@ -32,7 +32,11 @@ type CWatchDescriptor = CInt
 
 sysLinux_O_TMPFILE
     :: COpenFlags
+#ifdef __O_TMPFILE
 sysLinux_O_TMPFILE   = (#const __O_TMPFILE)
+#else
+sysLinux_O_TMPFILE   = 0
+#endif
 
 sysLinux_IN_NONBLOCK
     , sysLinux_IN_CLOEXEC :: CInotifyFlags
