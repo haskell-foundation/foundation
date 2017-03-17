@@ -103,7 +103,7 @@ import           Foundation.Primitive.Types
 import           Foundation.Primitive.FinalPtr
 import           Foundation.Primitive.Utils
 import           Foundation.Array.Common
-import           Foundation.Array.Unboxed.Mutable
+import           Foundation.Array.Unboxed.Mutable hiding (sub)
 import           Foundation.Numerical
 import           Foundation.Boot.Builder
 import qualified Data.List
@@ -344,18 +344,18 @@ create n initializer
 
 -- | Create a pinned array that is filled by a 'filler' function (typically an IO call like hGetBuf)
 createFromIO :: PrimType ty
-             => Int                -- ^ the size of the array
-             -> (Ptr ty -> IO Int) -- ^ filling function that
+             => Size ty                  -- ^ the size of the array
+             -> (Ptr ty -> IO (Size ty)) -- ^ filling function that
              -> IO (UArray ty)
 createFromIO size filler
     | size == 0 = return empty
     | otherwise = do
-        mba <- newPinned (Size size)
+        mba <- newPinned size
         r   <- withMutablePtr mba $ \p -> filler p
         case r of
             0             -> return empty -- make sure we don't keep our array referenced by using empty
             _ | r < 0     -> error "filler returned negative number"
-              | otherwise -> unsafeFreezeShrink mba (Size r)
+              | otherwise -> unsafeFreezeShrink mba r
 
 -----------------------------------------------------------------------
 -- higher level collection implementation
@@ -509,14 +509,6 @@ withPtr vec@(UVecBA start _ pstatus a) f
   where
     sz           = primSizeInBytes (vectorProxyTy vec)
     !(Offset os) = offsetOfE sz start
-
-withMutablePtr :: (PrimMonad prim, PrimType ty)
-               => MUArray ty (PrimState prim)
-               -> (Ptr ty -> prim a)
-               -> prim a
-withMutablePtr muvec f = do
-    v <- unsafeFreeze muvec
-    withPtr v f
 
 recast :: (PrimType a, PrimType b) => UArray a -> UArray b
 recast = recast_ Proxy Proxy

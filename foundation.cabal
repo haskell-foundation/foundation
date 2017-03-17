@@ -165,10 +165,14 @@ Library
                      Foundation.System.Entropy.Windows
   else
     Exposed-modules: Foundation.System.Bindings.Posix
+                     Foundation.System.Bindings.PosixDef
+                     Foundation.System.Bindings.Hs
     Other-modules:   Foundation.Foreign.MemoryMap.Posix
                      Foundation.System.Entropy.Unix
   if os(linux)
     Exposed-modules: Foundation.System.Bindings.Linux
+  if os(osx)
+    Exposed-modules: Foundation.System.Bindings.Macos
 
   if impl(ghc >= 7.10)
     Exposed-modules: Foundation.Tuple.Nth

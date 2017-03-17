@@ -32,12 +32,12 @@ import           GHC.STRef
 import           GHC.IORef
 import           GHC.IO
 import           GHC.Prim
-import           Foundation.Internal.Base (Exception, (.), ($))
+import           Foundation.Internal.Base (Exception, (.), ($), Applicative)
 
 -- | Primitive monad that can handle mutation.
 --
 -- For example: IO and ST.
-class (Prelude.Functor m, Prelude.Monad m) => PrimMonad m where
+class (Prelude.Functor m, Applicative m, Prelude.Monad m) => PrimMonad m where
     -- | type of state token associated with the PrimMonad m
     type PrimState m
     -- | type of variable associated with the PrimMonad m
