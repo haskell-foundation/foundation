@@ -8,7 +8,10 @@
 * Add `any` and `all` to `Collection`
 * Add defaulting to Integer and Double for numerical types
 * Add negation for Double and Float (and their associated C types)
-* Add/Export system bindings (Posix memory handling, Linux Inotify)
+* Add/Export system bindings (Posix file/memory handling, Linux Inotify)
+* Add Big Endian (BE) / Little Endian (LE) wrapping types
+* Add a way to transform an UArray into Hexadecimal/Base16
+* Add IPv4 and IPv6 types
 
 ## 0.0.3
 
