@@ -1,8 +1,18 @@
+-- |
+-- Module      : Foundation.Network.IPv4
+-- License     : BSD-style
+-- Maintainer  : Nicolas Di Prima <nicolas@primetype.co.uk>
+-- Stability   : experimental
+-- Portability : portable
+--
+-- IPv4 data type
+--
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Foundation.Network.IPv4
     ( IPv4
+    , any, loopback
     , fromString, toString
     , fromTuple, toTuple
     , ipv4Parser
@@ -18,7 +28,7 @@ import Foundation.String (String)
 import Foundation.Primitive
 import Foundation.Bits
 import Foundation.Parser
-import Foundation.Collection
+import Foundation.Collection (Sequential, Element, elem)
 
 -- | IPv4 data type
 newtype IPv4 = IPv4 Word32
@@ -33,6 +43,14 @@ instance Storable IPv4 where
 instance StorableFixed IPv4 where
     size      _ = size      (Proxy :: Proxy Word32)
     alignment _ = alignment (Proxy :: Proxy Word32)
+
+-- | "0.0.0.0"
+any :: IPv4
+any = fromTuple (0,0,0,0)
+
+-- | "127.0.0.1"
+loopback :: IPv4
+loopback = fromTuple (127,0,0,1)
 
 toString :: IPv4 -> String
 toString = fromList . toLString
