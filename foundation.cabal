@@ -82,6 +82,7 @@ Library
                      Foundation.Parser
                      Foundation.Random
                      Foundation.Check
+                     Foundation.UUID
                      Foundation.System.Entropy
                      Foundation.System.Bindings
   Other-modules:     Foundation.Boot.Builder
