@@ -924,7 +924,7 @@ toHexadecimal ba
             | sIdx == endOfs = return ()
             | otherwise      = do
                 let !(W8# !w)      = getAt sIdx
-                    (# wHi, wLo #) = Base16.convertByte w
+                    (# wHi, wLo #) = Base16.unsafeConvertByte w
                 unsafeWrite ma dIdx     (W8# wHi)
                 unsafeWrite ma (dIdx+1) (W8# wLo)
                 loop (dIdx + 2) (sIdx+1)

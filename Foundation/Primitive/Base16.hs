@@ -2,7 +2,7 @@
 {-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE BangPatterns  #-}
 module Foundation.Primitive.Base16
-    ( convertByte
+    ( unsafeConvertByte
     ) where
 
 import GHC.Prim
@@ -10,18 +10,20 @@ import GHC.Prim
 -- | Convert a byte value in Word# to two Word#s containing
 -- the hexadecimal representation of the Word#
 --
+-- The output words# are guaranteed to be included in the 0 to 2^7-1 range
+--
 -- Note that calling convertByte with a value greater than 256
 -- will cause segfault or other horrible effect.
-convertByte :: Word# -> (# Word#, Word# #)
-convertByte b = (# r tableHi b, r tableLo b #)
+unsafeConvertByte :: Word# -> (# Word#, Word# #)
+unsafeConvertByte b = (# r tableHi b, r tableLo b #)
   where
-        r :: Table -> Word# -> Word#
-        r (Table !table) index = indexWord8OffAddr# table (word2Int# index)
-{-# INLINE convertByte #-}
+    r :: Table -> Word# -> Word#
+    r (Table !table) index = indexWord8OffAddr# table (word2Int# index)
+{-# INLINE unsafeConvertByte #-}
 
 data Table = Table Addr#
 
-tableLo :: Table
+tableLo:: Table
 tableLo = Table
     "0123456789abcdef0123456789abcdef\
     \0123456789abcdef0123456789abcdef\
