@@ -1,12 +1,16 @@
 #include "foundation_system.h"
 
 #if defined(FOUNDATION_SYSTEM_WINDOWS)
-# error "todo"
+# include <winsock2.h>
 #else
 # include "netdb.h"
 #endif
 
 int get_h_errno(void)
 {
+#if defined(FOUNDATION_SYSTEM_WINDOWS)
+  return WSAGetLastError();
+#else
   return h_errno;
+#endif
 }
