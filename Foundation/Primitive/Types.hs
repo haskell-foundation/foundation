@@ -22,6 +22,8 @@ module Foundation.Primitive.Types
     , sizeRecast
     , offsetAsSize
     , sizeAsOffset
+    , primWordGetByteAndShift
+    , primWord64GetByteAndShift
     ) where
 
 #include "MachDeps.h"
@@ -37,6 +39,10 @@ import           Foundation.Internal.Types
 import           Foundation.Primitive.Endianness
 import           Foundation.Primitive.Monad
 import qualified Prelude (quot)
+
+#if WORD_SIZE_IN_BITS < 64
+import           GHC.IntWord64
+#endif
 
 #ifdef FOUNDATION_BOUNDS_CHECK
 
@@ -496,3 +502,16 @@ sizeAsOffset (Size a) = Offset a
 offsetAsSize :: Offset a -> Size a
 offsetAsSize (Offset a) = Size a
 {-# INLINE offsetAsSize #-}
+
+primWordGetByteAndShift :: Word# -> (# Word#, Word# #)
+primWordGetByteAndShift w = (# and# w 0xff##, uncheckedShiftRL# w 8# #)
+{-# INLINE primWordGetByteAndShift #-}
+
+#if WORD_SIZE_IN_BITS == 64
+primWord64GetByteAndShift :: Word# -> (# Word#, Word# #)
+primWord64GetByteAndShift = primWord64GetByteAndShift
+#else
+primWord64GetByteAndShift :: Word64# -> (# Word#, Word64# #)
+primWord64GetByteAndShift w = (# and# (word64ToWord# w) 0xff##, uncheckedShiftRL64# w 8# #)
+#endif
+{-# INLINE primWord64GetByteAndShift #-}
