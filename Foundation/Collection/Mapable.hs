@@ -11,6 +11,7 @@
 --
 module Foundation.Collection.Mapable
     ( Mapable(..)
+    , sequence_
     , traverse_
     , mapM_
     , forM
@@ -35,23 +36,26 @@ class Functor collection => Mapable collection where
                                -> f (collection a)
     sequenceA = traverse id
 
-    mapM :: Monad m => (a -> m b) -> collection a -> m (collection b)
+    mapM :: (Applicative m, Monad m) => (a -> m b) -> collection a -> m (collection b)
     mapM = traverse
 
-    sequence :: Monad m => collection (m a) -> m (collection a)
+    sequence :: (Applicative m, Monad m) => collection (m a) -> m (collection a)
     sequence = sequenceA
 
 traverse_ :: (Mapable col, Applicative f) => (a -> f b) -> col a -> f ()
 traverse_ f col = traverse f col *> pure ()
 
-forM :: (Mapable col, Monad m) => col a -> (a -> m b) -> m (col b)
+sequence_ :: (Mapable col, Applicative m, Monad m) => col (m a) -> m ()
+sequence_ c = sequence c *> return ()
+
+forM :: (Mapable col, Applicative m, Monad m) => col a -> (a -> m b) -> m (col b)
 forM = flip mapM
 
-forM_ :: (Mapable col, Monad m) => col a -> (a -> m b) -> m ()
+forM_ :: (Mapable col, Applicative m, Monad m) => col a -> (a -> m b) -> m ()
 forM_ = flip mapM_
 
-mapM_ :: (Mapable col, Monad m) => (a -> m b) -> col a -> m ()
-mapM_ = traverse_
+mapM_ :: (Mapable col, Applicative m, Monad m) => (a -> m b) -> col a -> m ()
+mapM_ f c = mapM f c *> return ()
 
 ----------------------------
 -- Foldable instances
