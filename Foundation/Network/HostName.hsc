@@ -95,6 +95,7 @@ getHostNameInfo = getHostNameInfo_ Proxy
 
 globalMutex :: MVar ()
 globalMutex = unsafePerformIO (newMVar ())
+{-# NOINLINE globalMutex #-}
 
 -- | like `getHostNameInfo` but takes a `Proxy` to help with the type checker.
 getHostNameInfo_ :: (Show address_type, Eq address_type, Address address_type)
