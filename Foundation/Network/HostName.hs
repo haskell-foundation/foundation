@@ -14,6 +14,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ForeignFunctionInterface #-}
 module Foundation.Network.HostName
     ( HostName(..)
     , HostNameInfo(..)
@@ -30,6 +31,8 @@ import Foundation.Network.Address
 import Foundation.Array
 import Foundation.Collection.Mapable
 
+import Foundation.System.Bindings.Network
+
 import Foreign.C.String
 import Foreign.C.Types
 import Foreign.Ptr (nullPtr)
@@ -37,13 +40,6 @@ import Control.Concurrent.MVar
 import System.IO.Unsafe (unsafePerformIO)
 
 import Control.Monad ((=<<))
-
-#ifdef mingw32_HOST_OS
-#include <winsock2.h>
-#else
-#include "netinet/in.h"
-#include "netdb.h"
-#endif
 
 -- | HostName
 --
@@ -125,13 +121,13 @@ getHostNameInfo_ p h@(HostName hn) =
         if ptr /= nullPtr
             then return ptr
             else do
-                err <- c_get_h_errno
+                err <- getHErrno
                 case err of
-                    _ | err == (#const NO_DATA)        -> throwIO $ NoAssociatedData h
-                      | err == (#const HOST_NOT_FOUND) -> throwIO $ HostNotFound h
-                      | err == (#const TRY_AGAIN)      -> loop f
-                      | err == (#const NO_RECOVERY)    -> throwIO FatalError
-                      | otherwise                      -> throwIO $ UnknownError err
+                    _ | err == herr_NoData        -> throwIO $ NoAssociatedData h
+                      | err == herr_HostNotFound  -> throwIO $ HostNotFound h
+                      | err == herr_TryAgain      -> loop f
+                      | err == herr_NoRecovery    -> throwIO FatalError
+                      | otherwise                 -> throwIO $ UnknownError err
     offname_ptr = (#ptr struct hostent, h_name)
     aliases_ptr = (#ptr struct hostent, h_aliases)
     addr_list   = (#ptr struct hostent, h_addr_list)
@@ -154,5 +150,3 @@ getAddresses _ ptr = do
 
 foreign import ccall unsafe "gethostbyname2"
     c_gethostbyname2 :: CString -> CInt -> IO (Ptr Word8)
-foreign import ccall unsafe "get_h_errno"
-    c_get_h_errno :: IO CInt

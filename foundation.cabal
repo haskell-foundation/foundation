@@ -158,6 +158,7 @@ Library
                      Foundation.Foreign.MemoryMap.Types
                      Foundation.Partial
                      Foundation.System.Entropy.Common
+                     Foundation.System.Bindings.Network
 
   include-dirs:      cbits
   C-sources:         cbits/foundation_random.c
