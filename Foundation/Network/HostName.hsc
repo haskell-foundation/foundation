@@ -41,6 +41,12 @@ import System.IO.Unsafe (unsafePerformIO)
 
 import Control.Monad ((=<<))
 
+#ifdef mingw32_HOST_OS
+# include <winsock2.h>
+#else
+# include "netdb.h"
+#endif
+
 -- | HostName
 --
 newtype HostName = HostName { toString :: String }
@@ -148,5 +154,5 @@ getAddresses _ ptr = do
     arr <- peekArrayEndedBy nullPtr ptr
     forM arr peek
 
-foreign import ccall unsafe "gethostbyname2"
+foreign import ccall safe "gethostbyname2"
     c_gethostbyname2 :: CString -> CInt -> IO (Ptr Word8)
