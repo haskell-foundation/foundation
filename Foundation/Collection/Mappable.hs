@@ -1,5 +1,5 @@
 -- |
--- Module      : Foundation.Primitive.Mapable
+-- Module      : Foundation.Primitive.Mappable
 -- License     : BSD-style
 -- Maintainer  : Nicolas Di Prima <nicolas@primetype.co.uk>
 -- Stability   : experimental
@@ -8,8 +8,8 @@
 -- Class of collection that can be traversed from left to right,
 -- performing an action on each element.
 --
-module Foundation.Collection.Mapable
-    ( Mapable(..)
+module Foundation.Collection.Mappable
+    ( Mappable(..)
     , sequence_
     , traverse_
     , mapM_
@@ -26,7 +26,7 @@ import           Foundation.Array.Boxed (Array)
 --
 -- Mostly like base's `Traversable` but applied to collections only.
 --
-class Functor collection => Mapable collection where
+class Functor collection => Mappable collection where
     {-# MINIMAL traverse | sequenceA #-}
 
     -- | Map each element of a structure to an action, evaluate these actions
@@ -59,46 +59,46 @@ class Functor collection => Mapable collection where
 -- | Map each element of a collection to an action, evaluate these
 -- actions from left to right, and ignore the results. For a version
 -- that doesn't ignore the results see 'Foundation.Collection.traverse`
-traverse_ :: (Mapable col, Applicative f) => (a -> f b) -> col a -> f ()
+traverse_ :: (Mappable col, Applicative f) => (a -> f b) -> col a -> f ()
 traverse_ f col = traverse f col *> pure ()
 
 -- | Evaluate each action in the collection from left to right, and
 -- ignore the results. For a version that doesn't ignore the results
 -- see 'Foundation.Collection.sequenceA'.
-sequenceA_ :: (Mapable col, Applicative f) => col (f a) -> f ()
+sequenceA_ :: (Mappable col, Applicative f) => col (f a) -> f ()
 sequenceA_ col = sequenceA col *> pure ()
 
 -- | Map each element of a collection to a monadic action, evaluate
 -- these actions from left to right, and ignore the results. For a
 -- version that doesn't ignore the results see
 -- 'Foundation.Collection.mapM'.
-mapM_ :: (Mapable col, Applicative m, Monad m) => (a -> m b) -> col a -> m ()
+mapM_ :: (Mappable col, Applicative m, Monad m) => (a -> m b) -> col a -> m ()
 mapM_ f c = mapM f c *> return ()
 
 -- | Evaluate each monadic action in the collection from left to right,
 -- and ignore the results. For a version that doesn't ignore the
 -- results see 'Foundation.Collection.sequence'.
-sequence_ :: (Mapable col, Applicative m, Monad m) => col (m a) -> m ()
+sequence_ :: (Mappable col, Applicative m, Monad m) => col (m a) -> m ()
 sequence_ c = sequence c *> return ()
 
 -- | 'forM' is 'mapM' with its arguments flipped. For a version that
 -- ignores the results see 'Foundation.Collection.forM_'.
-forM :: (Mapable col, Applicative m, Monad m) => col a -> (a -> m b) -> m (col b)
+forM :: (Mappable col, Applicative m, Monad m) => col a -> (a -> m b) -> m (col b)
 forM = flip mapM
 
 -- | 'forM_' is 'mapM_' with its arguments flipped. For a version that
 -- doesn't ignore the results see 'Foundation.Collection.forM'.
-forM_ :: (Mapable col, Applicative m, Monad m) => col a -> (a -> m b) -> m ()
+forM_ :: (Mappable col, Applicative m, Monad m) => col a -> (a -> m b) -> m ()
 forM_ = flip mapM_
 
 ----------------------------
 -- Foldable instances
 ----------------------------
 
-instance Mapable [] where
+instance Mappable [] where
     {-# INLINE traverse #-}
     traverse = Data.Traversable.traverse
 
-instance Mapable Array where
+instance Mappable Array where
     -- | TODO: to optimise
     traverse f arr = fromList <$> traverse f (toList arr)

@@ -28,7 +28,7 @@ import Foundation.Internal.Proxy
 import Foundation.Hashing (Hashable)
 import Foundation.String
 import Foundation.Array
-import Foundation.Collection.Mapable
+import Foundation.Collection.Mappable
 import Foundation.Network.IPv4 (IPv4)
 import Foundation.Network.IPv6 (IPv6)
 

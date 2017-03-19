@@ -111,7 +111,7 @@ Library
                      Foundation.Collection.Foldable
                      Foundation.Collection.Mutable
                      Foundation.Collection.Zippable
-                     Foundation.Collection.Mapable
+                     Foundation.Collection.Mappable
                      Foundation.Conduit.Internal
                      Foundation.Internal.Base
                      Foundation.Internal.ByteSwap
