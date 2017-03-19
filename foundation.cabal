@@ -76,7 +76,6 @@ Library
                      Foundation.Monad.State
                      Foundation.Network.IPv4
                      Foundation.Network.IPv6
-                     Foundation.Network.Address
                      Foundation.Network.HostName
                      Foundation.System.Info
                      Foundation.Strict

@@ -27,9 +27,10 @@ import Foundation.Internal.Base
 import Foundation.Internal.Proxy
 import Foundation.Hashing (Hashable)
 import Foundation.String
-import Foundation.Network.Address
 import Foundation.Array
 import Foundation.Collection.Mapable
+import Foundation.Network.IPv4 (IPv4)
+import Foundation.Network.IPv6 (IPv6)
 
 import Foundation.System.Bindings.Network
 
@@ -45,6 +46,7 @@ import Control.Monad ((=<<))
 # include <winsock2.h>
 #else
 # include "netdb.h"
+#include "netinet/in.h"
 #endif
 
 -- | HostName
@@ -87,6 +89,14 @@ data HostNameError
 
 instance Exception HostNameError
 
+-- TODO: move this when we have socket family and domain name...
+class SocketFamily a where
+    familyCode :: proxy a -> CInt
+instance SocketFamily IPv4 where
+    familyCode _ = (#const AF_INET)
+instance SocketFamily IPv6 where
+    familyCode _ = (#const AF_INET6)
+
 -- | get `HostName` info:
 --
 -- retrieve the official name, the aliases and the addresses associated to this
@@ -96,7 +106,7 @@ instance Exception HostNameError
 -- re-entrant function `gethostbyname2`. This function is using a `MVar ()` to
 -- avoid a race condition and should be safe to use.
 --
-getHostNameInfo :: (Show address_type, Eq address_type, Address address_type)
+getHostNameInfo :: (Eq address_type, Storable address_type, SocketFamily address_type)
                 => HostName
                 -> IO (HostNameInfo address_type)
 getHostNameInfo = getHostNameInfo_ Proxy
@@ -106,7 +116,7 @@ globalMutex = unsafePerformIO (newMVar ())
 {-# NOINLINE globalMutex #-}
 
 -- | like `getHostNameInfo` but takes a `Proxy` to help with the type checker.
-getHostNameInfo_ :: (Show address_type, Eq address_type, Address address_type)
+getHostNameInfo_ :: (SocketFamily address_type, Eq address_type, Storable address_type)
                  => Proxy address_type
                  -> HostName
                  -> IO (HostNameInfo address_type)
