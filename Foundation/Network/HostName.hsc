@@ -48,7 +48,9 @@ import Control.Monad ((=<<))
 -- | HostName
 --
 newtype HostName = HostName { toString :: String }
-  deriving (Show, Eq, Ord, Typeable, Hashable)
+  deriving (Eq, Ord, Typeable, Hashable)
+instance Show HostName where
+    show = show . toString
 instance IsString HostName where
     fromString = HostName . fromString
 
