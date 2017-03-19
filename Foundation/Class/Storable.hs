@@ -29,7 +29,6 @@ module Foundation.Class.Storable
 
 import GHC.Types (Double, Float)
 
-import Control.Monad (forM_)
 import Foreign.Ptr (castPtr)
 import qualified Foreign.Ptr
 import qualified Foreign.Storable (peek, poke, sizeOf, alignment)
@@ -97,7 +96,7 @@ peekArrayEndedBy term = build 64 . builder 0
 pokeArray :: (Sequential col, StorableFixed (Element col))
           => Ptr (Element col) -> col -> IO ()
 pokeArray ptr arr =
-    forM_ (z [0..] $ toList arr) $ \(i, e) ->
+    forM_ (z [0..] arr) $ \(i, e) ->
         pokeOff ptr (Offset i) e
   where
     z :: (Sequential col, Collection col) => [Int] -> col -> [(Int, Element col)]

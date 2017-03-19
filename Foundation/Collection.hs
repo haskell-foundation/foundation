@@ -15,6 +15,11 @@ module Foundation.Collection
     , Element
     , InnerFunctor(..)
     , Foldable(..)
+    , Mapable(..)
+    , traverse_
+    , mapM_
+    , forM
+    , forM_
     , Collection(..)
     , NonEmpty
     , getNonEmpty
@@ -40,5 +45,6 @@ import           Foundation.Collection.Keyed
 import           Foundation.Collection.Mutable
 import           Foundation.Collection.Collection
 import           Foundation.Collection.Sequential
+import           Foundation.Collection.Mapable
 import           Foundation.Collection.Zippable
 import           Foundation.Collection.Copy
