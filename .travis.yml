@@ -76,7 +76,7 @@ script:
       stack --no-terminal test --flag foundation:bounds-check --install-ghc --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps
       ;;
     cabal)
-      cabal install --only-dependencies --enable-tests --enable-benchmarks
+      cabal install --only-dependencies --enable-tests
       cabal test
       cabal check
       cabal sdist
