@@ -27,12 +27,16 @@ import Foundation.Internal.Proxy
 import Foundation.Hashing (Hashable)
 import Foundation.String
 import Foundation.Network.Address
+import Foundation.Array
+import Foundation.Collection.Mapable
 
 import Foreign.C.String
 import Foreign.C.Types
 import Foreign.Ptr (nullPtr)
 import Control.Concurrent.MVar
 import System.IO.Unsafe (unsafePerformIO)
+
+import Control.Monad ((=<<))
 
 #ifdef mingw32_HOST_OS
 #include <winsock2.h>
@@ -52,9 +56,9 @@ instance IsString HostName where
 data HostNameInfo address_type = HostNameInfo
     { officialName :: !HostName
         -- ^ official names
-    , aliases      :: ![HostName]
+    , aliases      :: !(Array HostName)
         -- ^ known aliases
-    , addresses    :: ![address_type]
+    , addresses    :: !(Array address_type)
         -- ^ known addresses
     } deriving (Show, Eq, Ord, Typeable)
 
@@ -107,19 +111,12 @@ getHostNameInfo_ p h@(HostName hn) =
     withCString (toList hn) $ \cname -> do
         ptr <- loop $ c_gethostbyname2 cname (familyCode p)
 
-        cptr <- peek $ castPtr (offname_ptr ptr)
-        on <- getCString cptr
+        on <- peekHostName . castPtr =<< peek (castPtr $ offname_ptr ptr)
 
-        alptr <- peek $ castPtr (aliases_ptr ptr)
-        alptr' <- peek alptr
-        as <- getAliases alptr'
+        as <- getAliases . castPtr =<< peek (castPtr $ aliases_ptr ptr)
 
-        ty <- peek $ castPtr (addtype_ptr ptr)
-        len <- peek $ castPtr (length_addr ptr)
-        lptr <- peek $ castPtr (addr_list ptr)
-        lptr' <- peek lptr
-        addrs <- getAddresses p ty len lptr'
-        return $ HostNameInfo (HostName on) as addrs
+        addrs <- getAddresses p . castPtr =<< peek (castPtr $ addr_list ptr)
+        return $ HostNameInfo on as addrs
   where
     loop f = do
         ptr <- f
@@ -128,38 +125,30 @@ getHostNameInfo_ p h@(HostName hn) =
             else do
                 err <- c_get_h_errno
                 case err of
-                    _ | err == (#const HOST_NOT_FOUND) -> throwIO $ HostNotFound h
+                    _ | err == (#const NO_DATA)        -> throwIO $ NoAssociatedData h
+                      | err == (#const HOST_NOT_FOUND) -> throwIO $ HostNotFound h
                       | err == (#const TRY_AGAIN)      -> loop f
                       | err == (#const NO_RECOVERY)    -> throwIO FatalError
-                      | err == (#const NO_DATA)        -> throwIO $ NoAssociatedData h
                       | otherwise                      -> throwIO $ UnknownError err
     offname_ptr = (#ptr struct hostent, h_name)
     aliases_ptr = (#ptr struct hostent, h_aliases)
-    addtype_ptr = (#ptr struct hostent, h_addrtype)
-    length_addr = (#ptr struct hostent, h_length)
     addr_list   = (#ptr struct hostent, h_addr_list)
 
-getCString :: Ptr CChar -> IO String
-getCString ptr = fromList <$> peekCString ptr
+peekHostName :: Ptr Word8 -> IO HostName
+peekHostName ptr = HostName . fst . fromBytesLenient <$> peekArrayEndedBy 0x00 ptr
 
-getAliases :: Ptr CChar -> IO [HostName]
-getAliases ptr
-    | nullPtr == ptr = return []
-    | otherwise = do
-         x <- HostName <$> getCString ptr
-         (:) x <$> getAliases (ptr `plusPtr` 1)
+getAliases :: Ptr (Ptr Word8) -> IO (Array HostName)
+getAliases ptr = do
+    arr <- peekArrayEndedBy nullPtr ptr
+    forM arr peekHostName
 
-getAddresses :: (Show address_type, Eq address_type, Address address_type)
+getAddresses :: Storable address_type
              => Proxy address_type
-             -> Int32
-             -> Int32
-             -> Ptr address_type
-             -> IO [address_type]
-getAddresses p ty len ptr = do
-    x <- peek ptr
-    if x == any
-        then return []
-        else (:) x <$> getAddresses p ty len (ptr `plusPtr` 1)
+             -> Ptr (Ptr address_type)
+             -> IO (Array address_type)
+getAddresses _ ptr = do
+    arr <- peekArrayEndedBy nullPtr ptr
+    forM arr peek
 
 foreign import ccall unsafe "gethostbyname2"
     c_gethostbyname2 :: CString -> CInt -> IO (Ptr Word8)
