@@ -10,13 +10,21 @@
 --
 
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Foundation.Class.Storable
     ( Storable(..)
     , StorableFixed(..)
 
+      -- * Ptr
     , Ptr, plusPtr, castPtr
+      -- * offset based helper
     , peekOff, pokeOff
+      -- * Collection
+    , peekArray
+    , peekArrayEndedBy
+    , pokeArray
+    , pokeArrayEndedBy
     ) where
 
 import GHC.Types (Double, Float)
@@ -29,6 +37,8 @@ import           Foreign.C.Types (CChar, CUChar)
 import Foundation.Internal.Base
 import Foundation.Internal.Types
 import Foundation.Internal.Proxy
+import Foundation.Collection
+import Foundation.Collection.Buildable (builderLift)
 import Foundation.Primitive.Types
 import Foundation.Primitive.Endianness
 import Foundation.Numerical
@@ -61,6 +71,42 @@ peekOff ptr off = peek (ptr `plusPtr` offsetAsSize off)
 -- | like `poke` but at a given offset.
 pokeOff :: StorableFixed a => Ptr a -> Offset a -> a -> IO ()
 pokeOff ptr off = poke (ptr `plusPtr` offsetAsSize off)
+
+peekArray :: (Buildable col, StorableFixed (Element col))
+          => Size (Element col) -> Ptr (Element col) -> IO col
+peekArray (Size s) = build 64 . builder 0
+  where
+    builder off ptr
+      | off == s = return ()
+      | otherwise = do
+          v <- builderLift (peekOff ptr (Offset off))
+          append v
+          builder (off + 1) ptr
+
+peekArrayEndedBy :: (Buildable col, StorableFixed (Element col), Eq (Element col), Show (Element col))
+                 => Element col -> Ptr (Element col) -> IO col
+peekArrayEndedBy term = build 64 . builder 0
+  where
+    builder off ptr = do
+      v <- builderLift $ peekOff ptr off
+      if term == v
+        then return ()
+        else append v >> builder (off + (Offset 1)) ptr
+
+pokeArray :: (Sequential col, StorableFixed (Element col))
+          => Ptr (Element col) -> col -> IO ()
+pokeArray ptr arr =
+    forM_ (z [0..] arr) $ \(i, e) ->
+        pokeOff ptr (Offset i) e
+  where
+    z :: (Sequential col, Collection col) => [Int] -> col -> [(Int, Element col)]
+    z = zip
+
+pokeArrayEndedBy :: (Sequential col, StorableFixed (Element col))
+                 => Element col -> Ptr (Element col) -> col -> IO ()
+pokeArrayEndedBy term ptr col = do
+    pokeArray ptr col
+    pokeOff ptr (Offset $ length col) term
 
 instance Storable CChar where
     peek (Ptr addr) = primAddrRead addr (Offset 0)

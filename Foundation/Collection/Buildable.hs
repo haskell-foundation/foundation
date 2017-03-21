@@ -11,6 +11,7 @@ module Foundation.Collection.Buildable
     ( Buildable(..)
     , Builder(..)
     , BuildingState(..)
+    , builderLift
     ) where
 
 import           Foundation.Array.Unboxed
@@ -21,6 +22,7 @@ import           Foundation.Collection.Element
 import           Foundation.Internal.Base
 import           Foundation.Primitive.Monad
 import           Foundation.Boot.Builder
+import           Foundation.Internal.MonadTrans
 
 -- $setup
 -- >>> import Control.Monad.ST
@@ -53,6 +55,13 @@ class Buildable col where
           => Int -- ^ Size of a chunk
           -> Builder col (Mutable col) (Step col) prim ()
           -> prim col
+
+builderLift :: (Buildable c, PrimMonad prim)
+            => prim a
+            -> Builder c (Mutable c) (Step c) prim a
+builderLift f = Builder $ State $ \(i, st) -> do
+    ret <- f
+    return (ret, (i, st))
 
 instance PrimType ty => Buildable (UArray ty) where
     type Mutable (UArray ty) = MUArray ty

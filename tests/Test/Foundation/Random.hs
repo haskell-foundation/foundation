@@ -11,7 +11,7 @@ import Foundation.Array
 import Foundation.Collection
 import Foundation.System.Entropy
 import Foundation.Random
-import Control.Monad
+import Control.Monad (unless)
 import qualified Prelude
 import qualified Data.List
 import GHC.ST

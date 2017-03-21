@@ -13,6 +13,7 @@
 
 module Foundation.Network.IPv6
     ( IPv6
+    , any, loopback
     , fromString, toString
     , fromTuple, toTuple
       -- * parsers
@@ -35,7 +36,7 @@ import Foundation.Internal.Base
 import Foundation.Internal.Proxy
 import Foundation.Primitive
 import Foundation.Numerical
-import Foundation.Collection
+import Foundation.Collection (Sequential, Element, length, intercalate, null)
 import Foundation.Parser
 import Foundation.String (String)
 import Foundation.Bits
@@ -80,6 +81,14 @@ instance Storable IPv6 where
 instance StorableFixed IPv6 where
     size      _ = (size      (Proxy :: Proxy Word64)) `scale` 2
     alignment _ = alignment (Proxy :: Proxy Word64)
+
+-- | equivalent to `::`
+any :: IPv6
+any = fromTuple (0,0,0,0,0,0,0,0)
+
+-- | equivalent to `::1`
+loopback :: IPv6
+loopback = fromTuple (0,0,0,0,0,0,0,1)
 
 -- | serialise to human readable IPv6
 --

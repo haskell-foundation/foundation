@@ -76,6 +76,7 @@ Library
                      Foundation.Monad.State
                      Foundation.Network.IPv4
                      Foundation.Network.IPv6
+                     Foundation.Network.HostName
                      Foundation.System.Info
                      Foundation.Strict
                      Foundation.Parser
@@ -110,6 +111,7 @@ Library
                      Foundation.Collection.Foldable
                      Foundation.Collection.Mutable
                      Foundation.Collection.Zippable
+                     Foundation.Collection.Mappable
                      Foundation.Conduit.Internal
                      Foundation.Internal.Base
                      Foundation.Internal.ByteSwap
@@ -155,9 +157,11 @@ Library
                      Foundation.Foreign.MemoryMap.Types
                      Foundation.Partial
                      Foundation.System.Entropy.Common
+                     Foundation.System.Bindings.Network
 
   include-dirs:      cbits
   C-sources:         cbits/foundation_random.c
+                     cbits/foundation_network.c
 
   if os(windows)
     Exposed-modules: Foundation.System.Bindings.Windows
