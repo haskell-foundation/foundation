@@ -41,5 +41,5 @@ herr_NoRecovery   = (#const NO_RECOVERY)
 herr_TryAgain     = (#const TRY_AGAIN)
 #endif
 
-foreign import ccall unsafe "get_h_errno"
+foreign import ccall unsafe "foundation_network_get_h_errno"
     getHErrno :: IO CInt

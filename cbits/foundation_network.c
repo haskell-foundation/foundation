@@ -6,7 +6,8 @@
 # include "netdb.h"
 #endif
 
-int get_h_errno(void)
+
+int foundation_network_get_h_errno(void)
 {
 #if defined(FOUNDATION_SYSTEM_WINDOWS)
   return WSAGetLastError();
