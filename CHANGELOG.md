@@ -1,3 +1,9 @@
+## 0.0.5
+
+* Generalize monadic map (mapM, mapM\_)
+* HostName type
+* Network address / name resolution
+
 ## 0.0.4
 
 * Add Conduit for all your streaming needs
