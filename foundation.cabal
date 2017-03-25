@@ -159,6 +159,7 @@ Library
                      Foundation.Partial
                      Foundation.System.Entropy.Common
                      Foundation.System.Bindings.Network
+                     Foundation.System.Bindings.Posix2008
 
   include-dirs:      cbits
   C-sources:         cbits/foundation_random.c
@@ -171,7 +172,6 @@ Library
   else
     Exposed-modules: Foundation.System.Bindings.Posix
                      Foundation.System.Bindings.PosixDef
-                     Foundation.System.Bindings.Posix2008
                      Foundation.System.Bindings.Hs
     Other-modules:   Foundation.Foreign.MemoryMap.Posix
                      Foundation.System.Entropy.Unix

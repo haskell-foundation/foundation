@@ -41,9 +41,14 @@ import Foreign.Ptr
 import Foreign.C.Types
 import Foreign.C.String (CString)
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
+#if defined(FOUNDATION_SYSTEM_WINDOWS)
+# include <winsock2.h>
+# include <netdb.h>
+#else
+# include <sys/types.h>
+# include <sys/socket.h>
+# include <netdb.h>
+#endif
 
 newtype CAddrInfoError = CAddrInfoError CInt
   deriving (Show, Eq, Ord)
