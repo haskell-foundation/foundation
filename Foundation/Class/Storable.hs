@@ -38,6 +38,7 @@ import Foundation.Internal.Base
 import Foundation.Internal.Types
 import Foundation.Internal.Proxy
 import Foundation.Collection
+import Foundation.String
 import Foundation.Collection.Buildable (builderLift)
 import Foundation.Primitive.Types
 import Foundation.Primitive.Endianness
@@ -168,7 +169,9 @@ instance Storable (LE Word64) where
 instance Storable (Ptr a) where
     peek = Foreign.Storable.peek
     poke = Foreign.Storable.poke
-
+instance Storable String where
+    peek ptr = fst . fromBytesLenient <$> peekArrayEndedBy 0x00 (castPtr ptr)
+    poke ptr cstr = pokeArrayEndedBy 0x00 (castPtr ptr) (toBytes UTF8 cstr)
 instance StorableFixed CChar where
     size      = primSizeInBytes . toProxy
     alignment = primSizeInBytes . toProxy
