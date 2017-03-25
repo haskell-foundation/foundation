@@ -51,7 +51,11 @@ newtype CAddrInfoError = CAddrInfoError CInt
 -- | The specified network host does not have any network addresses
 -- in the requested address family.
 sysPosix_EAI_ADDRFAMILY :: CAddrInfoError
+#ifdef EAI_ADDRFAMILY
 sysPosix_EAI_ADDRFAMILY = CAddrInfoError (#const EAI_ADDRFAMILY)
+#else
+sysPosix_EAI_ADDRFAMILY = sysPosix_EAI_SYSTEM
+#endif
 
 -- | The name server returned a temporary failure indication.  Try
 -- again later.
@@ -77,7 +81,11 @@ sysPosix_EAI_MEMORY = CAddrInfoError (#const EAI_MEMORY)
 -- | The specified network host exists, but does not have any
 -- network addresses defined.
 sysPosix_EAI_NODATA :: CAddrInfoError
+#ifdef EAI_NODATA
 sysPosix_EAI_NODATA = CAddrInfoError (#const EAI_NODATA)
+#else
+sysPosix_EAI_NODATA = sysPosix_EAI_SYSTEM
+#endif
 
 -- | The node or service is not known; or both node and service are
 -- NULL; or AI_NUMERICSERV was specified in hints.ai_flags and
