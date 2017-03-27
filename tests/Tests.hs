@@ -327,6 +327,24 @@ tests =
     , testNetworkIPv4
     , testNetworkIPv6
     , testHexadecimal
+    , testGroup "Issues"
+        [ testGroup "218"
+            [ testCase "Foundation Strings" $
+                let str1 = "aa9a9\154" :: String
+                    str2 = "a9\154" :: String
+                    Just x = uncons $ snd $ breakElem '9' str1
+                    x1 = breakElem '9' $ snd x
+                    x2 = breakElem '9' str2
+                 in if assertEq x1 x2 then return () else error "failed..."
+            , testCase "Lazy Strings" $
+                let str1 = "aa9a9\154" :: [Char]
+                    str2 = "a9\154" :: [Char]
+                    Just x = uncons $ snd $ breakElem '9' str1
+                    x1 = breakElem '9' $ snd x
+                    x2 = breakElem '9' str2
+                 in if assertEq x1 x2 then return () else error "failed..."
+            ]
+        ]
     ]
 
 testCaseModifiedUTF8 :: [Char] -> String -> Assertion
