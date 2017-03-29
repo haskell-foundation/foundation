@@ -45,8 +45,9 @@ import Control.Monad ((=<<))
 #ifdef mingw32_HOST_OS
 # include <winsock2.h>
 #else
-# include "netdb.h"
-#include "netinet/in.h"
+# include <netdb.h>
+# include <netinet/in.h>
+# include <sys/socket.h>
 #endif
 
 -- | HostName
@@ -58,7 +59,7 @@ instance Show HostName where
 instance IsString HostName where
     fromString = HostName . fromString
 
--- | HostName's Info
+-- | HostName Info
 data HostNameInfo address_type = HostNameInfo
     { officialName :: !HostName
         -- ^ official names
