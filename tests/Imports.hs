@@ -1,5 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP #-}
 module Imports
     ( module X
     , testCase
@@ -15,8 +16,11 @@ module Imports
 import Foundation
 import Test.Tasty              as X hiding (testGroup)
 import Test.Tasty.QuickCheck   as X (Arbitrary(..), Gen, suchThat, Property, (===), (==>)
-                                    , Small(..), QuickCheckVerbose(..), QuickCheckTests(..)
+                                    , Small(..), QuickCheckTests(..)
                                     , forAll, vectorOf, frequency, choose, elements)
+#if MIN_VERSION_tasty_quickcheck(0,8,4)
+import Test.Tasty.QuickCheck   as X (QuickCheckVerbose(..))
+#endif
 import Test.Tasty.HUnit        as X hiding (testCase, assert, assertFailure)
 import Test.QuickCheck.Monadic as X
 

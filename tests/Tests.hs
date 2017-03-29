@@ -3,6 +3,7 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE CPP #-}
 module Main where
 
 import           Control.Monad
@@ -79,6 +80,7 @@ assertEq got expected
     | got == expected = True
     | otherwise       = error ("got: " <> show got <> " expected: " <> show expected)
 
+#if MIN_VERSION_tasty_quickcheck(0,8,4)
 -- | Set in front of tests to make them verbose
 qcv :: TestTree -> TestTree
 qcv = adjustOption (\(QuickCheckVerbose _) -> QuickCheckVerbose True)
@@ -90,7 +92,7 @@ qcnSet n = adjustOption (\(QuickCheckTests _) -> QuickCheckTests n)
 -- | Scale the number of tests
 qcnScale :: Int -> TestTree -> TestTree
 qcnScale n = adjustOption (\(QuickCheckTests actual) -> QuickCheckTests (actual * n))
-
+#endif
 
 testCaseFilePath :: [TestTree]
 testCaseFilePath = Prelude.map (makeTestCases . (\x -> (show x, x)))
