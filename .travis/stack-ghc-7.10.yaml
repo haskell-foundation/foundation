@@ -1,5 +1,6 @@
-resolver: nightly-2017-03-08
+resolver: ghc-7.10.3
 packages:
 - '.'
 extra-deps: []
+flags: {}
 extra-package-dbs: []
