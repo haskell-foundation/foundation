@@ -37,7 +37,6 @@ sysPosix_E2BIG
     , sysPosix_EAGAIN
     , sysPosix_EALREADY
     , sysPosix_EBADF
-    , sysPosix_EBADMSG
     , sysPosix_EBUSY
     , sysPosix_ECANCELED
     , sysPosix_ECHILD
@@ -64,40 +63,32 @@ sysPosix_E2BIG
     , sysPosix_EMFILE
     , sysPosix_EMLINK
     , sysPosix_EMSGSIZE
-    , sysPosix_EMULTIHOP
     , sysPosix_ENAMETOOLONG
     , sysPosix_ENETDOWN
     , sysPosix_ENETRESET
     , sysPosix_ENETUNREACH
     , sysPosix_ENFILE
     , sysPosix_ENOBUFS
-    , sysPosix_ENODATA
     , sysPosix_ENODEV
     , sysPosix_ENOENT
     , sysPosix_ENOEXEC
     , sysPosix_ENOLCK
-    , sysPosix_ENOLINK
     , sysPosix_ENOMEM
     , sysPosix_ENOMSG
     , sysPosix_ENOPROTOOPT
     , sysPosix_ENOSPC
-    , sysPosix_ENOSR
-    , sysPosix_ENOSTR
     , sysPosix_ENOSYS
     , sysPosix_ENOTCONN
     , sysPosix_ENOTDIR
     , sysPosix_ENOTEMPTY
-    , sysPosix_ENOTRECOVERABLE
     , sysPosix_ENOTSOCK
     , sysPosix_ENOTSUP
     , sysPosix_ENOTTY
     , sysPosix_ENXIO
     , sysPosix_EOPNOTSUPP
     , sysPosix_EOVERFLOW
-    , sysPosix_EOWNERDEAD
     , sysPosix_EPERM
     , sysPosix_EPIPE
-    , sysPosix_EPROTO
     , sysPosix_EPROTONOSUPPORT
     , sysPosix_EPROTOTYPE
     , sysPosix_ERANGE
@@ -105,7 +96,6 @@ sysPosix_E2BIG
     , sysPosix_ESPIPE
     , sysPosix_ESRCH
     , sysPosix_ESTALE
-    , sysPosix_ETIME
     , sysPosix_ETIMEDOUT
     , sysPosix_ETXTBSY
     , sysPosix_EWOULDBLOCK
@@ -118,7 +108,6 @@ sysPosix_EAFNOSUPPORT = (#const EAFNOSUPPORT)
 sysPosix_EAGAIN = (#const EAGAIN)
 sysPosix_EALREADY = (#const EALREADY)
 sysPosix_EBADF = (#const EBADF)
-sysPosix_EBADMSG = (#const EBADMSG)
 sysPosix_EBUSY = (#const EBUSY)
 sysPosix_ECANCELED = (#const ECANCELED)
 sysPosix_ECHILD = (#const ECHILD)
@@ -145,40 +134,32 @@ sysPosix_ELOOP = (#const ELOOP)
 sysPosix_EMFILE = (#const EMFILE)
 sysPosix_EMLINK = (#const EMLINK)
 sysPosix_EMSGSIZE = (#const EMSGSIZE)
-sysPosix_EMULTIHOP = (#const EMULTIHOP)
 sysPosix_ENAMETOOLONG = (#const ENAMETOOLONG)
 sysPosix_ENETDOWN = (#const ENETDOWN)
 sysPosix_ENETRESET = (#const ENETRESET)
 sysPosix_ENETUNREACH = (#const ENETUNREACH)
 sysPosix_ENFILE = (#const ENFILE)
 sysPosix_ENOBUFS = (#const ENOBUFS)
-sysPosix_ENODATA = (#const ENODATA)
 sysPosix_ENODEV = (#const ENODEV)
 sysPosix_ENOENT = (#const ENOENT)
 sysPosix_ENOEXEC = (#const ENOEXEC)
 sysPosix_ENOLCK = (#const ENOLCK)
-sysPosix_ENOLINK = (#const ENOLINK)
 sysPosix_ENOMEM = (#const ENOMEM)
 sysPosix_ENOMSG = (#const ENOMSG)
 sysPosix_ENOPROTOOPT = (#const ENOPROTOOPT)
 sysPosix_ENOSPC = (#const ENOSPC)
-sysPosix_ENOSR = (#const ENOSR)
-sysPosix_ENOSTR = (#const ENOSTR)
 sysPosix_ENOSYS = (#const ENOSYS)
 sysPosix_ENOTCONN = (#const ENOTCONN)
 sysPosix_ENOTDIR = (#const ENOTDIR)
 sysPosix_ENOTEMPTY = (#const ENOTEMPTY)
-sysPosix_ENOTRECOVERABLE = (#const ENOTRECOVERABLE)
 sysPosix_ENOTSOCK = (#const ENOTSOCK)
 sysPosix_ENOTSUP = (#const ENOTSUP)
 sysPosix_ENOTTY = (#const ENOTTY)
 sysPosix_ENXIO = (#const ENXIO)
 sysPosix_EOPNOTSUPP = (#const EOPNOTSUPP)
 sysPosix_EOVERFLOW = (#const EOVERFLOW)
-sysPosix_EOWNERDEAD = (#const EOWNERDEAD)
 sysPosix_EPERM = (#const EPERM)
 sysPosix_EPIPE = (#const EPIPE)
-sysPosix_EPROTO = (#const EPROTO)
 sysPosix_EPROTONOSUPPORT = (#const EPROTONOSUPPORT)
 sysPosix_EPROTOTYPE = (#const EPROTOTYPE)
 sysPosix_ERANGE = (#const ERANGE)
@@ -186,12 +167,60 @@ sysPosix_EROFS = (#const EROFS)
 sysPosix_ESPIPE = (#const ESPIPE)
 sysPosix_ESRCH = (#const ESRCH)
 sysPosix_ESTALE = (#const ESTALE)
-sysPosix_ETIME = (#const ETIME)
 sysPosix_ETIMEDOUT = (#const ETIMEDOUT)
 sysPosix_ETXTBSY = (#const ETXTBSY)
 sysPosix_EWOULDBLOCK = (#const EWOULDBLOCK)
 sysPosix_EXDEV = (#const EXDEV)
 
+#ifdef ENODATA
+sysPosix_ENODATA :: CErrno
+sysPosix_ENODATA = (#const ENODATA)
+#endif
+
+#ifdef ENOSR
+sysPosix_ENOSR :: CErrno
+sysPosix_ENOSR = (#const ENOSR)
+#endif
+
+#ifdef ENOSTR
+sysPosix_ENOSTR :: CErrno
+sysPosix_ENOSTR = (#const ENOSTR)
+#endif
+
+#ifdef ETIME
+sysPosix_ETIME :: CErrno
+sysPosix_ETIME = (#const ETIME)
+#endif
+
+#ifdef EBADMSG
+sysPosix_EBADMSG :: CErrno
+sysPosix_EBADMSG = (#const EBADMSG)
+#endif
+
+#ifdef EMULTIHOP
+sysPosix_EMULTIHOP :: CErrno
+sysPosix_EMULTIHOP = (#const EMULTIHOP)
+#endif
+
+#ifdef ENOLINK
+sysPosix_ENOLINK :: CErrno
+sysPosix_ENOLINK = (#const ENOLINK)
+#endif
+
+#ifdef ENOTRECOVERABLE
+sysPosix_ENOTRECOVERABLE :: CErrno
+sysPosix_ENOTRECOVERABLE = (#const ENOTRECOVERABLE)
+#endif
+
+#ifdef EOWNERDEAD
+sysPosix_EOWNERDEAD :: CErrno
+sysPosix_EOWNERDEAD = (#const EOWNERDEAD)
+#endif
+
+#ifdef EPROTO
+sysPosix_EPROTO :: CErrno
+sysPosix_EPROTO = (#const EPROTO)
+#endif
 
 sysPosix_O_RDONLY
     , sysPosix_O_WRONLY
