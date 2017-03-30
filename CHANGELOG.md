@@ -3,6 +3,7 @@
 * Generalize monadic map (mapM, mapM\_)
 * HostName type
 * Network address / name resolution
+* Fix compilation on FreeBSD & OpenBSD
 
 ## 0.0.4
 
