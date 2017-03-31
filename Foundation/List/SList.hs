@@ -16,7 +16,6 @@
 {-# LANGUAGE TypeFamilies              #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
-{-# LANGUAGE NoImplicitPrelude         #-}
 {-# LANGUAGE UndecidableInstances      #-}
 module Foundation.List.SList
     ( SList
@@ -44,11 +43,10 @@ module Foundation.List.SList
     , replicateM
     ) where
 
-import           GHC.TypeLits
 import           Data.Proxy
-import           Prelude       hiding ( map, zip, zip3, zipWith, zipWith3
-                                      , foldl
-                                      , length, maximum, minimum, head, tail, take, drop, elem)
+import           Foundation.Internal.Base
+import           Foundation.Primitive.Nat
+import           Foundation.Numerical
 import qualified Prelude
 import qualified Control.Monad as M (replicateM)
 
@@ -57,12 +55,12 @@ impossible = error "SList: internal error: the impossible happened"
 
 newtype SList (n :: Nat) a = SList { unSList :: [a] }
 
-toSList :: forall (n :: Nat) a . KnownNat n => [a] -> Maybe (SList n a)
+toSList :: forall (n :: Nat) a . (KnownNat n, NatWithinIntBound n) => [a] -> Maybe (SList n a)
 toSList l
-    | expected == fromIntegral (Prelude.length l) = Just (SList l)
-    | otherwise                                   = Nothing
+    | expected == Prelude.fromIntegral (Prelude.length l) = Just (SList l)
+    | otherwise                                           = Nothing
   where
-    expected = natVal (Proxy :: Proxy n)
+    expected = natValInt (Proxy :: Proxy n)
 
 replicateM :: forall (n :: Nat) m a . (n <= 0x100000, Monad m, KnownNat n) => m a -> m (SList n a)
 replicateM action = SList <$> M.replicateM (Prelude.fromIntegral $ natVal (Proxy :: Proxy n)) action
@@ -77,8 +75,8 @@ cons a (SList l) = SList (a : l)
 empty :: SList 0 a
 empty = SList []
 
-length :: forall a (n :: Nat) . KnownNat n => SList n a -> Int
-length _ = fromIntegral $ natVal (Proxy :: Proxy n)
+length :: forall a (n :: Nat) . (KnownNat n, NatWithinIntBound n) => SList n a -> Int
+length _ = natValInt (Proxy :: Proxy n)
 
 create :: forall a (n :: Nat) . KnownNat n => (Integer -> a) -> SList n a
 create f = SList $ Prelude.map f [0..(len-1)]
@@ -99,7 +97,7 @@ elem :: Eq a => a -> SList n a -> Bool
 elem a (SList l) = Prelude.elem a l
 
 append :: SList n a -> SList m a -> SList (n+m) a
-append (SList l1) (SList l2) = SList (l1 ++ l2)
+append (SList l1) (SList l2) = SList (l1 <> l2)
 
 maximum :: (Ord a, CmpNat n 0 ~ 'GT) => SList n a -> a
 maximum (SList l) = Prelude.maximum l
@@ -115,13 +113,13 @@ tail :: CmpNat n 0 ~ 'GT => SList n a -> SList (n-1) a
 tail (SList (_:xs)) = SList xs
 tail _ = impossible
 
-take :: forall a (m :: Nat) (n :: Nat) . (KnownNat m, m <= n) => SList n a -> SList m a
+take :: forall a (m :: Nat) (n :: Nat) . (KnownNat m, NatWithinIntBound m, m <= n) => SList n a -> SList m a
 take (SList l) = SList (Prelude.take n l)
-  where n = fromIntegral $ natVal (Proxy :: Proxy m)
+  where n = natValInt (Proxy :: Proxy m)
 
-drop :: forall a d (m :: Nat) (n :: Nat) . (KnownNat d, (n - m) ~ d, m <= n) => SList n a -> SList m a
+drop :: forall a d (m :: Nat) (n :: Nat) . (KnownNat d, NatWithinIntBound d, (n - m) ~ d, m <= n) => SList n a -> SList m a
 drop (SList l) = SList (Prelude.drop n l)
-  where n = fromIntegral $ natVal (Proxy :: Proxy d)
+  where n = natValInt (Proxy :: Proxy d)
 
 map :: (a -> b) -> SList n a -> SList n b
 map f (SList l) = SList (Prelude.map f l)
