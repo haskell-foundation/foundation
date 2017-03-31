@@ -181,6 +181,7 @@ Library
   if impl(ghc >= 7.10)
     Exposed-modules: Foundation.Tuple.Nth
                      Foundation.List.SList
+                     Foundation.Primitive.Nat
 
   Default-Extensions: NoImplicitPrelude
                       RebindableSyntax
