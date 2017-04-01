@@ -138,14 +138,20 @@ testName (Unit s _)     = s
 testName (Property s _) = s
 testName (Group s _)    = s
 
+type Context = (Word, [String])
+
 -- | Run tests
 defaultMain :: Test -> IO ()
 defaultMain test = do
-    runTest test
+    -- parse arguments
+    runTest (0, []) test
   where
-    runTest (Group s l) = do
+    runTest :: Context -> Test -> IO ()
+    runTest (lvl, stk) (Group s l) = do
+        putStrLn s
+        mapM_ (runTest (lvl+1, s:stk)) l
         return ()
-    runTest (Property _ _) = do
+    runTest _ (Property _ _) = do
         return ()
-    runTest (Unit _ _) = do
+    runTest _ (Unit _ _) = do
         return ()
