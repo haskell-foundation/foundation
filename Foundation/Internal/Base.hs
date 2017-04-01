@@ -82,6 +82,7 @@ import qualified Foundation.Internal.NumLiteral
 import qualified GHC.Exts
 import qualified GHC.Generics
 import qualified GHC.Ptr
+import           GHC.Exts (fromString)
 
 -- | Only to use internally for internal error cases
 internalError :: [Prelude.Char] -> a
