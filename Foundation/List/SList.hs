@@ -55,7 +55,7 @@ impossible = error "SList: internal error: the impossible happened"
 
 newtype SList (n :: Nat) a = SList { unSList :: [a] }
 
-toSList :: forall (n :: Nat) a . (KnownNat n, NatWithinIntBound n) => [a] -> Maybe (SList n a)
+toSList :: forall (n :: Nat) a . (KnownNat n, NatWithinBound Int n) => [a] -> Maybe (SList n a)
 toSList l
     | expected == Prelude.fromIntegral (Prelude.length l) = Just (SList l)
     | otherwise                                           = Nothing
@@ -75,7 +75,7 @@ cons a (SList l) = SList (a : l)
 empty :: SList 0 a
 empty = SList []
 
-length :: forall a (n :: Nat) . (KnownNat n, NatWithinIntBound n) => SList n a -> Int
+length :: forall a (n :: Nat) . (KnownNat n, NatWithinBound Int n) => SList n a -> Int
 length _ = natValInt (Proxy :: Proxy n)
 
 create :: forall a (n :: Nat) . KnownNat n => (Integer -> a) -> SList n a
@@ -113,11 +113,11 @@ tail :: CmpNat n 0 ~ 'GT => SList n a -> SList (n-1) a
 tail (SList (_:xs)) = SList xs
 tail _ = impossible
 
-take :: forall a (m :: Nat) (n :: Nat) . (KnownNat m, NatWithinIntBound m, m <= n) => SList n a -> SList m a
+take :: forall a (m :: Nat) (n :: Nat) . (KnownNat m, NatWithinBound Int m, m <= n) => SList n a -> SList m a
 take (SList l) = SList (Prelude.take n l)
   where n = natValInt (Proxy :: Proxy m)
 
-drop :: forall a d (m :: Nat) (n :: Nat) . (KnownNat d, NatWithinIntBound d, (n - m) ~ d, m <= n) => SList n a -> SList m a
+drop :: forall a d (m :: Nat) (n :: Nat) . (KnownNat d, NatWithinBound Int d, (n - m) ~ d, m <= n) => SList n a -> SList m a
 drop (SList l) = SList (Prelude.drop n l)
   where n = natValInt (Proxy :: Proxy d)
 
