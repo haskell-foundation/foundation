@@ -54,8 +54,33 @@ instance Monad Gen where
 class Arbitrary a where
     arbitrary :: Gen a
 
+arbitraryBounded :: Bounded b => Gen b
+arbitraryBounded = undefined
+
 instance Arbitrary Int where
     arbitrary = return 10
+instance Arbitrary Natural where
+    arbitrary = undefined
+instance Arbitrary Word64 where
+    arbitrary = arbitraryBounded
+instance Arbitrary Word32 where
+    arbitrary = arbitraryBounded
+instance Arbitrary Word16 where
+    arbitrary = arbitraryBounded
+instance Arbitrary Word8 where
+    arbitrary = arbitraryBounded
+instance Arbitrary Int64 where
+    arbitrary = arbitraryBounded
+instance Arbitrary Int32 where
+    arbitrary = arbitraryBounded
+instance Arbitrary Int16 where
+    arbitrary = arbitraryBounded
+instance Arbitrary Int8 where
+    arbitrary = arbitraryBounded
+instance Arbitrary Char where
+    arbitrary = undefined
+instance Arbitrary Bool where
+    arbitrary = undefined
 
 --instance Arbitrary a => Arbitrary (Maybe a) where
 
