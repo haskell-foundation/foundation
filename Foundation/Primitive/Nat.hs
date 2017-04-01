@@ -10,6 +10,9 @@
 #if __GLASGOW_HASKELL__ < 710
 # error "IMPORT ERROR: cannot include this file with GHC version below 7.10
 #else
+#if __GLASGOW_HASKELL__ < 800
+{-# LANGUAGE ConstraintKinds           #-}
+#endif
 module Foundation.Primitive.Nat
     ( Nat
     , KnownNat
@@ -28,141 +31,89 @@ module Foundation.Primitive.Nat
     , natValWord32
     , natValWord64
     -- * Maximum bounds
-    , NatMaxBoundInt
-    , NatMaxBoundInt8
-    , NatMaxBoundInt16
-    , NatMaxBoundInt32
-    , NatMaxBoundInt64
-    , NatMaxBoundWord
-    , NatMaxBoundWord8
-    , NatMaxBoundWord16
-    , NatMaxBoundWord32
-    , NatMaxBoundWord64
+    , NatNumMaxBound
     -- * Constraint
-    , NatWithinIntBound
-    , NatWithinInt64Bound
-    , NatWithinInt32Bound
-    , NatWithinInt16Bound
-    , NatWithinInt8Bound
-    , NatWithinWordBound
-    , NatWithinWord64Bound
-    , NatWithinWord32Bound
-    , NatWithinWord16Bound
-    , NatWithinWord8Bound
+    , NatInBoundOf
+    , NatWithinBound
     ) where
 
 #include "MachDeps.h"
 
 import           GHC.TypeLits
 import           Foundation.Internal.Base
-import           Data.Type.Bool
+import           Foundation.Internal.Natural
 import           Data.Int (Int8, Int16, Int32, Int64)
 import           Data.Word (Word8, Word16, Word32, Word64)
 import qualified Prelude (fromIntegral)
 
---natValSize :: forall n proxy. KnownNat n => proxy n -> Size a
---natValSize
+#if __GLASGOW_HASKELL__ >= 800
+import           Data.Type.Bool
+#endif
 
-natValInt :: forall n proxy . (KnownNat n, NatWithinIntBound n) => proxy n -> Int
+natValInt :: forall n proxy . (KnownNat n, NatWithinBound Int n) => proxy n -> Int
 natValInt n = Prelude.fromIntegral (natVal n)
 
-natValInt64 :: forall n proxy . (KnownNat n, NatWithinInt64Bound n) => proxy n -> Int64
+natValInt64 :: forall n proxy . (KnownNat n, NatWithinBound Int64 n) => proxy n -> Int64
 natValInt64 n = Prelude.fromIntegral (natVal n)
 
-natValInt32 :: forall n proxy . (KnownNat n, NatWithinInt32Bound n) => proxy n -> Int32
+natValInt32 :: forall n proxy . (KnownNat n, NatWithinBound Int32 n) => proxy n -> Int32
 natValInt32 n = Prelude.fromIntegral (natVal n)
 
-natValInt16 :: forall n proxy . (KnownNat n, NatWithinInt16Bound n) => proxy n -> Int16
+natValInt16 :: forall n proxy . (KnownNat n, NatWithinBound Int16 n) => proxy n -> Int16
 natValInt16 n = Prelude.fromIntegral (natVal n)
 
-natValInt8 :: forall n proxy . (KnownNat n, NatWithinInt8Bound n) => proxy n -> Int8
+natValInt8 :: forall n proxy . (KnownNat n, NatWithinBound Int8 n) => proxy n -> Int8
 natValInt8 n = Prelude.fromIntegral (natVal n)
 
-natValWord :: forall n proxy . (KnownNat n, NatWithinWordBound n) => proxy n -> Word
+natValWord :: forall n proxy . (KnownNat n, NatWithinBound Word n) => proxy n -> Word
 natValWord n = Prelude.fromIntegral (natVal n)
 
-natValWord64 :: forall n proxy . (KnownNat n, NatWithinWord64Bound n) => proxy n -> Word64
+natValWord64 :: forall n proxy . (KnownNat n, NatWithinBound Word64 n) => proxy n -> Word64
 natValWord64 n = Prelude.fromIntegral (natVal n)
 
-natValWord32 :: forall n proxy . (KnownNat n, NatWithinWord32Bound n) => proxy n -> Word32
+natValWord32 :: forall n proxy . (KnownNat n, NatWithinBound Word32 n) => proxy n -> Word32
 natValWord32 n = Prelude.fromIntegral (natVal n)
 
-natValWord16 :: forall n proxy . (KnownNat n, NatWithinWord16Bound n) => proxy n -> Word16
+natValWord16 :: forall n proxy . (KnownNat n, NatWithinBound Word16 n) => proxy n -> Word16
 natValWord16 n = Prelude.fromIntegral (natVal n)
 
-natValWord8 :: forall n proxy . (KnownNat n, NatWithinWord8Bound n) => proxy n -> Word8
+natValWord8 :: forall n proxy . (KnownNat n, NatWithinBound Word8 n) => proxy n -> Word8
 natValWord8 n = Prelude.fromIntegral (natVal n)
 
+-- | Get Maximum bounds of different Integral / Natural types related to Nat
+type family NatNumMaxBound ty where
+    NatNumMaxBound Int64  = 0x7fffffffffffffff
+    NatNumMaxBound Int32  = 0x7fffffff
+    NatNumMaxBound Int16  = 0x7fff
+    NatNumMaxBound Int8   = 0x7f
+    NatNumMaxBound Word64 = 0xffffffffffffffff
+    NatNumMaxBound Word32 = 0xffffffff
+    NatNumMaxBound Word16 = 0xffff
+    NatNumMaxBound Word8  = 0xff
 #if WORD_SIZE_IN_BITS == 64
-type NatMaxBoundInt = NatMaxBoundInt64
+    NatNumMaxBound Int    = NatNumMaxBound Int64
+    NatNumMaxBound Word   = NatNumMaxBound Word64
 #else
-type NatMaxBoundInt = NatMaxBoundInt32
+    NatNumMaxBound Int    = NatNumMaxBound Int32
+    NatNumMaxBound Word   = NatNumMaxBound Word32
 #endif
 
-type NatMaxBoundInt64 = 0x7fffffffffffffff
-type NatMaxBoundInt32 = 0x7fffffff
-type NatMaxBoundInt16 = 0x7fff
-type NatMaxBoundInt8 = 0x7f
+-- | Check if a Nat is in bounds of another integral / natural types
+type family NatInBoundOf ty n where
+    NatInBoundOf Integer n = 'True
+    NatInBoundOf Natural n = 'True
+    NatInBoundOf ty      n = n <=? NatNumMaxBound ty
 
-#if WORD_SIZE_IN_BITS == 64
-type NatMaxBoundWord = NatMaxBoundWord64
+-- | Constraint to check if a natural is within a specific bounds of a type.
+--
+-- i.e. given a Nat `n`, is it possible to convert it to `ty` without losing information
+#if __GLASGOW_HASKELL__ >= 800
+type family NatWithinBound ty (n :: Nat) where
+    NatWithinBound ty n = If (NatInBoundOf ty n)
+        (() ~ ())
+        (TypeError ('Text "Natural " ':<>: 'ShowType n ':<>: 'Text " is out of bounds for " ':<>: 'ShowType ty))
 #else
-type NatMaxBoundWord = NatMaxBoundWord32
+type NatWithinBound ty n = NatInBoundOf ty n ~ 'True
 #endif
-
-type NatMaxBoundWord64 = 0xffffffffffffffff
-type NatMaxBoundWord32 = 0xffffffff
-type NatMaxBoundWord16 = 0xffff
-type NatMaxBoundWord8  = 0xff
-
-type family NatWithinIntBound (n :: Nat) where
-    NatWithinIntBound n = If (n <=? NatMaxBoundInt)
-        (() ~ ())
-        (TypeError ('Text "Natural " ':<>: 'ShowType n ':<>: 'Text " is out of bounds for Int"))
-
-type family NatWithinInt64Bound (n :: Nat) where
-    NatWithinInt64Bound n = If (n <=? NatMaxBoundInt64)
-        (() ~ ())
-        (TypeError ('Text "Natural " ':<>: 'ShowType n ':<>: 'Text " is out of bounds for Int64"))
-
-type family NatWithinInt32Bound (n :: Nat) where
-    NatWithinInt32Bound n = If (n <=? NatMaxBoundInt32)
-        (() ~ ())
-        (TypeError ('Text "Natural " ':<>: 'ShowType n ':<>: 'Text " is out of bounds for Int32"))
-
-type family NatWithinInt16Bound (n :: Nat) where
-    NatWithinInt16Bound n = If (n <=? NatMaxBoundInt16)
-        (() ~ ())
-        (TypeError ('Text "Natural " ':<>: 'ShowType n ':<>: 'Text " is out of bounds for Int16"))
-
-type family NatWithinInt8Bound (n :: Nat) where
-    NatWithinInt8Bound n = If (n <=? NatMaxBoundInt8)
-        (() ~ ())
-        (TypeError ('Text "Natural " ':<>: 'ShowType n ':<>: 'Text " is out of bounds for Int8"))
-
-type family NatWithinWordBound (n :: Nat) where
-    NatWithinWordBound n = If (n <=? NatMaxBoundWord)
-        (() ~ ())
-        (TypeError ('Text "Natural " ':<>: 'ShowType n ':<>: 'Text " is out of bounds for Word"))
-
-type family NatWithinWord64Bound (n :: Nat) where
-    NatWithinWord64Bound n = If (n <=? NatMaxBoundWord64)
-        (() ~ ())
-        (TypeError ('Text "Natural " ':<>: 'ShowType n ':<>: 'Text " is out of bounds for Word64"))
-
-type family NatWithinWord32Bound (n :: Nat) where
-    NatWithinWord32Bound n = If (n <=? NatMaxBoundWord32)
-        (() ~ ())
-        (TypeError ('Text "Natural " ':<>: 'ShowType n ':<>: 'Text " is out of bounds for Word32"))
-
-type family NatWithinWord16Bound (n :: Nat) where
-    NatWithinWord16Bound n = If (n <=? NatMaxBoundWord16)
-        (() ~ ())
-        (TypeError ('Text "Natural " ':<>: 'ShowType n ':<>: 'Text " is out of bounds for Word16"))
-
-type family NatWithinWord8Bound (n :: Nat) where
-    NatWithinWord8Bound n = If (n <=? NatMaxBoundWord8)
-        (() ~ ())
-        (TypeError ('Text "Natural " ':<>: 'ShowType n ':<>: 'Text " is out of bounds for Word8"))
 
 #endif
