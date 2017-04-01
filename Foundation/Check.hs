@@ -16,7 +16,9 @@ module Foundation.Check
 
 import           Foundation.Internal.Base
 import           Foundation.Internal.Natural
+import           Foundation.Collection.Mappable
 import           Foundation.Random
+import           Foundation.Numerical
 import           Foundation.String
 import           Foundation.IO.Terminal
 
