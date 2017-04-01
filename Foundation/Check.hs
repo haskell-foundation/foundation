@@ -15,8 +15,10 @@ module Foundation.Check
     ) where
 
 import           Foundation.Internal.Base
+import           Foundation.Internal.Natural
 import           Foundation.Random
 import           Foundation.String
+import           Foundation.IO.Terminal
 
 data GenParams = GenParams
     {
