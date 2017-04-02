@@ -4,12 +4,8 @@ module Foundation.Check.Arbitrary
 
 import           Foundation.Internal.Base
 import           Foundation.Internal.Natural
-import           Foundation.Collection.Mappable
-import           Foundation.Random
-import           Foundation.Numerical
-import           Foundation.String
-import           Foundation.IO.Terminal
 import           Foundation.Check.Gen
+import           Foundation.Random
 
 -- | How to generate an arbitrary value for 'a'
 class Arbitrary a where
@@ -19,31 +15,31 @@ arbitraryBounded :: Bounded b => Gen b
 arbitraryBounded = undefined
 
 instance Arbitrary Int where
-    arbitrary = return 10
+    arbitrary = genWithRng getRandomPrimType
 instance Arbitrary Integer where
     arbitrary = undefined
 instance Arbitrary Natural where
     arbitrary = undefined
 instance Arbitrary Word64 where
-    arbitrary = arbitraryBounded
+    arbitrary = genWithRng getRandomPrimType
 instance Arbitrary Word32 where
-    arbitrary = arbitraryBounded
+    arbitrary = genWithRng getRandomPrimType
 instance Arbitrary Word16 where
-    arbitrary = arbitraryBounded
+    arbitrary = genWithRng getRandomPrimType
 instance Arbitrary Word8 where
-    arbitrary = arbitraryBounded
+    arbitrary = genWithRng getRandomPrimType
 instance Arbitrary Int64 where
-    arbitrary = arbitraryBounded
+    arbitrary = genWithRng getRandomPrimType
 instance Arbitrary Int32 where
-    arbitrary = arbitraryBounded
+    arbitrary = genWithRng getRandomPrimType
 instance Arbitrary Int16 where
-    arbitrary = arbitraryBounded
+    arbitrary = genWithRng getRandomPrimType
 instance Arbitrary Int8 where
-    arbitrary = arbitraryBounded
+    arbitrary = genWithRng getRandomPrimType
 instance Arbitrary Char where
-    arbitrary = undefined
+    arbitrary = genWithRng getRandomPrimType
 instance Arbitrary Bool where
-    arbitrary = undefined
+    arbitrary = undefined -- arbitrary
 
 --instance Arbitrary a => Arbitrary (Maybe a) where
 
