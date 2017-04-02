@@ -100,6 +100,9 @@ Library
                      Foundation.Hashing.SipHash
                      Foundation.Hashing.Hasher
                      Foundation.Hashing.Hashable
+                     Foundation.Check.Gen
+                     Foundation.Check.Arbitrary
+                     Foundation.Check.Property
                      Foundation.Collection.Buildable
                      Foundation.Collection.List
                      Foundation.Collection.Element
