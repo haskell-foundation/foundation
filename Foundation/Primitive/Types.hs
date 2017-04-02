@@ -24,6 +24,7 @@ module Foundation.Primitive.Types
     , sizeAsOffset
     , primWordGetByteAndShift
     , primWord64GetByteAndShift
+    , primWord64GetHiLo
     ) where
 
 #include "MachDeps.h"
@@ -510,8 +511,14 @@ primWordGetByteAndShift w = (# and# w 0xff##, uncheckedShiftRL# w 8# #)
 #if WORD_SIZE_IN_BITS == 64
 primWord64GetByteAndShift :: Word# -> (# Word#, Word# #)
 primWord64GetByteAndShift = primWord64GetByteAndShift
+
+primWord64GetHiLo :: Word# -> (# Word#, Word# #)
+primWord64GetHiLo w = (# uncheckedShiftRL# w 32# , and# w 0xffffffff## #)
 #else
 primWord64GetByteAndShift :: Word64# -> (# Word#, Word64# #)
 primWord64GetByteAndShift w = (# and# (word64ToWord# w) 0xff##, uncheckedShiftRL64# w 8# #)
+
+primWord64GetHiLo :: Word64# -> (# Word#, Word# #)
+primWord64GetHiLo w = (# word64ToWord# (uncheckedShiftRL64# w 32#), word64ToWord# w #)
 #endif
 {-# INLINE primWord64GetByteAndShift #-}
