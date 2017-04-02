@@ -31,11 +31,11 @@ import           System.Exit
 
 -- different type of tests
 data Test where
-    -- * Unit test
+    -- Unit test
     Unit     :: String -> IO () -> Test
-    -- * Property test
+    -- Property test
     Property :: IsProperty prop => String -> prop -> Test
-    -- * Multiples tests grouped together
+    -- Multiples tests grouped together
     Group    :: String -> [Test] -> Test
 
 -- | Name of a test
