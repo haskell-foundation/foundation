@@ -27,10 +27,10 @@ import           Foundation.System.Entropy.Unix
 #endif
 
 -- | Get some of the system entropy
-getEntropy :: Int -> IO (A.UArray Word8)
-getEntropy n = do
-    m <- A.newPinned (Size n)
-    bracket entropyOpen entropyClose $ \ctx -> A.withMutablePtr m $ loop ctx n
+getEntropy :: Size Word8 -> IO (A.UArray Word8)
+getEntropy n@(Size x) = do
+    m <- A.newPinned n
+    bracket entropyOpen entropyClose $ \ctx -> A.withMutablePtr m $ loop ctx x
     A.unsafeFreeze m
   where
     loop :: EntropyCtx -> Int -> Ptr Word8 -> IO ()
@@ -39,5 +39,5 @@ getEntropy n = do
         let chSz = min entropyMaximumSize i
         r <- entropyGather ctx p chSz
         if r
-            then loop ctx (n-chSz) (p `plusPtr` chSz)
+            then loop ctx (i-chSz) (p `plusPtr` chSz)
             else throwIO EntropySystemMissing
