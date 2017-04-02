@@ -116,13 +116,7 @@ vFromList l = ChunkedUArray array
       A.unsafeFreeze a
 
 vToList :: PrimType ty => ChunkedUArray ty -> [ty]
-vToList (ChunkedUArray a) = loop (C.length a) 0 mempty
-  where
-    -- TODO: Rewrite this to use something like a `DList`
-    -- to avoid the expensive `mappend`.
-    loop len !acc l = case acc >= len of
-      True  -> l
-      False -> loop len (acc+1) ((toList (A.unsafeIndex a acc)) <> l)
+vToList (ChunkedUArray a) = mconcat $ toList $ toList <$> a
 
 null :: PrimType ty => ChunkedUArray ty -> Bool
 null (ChunkedUArray array) =
@@ -314,8 +308,8 @@ unsnoc v = first fromList <$> (C.unsnoc $ toList v)
 uncons :: PrimType ty => ChunkedUArray ty -> Maybe (ty, ChunkedUArray ty)
 uncons v = second fromList <$> (C.uncons $ toList v)
 
-snoc :: PrimType ty => ChunkedUArray ty -> ty -> ChunkedUArray ty
-snoc (ChunkedUArray inner) el = ChunkedUArray $ runST $ do
+cons :: PrimType ty => ty -> ChunkedUArray ty -> ChunkedUArray ty
+cons el (ChunkedUArray inner) = ChunkedUArray $ runST $ do
   let newLen = (Size $ C.length inner + 1)
   newArray   <- A.new newLen
   let single = fromList [el]
@@ -323,8 +317,8 @@ snoc (ChunkedUArray inner) el = ChunkedUArray $ runST $ do
   A.unsafeCopyAtRO newArray (Offset 1) inner (Offset 0) (Size $ C.length inner)
   A.unsafeFreeze newArray
 
-cons :: PrimType ty => ty -> ChunkedUArray ty -> ChunkedUArray ty
-cons el (ChunkedUArray inner) = ChunkedUArray $ runST $ do
+snoc :: PrimType ty => ChunkedUArray ty -> ty -> ChunkedUArray ty
+snoc (ChunkedUArray inner) el = ChunkedUArray $ runST $ do
   newArray   <- A.new (Size $ C.length inner + 1)
   let single = fromList [el]
   A.unsafeCopyAtRO newArray (Offset 0) inner (Offset 0) (Size $ C.length inner)
