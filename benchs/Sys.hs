@@ -1,4 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE RebindableSyntax #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Sys ( benchSys ) where
 
@@ -16,7 +17,8 @@ data NullRandom = NullRandom
 
 instance RandomGen NullRandom where
     randomNew        = return NullRandom
-    randomGenerate n r = (fromList (Prelude.replicate n 0), r)
+    randomNewFrom    = error "no randomNewFrom"
+    randomGenerate (Size n) r = (fromList (Prelude.replicate n 0), r)
 
 benchSys =
     [ bgroup "Random"
@@ -25,11 +27,11 @@ benchSys =
         , bench "Entropy-1024" $ whnfIO $ getEntropy 1024
         ]
     , bgroup "RNGv1"
-        [ bench "Entropy-1"    $ benchRandom 1 randomNew (Proxy :: Proxy RNGv1)
-        , bench "Entropy-1024"    $ benchRandom 1024 randomNew (Proxy :: Proxy RNGv1)
-        , bench "Entropy-1M"    $ benchRandom (1024 * 1024) randomNew (Proxy :: Proxy RNGv1)
+        [ bench "Entropy-1"     $ benchRandom 1 randomNew (Proxy :: Proxy RNGv1)
+        , bench "Entropy-1024"  $ benchRandom 1024 randomNew (Proxy :: Proxy RNGv1)
+        , bench "Entropy-1M"    $ benchRandom (Size (1024 * 1024)) randomNew (Proxy :: Proxy RNGv1)
         ]
     ]
 
-benchRandom :: RandomGen rng => Int -> MonadRandomState NullRandom rng -> Proxy rng -> Benchmarkable
+benchRandom :: RandomGen rng => Size Word8 -> MonadRandomState NullRandom rng -> Proxy rng -> Benchmarkable
 benchRandom n rNew _ = whnf (fst . randomGenerate n) (fst $ withRandomGenerator NullRandom rNew)
