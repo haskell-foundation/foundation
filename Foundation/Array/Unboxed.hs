@@ -578,8 +578,8 @@ splitElem !ty r@(UVecBA start len pinst ba)
     | k == end   = (# r, empty #)
     | k == start = (# empty, r #)
     | otherwise  =
-        (# UVecBA start (offsetAsSize k) pinst ba
-        ,  UVecBA (start `offsetPlusE` (offsetAsSize k)) (len - offsetAsSize k) pinst ba
+        (# UVecBA start (offsetAsSize k - offsetAsSize start) pinst ba
+        ,  UVecBA k     (len - (offsetAsSize k - offsetAsSize start)) pinst ba
         #)
   where
     !end = start `offsetPlusE` len
@@ -590,8 +590,9 @@ splitElem !ty r@(UVecBA start len pinst ba)
 splitElem !ty r@(UVecAddr start len fptr)
     | k == end  = (# r, empty #)
     | otherwise =
-        (# UVecAddr start (offsetAsSize k) fptr
-        ,  UVecAddr (start `offsetPlusE` offsetAsSize k) (len - offsetAsSize k) fptr #)
+        (# UVecAddr start (offsetAsSize k - offsetAsSize start) fptr
+        ,  UVecAddr k     (len - (offsetAsSize k - offsetAsSize start)) fptr
+        #)
   where
     !(Ptr addr) = withFinalPtrNoTouch fptr id
     !end = start `offsetPlusE` len
