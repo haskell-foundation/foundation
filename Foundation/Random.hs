@@ -83,6 +83,10 @@ instance Monad (MonadRandomState gen) where
 instance RandomGen gen => MonadRandom (MonadRandomState gen) where
     getRandomBytes n = MonadRandomState (randomGenerate n)
 
+getRandomPrimType :: forall randomly ty . (PrimType ty, MonadRandom randomly) => randomly ty
+getRandomPrimType =
+    flip A.index 0 . A.unsafeRecast <$> getRandomBytes (A.primSizeInBytes (Proxy :: Proxy ty))
+
 -- | Run a pure computation with a Random Generator in the 'MonadRandomState'
 withRandomGenerator :: RandomGen gen
                     => gen
