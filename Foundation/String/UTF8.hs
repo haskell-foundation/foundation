@@ -623,7 +623,7 @@ revSplitAt n v = (drop idx v, take idx v)
 --
 splitOn :: (Char -> Bool) -> String -> [String]
 splitOn predicate s
-    | sz == Size 0 = [s]
+    | sz == Size 0 = [mempty]
     | otherwise    = loop azero azero
   where
     !sz = size s
