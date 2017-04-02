@@ -81,6 +81,7 @@ Library
                      Foundation.Strict
                      Foundation.Parser
                      Foundation.Random
+                     Foundation.Check
                      Foundation.System.Entropy
                      Foundation.System.Bindings
   Other-modules:     Foundation.Boot.Builder
@@ -99,6 +100,9 @@ Library
                      Foundation.Hashing.SipHash
                      Foundation.Hashing.Hasher
                      Foundation.Hashing.Hashable
+                     Foundation.Check.Gen
+                     Foundation.Check.Arbitrary
+                     Foundation.Check.Property
                      Foundation.Collection.Buildable
                      Foundation.Collection.List
                      Foundation.Collection.Element
@@ -239,6 +243,21 @@ Test-Suite test-foundation
                    , tasty
                    , tasty-quickcheck
                    , tasty-hunit
+                   , foundation
+  ghc-options:       -Wall -fno-warn-orphans -fno-warn-missing-signatures
+  default-language:  Haskell2010
+  if impl(ghc >= 8.0)
+    ghc-options:     -Wno-redundant-constraints
+
+Test-Suite check-foundation
+  type:              exitcode-stdio-1.0
+  hs-source-dirs:    tests
+  Main-is:           Checks.hs
+  Other-modules:
+  Default-Extensions: NoImplicitPrelude
+                      RebindableSyntax
+                      OverloadedStrings
+  Build-Depends:     base >= 3 && < 5
                    , foundation
   ghc-options:       -Wall -fno-warn-orphans -fno-warn-missing-signatures
   default-language:  Haskell2010

@@ -16,10 +16,12 @@
 --   abstract a generator.
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE ScopedTypeVariables      #-}
 module Foundation.Random
     ( MonadRandom(..)
     , MonadRandomState(..)
     , RandomGen(..)
+    , getRandomPrimType
     , withRandomGenerator
     , RNG
     , RNGv1
@@ -27,6 +29,7 @@ module Foundation.Random
 
 import           Foundation.Internal.Base
 import           Foundation.Internal.Types
+import           Foundation.Internal.Proxy
 import           Foundation.Primitive.Monad
 import           Foundation.System.Entropy
 import           Foundation.Array
@@ -37,7 +40,7 @@ import qualified Prelude
 
 -- | A monad constraint that allows to generate random bytes
 class (Functor m, Applicative m, Monad m) => MonadRandom m where
-    getRandomBytes :: Int -> m (UArray Word8)
+    getRandomBytes :: Size Word8 -> m (UArray Word8)
 
 instance MonadRandom IO where
     getRandomBytes = getEntropy
@@ -47,8 +50,14 @@ class RandomGen gen where
     -- | Initialize a new random generator
     randomNew :: MonadRandom m => m gen
 
+    -- | Initialize a new random generator from a binary seed.
+    --
+    -- If `Nothing` is returned, then the data is not acceptable
+    -- for creating a new random generator.
+    randomNewFrom :: UArray Word8 -> Maybe gen
+
     -- | Generate N bytes of randomness from a DRG
-    randomGenerate :: Int -> gen -> (UArray Word8, gen)
+    randomGenerate :: Size Word8 -> gen -> (UArray Word8, gen)
 
 -- | A simple Monad class very similar to a State Monad
 -- with the state being a RandomGenerator.
@@ -74,6 +83,10 @@ instance Monad (MonadRandomState gen) where
 instance RandomGen gen => MonadRandom (MonadRandomState gen) where
     getRandomBytes n = MonadRandomState (randomGenerate n)
 
+getRandomPrimType :: forall randomly ty . (PrimType ty, MonadRandom randomly) => randomly ty
+getRandomPrimType =
+    flip A.index 0 . A.unsafeRecast <$> getRandomBytes (A.primSizeInBytes (Proxy :: Proxy ty))
+
 -- | Run a pure computation with a Random Generator in the 'MonadRandomState'
 withRandomGenerator :: RandomGen gen
                     => gen
@@ -97,19 +110,22 @@ newtype RNGv1 = RNGv1 (UArray Word8)
 
 instance RandomGen RNGv1 where
     randomNew = RNGv1 <$> getRandomBytes 32
+    randomNewFrom bs
+        | A.length bs == 32 = Just $ RNGv1 bs
+        | otherwise         = Nothing
     randomGenerate = rngv1Generate
 
-rngv1KeySize :: Int
+rngv1KeySize :: Size Word8
 rngv1KeySize = 32
 
-rngv1Generate :: Int -> RNGv1 -> (UArray Word8, RNGv1)
-rngv1Generate n (RNGv1 key) = runST $ do
-    dst    <- A.newPinned (Size n)
-    newKey <- A.newPinned (Size $ rngv1KeySize)
+rngv1Generate :: Size Word8 -> RNGv1 -> (UArray Word8, RNGv1)
+rngv1Generate n@(Size x) (RNGv1 key) = runST $ do
+    dst    <- A.newPinned n
+    newKey <- A.newPinned rngv1KeySize
     A.withMutablePtr dst        $ \dstP    ->
         A.withMutablePtr newKey $ \newKeyP ->
         A.withPtr key           $ \keyP    -> do
-            _ <- unsafePrimFromIO $ c_rngv1_generate newKeyP dstP keyP (Prelude.fromIntegral n)
+            _ <- unsafePrimFromIO $ c_rngv1_generate newKeyP dstP keyP (Prelude.fromIntegral x)
             return ()
     (,) <$> A.unsafeFreeze dst
         <*> (RNGv1 <$> A.unsafeFreeze newKey)

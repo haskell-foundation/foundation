@@ -1,4 +1,3 @@
--- |
 -- Module      : Foundation.Primitive.Types
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
@@ -24,6 +23,8 @@ module Foundation.Primitive.Types
     , offsetAsSize
     , sizeAsOffset
     ) where
+
+#include "MachDeps.h"
 
 import           GHC.Prim
 import           GHC.Int
@@ -189,7 +190,48 @@ class Eq ty => PrimType ty where
                   -> ty
                   -> prim ()
 
+sizeInt, sizeWord :: Size Word8
+#if WORD_SIZE_IN_BITS == 64
+sizeInt = Size 8
+sizeWord = Size 8
+#else
+sizeInt = Size 4
+sizeWord = Size 4
+#endif
+
 {-# SPECIALIZE [3] primBaUIndex :: ByteArray# -> Offset Word8 -> Word8 #-}
+
+instance PrimType Int where
+    primSizeInBytes _ = sizeInt
+    {-# INLINE primSizeInBytes #-}
+    primBaUIndex ba (Offset (I# n)) = I# (indexIntArray# ba n)
+    {-# INLINE primBaUIndex #-}
+    primMbaURead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readIntArray# mba n s1 in (# s2, I# r #)
+    {-# INLINE primMbaURead #-}
+    primMbaUWrite mba (Offset (I# n)) (I# w) = primitive $ \s1 -> (# writeIntArray# mba n w s1, () #)
+    {-# INLINE primMbaUWrite #-}
+    primAddrIndex addr (Offset (I# n)) = I# (indexIntOffAddr# addr n)
+    {-# INLINE primAddrIndex #-}
+    primAddrRead addr (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readIntOffAddr# addr n s1 in (# s2, I# r #)
+    {-# INLINE primAddrRead #-}
+    primAddrWrite addr (Offset (I# n)) (I# w) = primitive $ \s1 -> (# writeIntOffAddr# addr n w s1, () #)
+    {-# INLINE primAddrWrite #-}
+
+instance PrimType Word where
+    primSizeInBytes _ = sizeWord
+    {-# INLINE primSizeInBytes #-}
+    primBaUIndex ba (Offset (I# n)) = W# (indexWordArray# ba n)
+    {-# INLINE primBaUIndex #-}
+    primMbaURead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readWordArray# mba n s1 in (# s2, W# r #)
+    {-# INLINE primMbaURead #-}
+    primMbaUWrite mba (Offset (I# n)) (W# w) = primitive $ \s1 -> (# writeWordArray# mba n w s1, () #)
+    {-# INLINE primMbaUWrite #-}
+    primAddrIndex addr (Offset (I# n)) = W# (indexWordOffAddr# addr n)
+    {-# INLINE primAddrIndex #-}
+    primAddrRead addr (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readWordOffAddr# addr n s1 in (# s2, W# r #)
+    {-# INLINE primAddrRead #-}
+    primAddrWrite addr (Offset (I# n)) (W# w) = primitive $ \s1 -> (# writeWordOffAddr# addr n w s1, () #)
+    {-# INLINE primAddrWrite #-}
 
 instance PrimType Word8 where
     primSizeInBytes _ = Size 1

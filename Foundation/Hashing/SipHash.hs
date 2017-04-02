@@ -13,6 +13,7 @@
 {-# LANGUAGE UnboxedTuples #-}
 module Foundation.Hashing.SipHash
     ( SipKey(..)
+    , SipHash(..)
     , Sip1_3
     , Sip2_4
     ) where
@@ -46,7 +47,9 @@ newtype Sip1_3 = Sip1_3 Sip
 
 instance Hasher Sip2_4 where
     type HashResult Sip2_4      = SipHash
+    type HashInitParam Sip2_4   = SipKey
     hashNew                     = Sip2_4 $ newSipState (SipKey 0 0)
+    hashNewParam key            = Sip2_4 $ newSipState key
     hashEnd (Sip2_4 st)         = finish 2 4 st
     hashMix8 w (Sip2_4 st)      = Sip2_4 $ mix8 2 w st
     hashMix32 w (Sip2_4 st)     = Sip2_4 $ mix32 2 w st
@@ -55,7 +58,9 @@ instance Hasher Sip2_4 where
 
 instance Hasher Sip1_3 where
     type HashResult Sip1_3      = SipHash
+    type HashInitParam Sip1_3   = SipKey
     hashNew                     = Sip1_3 $ newSipState (SipKey 0 0)
+    hashNewParam key            = Sip1_3 $ newSipState key
     hashEnd (Sip1_3 st)         = finish 1 3 st
     hashMix8 w (Sip1_3 st)      = Sip1_3 $ mix8 1 w st
     hashMix32 w (Sip1_3 st)     = Sip1_3 $ mix32 1 w st
