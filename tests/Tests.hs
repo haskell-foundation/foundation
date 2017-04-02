@@ -75,11 +75,6 @@ transEq unWrap f g s =
 --stringEq :: Eq a => (b -> a) -> (String -> b) -> (LString -> a) -> LUString -> Bool
 --stringEq back f g s =
 
-assertEq :: (Eq a, Show a) => a -> a -> Bool
-assertEq got expected
-    | got == expected = True
-    | otherwise       = error ("got: " <> show got <> " expected: " <> show expected)
-
 #if MIN_VERSION_tasty_quickcheck(0,8,4)
 -- | Set in front of tests to make them verbose
 qcv :: TestTree -> TestTree

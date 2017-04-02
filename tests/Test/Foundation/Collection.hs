@@ -11,8 +11,7 @@ module Test.Foundation.Collection
 
 import qualified Prelude
 
-import Test.Tasty
-import Test.Tasty.QuickCheck hiding (getNonEmpty)
+import Imports
 
 import Foundation
 import Foundation.Collection
@@ -122,7 +121,7 @@ testCollection :: ( Sequential a
                   , Eq (Element a)
                   , Ord a, Ord (Item a)
                   )
-               => LString
+               => String
                -> Proxy a
                -> Gen (Element a)
                -> TestTree
