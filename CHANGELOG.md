@@ -7,6 +7,7 @@
 * Initial re-implementation for property tests and tests orchestration
 * Fix bug in splitElem, and breakElem
 * Improve splitOn to return empty elements
+* Fix API bug for snoc and cons in Chunked UArray
 
 ## 0.0.4
 
