@@ -47,6 +47,12 @@ class RandomGen gen where
     -- | Initialize a new random generator
     randomNew :: MonadRandom m => m gen
 
+    -- | Initialize a new random generator from a binary seed.
+    --
+    -- If `Nothing` is returned, then the data is not acceptable
+    -- for creating a new random generator.
+    randomNewFrom :: UArray Word8 -> Maybe gen
+
     -- | Generate N bytes of randomness from a DRG
     randomGenerate :: Int -> gen -> (UArray Word8, gen)
 
@@ -97,6 +103,9 @@ newtype RNGv1 = RNGv1 (UArray Word8)
 
 instance RandomGen RNGv1 where
     randomNew = RNGv1 <$> getRandomBytes 32
+    randomNewFrom bs
+        | A.length bs == 32 = Just $ RNGv1 bs
+        | otherwise         = Nothing
     randomGenerate = rngv1Generate
 
 rngv1KeySize :: Int
