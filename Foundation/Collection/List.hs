@@ -21,7 +21,7 @@ import           Foundation.Numerical
 
 -- | Simple helper to split a list repeatly when the predicate match
 wordsWhen     :: (x -> Bool) -> [x] -> [[x]]
-wordsWhen _ [] = []
+wordsWhen _ [] = [[]]
 wordsWhen p is = loop is
   where
     loop s =

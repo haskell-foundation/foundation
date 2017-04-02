@@ -614,7 +614,7 @@ revSplitAt n v = (drop idx v, take idx v)
 
 splitOn :: PrimType ty => (ty -> Bool) -> UArray ty -> [UArray ty]
 splitOn xpredicate ivec
-    | len == 0  = []
+    | len == 0  = [ivec]
     | otherwise = runST $ unsafeIndexer ivec (go ivec xpredicate)
   where
     !len = length ivec

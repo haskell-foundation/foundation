@@ -425,7 +425,7 @@ revSplitAt n v = (drop idx v, take idx v)
 
 splitOn ::  (ty -> Bool) -> Array ty -> [Array ty]
 splitOn predicate vec
-    | len == Size 0 = []
+    | len == Size 0 = [vec]
     | otherwise     = loop (Offset 0) (Offset 0)
   where
     !len = lengthSize vec
