@@ -18,7 +18,12 @@ import Foundation.Internal.Base
 -- | Downsize an integral value
 class IntegralDownsize a b where
     integralDownsize      :: a -> b
+    default integralDownsize :: a ~ b => a -> b
+    integralDownsize = id
+
     integralDownsizeCheck :: a -> Maybe b
+    default integralDownsizeCheck :: a ~ b => a -> Maybe b
+    integralDownsizeCheck = Just
 
 -- | Upsize an integral value
 --
