@@ -4,6 +4,9 @@
 * HostName type
 * Network address / name resolution
 * Fix compilation on FreeBSD & OpenBSD
+* Initial re-implementation for property tests and tests orchestration
+* Fix bug in splitElem, and breakElem
+* Improve splitOn to return empty elements
 
 ## 0.0.4
 
