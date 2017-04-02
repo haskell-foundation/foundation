@@ -7,6 +7,7 @@ module Foundation.Check.Gen
     , runGen
     , GenParams(..)
     , genRng
+    , genWithRng
     ) where
 
 import           Foundation.Internal.Base
@@ -26,13 +27,12 @@ newtype GenRng = GenRng RNGv1
 
 type GenSeed = Word64
 
-genRng :: GenSeed -> [String] -> GenRng
-genRng seed groups = genRngNewNoFail $ A.unsafeRecast $ fromList [w1,w2,w3,w4]
+genRng :: GenSeed -> [String] -> (Word64 -> GenRng)
+genRng seed groups = \iteration -> genRngNewNoFail $ A.unsafeRecast $ fromList [w1,w2,w3,iteration]
   where
     w1 = rngSeed
     w2 = rngSeed * 2
     w3 = rngSeed * 4
-    w4 = rngSeed * 8
 
     (SipHash rngSeed) = hashEnd $ hashMixBytes hashData iHashState
     hashData = toBytes UTF8 $ intercalate "::" (reverse groups)
@@ -67,3 +67,7 @@ instance Monad Gen where
             let (r1,r2) = genGenerator rng
                 a       = runGen ma r1 params
              in runGen (mb a) r2 params
+
+genWithRng :: forall a . (forall randomly . MonadRandom randomly => randomly a) -> Gen a
+genWithRng f = Gen $ \(GenRng rng) _ ->
+    let (a, _) = withRandomGenerator rng f in a
