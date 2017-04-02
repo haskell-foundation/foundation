@@ -11,8 +11,7 @@ module Test.Foundation.Collection
 
 import qualified Prelude
 
-import Test.Tasty
-import Test.Tasty.QuickCheck hiding (getNonEmpty)
+import Imports
 
 import Foundation
 import Foundation.Collection
@@ -122,7 +121,7 @@ testCollection :: ( Sequential a
                   , Eq (Element a)
                   , Ord a, Ord (Item a)
                   )
-               => LString
+               => String
                -> Proxy a
                -> Gen (Element a)
                -> TestTree
@@ -164,10 +163,20 @@ testCollectionOps proxy genElement = testGroup "Collection"
     withListAndElement = forAll ((,) <$> generateListOfElement genElement <*> genElement)
     withNonEmptyElements f = forAll (generateNonEmptyListOfElement 80 genElement) f
 
+testSplitOn :: ( Sequential a
+               , Show a, Show (Element a)
+               , Eq (Element a)
+               , Eq a, Ord a, Ord (Item a), Show a
+               )
+              => Proxy a -> (Element a -> Bool) -> a
+              -> TestTree
+testSplitOn p predicate col = testCase "splitOn (const True) mempty == [mempty]" $
+    assertEq' (splitOn predicate col) [col]
+
 testSequentialOps :: ( Sequential a
                      , Show a, Show (Element a)
                      , Eq (Element a)
-                     , Ord a, Ord (Item a)
+                     , Eq a, Ord a, Ord (Item a), Show a
                      )
                   => Proxy a
                   -> Gen (Element a)
@@ -194,6 +203,13 @@ testSequentialOps proxy genElement = testGroup "Sequential"
     , testProperty "init" $ withNonEmptyElements $ \els -> toList (init $ fromListNonEmptyP proxy els) === init els
     , testProperty "splitOn" $ withElements2E $ \(l, ch) ->
          fmap toList (splitOn (== ch) (fromListP proxy l)) === splitOn (== ch) l
+    , testSplitOn proxy (\_ -> True) mempty
+    , testProperty "intercalate c (splitOn (c ==) col) == col" $ withElements2E $ \(c, ch) ->
+        intercalate [ch] (splitOn (== ch) c) === c
+    , testProperty "intercalate c (splitOn (c ==) (col ++ [c]) == (col ++ [c])" $ withElements2E $ \(c, ch) ->
+        intercalate [ch] (splitOn (== ch) $ snoc c ch) === (snoc c ch)
+    , testProperty "intercalate c (splitOn (c ==) (col ++ [c,c]) == (col ++ [c,c])" $ withElements2E $ \(c, ch) ->
+        intercalate [ch] (splitOn (== ch) $ snoc (snoc c ch) ch) === (snoc (snoc c ch) ch)
     , testProperty "intersperse" $ withElements2E $ \(l, c) ->
         toList (intersperse c (fromListP proxy l)) === intersperse c l
     , testProperty "intercalate" $ withElements2E $ \(l, c) ->

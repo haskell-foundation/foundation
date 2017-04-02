@@ -11,6 +11,8 @@ module Imports
     , NonZero(..)
     , (===?)
     , diffList
+    , assertEq
+    , assertEq'
     ) where
 
 import Foundation
@@ -27,6 +29,15 @@ import Test.QuickCheck.Monadic as X
 import qualified Test.Tasty            as Y
 import qualified Test.Tasty.QuickCheck as Y
 import qualified Test.Tasty.HUnit      as Y
+
+assertEq :: (Eq a, Show a) => a -> a -> Bool
+assertEq got expected
+    | got == expected = True
+    | otherwise       = error ("got: " <> show got <> " expected: " <> show expected)
+assertEq' :: (Eq a, Show a) => a -> a -> X.Assertion
+assertEq' got expected
+    | got == expected = return ()
+    | otherwise       = error ("got: " <> show got <> " expected: " <> show expected)
 
 testCase :: String -> X.Assertion -> X.TestTree
 testCase x f = Y.testCase (toList x) f
