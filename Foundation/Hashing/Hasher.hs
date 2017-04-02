@@ -17,13 +17,19 @@ import qualified Prelude
 -- The class allow to define faster mixing function that works on
 -- bigger Word size and any unboxed array of any PrimType elements
 class Hasher st where
-    {-# MINIMAL hashNew, hashMix8, hashEnd #-}
+    {-# MINIMAL hashNew, hashNewParam, hashMix8, hashEnd #-}
 
     -- | Associate type when finalizing the state with 'hashEnd'
     type HashResult st
 
+    -- | Associate type when initializing the state (e.g. a Key or seed)
+    type HashInitParam st
+
     -- | Create a new Hashing context
     hashNew :: st
+
+    -- | Create a new Hashing context
+    hashNewParam :: HashInitParam st -> st
 
     -- | Finalize the state and returns the hash result
     hashEnd :: st -> HashResult st

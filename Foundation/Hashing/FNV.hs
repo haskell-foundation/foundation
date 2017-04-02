@@ -80,28 +80,36 @@ fnv1a_64_Mix8 !w !(FNV1a_64 acc) = FNV1a_64 (0x100000001b3 * (acc `xor64` w))
 
 instance Hasher FNV1_32 where
     type HashResult FNV1_32 = FNV1Hash32
+    type HashInitParam FNV1_32 = Word
     hashNew = FNV1_32 0
+    hashNewParam w = FNV1_32 w
     hashEnd (FNV1_32 w) = FNV1Hash32 (Prelude.fromIntegral w)
     hashMix8 = fnv1_32_Mix8
     hashMixBytes = fnv1_32_mixBa
 
 instance Hasher FNV1a_32 where
     type HashResult FNV1a_32 = FNV1Hash32
+    type HashInitParam FNV1a_32 = Word
     hashNew = FNV1a_32 0
+    hashNewParam w = FNV1a_32 w
     hashEnd (FNV1a_32 w) = FNV1Hash32 (Prelude.fromIntegral w)
     hashMix8 = fnv1a_32_Mix8
     hashMixBytes = fnv1a_32_mixBa
 
 instance Hasher FNV1_64 where
     type HashResult FNV1_64 = FNV1Hash64
+    type HashInitParam FNV1_64 = Word64
     hashNew = FNV1_64 0xcbf29ce484222325
+    hashNewParam w = FNV1_64 w
     hashEnd (FNV1_64 w) = FNV1Hash64 (Prelude.fromIntegral w)
     hashMix8 = fnv1_64_Mix8
     hashMixBytes = fnv1_64_mixBa
 
 instance Hasher FNV1a_64 where
     type HashResult FNV1a_64 = FNV1Hash64
+    type HashInitParam FNV1a_64 = Word64
     hashNew = FNV1a_64 0xcbf29ce484222325
+    hashNewParam w = FNV1a_64 w
     hashEnd (FNV1a_64 w) = FNV1Hash64 (Prelude.fromIntegral w)
     hashMix8 = fnv1a_64_Mix8
     hashMixBytes = fnv1a_64_mixBa
