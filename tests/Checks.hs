@@ -20,8 +20,10 @@ main = defaultMain $ Group "foundation"
         , Group "Word64"
             [ testAdditive (Proxy :: Proxy Word64)
             ]
+{-
         , Group "Natural"
             [ testAdditive (Proxy :: Proxy Natural)
             ]
+-}
         ]
     ]
