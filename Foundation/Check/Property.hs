@@ -26,7 +26,7 @@ instance (Arbitrary a, IsProperty prop) => IsProperty (a -> prop) where
 data Property = Prop { unProp :: Gen Bool }
 
 forAll :: IsProperty prop => Gen a -> (a -> prop) -> Property
-forAll generator tst = undefined
+forAll generator tst = Prop (generator >>= \a -> unProp (property (tst a)))
 
 (===) :: Eq a => a -> a -> Property
 (===) a b = Prop (pure (a == b))
