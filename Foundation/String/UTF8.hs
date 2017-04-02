@@ -955,11 +955,9 @@ cons c s@(String ba)
 unsnoc :: String -> Maybe (String, Char)
 unsnoc s
     | null s    = Nothing
-    | otherwise =
-        let (s1,s2) = revSplitAt 1 s
-         in case toList s1 of -- TODO use index instead of toList
-                [c] -> Just (s2, c)
-                _   -> internalError "unsnoc"
+    | otherwise = case index s (length s - 1) of
+        Nothing -> Nothing
+        Just c  -> Just (revDrop 1 s, c)
 
 -- | Extract the First character of a string, and the String stripped of the first character.
 --
@@ -967,11 +965,9 @@ unsnoc s
 uncons :: String -> Maybe (Char, String)
 uncons s
     | null s    = Nothing
-    | otherwise =
-        let (s1,s2) = splitAt 1 s
-         in case toList s1 of -- TODO use index instead of ToList
-                [c] -> Just (c, s2)
-                _   -> internalError "uncons"
+    | otherwise = case index s 0 of
+          Nothing -> Nothing
+          Just c  -> Just (c, drop 1 s)
 
 -- | Look for a predicate in the String and return the matched character, if any.
 find :: (Char -> Bool) -> String -> Maybe Char
