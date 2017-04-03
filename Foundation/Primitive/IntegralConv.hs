@@ -211,13 +211,13 @@ instance IntegralCast Word64 Int64 where
 #if WORD_SIZE_IN_BITS == 64
     integralCast (W64# i) = I64# (word2Int# i)
 #else
-    integralCast (W64# i) = I64# (int64ToWord64# i)
+    integralCast (W64# i) = I64# (word64ToInt64# i)
 #endif
 instance IntegralCast Int64 Word64 where
 #if WORD_SIZE_IN_BITS == 64
     integralCast (I64# i) = W64# (int2Word# i)
 #else
-    integralCast (I64# i) = W64# (word64ToInt64# i)
+    integralCast (I64# i) = W64# (int64ToWord64# i)
 #endif
 
 -- missing word8, word16, word32, word64
