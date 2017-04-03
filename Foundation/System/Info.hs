@@ -29,16 +29,9 @@ import qualified System.Info
 import qualified Data.Version
 import           Data.Data
 import qualified GHC.Conc
-import Foundation.String
-import Foundation.Internal.Base
-
-#ifdef ARCH_IS_UNKNOWN_ENDIAN
-import Foreign.Marshal.Alloc (alloca)
-import Foreign.Ptr (castPtr)
-import Foreign.Storable (poke, peek)
-import Data.Word (Word8, Word32)
-import System.IO.Unsafe (unsafePerformIO)
-#endif
+import           Foundation.Internal.Base
+import           Foundation.Primitive.Endianness (Endianness(..), endianness)
+import           Foundation.String
 
 data OS
     = Windows
@@ -54,7 +47,7 @@ data OS
 --
 -- This function uses the `base`'s `System.Info.os` function.
 --
-os :: Either String OS
+os :: Either [Char] OS
 os = case System.Info.os of
     "darwin"  -> Right OSX
     "mingw32" -> Right Windows
@@ -63,7 +56,7 @@ os = case System.Info.os of
     "openbsd" -> Right BSD
     "netbsd"  -> Right BSD
     "freebsd" -> Right BSD
-    str       -> Left $ fromList str
+    str       -> Left str
 
 -- | Enumeration of the known GHC supported architecture.
 --
@@ -85,7 +78,7 @@ data Arch
 --
 -- This function uses the `base`'s `System.Info.arch` function.
 --
-arch :: Either String Arch
+arch :: Either [Char] Arch
 arch = case System.Info.arch of
     "i386"          -> Right I386
     "x86_64"        -> Right X86_64
@@ -96,7 +89,7 @@ arch = case System.Info.arch of
     "sparc64"       -> Right Sparc64
     "arm"           -> Right ARM
     "aarch64"       -> Right ARM64
-    str             -> Left $ fromList str
+    str             -> Left str
 
 -- | get the compiler name
 --
@@ -108,32 +101,3 @@ compilerName = fromList System.Info.compilerName
 -- | returns the number of CPUs the machine has
 cpus :: IO Int
 cpus = GHC.Conc.getNumProcessors
-
-data Endianness
-    = LittleEndian
-    | BigEndian
-  deriving (Eq, Show)
-
--- | endianness of the current architecture
-endianness :: Endianness
-#ifdef ARCH_IS_LITTLE_ENDIAN
-endianness = LittleEndian
-#elif ARCH_IS_BIG_ENDIAN
-endianness = BigEndian
-#else
--- ! ARCH_IS_UNKNOWN_ENDIAN
-endianness = unsafePerformIO $ bytesToEndianness <$> word32ToByte input
-  where
-    input :: Word32
-    input = 0x01020304
-{-# NOINLINE endianness #-}
-
-word32ToByte :: Word32 -> IO Word8
-word32ToByte word = alloca $ \wordPtr -> do
-         poke wordPtr word
-         peek (castPtr wordPtr)
-
-bytesToEndianness :: Word8 -> Endianness
-bytesToEndianness 1 = BigEndian
-bytesToEndianness _ = LittleEndian
-#endif

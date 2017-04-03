@@ -18,14 +18,31 @@ module Foundation.Primitive.Endianness
     , BE(..), toBE, fromBE
       -- * Little Endian
     , LE(..), toLE, fromLE
+      -- * System Endianness
+    , Endianness(..)
+    , endianness
     ) where
 
 import Foundation.Internal.Base
 import Foundation.Internal.ByteSwap
 
-#if !defined(ARCH_IS_LITTLE_ENDIAN) && !defined(ARCH_IS_BIG_ENDIAN)
-import Foundation.System.Info (endianness, Endianness(..))
+#ifdef ARCH_IS_UNKNOWN_ENDIAN
+import Foreign.Marshal.Alloc (alloca)
+import Foreign.Ptr (castPtr)
+import Foreign.Storable (poke, peek)
+import Data.Word (Word8, Word32)
+import System.IO.Unsafe (unsafePerformIO)
 #endif
+
+
+-- #if !defined(ARCH_IS_LITTLE_ENDIAN) && !defined(ARCH_IS_BIG_ENDIAN)
+-- import Foundation.System.Info (endianness, Endianness(..))
+-- #endif
+
+data Endianness =
+      LittleEndian
+    | BigEndian
+    deriving (Eq, Show)
 
 -- | Little Endian value
 newtype LE a = LE { unLE :: a }
@@ -82,3 +99,27 @@ fromLE (LE a) = byteSwap a
 fromLE (LE a) = if endianness == LittleEndian then a else byteSwap a
 #endif
 {-# INLINE fromLE #-}
+
+-- | endianness of the current architecture
+endianness :: Endianness
+#ifdef ARCH_IS_LITTLE_ENDIAN
+endianness = LittleEndian
+#elif ARCH_IS_BIG_ENDIAN
+endianness = BigEndian
+#else
+-- ! ARCH_IS_UNKNOWN_ENDIAN
+endianness = unsafePerformIO $ bytesToEndianness <$> word32ToByte input
+  where
+    input :: Word32
+    input = 0x01020304
+{-# NOINLINE endianness #-}
+
+word32ToByte :: Word32 -> IO Word8
+word32ToByte word = alloca $ \wordPtr -> do
+         poke wordPtr word
+         peek (castPtr wordPtr)
+
+bytesToEndianness :: Word8 -> Endianness
+bytesToEndianness 1 = BigEndian
+bytesToEndianness _ = LittleEndian
+#endif
