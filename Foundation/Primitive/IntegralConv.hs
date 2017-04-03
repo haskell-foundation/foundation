@@ -137,13 +137,13 @@ instance IntegralDownsize Int Int32 where
     integralDownsizeCheck = integralDownsizeBounded integralDownsize
 
 instance IntegralDownsize Word64 Word8 where
-    integralDownsize      (W64# i) = W8# (narrow8Word# i)
+    integralDownsize      i = W8# (narrow8Word# (word64ToWord# i))
     integralDownsizeCheck = integralDownsizeBounded integralDownsize
 instance IntegralDownsize Word64 Word16 where
-    integralDownsize      (W64# i) = W16# (narrow16Word# i)
+    integralDownsize      i = W16# (narrow16Word# (word64ToWord# i))
     integralDownsizeCheck = integralDownsizeBounded integralDownsize
 instance IntegralDownsize Word64 Word32 where
-    integralDownsize      (W64# i) = W32# (narrow32Word# i)
+    integralDownsize      i = W32# (narrow32Word# (word64ToWord# i))
     integralDownsizeCheck = integralDownsizeBounded integralDownsize
 
 instance IntegralDownsize Word32 Word8 where
@@ -243,6 +243,13 @@ word64ToWord :: Word64 -> Word
 word64ToWord (W64# i) = W# i
 #else
 word64ToWord (W64# i) = W# (word64ToWord# i)
+#endif
+
+word64ToWord# :: Word64 -> Word#
+#if WORD_SIZE_IN_BITS == 64
+word64ToWord# (W64# i) = i
+#else
+word64ToWord# (W64# i) = word64ToWord# i
 #endif
 
 
