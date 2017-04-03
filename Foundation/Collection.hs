@@ -25,6 +25,7 @@ module Foundation.Collection
     , getNonEmpty
     , nonEmpty
     , nonEmpty_
+    , nonEmptyFmap
     , Sequential(..)
     , MutableCollection(..)
     , IndexedCollection(..)
