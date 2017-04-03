@@ -9,6 +9,7 @@
 * Improve splitOn to return empty elements
 * Fix API bug for snoc and cons in Chunked UArray
 * Add UUID
+* Check API
 
 ## 0.0.4
 
