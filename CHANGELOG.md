@@ -10,6 +10,7 @@
 * Fix API bug for snoc and cons in Chunked UArray
 * Add UUID
 * Check API
+* Fix compilation on !x86
 
 ## 0.0.4
 
