@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE StandaloneDeriving #-}
 module Foundation.Monad
     ( MonadIO(..)
     , MonadFailure(..)
@@ -23,13 +24,20 @@ import Data.Functor.Identity
 import Control.Monad.Fix
 import Control.Monad.Zip
 import Foundation.Internal.Base
+
+#if MIN_VERSION_base(4,6,0)
 import GHC.Generics (Generic1)
+#endif
 
 -- | Identity functor and monad. (a non-strict monad)
 --
 -- @since 4.8.0.0
 newtype Identity a = Identity { runIdentity :: a }
-    deriving (Eq, Ord, Data, Generic, Generic1, Typeable)
+    deriving (Eq, Ord, Data, Generic, Typeable)
+
+#if MIN_VERSION_base(4,6,0)
+deriving instance Generic1 Identity
+#endif
 
 instance Functor Identity where
     fmap f (Identity x) = Identity (f x)

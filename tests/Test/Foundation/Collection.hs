@@ -170,7 +170,7 @@ testSplitOn :: ( Sequential a
                )
               => Proxy a -> (Element a -> Bool) -> a
               -> TestTree
-testSplitOn p predicate col = testCase "splitOn (const True) mempty == [mempty]" $
+testSplitOn _ predicate col = testCase "splitOn (const True) mempty == [mempty]" $
     assertEq' (splitOn predicate col) [col]
 
 testSequentialOps :: ( Sequential a

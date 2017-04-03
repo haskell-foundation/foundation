@@ -18,8 +18,14 @@ module Foundation.Primitive
     , ByteSwap
     , LE(..), toLE, fromLE
     , BE(..), toBE, fromBE
+
+    -- * Integral convertion
+    , IntegralUpsize(..)
+    , IntegralDownsize(..)
+    , IntegralCast(..)
     ) where
 
 import Foundation.Primitive.Types
 import Foundation.Primitive.Monad
 import Foundation.Primitive.Endianness
+import Foundation.Primitive.IntegralConv

@@ -82,6 +82,7 @@ Library
                      Foundation.Parser
                      Foundation.Random
                      Foundation.Check
+                     Foundation.UUID
                      Foundation.System.Entropy
                      Foundation.System.Bindings
   Other-modules:     Foundation.Boot.Builder
@@ -144,6 +145,7 @@ Library
                      Foundation.Primitive.Types
                      Foundation.Primitive.Monad
                      Foundation.Primitive.Utils
+                     Foundation.Primitive.IntegralConv
                      Foundation.Primitive.FinalPtr
                      Foundation.Monad.MonadIO
                      Foundation.Monad.Exception
