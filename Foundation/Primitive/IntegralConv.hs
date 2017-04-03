@@ -3,12 +3,15 @@
 {-# LANGUAGE DefaultSignatures     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE UnboxedTuples         #-}
 module Foundation.Primitive.IntegralConv
     ( IntegralDownsize(..)
     , IntegralUpsize(..)
     , IntegralCast(..)
     , intToInt64
     , wordToWord64
+    , word64ToWord32s
+    , word64ToWord
     ) where
 
 #include "MachDeps.h"
@@ -20,6 +23,10 @@ import GHC.Word
 import Prelude (Integer, fromIntegral)
 import Foundation.Internal.Base
 import Foundation.Internal.Natural
+
+#if WORD_SIZE_IN_BITS < 64
+import GHC.IntWord64
+#endif
 
 -- | Downsize an integral value
 class IntegralDownsize a b where
@@ -162,4 +169,20 @@ wordToWord64 :: Word -> Word64
 wordToWord64 (W# i) = W64# i
 #else
 wordToWord64 (W# i) = W64# (wordToWord64# i)
+#endif
+
+word64ToWord :: Word64 -> Word
+#if WORD_SIZE_IN_BITS == 64
+word64ToWord (W64# i) = W# i
+#else
+word64ToWord (W64# i) = W# (word64ToWord# i)
+#endif
+
+
+#if WORD_SIZE_IN_BITS == 64
+word64ToWord32s :: Word64 -> (# Word32, Word32 #)
+word64ToWord32s (W64# w) = (# W32# (uncheckedShiftRL# w 32#), W32# (narrow32Word# w) #)
+#else
+word64ToWord32s :: Word64 -> (# Word32, Word32 #)
+word64ToWord32s (W64# w) = (# W32# (word64ToWord# (uncheckedShiftRL64# w 32#)), W32# (word64ToWord# w) #)
 #endif
