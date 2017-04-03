@@ -1,6 +1,8 @@
+{-# LANGUAGE UnboxedTuples #-}
 module Foundation.UUID
     ( UUID(..)
     , nil
+    , fromBinary
     ) where
 
 import           Foundation.Internal.Base
@@ -54,3 +56,30 @@ toLString uuid = withComponent uuid $ \x1 x2 x3 x4 x5 ->
 
 nil :: UUID
 nil = UUID 0 0
+
+fromBinary :: UA.UArray Word8 -> Maybe UUID
+fromBinary ba
+    | UA.length ba /= 16 = Nothing
+    | otherwise          = Just $ UUID w0 w1
+  where
+    w0 = (b15 .<<. 56) .|. (b14 .<<. 48) .|. (b13 .<<. 40) .|. (b12 .<<. 32) .|.
+         (b11 .<<. 24) .|. (b10 .<<. 16) .|. (b9 .<<. 8)   .|. b8
+    w1 = (b7 .<<. 56) .|. (b6 .<<. 48) .|. (b5 .<<. 40) .|. (b4 .<<. 32) .|.
+         (b3 .<<. 24) .|. (b2 .<<. 16) .|. (b1 .<<. 8)  .|. b0
+
+    b0  = integralUpsize (UA.unsafeIndex ba 0)
+    b1  = integralUpsize (UA.unsafeIndex ba 1)
+    b2  = integralUpsize (UA.unsafeIndex ba 2)
+    b3  = integralUpsize (UA.unsafeIndex ba 3)
+    b4  = integralUpsize (UA.unsafeIndex ba 4)
+    b5  = integralUpsize (UA.unsafeIndex ba 5)
+    b6  = integralUpsize (UA.unsafeIndex ba 6)
+    b7  = integralUpsize (UA.unsafeIndex ba 7)
+    b8  = integralUpsize (UA.unsafeIndex ba 8)
+    b9  = integralUpsize (UA.unsafeIndex ba 9)
+    b10 = integralUpsize (UA.unsafeIndex ba 10)
+    b11 = integralUpsize (UA.unsafeIndex ba 11)
+    b12 = integralUpsize (UA.unsafeIndex ba 12)
+    b13 = integralUpsize (UA.unsafeIndex ba 13)
+    b14 = integralUpsize (UA.unsafeIndex ba 14)
+    b15 = integralUpsize (UA.unsafeIndex ba 15)
