@@ -11,9 +11,6 @@ import           Foundation.Random
 class Arbitrary a where
     arbitrary :: Gen a
 
-arbitraryBounded :: Bounded b => Gen b
-arbitraryBounded = undefined
-
 instance Arbitrary Int where
     arbitrary = genWithRng getRandomPrimType
 instance Arbitrary Integer where
