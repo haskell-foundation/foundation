@@ -109,6 +109,7 @@ defaultMain test = do
                           , contextSeed   = seed
                           }
 
+    printHeader context
     tr <- runTest context test
     if nbFail tr > 0
         then putStrLn (fromList (show $ nbFail tr) <> " failure(s)") >> exitFailure
