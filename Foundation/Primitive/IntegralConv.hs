@@ -136,6 +136,73 @@ instance IntegralDownsize Int Int32 where
     integralDownsize      (I# i) = I32# (narrow32Int# i)
     integralDownsizeCheck = integralDownsizeBounded integralDownsize
 
+instance IntegralDownsize Word64 Word8 where
+    integralDownsize      (W64# i) = W8# (narrow8Word# i)
+    integralDownsizeCheck = integralDownsizeBounded integralDownsize
+instance IntegralDownsize Word64 Word16 where
+    integralDownsize      (W64# i) = W16# (narrow16Word# i)
+    integralDownsizeCheck = integralDownsizeBounded integralDownsize
+instance IntegralDownsize Word64 Word32 where
+    integralDownsize      (W64# i) = W32# (narrow32Word# i)
+    integralDownsizeCheck = integralDownsizeBounded integralDownsize
+
+instance IntegralDownsize Word32 Word8 where
+    integralDownsize      (W32# i) = W8# (narrow8Word# i)
+    integralDownsizeCheck = integralDownsizeBounded integralDownsize
+instance IntegralDownsize Word32 Word16 where
+    integralDownsize      (W32# i) = W16# (narrow16Word# i)
+    integralDownsizeCheck = integralDownsizeBounded integralDownsize
+
+instance IntegralDownsize Word16 Word8 where
+    integralDownsize      (W16# i) = W8# (narrow8Word# i)
+    integralDownsizeCheck = integralDownsizeBounded integralDownsize
+
+instance IntegralDownsize Integer Int8 where
+    integralDownsize = fromIntegral
+    integralDownsizeCheck = integralDownsizeBounded integralDownsize
+instance IntegralDownsize Integer Int16 where
+    integralDownsize = fromIntegral
+    integralDownsizeCheck = integralDownsizeBounded integralDownsize
+instance IntegralDownsize Integer Int32 where
+    integralDownsize = fromIntegral
+    integralDownsizeCheck = integralDownsizeBounded integralDownsize
+instance IntegralDownsize Integer Int64 where
+    integralDownsize = fromIntegral
+    integralDownsizeCheck = integralDownsizeBounded integralDownsize
+
+instance IntegralDownsize Integer Word8 where
+    integralDownsize = fromIntegral
+    integralDownsizeCheck = integralDownsizeBounded integralDownsize
+instance IntegralDownsize Integer Word16 where
+    integralDownsize = fromIntegral
+    integralDownsizeCheck = integralDownsizeBounded integralDownsize
+instance IntegralDownsize Integer Word32 where
+    integralDownsize = fromIntegral
+    integralDownsizeCheck = integralDownsizeBounded integralDownsize
+instance IntegralDownsize Integer Word64 where
+    integralDownsize = fromIntegral
+    integralDownsizeCheck = integralDownsizeBounded integralDownsize
+instance IntegralDownsize Integer Natural where
+    integralDownsize i
+        | i >= 0    = fromIntegral i
+        | otherwise = 0
+    integralDownsizeCheck i
+        | i >= 0    = Just (fromIntegral i)
+        | otherwise = Nothing
+
+instance IntegralDownsize Natural Word8 where
+    integralDownsize = fromIntegral
+    integralDownsizeCheck = integralDownsizeBounded integralDownsize
+instance IntegralDownsize Natural Word16 where
+    integralDownsize = fromIntegral
+    integralDownsizeCheck = integralDownsizeBounded integralDownsize
+instance IntegralDownsize Natural Word32 where
+    integralDownsize = fromIntegral
+    integralDownsizeCheck = integralDownsizeBounded integralDownsize
+instance IntegralDownsize Natural Word64 where
+    integralDownsize = fromIntegral
+    integralDownsizeCheck = integralDownsizeBounded integralDownsize
+
 instance IntegralCast Word Int where
     integralCast (W# w) = I# (word2Int# w)
 instance IntegralCast Int Word where
