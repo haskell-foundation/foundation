@@ -11,11 +11,14 @@ module Foundation.Check.Arbitrary
 import           Foundation.Internal.Base
 import           Foundation.Internal.Natural
 import           Foundation.Primitive
+import           Foundation.Primitive.IntegralConv (wordToChar)
 import           Foundation.Check.Gen
 import           Foundation.Random
+import           Foundation.Bits
 import           Foundation.Collection
 import           Foundation.Array
 import           Foundation.Numerical
+import           Foundation.String
 import           Control.Monad (replicateM)
 
 -- | How to generate an arbitrary value for 'a'
@@ -49,14 +52,14 @@ instance Arbitrary Int16 where
 instance Arbitrary Int8 where
     arbitrary = arbitraryPrimtype
 instance Arbitrary Char where
-    arbitrary = arbitraryPrimtype
+    arbitrary = arbitraryChar
 
--- other types
 instance Arbitrary Bool where
-    arbitrary = undefined -- arbitrary
+    arbitrary = flip testBit 0 <$> (arbitraryPrimtype :: Gen Word)
 
 instance Arbitrary String where
-    arbitrary = undefined
+    arbitrary = genWithParams $ \params ->
+        fromList <$> (genMax (genMaxSizeString params) >>= \i -> replicateM (integralCast i) arbitrary)
 
 instance Arbitrary a => Arbitrary (Maybe a) where
     arbitrary = frequency $ nonEmpty_ [ (1, pure Nothing), (4, Just <$> arbitrary) ]
@@ -101,12 +104,18 @@ arbitraryInteger =
 arbitraryNatural :: Gen Natural
 arbitraryNatural = integralDownsize . abs <$> arbitraryInteger
 
+arbitraryChar :: Gen Char
+arbitraryChar = frequency $ nonEmpty_
+    [ (6, wordToChar <$> genMax 128)
+    , (1, wordToChar <$> genMax 0x10ffff)
+    ]
+
 arbitraryPrimtype :: PrimType ty => Gen ty
 arbitraryPrimtype = genWithRng getRandomPrimType
 
 arbitraryUArrayOf :: PrimType ty => Word -> Gen (UArray ty)
 arbitraryUArrayOf size =
-    between (0, size) >>= \sz -> (fromList <$> replicateM (integralCast sz) arbitrary)
+    between (0, size) >>= \sz -> (fromList <$> replicateM (integralCast sz) arbitraryPrimtype)
 
 -- | Call one of the generator weighted
 frequency :: NonEmpty [(Word, Gen a)] -> Gen a
@@ -118,6 +127,7 @@ frequency (getNonEmpty -> l) = between (0, sum) >>= pickOne l
     pickOne ((k,x):xs) n
         | n <= k    = x
         | otherwise = pickOne xs (n-k)
+    pickOne _ _ = internalError "frequency"
 
 oneof :: NonEmpty [Gen a] -> Gen a
 oneof ne = frequency (nonEmptyFmap (\x -> (1, x)) ne)
@@ -126,8 +136,8 @@ elements :: NonEmpty [a] -> Gen a
 elements l = frequency (nonEmptyFmap (\x -> (1, pure x)) l)
 
 between :: (Word, Word) -> Gen Word
-between (min,max) = (+) min <$> genMax range
-  where range = max - min
+between (x,y) = (+) x <$> genMax range
+  where range = y - x
 
 genMax :: Word -> Gen Word
-genMax m = undefined
+genMax m = (flip mod m) <$> arbitraryPrimtype

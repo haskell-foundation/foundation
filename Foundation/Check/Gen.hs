@@ -21,9 +21,9 @@ import           Foundation.Hashing.Hasher
 import qualified Foundation.Array.Unboxed as A
 
 data GenParams = GenParams
-    { genMaxSizeIntegral :: Word64 -- maximum number of bytes
-    , genMaxSizeArray    :: Word64 -- number of elements, as placeholder
-    , genMaxSizeString   :: Word64 -- maximum number of chars
+    { genMaxSizeIntegral :: Word -- maximum number of bytes
+    , genMaxSizeArray    :: Word -- number of elements, as placeholder
+    , genMaxSizeString   :: Word -- maximum number of chars
     }
 
 newtype GenRng = GenRng RNGv1
