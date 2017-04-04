@@ -69,16 +69,19 @@ sysLinux_IN_MOVED_TO = (#const IN_MOVED_TO)
 -- extra mask at add_watch time
 sysLinux_IN_OPEN
     , sysLinux_IN_DONT_FOLLOW
-    , sysLinux_IN_EXCL_UNLINK
     , sysLinux_IN_MASK_ADD
     , sysLinux_IN_ONESHOT
     , sysLinux_IN_ONLYDIR :: CInotifyMask
 sysLinux_IN_OPEN = (#const IN_OPEN)
 sysLinux_IN_DONT_FOLLOW = (#const IN_DONT_FOLLOW)
-sysLinux_IN_EXCL_UNLINK = (#const IN_EXCL_UNLINK)
 sysLinux_IN_MASK_ADD = (#const IN_MASK_ADD)
 sysLinux_IN_ONESHOT = (#const IN_ONESHOT)
 sysLinux_IN_ONLYDIR = (#const IN_ONLYDIR)
+
+#ifdef IN_EXCL_UNLINK
+sysLinux_IN_EXCL_UNLINK :: CInotifyMask
+sysLinux_IN_EXCL_UNLINK = (#const IN_EXCL_UNLINK)
+#endif
 
 -- only found in mask
 sysLinux_IN_IGNORED
