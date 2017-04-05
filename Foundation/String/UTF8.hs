@@ -83,6 +83,7 @@ import           Foundation.Internal.Types
 import           Foundation.Numerical
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
+import           Foundation.Primitive.IntegralConv
 import           Foundation.Boot.Builder
 import qualified Foundation.Boot.List as List
 import           Foundation.String.UTF8Table
@@ -212,13 +213,13 @@ validate ba ofsStart sz = runST (Vec.unsafeIndexer ba go)
 -- | Similar to 'validate' but works on a 'MutableByteArray'
 mutableValidate :: PrimMonad prim
                 => MutableByteArray (PrimState prim)
-                -> Int
-                -> Int
-                -> prim (Int, Maybe ValidationFailure)
+                -> Offset Word8
+                -> Size Word8
+                -> prim (Offset Word8, Maybe ValidationFailure)
 mutableValidate mba ofsStart sz = do
     loop ofsStart
   where
-    end = ofsStart + sz
+    end = ofsStart `offsetPlusE` sz
 
     loop ofs
         | ofs > end  = error "mutableValidate: internal error: went pass offset"
@@ -234,7 +235,7 @@ mutableValidate mba ofsStart sz = do
         let nbConts = getNbBytes h
         if nbConts == 0xff
             then return (pos, Just InvalidHeader)
-            else if pos + 1 + nbConts > end
+            else if pos + 1 + Offset nbConts > end
                 then return (pos, Just MissingByte)
                 else do
                     case nbConts of
@@ -343,15 +344,15 @@ writeWithBuilder c =
     toContinuation w = or# (and# w 0x3f##) 0x80##
 
 next :: String -> Offset8 -> (# Char, Offset8 #)
-next (String ba) (Offset n) =
+next (String ba) n =
     case getNbBytes# h of
-        0# -> (# toChar h, Offset $ n + 1 #)
-        1# -> (# toChar (decode2 (Vec.unsafeIndex ba (n + 1))) , Offset $ n + 2 #)
+        0# -> (# toChar h, n + 1 #)
+        1# -> (# toChar (decode2 (Vec.unsafeIndex ba (n + 1))) , n + 2 #)
         2# -> (# toChar (decode3 (Vec.unsafeIndex ba (n + 1))
-                                 (Vec.unsafeIndex ba (n + 2))) , Offset $ n + 3 #)
+                                 (Vec.unsafeIndex ba (n + 2))) , n + 3 #)
         3# -> (# toChar (decode4 (Vec.unsafeIndex ba (n + 1))
                                  (Vec.unsafeIndex ba (n + 2))
-                                 (Vec.unsafeIndex ba (n + 3))) , Offset $ n + 4 #)
+                                 (Vec.unsafeIndex ba (n + 3))) , n + 4 #)
         r -> error ("next: internal error: invalid input: offset=" <> show n <> " table=" <> show (I# r) <> " h=" <> show (W# h))
   where
     !(W8# h) = Vec.unsafeIndex ba n
@@ -423,16 +424,16 @@ numBytes UTF8_3{} = Size 3
 numBytes UTF8_4{} = Size 4
 
 writeUTF8Char :: PrimMonad prim => MutableString (PrimState prim) -> Offset8 -> UTF8Char -> prim ()
-writeUTF8Char (MutableString mba) (Offset i) (UTF8_1 x1) =
+writeUTF8Char (MutableString mba) i (UTF8_1 x1) =
     Vec.unsafeWrite mba i     x1
-writeUTF8Char (MutableString mba) (Offset i) (UTF8_2 x1 x2) = do
+writeUTF8Char (MutableString mba) i (UTF8_2 x1 x2) = do
     Vec.unsafeWrite mba i     x1
     Vec.unsafeWrite mba (i+1) x2
-writeUTF8Char (MutableString mba) (Offset i) (UTF8_3 x1 x2 x3) = do
+writeUTF8Char (MutableString mba) i (UTF8_3 x1 x2 x3) = do
     Vec.unsafeWrite mba i     x1
     Vec.unsafeWrite mba (i+1) x2
     Vec.unsafeWrite mba (i+2) x3
-writeUTF8Char (MutableString mba) (Offset i) (UTF8_4 x1 x2 x3 x4) = do
+writeUTF8Char (MutableString mba) i (UTF8_4 x1 x2 x3 x4) = do
     Vec.unsafeWrite mba i     x1
     Vec.unsafeWrite mba (i+1) x2
     Vec.unsafeWrite mba (i+2) x3
@@ -440,7 +441,7 @@ writeUTF8Char (MutableString mba) (Offset i) (UTF8_4 x1 x2 x3 x4) = do
 {-# INLINE writeUTF8Char #-}
 
 write :: PrimMonad prim => MutableString (PrimState prim) -> Offset8 -> Char -> prim Offset8
-write (MutableString mba) (Offset i) c =
+write (MutableString mba) i c =
     if      bool# (ltWord# x 0x80##   ) then encode1
     else if bool# (ltWord# x 0x800##  ) then encode2
     else if bool# (ltWord# x 0x10000##) then encode3
@@ -449,14 +450,14 @@ write (MutableString mba) (Offset i) c =
     !(I# xi) = fromEnum c
     !x       = int2Word# xi
 
-    encode1 = Vec.unsafeWrite mba i (W8# x) >> return (Offset $ i + 1)
+    encode1 = Vec.unsafeWrite mba i (W8# x) >> return (i + 1)
 
     encode2 = do
         let x1  = or# (uncheckedShiftRL# x 6#) 0xc0##
             x2  = toContinuation x
         Vec.unsafeWrite mba i     (W8# x1)
         Vec.unsafeWrite mba (i+1) (W8# x2)
-        return $ Offset (i + 2)
+        return (i + 2)
 
     encode3 = do
         let x1  = or# (uncheckedShiftRL# x 12#) 0xe0##
@@ -465,7 +466,7 @@ write (MutableString mba) (Offset i) c =
         Vec.unsafeWrite mba i     (W8# x1)
         Vec.unsafeWrite mba (i+1) (W8# x2)
         Vec.unsafeWrite mba (i+2) (W8# x3)
-        return $ Offset (i + 3)
+        return (i + 3)
 
     encode4 = do
         let x1  = or# (uncheckedShiftRL# x 18#) 0xf0##
@@ -476,7 +477,7 @@ write (MutableString mba) (Offset i) c =
         Vec.unsafeWrite mba (i+1) (W8# x2)
         Vec.unsafeWrite mba (i+2) (W8# x3)
         Vec.unsafeWrite mba (i+3) (W8# x4)
-        return $ Offset (i + 4)
+        return (i + 4)
 
     toContinuation :: Word# -> Word#
     toContinuation w = or# (and# w 0x3f##) 0x80##
@@ -544,14 +545,14 @@ take :: Int -> String -> String
 take n s@(String ba)
     | n <= 0           = mempty
     | n >= C.length ba = s
-    | otherwise        = let (Offset o) = indexN n s in String $ Vec.take o ba
+    | otherwise        = let (Offset o) = indexN (Offset n) s in String $ Vec.take o ba
 
 -- | Create a string with the remaining Chars after dropping @n Chars from the beginning
 drop :: Int -> String -> String
 drop n s@(String ba)
     | n <= 0           = s
     | n >= C.length ba = mempty
-    | otherwise        = let (Offset o) = indexN n s in String $ Vec.drop o ba
+    | otherwise        = let (Offset o) = indexN (Offset n) s in String $ Vec.drop o ba
 
 -- | Split a string at the Offset specified (in Char) returning both
 -- the leading part and the remaining part.
@@ -560,17 +561,17 @@ splitAt nI s@(String ba)
     | nI <= 0           = (mempty, s)
     | nI >= C.length ba = (s, mempty)
     | otherwise =
-        let (Offset k) = indexN nI s
+        let (Offset k) = indexN (Offset nI) s
             (v1,v2)    = C.splitAt k ba
          in (String v1, String v2)
 
 -- | Return the offset (in bytes) of the N'th sequence in an UTF8 String
-indexN :: Int -> String -> Offset Word8
-indexN nI (String ba) = Vec.unsafeDewrap goVec goAddr ba
+indexN :: Offset Char -> String -> Offset Word8
+indexN !n (String ba) = Vec.unsafeDewrap goVec goAddr ba
   where
-    !n = Size nI
-    end :: Offset Char
-    !end = Offset 0 `offsetPlusE` n
+    -- !n = Size nI
+    --end :: Offset Char
+    -- !end = Offset 0 `offsetPlusE` n
 
     goVec :: ByteArray# -> Offset Word8 -> Offset Word8
     goVec !ma !start = loop start (Offset 0)
@@ -578,7 +579,7 @@ indexN nI (String ba) = Vec.unsafeDewrap goVec goAddr ba
         !len = start `offsetPlusE` Vec.lengthSize ba
         loop :: Offset Word8 -> Offset Char -> Offset Word8
         loop !idx !i
-            | idx >= len || i >= end = sizeAsOffset (idx - start)
+            | idx >= len || i >= n = sizeAsOffset (idx - start)
             | otherwise              = loop (idx `offsetPlusE` d) (i + Offset 1)
           where d = skipNextHeaderValue (primBaIndex ma idx)
     {-# INLINE goVec #-}
@@ -589,8 +590,8 @@ indexN nI (String ba) = Vec.unsafeDewrap goVec goAddr ba
         !len = start `offsetPlusE` Vec.lengthSize ba
         loop :: Offset Word8 -> Offset Char -> Offset Word8
         loop !idx !i
-            | idx >= len || i >= end = sizeAsOffset (idx - start)
-            | otherwise              = loop (idx `offsetPlusE` d) (i + Offset 1)
+            | idx >= len || i >= n = sizeAsOffset (idx - start)
+            | otherwise            = loop (idx `offsetPlusE` d) (i + Offset 1)
           where d = skipNextHeaderValue (primAddrIndex ptr idx)
     {-# INLINE goAddr #-}
 {-# INLINE indexN #-}
@@ -641,7 +642,7 @@ splitOn predicate s
 -- This is unsafe considering that one can create a substring
 -- starting and/or ending on the middle of a UTF8 sequence.
 sub :: String -> Offset8 -> Offset8 -> String
-sub (String ba) (Offset start) (Offset end) = String $ Vec.sub ba start end
+sub (String ba) start end = String $ Vec.sub ba start end
 
 -- | Internal call to split at a given index in offset of bytes.
 --
@@ -807,18 +808,18 @@ length :: String -> Int
 length s = let (Size sz) = lengthSize s in sz
 
 -- | Replicate a character @c@ @n@ times to create a string of length @n@
-replicate :: Int -> Char -> String
+replicate :: Word -> Char -> String
 replicate n c = runST (new nbBytes >>= fill)
   where
-    end       = azero `offsetPlusE` nbBytes
-    nbBytes   = Size $ sz * n
-    (Size sz) = charToBytes (fromEnum c)
+    --end       = azero `offsetPlusE` nbBytes
+    nbBytes   = scale n sz
+    sz = charToBytes (fromEnum c)
     fill :: PrimMonad prim => MutableString (PrimState prim) -> prim String
     fill ms = loop (Offset 0)
       where
         loop idx
-            | idx == end = freeze ms
-            | otherwise  = write ms idx c >>= loop
+            | idx .==# nbBytes = freeze ms
+            | otherwise        = write ms idx c >>= loop
 
 -- | Copy the String
 --
@@ -955,7 +956,7 @@ cons c s@(String ba)
 unsnoc :: String -> Maybe (String, Char)
 unsnoc s
     | null s    = Nothing
-    | otherwise = case index s (length s - 1) of
+    | otherwise = case index s (sizeLastOffset $ lengthSize s) of
         Nothing -> Nothing
         Just c  -> Just (revDrop 1 s, c)
 
@@ -1000,14 +1001,14 @@ reverse s@(String ba) = runST $ do
     !len = size s
     -- write those bytes
     loop :: PrimMonad prim => MutableString (PrimState prim) -> Offset8 -> Offset8 -> prim String
-    loop ms@(MutableString mba) sidx@(Offset si) didx
+    loop ms@(MutableString mba) si didx
         | didx == Offset 0 = freeze ms
         | otherwise = do
             let !h = Vec.unsafeIndex ba si
                 !nb = Size (getNbBytes h + 1)
-                didx'@(Offset d) = didx `offsetMinusE` nb
+                d  = didx `offsetMinusE` nb
             case nb of
-                Size 1 -> Vec.unsafeWrite mba d      h
+                Size 1 -> Vec.unsafeWrite mba d h
                 Size 2 -> do
                     Vec.unsafeWrite mba d       h
                     Vec.unsafeWrite mba (d + 1) (Vec.unsafeIndex ba (si + 1))
@@ -1021,13 +1022,13 @@ reverse s@(String ba) = runST $ do
                     Vec.unsafeWrite mba (d + 2) (Vec.unsafeIndex ba (si + 2))
                     Vec.unsafeWrite mba (d + 3) (Vec.unsafeIndex ba (si + 3))
                 _  -> return () -- impossible
-            loop ms (sidx `offsetPlusE` nb) didx'
+            loop ms (si `offsetPlusE` nb) d
 
 -- | Return the nth character in a String
 --
 -- Compared to an array, the string need to be scanned from the beginning
 -- since the UTF8 encoding is variable.
-index :: String -> Int -> Maybe Char
+index :: String -> Offset Char -> Maybe Char
 index s n
     | ofs >= end = Nothing
     | otherwise  =
@@ -1041,18 +1042,17 @@ index s n
 -- | Return the index in unit of Char of the first occurence of the predicate returning True
 --
 -- If not found, Nothing is returned
-findIndex :: (Char -> Bool) -> String -> Maybe Int
-findIndex predicate s = loop (Offset 0)
+findIndex :: (Char -> Bool) -> String -> Maybe (Offset Char)
+findIndex predicate s = loop 0 0
   where
     !sz = size s
-    end = Offset 0 `offsetPlusE` sz
-    loop idx
-        | idx == end = Nothing
-        | otherwise =
+    loop ofs idx
+        | idx .==# sz = Nothing
+        | otherwise   =
             let (# c, idx' #) = next s idx
              in case predicate c of
-                    True  -> let (Offset r) = idx in Just r
-                    False -> loop idx'
+                    True  -> Just ofs
+                    False -> loop (ofs+1) idx'
 
 -- | Various String Encoding that can be use to convert to and from bytes
 data Encoding

@@ -106,13 +106,14 @@ instance C.Sequential AsciiString where
     find = find
     sortBy = sortBy
     singleton = fromList . (:[])
+    replicate n = fromList . C.replicate n
 
 instance C.Zippable AsciiString where
   -- TODO Use a string builder once available
   zipWith f a b = sFromList (C.zipWith f a b)
 
 next :: AsciiString -> Offset CUChar -> (# CUChar, Offset CUChar #)
-next (AsciiString ba) (Offset n) = (# h, Offset (n + 1) #)
+next (AsciiString ba) n = (# h, n + 1 #)
   where
     !h = Vec.unsafeIndex ba n
 
@@ -209,7 +210,7 @@ length :: AsciiString -> Int
 length s = let (Size l) = size s in l
 
 replicate :: Int -> CUChar -> AsciiString
-replicate n c = AsciiString $ Vec.create n (const c)
+replicate n c = AsciiString $ Vec.create (Size n) (const c)
 
 -- | Copy the AsciiString
 copy :: AsciiString -> AsciiString
