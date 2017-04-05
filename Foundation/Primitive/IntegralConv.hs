@@ -13,6 +13,8 @@ module Foundation.Primitive.IntegralConv
     , word64ToWord32s
     , word64ToWord
     , wordToChar
+    , wordToInt
+    , charToInt
     ) where
 
 #include "MachDeps.h"
@@ -85,6 +87,11 @@ instance IntegralUpsize Int32 Int where
     integralUpsize (I32# i) = I# i
 instance IntegralUpsize Int32 Integer where
     integralUpsize = fromIntegral
+
+instance IntegralUpsize Int Integer where
+    integralUpsize = fromIntegral
+instance IntegralUpsize Int Int64 where
+    integralUpsize = intToInt64
 
 instance IntegralUpsize Int64 Integer where
     integralUpsize = fromIntegral
@@ -262,3 +269,9 @@ word64ToWord32s (W64# w) = (# W32# (word64ToWord# (uncheckedShiftRL64# w 32#)), 
 
 wordToChar :: Word -> Char
 wordToChar (W# w) = C# (chr# (word2Int# w))
+
+wordToInt :: Word -> Int
+wordToInt (W# w) = I# (word2Int# w)
+
+charToInt :: Char -> Int
+charToInt (C# x) = I# (ord# x)
