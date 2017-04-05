@@ -66,6 +66,7 @@ module Foundation.String.UTF8
     , reverse
     , builderAppend
     , builderBuild
+    , readInteger
     -- * Legacy utility
     , lines
     , words
@@ -1238,3 +1239,25 @@ builderBuild sizeChunksI sb
         let sz = Vec.lengthSize x
         Vec.unsafeCopyAtRO mba (sizeAsOffset (end - sz)) x (Offset 0) sz
         fillFromEnd (end - sz) xs mba
+
+readInteger :: String -> Maybe Integer
+readInteger str
+    | sz == 0  = Nothing
+    | otherwise =
+        let (# c, nextOfs #) = next str 0
+         in case c of
+            '-'           -> fmap negate (loop 0 nextOfs)
+            _ | isDigit c -> loop (fromDigit c) nextOfs
+              | otherwise -> Nothing
+  where
+    !sz = size str
+    loop :: Integer -> Offset Word8 -> Maybe Integer
+    loop !acc !ofs
+        | ofs .==# sz = Just acc
+        | otherwise   =
+            let (# c, nextOfs #) = next str ofs
+             in if isDigit c
+                    then loop (acc * 10 + fromDigit c) nextOfs
+                    else Nothing
+    isDigit c = c >= '0' && c <= '9'
+    fromDigit c = integralUpsize (c - '0')

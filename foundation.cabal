@@ -60,6 +60,7 @@ Library
                      Foundation.Convertible
                      Foundation.String
                      Foundation.String.ASCII
+                     Foundation.String.Read
                      Foundation.IO
                      Foundation.IO.FileMap
                      Foundation.VFS

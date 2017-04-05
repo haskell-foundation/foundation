@@ -3,6 +3,7 @@ module Main where
 
 import Foundation
 import Foundation.Check
+import Foundation.String.Read
 
 testAdditive :: forall a . (Eq a, Additive a, Arbitrary a) => Proxy a -> Test
 testAdditive _ = Group "Additive"
@@ -20,10 +21,8 @@ main = defaultMain $ Group "foundation"
         , Group "Word64"
             [ testAdditive (Proxy :: Proxy Word64)
             ]
-{-
-        , Group "Natural"
-            [ testAdditive (Proxy :: Proxy Natural)
-            ]
--}
+        ]
+    , Group "String"
+        [ Property "Reading-integer" $ \i -> readInteger (show i) == Just i
         ]
     ]
