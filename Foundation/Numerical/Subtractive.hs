@@ -4,6 +4,7 @@ module Foundation.Numerical.Subtractive
 
 import           Foundation.Internal.Base
 import           Foundation.Internal.Natural
+import           Foundation.Primitive.IntegralConv
 import qualified Prelude
 
 -- | Represent class of things that can be subtracted.
@@ -68,3 +69,6 @@ instance Subtractive Prelude.Float where
 instance Subtractive Prelude.Double where
     type Difference Prelude.Double = Prelude.Double
     (-) = (Prelude.-)
+instance Subtractive Prelude.Char where
+    type Difference Prelude.Char = Prelude.Int
+    (-) a b = (Prelude.-) (charToInt a) (charToInt b)
