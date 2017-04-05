@@ -25,6 +25,7 @@ module Foundation.Collection.Collection
     , getNonEmpty
     , nonEmpty
     , nonEmpty_
+    , nonEmptyFmap
     ) where
 
 import           Foundation.Internal.Base
@@ -62,6 +63,9 @@ instance Collection c => IsList (NonEmpty c) where
     type Item (NonEmpty c) = Item c
     toList   = toList . getNonEmpty
     fromList = nonEmpty_ . fromList
+
+nonEmptyFmap :: Functor f => (a -> b) -> NonEmpty (f a) -> NonEmpty (f b)
+nonEmptyFmap f (NonEmpty l) = NonEmpty (fmap f l)
 
 -- | A set of methods for ordered colection
 class (IsList c, Item c ~ Element c) => Collection c where

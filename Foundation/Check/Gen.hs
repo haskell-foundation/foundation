@@ -8,6 +8,7 @@ module Foundation.Check.Gen
     , GenParams(..)
     , genRng
     , genWithRng
+    , genWithParams
     ) where
 
 import           Foundation.Internal.Base
@@ -20,7 +21,9 @@ import           Foundation.Hashing.Hasher
 import qualified Foundation.Array.Unboxed as A
 
 data GenParams = GenParams
-    {
+    { genMaxSizeIntegral :: Word -- maximum number of bytes
+    , genMaxSizeArray    :: Word -- number of elements, as placeholder
+    , genMaxSizeString   :: Word -- maximum number of chars
     }
 
 newtype GenRng = GenRng RNGv1
@@ -71,3 +74,6 @@ instance Monad Gen where
 genWithRng :: forall a . (forall randomly . MonadRandom randomly => randomly a) -> Gen a
 genWithRng f = Gen $ \(GenRng rng) _ ->
     let (a, _) = withRandomGenerator rng f in a
+
+genWithParams :: (GenParams -> Gen a) -> Gen a
+genWithParams f = Gen $ \rng params -> runGen (f params) rng params

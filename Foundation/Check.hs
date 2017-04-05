@@ -6,6 +6,9 @@
 module Foundation.Check
     ( Gen
     , Arbitrary(..)
+    , oneof
+    , elements
+    , frequency
     -- test
     , Test(..)
     , testName
@@ -95,7 +98,10 @@ runProp ctx s prop = do
     propertyToResult True  = PropertySuccess
 
     !rngIt  = genRng (contextSeed ctx) (s : contextGroups ctx)
-    !params = GenParams {}
+    !params = GenParams { genMaxSizeIntegral = 32   -- 256 bits maximum numbers
+                        , genMaxSizeArray    = 512  -- 512 elements
+                        , genMaxSizeString   = 8192 -- 8K string
+                        }
 
 -- | Run tests
 defaultMain :: Test -> IO ()
