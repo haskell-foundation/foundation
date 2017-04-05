@@ -6,6 +6,7 @@
 -- Portability : portable
 --
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MagicHash #-}
 module Foundation.Internal.Types
     ( FileSize(..)
     , Offset(..)
@@ -14,7 +15,11 @@ module Foundation.Internal.Types
     , offsetPlusE
     , offsetMinusE
     , offsetRecast
+    , offsetCast
+    , sizeCast
+    , sizeLastOffset
     , (+.)
+    , (.==#)
     , Size(..)
     , Size8
     , sizeOfE
@@ -22,7 +27,9 @@ module Foundation.Internal.Types
 
 import GHC.Types
 import GHC.Word
+import GHC.Prim (unsafeCoerce#)
 import Foundation.Internal.Base
+import Foundation.Internal.Proxy
 import Foundation.Numerical.Primitives
 import Foundation.Numerical.Number
 import Foundation.Numerical.Additive
@@ -67,6 +74,11 @@ instance Subtractive (Offset ty) where
 (+.) :: Offset ty -> Int -> Offset ty
 (+.) (Offset a) b = Offset (a + b)
 
+-- . is offset (as a pointer from a beginning), and # is the size (amount of data)
+(.==#) :: Offset ty -> Size ty -> Bool
+(.==#) (Offset ofs) (Size sz) = ofs == sz
+{-# INLINE (.==#) #-}
+
 offsetOfE :: Size8 -> Offset ty -> Offset8
 offsetOfE (Size sz) (Offset ty) = Offset (ty * sz)
 
@@ -80,6 +92,20 @@ offsetRecast :: Size8 -> Size8 -> Offset ty -> Offset ty2
 offsetRecast szTy (Size szTy2) ofs =
     let (Offset bytes) = offsetOfE szTy ofs
      in Offset (bytes `div` szTy2)
+
+offsetCast :: Proxy (a -> b) -> Offset a -> Offset b
+offsetCast _ o = unsafeCoerce# o
+{-# INLINE offsetCast #-}
+
+sizeCast :: Proxy (a -> b) -> Size a -> Size b
+sizeCast _ o = unsafeCoerce# o
+{-# INLINE sizeCast #-}
+
+-- TODO add a callstack, or a construction to prevent size == 0 error
+sizeLastOffset :: Size a -> Offset a
+sizeLastOffset (Size s)
+    | s > 0     = Offset (pred s)
+    | otherwise = error "last offset on size 0"
 
 -- | Size of a data structure in bytes.
 type Size8 = Size Word8
