@@ -126,6 +126,7 @@ defaultMain test = do
 
     runTest :: Context -> Test -> IO TestResult
     runTest ctx (Group s l) = do
+        putStr (replicate (contextLevel ctx) ' ')
         putStrLn s
         results <- mapM (runTest (appendContext s ctx)) l
         return $ GroupResult s (foldl' (+) 0 $ fmap nbFail results) results
