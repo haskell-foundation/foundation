@@ -6,6 +6,9 @@
 module Foundation.Check
     ( Gen
     , Arbitrary(..)
+    , oneof
+    , elements
+    , frequency
     -- test
     , Test(..)
     , testName
