@@ -1,5 +1,5 @@
 Name:                foundation
-Version:             0.0.5
+Version:             0.0.6
 Synopsis:            Alternative prelude with batteries and no dependencies
 Description:
     A custom prelude with no dependencies apart from base.
