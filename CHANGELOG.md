@@ -1,3 +1,8 @@
+## 0.0.6
+
+* Fix build on Centos 6.x / older linux distribution
+* Improve test checks generators
+
 ## 0.0.5
 
 * Generalize monadic map (mapM, mapM\_)
