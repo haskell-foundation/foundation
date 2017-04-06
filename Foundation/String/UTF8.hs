@@ -79,6 +79,7 @@ import qualified Foundation.Array.Unboxed           as C
 import           Foundation.Array.Unboxed.ByteArray (MutableByteArray)
 import qualified Foundation.Array.Unboxed.Mutable   as MVec
 import           Foundation.Internal.Base
+import           Foundation.Bits
 import           Foundation.Internal.Natural
 import           Foundation.Internal.MonadTrans
 import           Foundation.Internal.Primitive
@@ -345,6 +346,14 @@ writeWithBuilder c =
 
     toContinuation :: Word# -> Word#
     toContinuation w = or# (and# w 0x3f##) 0x80##
+
+-- A variant of 'next' when you want the next character
+-- to be ASCII only. if Bool is False, then it's not ascii,
+-- otherwise it is and the return Word8 is valid.
+nextAscii :: String -> Offset8 -> (# Word8, Bool #)
+nextAscii (String ba) n = (# w, not (testBit w 7) #)
+  where
+    !w = Vec.unsafeIndex ba n
 
 next :: String -> Offset8 -> (# Char, Offset8 #)
 next (String ba) n =
