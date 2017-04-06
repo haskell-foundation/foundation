@@ -67,6 +67,7 @@ module Foundation.String.UTF8
     , builderAppend
     , builderBuild
     , readInteger
+    , readNatural
     -- * Legacy utility
     , lines
     , words
@@ -78,6 +79,7 @@ import qualified Foundation.Array.Unboxed           as C
 import           Foundation.Array.Unboxed.ByteArray (MutableByteArray)
 import qualified Foundation.Array.Unboxed.Mutable   as MVec
 import           Foundation.Internal.Base
+import           Foundation.Internal.Natural
 import           Foundation.Internal.MonadTrans
 import           Foundation.Internal.Primitive
 import           Foundation.Internal.Types
@@ -1261,3 +1263,20 @@ readInteger str
                     else Nothing
     isDigit c = c >= '0' && c <= '9'
     fromDigit c = integralUpsize (c - '0')
+
+readNatural :: String -> Maybe Natural
+readNatural str
+    | sz == 0  = Nothing
+    | otherwise = loop 0 0
+  where
+    !sz = size str
+    loop :: Natural -> Offset Word8 -> Maybe Natural
+    loop !acc !ofs
+        | ofs .==# sz = Just acc
+        | otherwise   =
+            let (# c, nextOfs #) = next str ofs
+             in if isDigit c
+                    then loop (acc * 10 + fromDigit c) nextOfs
+                    else Nothing
+    isDigit c = c >= '0' && c <= '9'
+    fromDigit c = integralUpsize (integralCast (c - '0') :: Word)
