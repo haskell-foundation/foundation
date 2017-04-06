@@ -10,11 +10,15 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE UnboxedTuples #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Foundation.Array.Boxed
     ( Array
     , MArray
     , empty
     , length
+    , lengthSize
+    , mutableLength
+    , mutableLengthSize
     , copy
     , copyAt
     , unsafeCopyAtRO
@@ -30,6 +34,7 @@ module Foundation.Array.Boxed
     , read
     , index
     , singleton
+    , replicate
     , null
     , take
     , drop
@@ -63,9 +68,11 @@ import           GHC.Types
 import           GHC.ST
 import           Foundation.Numerical
 import           Foundation.Internal.Base
+import           Foundation.Internal.Proxy
 import           Foundation.Internal.MonadTrans
-import           Foundation.Internal.Types
+import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Types
+import           Foundation.Primitive.IntegralConv
 import           Foundation.Primitive.Monad
 import           Foundation.Array.Common
 import           Foundation.Boot.Builder
@@ -118,59 +125,64 @@ mutableLength :: MArray ty st -> Int
 mutableLength (MArray _ (Size len) _) = len
 {-# INLINE mutableLength #-}
 
+-- | return the numbers of elements in a mutable array
+mutableLengthSize :: MArray ty st -> Size ty
+mutableLengthSize (MArray _ size _) = size
+{-# INLINE mutableLengthSize #-}
+
 -- | Return the element at a specific index from an array.
 --
 -- If the index @n is out of bounds, an error is raised.
-index :: Array ty -> Int -> ty
+index :: Array ty -> Offset ty -> ty
 index array n
-    | n < 0 || n >= len = throw (OutOfBound OOB_Index n len)
-    | otherwise         = unsafeIndex array n
-  where len = length array
+    | isOutOfBound n len = outOfBound OOB_Index n len
+    | otherwise          = unsafeIndex array n
+  where len = lengthSize array
 {-# INLINE index #-}
 
 -- | Return the element at a specific index from an array without bounds checking.
 --
 -- Reading from invalid memory can return unpredictable and invalid values.
 -- use 'index' if unsure.
-unsafeIndex :: Array ty -> Int -> ty
-unsafeIndex (Array start _ a) ofs = primArrayIndex a (start+Offset ofs)
+unsafeIndex :: Array ty -> Offset ty -> ty
+unsafeIndex (Array start _ a) ofs = primArrayIndex a (start+ofs)
 {-# INLINE unsafeIndex #-}
 
 -- | read a cell in a mutable array.
 --
 -- If the index is out of bounds, an error is raised.
-read :: PrimMonad prim => MArray ty (PrimState prim) -> Int -> prim ty
+read :: PrimMonad prim => MArray ty (PrimState prim) -> Offset ty -> prim ty
 read array n
-    | n < 0 || n >= len = primThrow (OutOfBound OOB_Read n len)
-    | otherwise         = unsafeRead array n
-  where len = mutableLength array
+    | isOutOfBound n len = primOutOfBound OOB_Read n len
+    | otherwise          = unsafeRead array n
+  where len = mutableLengthSize array
 {-# INLINE read #-}
 
 -- | read from a cell in a mutable array without bounds checking.
 --
 -- Reading from invalid memory can return unpredictable and invalid values.
 -- use 'read' if unsure.
-unsafeRead :: PrimMonad prim => MArray ty (PrimState prim) -> Int -> prim ty
-unsafeRead (MArray start _ ma) i = primMutableArrayRead ma (start + Offset i)
+unsafeRead :: PrimMonad prim => MArray ty (PrimState prim) -> Offset ty -> prim ty
+unsafeRead (MArray start _ ma) i = primMutableArrayRead ma (start + i)
 {-# INLINE unsafeRead #-}
 
 -- | Write to a cell in a mutable array.
 --
 -- If the index is out of bounds, an error is raised.
-write :: PrimMonad prim => MArray ty (PrimState prim) -> Int -> ty -> prim ()
+write :: PrimMonad prim => MArray ty (PrimState prim) -> Offset ty -> ty -> prim ()
 write array n val
-    | n < 0 || n >= len = primThrow (OutOfBound OOB_Write n len)
-    | otherwise         = unsafeWrite array n val
-  where len = mutableLength array
+    | isOutOfBound n len = primOutOfBound OOB_Write n len
+    | otherwise          = unsafeWrite array n val
+  where len = mutableLengthSize array
 {-# INLINE write #-}
 
 -- | write to a cell in a mutable array without bounds checking.
 --
 -- Writing with invalid bounds will corrupt memory and your program will
 -- become unreliable. use 'write' if unsure.
-unsafeWrite :: PrimMonad prim => MArray ty (PrimState prim) -> Int -> ty -> prim ()
+unsafeWrite :: PrimMonad prim => MArray ty (PrimState prim) -> Offset ty -> ty -> prim ()
 unsafeWrite (MArray start _ ma) ofs v =
-    primMutableArrayWrite ma (start + Offset ofs) v
+    primMutableArrayWrite ma (start + ofs) v
 {-# INLINE unsafeWrite #-}
 
 -- | Freeze a mutable array into an array.
@@ -206,7 +218,7 @@ freeze marray = do
     copyAt m (Offset 0) marray (Offset 0) sz
     unsafeFreeze m
   where
-    sz = Size $ mutableLength marray
+    sz = mutableLengthSize marray
 
 -- | Copy the element to a new element array
 copy :: Array ty -> Array ty
@@ -221,10 +233,10 @@ copyAt :: PrimMonad prim
        -> Size ty                    -- ^ number of elements to copy
        -> prim ()
 copyAt dst od src os n = loop od os
-  where !endIndex = os `offsetPlusE` n
-        loop (Offset d) s@(Offset i)
-            | s == endIndex = return ()
-            | otherwise     = unsafeRead src i >>= unsafeWrite dst d >> loop (Offset $ d+1) (Offset $ i+1)
+  where -- !endIndex = os `offsetPlusE` n
+        loop d s
+            | s .==# n  = pure ()
+            | otherwise = unsafeRead src s >>= unsafeWrite dst d >> loop (d+1) (s+1)
 
 -- | Copy @n@ sequential elements from the specified offset in a source array
 --   to the specified position in a destination array.
@@ -272,18 +284,17 @@ new sz@(Size (I# n)) = primitive $ \s1 ->
 
 -- | Create a new array of size @n by settings each cells through the
 -- function @f.
-create :: Int         -- ^ the size of the array
-       -> (Int -> ty) -- ^ the function that set the value at the index
-       -> Array ty   -- ^ the array created
-create n initializer = runST (new (Size n) >>= iter initializer)
+create :: forall ty . Size ty -- ^ the size of the array
+       -> (Offset ty -> ty)   -- ^ the function that set the value at the index
+       -> Array ty            -- ^ the array created
+create n initializer = runST (new n >>= iter initializer)
   where
-    iter :: PrimMonad prim => (Int -> ty) -> MArray ty (PrimState prim) -> prim (Array ty)
-    iter f ma = loop (Offset 0)
+    iter :: PrimMonad prim => (Offset ty -> ty) -> MArray ty (PrimState prim) -> prim (Array ty)
+    iter f ma = loop 0
       where
-        !end = Offset 0 `offsetPlusE` Size n
-        loop s@(Offset i)
-            | s == end  = unsafeFreeze ma
-            | otherwise = unsafeWrite ma i (f i) >> loop (Offset $ i+1)
+        loop s
+            | s .==# n  = unsafeFreeze ma
+            | otherwise = unsafeWrite ma s (f s) >> loop (s+1)
         {-# INLINE loop #-}
     {-# INLINE iter #-}
 
@@ -291,22 +302,22 @@ create n initializer = runST (new (Size n) >>= iter initializer)
 -- higher level collection implementation
 -----------------------------------------------------------------------
 equal :: Eq a => Array a -> Array a -> Bool
-equal a b = (len == length b) && eachEqual 0
+equal a b = (len == lengthSize b) && eachEqual 0
   where
-    len = length a
+    len = lengthSize a
     eachEqual !i
-        | i == len                           = True
+        | i .==# len                         = True
         | unsafeIndex a i /= unsafeIndex b i = False
         | otherwise                          = eachEqual (i+1)
 
 vCompare :: Ord a => Array a -> Array a -> Ordering
 vCompare a b = loop 0
   where
-    !la = length a
-    !lb = length b
+    !la = lengthSize a
+    !lb = lengthSize b
     loop n
-        | n == la   = if la == lb then EQ else LT
-        | n == lb   = GT
+        | n .==# la = if la == lb then EQ else LT
+        | n .==# lb = GT
         | otherwise =
             case unsafeIndex a n `compare` unsafeIndex b n of
                 EQ -> loop (n+1)
@@ -329,16 +340,17 @@ vFromList l = runST (new len >>= loop 0 l)
     loop i (x:xs) ma = unsafeWrite ma i x >> loop (i+1) xs ma
 
 vToList :: Array a -> [a]
-vToList v = fmap (unsafeIndex v) [0..(length v - 1)]
+vToList v
+    | len == 0  = []
+    | otherwise = fmap (unsafeIndex v) [0..sizeLastOffset len]
+  where !len = lengthSize v
 
 -- | Append 2 arrays together by creating a new bigger array
 append :: Array ty -> Array ty -> Array ty
 append a b = runST $ do
     r  <- new (la+lb)
-    ma <- unsafeThaw a
-    mb <- unsafeThaw b
-    copyAt r (Offset 0) ma (Offset 0) la
-    copyAt r (sizeAsOffset la) mb (Offset 0) lb
+    unsafeCopyAtRO r (Offset 0) a (Offset 0) la
+    unsafeCopyAtRO r (sizeAsOffset la) b (Offset 0) lb
     unsafeFreeze r
   where la = lengthSize a
         lb = lengthSize b
@@ -350,8 +362,7 @@ concat l = runST $ do
     unsafeFreeze r
   where loop _ _ []     = return ()
         loop r i (x:xs) = do
-            mx <- unsafeThaw x
-            copyAt r i mx (Offset 0) lx
+            unsafeCopyAtRO r i x (Offset 0) lx
             loop r (i `offsetPlusE` lx) xs
           where lx = lengthSize x
 
@@ -430,11 +441,11 @@ splitOn predicate vec
   where
     !len = lengthSize vec
     !endIdx = Offset 0 `offsetPlusE` len
-    loop prevIdx idx@(Offset i)
+    loop prevIdx idx
         | idx == endIdx = [sub vec prevIdx idx]
         | otherwise     =
-            let e = unsafeIndex vec i
-                idx' = idx + Offset 1
+            let e = unsafeIndex vec idx
+                idx' = idx + 1
              in if predicate e
                     then sub vec prevIdx idx : loop idx' idx'
                     else loop prevIdx idx'
@@ -450,11 +461,12 @@ sub (Array start len a) startIdx expectedEndIdx
 break ::  (ty -> Bool) -> Array ty -> (Array ty, Array ty)
 break predicate v = findBreak 0
   where
-    findBreak i
-        | i == length v = (v, empty)
-        | otherwise     =
+    !len = lengthSize v
+    findBreak i@(Offset i')
+        | i .==# len  = (v, empty)
+        | otherwise   =
             if predicate (unsafeIndex v i)
-                then splitAt i v
+                then splitAt i' v
                 else findBreak (i+1)
 
 intersperse :: ty -> Array ty -> Array ty
@@ -465,20 +477,20 @@ intersperse sep v
         -- terminate 1 before the end
 
         go :: Offset ty -> ty -> Array ty -> Offset ty -> MArray ty s -> ST s ()
-        go endI sep' oldV oldI@(Offset oi) newV
+        go endI sep' oldV oldI newV
             | oldI == endI = unsafeWrite newV dst e
             | otherwise    = do
                 unsafeWrite newV dst e
                 unsafeWrite newV (dst + 1) sep'
           where
-            e = unsafeIndex oldV oi
-            (Offset dst) = oldI + oldI
+            e = unsafeIndex oldV oldI
+            dst = oldI + oldI
 
 span ::  (ty -> Bool) -> Array ty -> (Array ty, Array ty)
 span p = break (not . p)
 
 map :: (a -> b) -> Array a -> Array b
-map f a = create (length a) (\i -> f $ unsafeIndex a i)
+map f a = create (sizeCast Proxy $ lengthSize a) (\i -> f $ unsafeIndex a (offsetCast Proxy i))
 
 {-
 mapIndex :: (Int -> a -> b) -> Array a -> Array b
@@ -490,6 +502,9 @@ singleton e = runST $ do
     a <- new 1
     unsafeWrite a 0 e
     unsafeFreeze a
+
+replicate :: Word -> ty -> Array ty
+replicate sz ty = create (Size (integralCast sz)) (const ty)
 
 cons :: ty -> Array ty -> Array ty
 cons e vec
@@ -504,14 +519,14 @@ cons e vec
 
 snoc ::  Array ty -> ty -> Array ty
 snoc vec e
-    | len == Size 0 = singleton e
-    | otherwise     = runST $ do
-        mv <- new (len + Size 1)
-        unsafeCopyAtRO mv (Offset 0) vec (Offset 0) len
-        unsafeWrite mv lastI e
+    | len == 0  = singleton e
+    | otherwise = runST $ do
+        mv <- new (len + 1)
+        unsafeCopyAtRO mv 0 vec 0 len
+        unsafeWrite mv (sizeAsOffset len) e
         unsafeFreeze mv
   where
-    !len@(Size lastI) = lengthSize vec
+    !len = lengthSize vec
 
 uncons :: Array ty -> Maybe (ty, Array ty)
 uncons vec
@@ -523,32 +538,34 @@ uncons vec
 unsnoc :: Array ty -> Maybe (Array ty, ty)
 unsnoc vec
     | len == 0  = Nothing
-    | otherwise = Just (take (len - 1) vec, unsafeIndex vec (len-1))
+    | otherwise = Just (take (lenI - 1) vec, unsafeIndex vec (sizeLastOffset len))
   where
-    !len = length vec
+    !len@(Size lenI) = lengthSize vec
 
 find ::  (ty -> Bool) -> Array ty -> Maybe ty
 find predicate vec = loop 0
   where
-    !len = length vec
+    !len = lengthSize vec
     loop i
-        | i == len  = Nothing
-        | otherwise =
+        | i .==# len = Nothing
+        | otherwise  =
             let e = unsafeIndex vec i
              in if predicate e then Just e else loop (i+1)
 
-sortBy ::  (ty -> ty -> Ordering) -> Array ty -> Array ty
-sortBy xford vec = runST (thaw vec >>= doSort xford)
+sortBy :: forall ty . (ty -> ty -> Ordering) -> Array ty -> Array ty
+sortBy xford vec
+    | len == 0  = empty
+    | otherwise = runST (thaw vec >>= doSort xford)
   where
-    len = length vec
+    len = lengthSize vec
     doSort :: PrimMonad prim => (ty -> ty -> Ordering) -> MArray ty (PrimState prim) -> prim (Array ty)
-    doSort ford ma = qsort 0 (len - 1) >> unsafeFreeze ma
+    doSort ford ma = qsort 0 (sizeLastOffset len) >> unsafeFreeze ma
       where
         qsort lo hi
             | lo >= hi  = return ()
             | otherwise = do
                 p <- partition lo hi
-                qsort lo (p-1)
+                qsort lo (pred p)
                 qsort (p+1) hi
         partition lo hi = do
             pivot <- unsafeRead ma hi
@@ -572,20 +589,19 @@ sortBy xford vec = runST (thaw vec >>= doSort xford)
             unsafeWrite ma i ahi
             return i
 
-filter :: (ty -> Bool) -> Array ty -> Array ty
+filter :: forall ty . (ty -> Bool) -> Array ty -> Array ty
 filter predicate vec = runST (new len >>= copyFilterFreeze predicate (unsafeIndex vec))
   where
     !len = lengthSize vec
-    !end = Offset 0 `offsetPlusE` len
-    copyFilterFreeze :: PrimMonad prim => (ty -> Bool) -> (Int -> ty) -> MArray ty (PrimState prim) -> prim (Array ty)
+    copyFilterFreeze :: PrimMonad prim => (ty -> Bool) -> (Offset ty -> ty) -> MArray ty (PrimState prim) -> prim (Array ty)
     copyFilterFreeze predi getVec mvec = loop (Offset 0) (Offset 0) >>= freezeUntilIndex mvec
       where
-        loop d@(Offset di) s@(Offset si)
-            | s == end    = return d
-            | predi v     = unsafeWrite mvec di v >> loop (d+Offset 1) (s+Offset 1)
-            | otherwise   = loop d (s+Offset 1)
+        loop d s
+            | s .==# len  = return d
+            | predi v     = unsafeWrite mvec d v >> loop (d+1) (s+1)
+            | otherwise   = loop d (s+1)
           where
-            v = getVec si
+            v = getVec s
 
 freezeUntilIndex :: PrimMonad prim => MArray ty (PrimState prim) -> Offset ty -> prim (Array ty)
 freezeUntilIndex mvec d = do
@@ -599,36 +615,36 @@ unsafeFreezeShrink (MArray start _ ma) n = unsafeFreeze (MArray start n ma)
 reverse :: Array ty -> Array ty
 reverse a = create len toEnd
   where
-    len = length a
-    toEnd i = unsafeIndex a (len - i - 1)
+    len@(Size s) = lengthSize a
+    toEnd (Offset i) = unsafeIndex a (Offset (s - 1 - i))
 
 foldl :: (a -> ty -> a) -> a -> Array ty -> a
 foldl f initialAcc vec = loop 0 initialAcc
   where
-    len = length vec
+    len = lengthSize vec
     loop !i acc
-        | i == len  = acc
-        | otherwise = loop (i+1) (f acc (unsafeIndex vec i))
+        | i .==# len = acc
+        | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
 
 foldr :: (ty -> a -> a) -> a -> Array ty -> a
 foldr f initialAcc vec = loop 0
   where
-    len = length vec
+    len = lengthSize vec
     loop !i
-        | i == len  = initialAcc
-        | otherwise = unsafeIndex vec i `f` loop (i+1)
+        | i .==# len = initialAcc
+        | otherwise  = unsafeIndex vec i `f` loop (i+1)
 
 foldl' :: (a -> ty -> a) -> a -> Array ty -> a
 foldl' f initialAcc vec = loop 0 initialAcc
   where
-    len = length vec
+    len = lengthSize vec
     loop !i !acc
-        | i == len  = acc
-        | otherwise = loop (i+1) (f acc (unsafeIndex vec i))
+        | i .==# len = acc
+        | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
 
 builderAppend :: PrimMonad state => ty -> Builder (Array ty) (MArray ty) ty state ()
 builderAppend v = Builder $ State $ \(i, st) ->
-    if offsetAsSize i == chunkSize st
+    if i .==# chunkSize st
         then do
             cur      <- unsafeFreeze (curChunk st)
             newChunk <- new (chunkSize st)
@@ -638,9 +654,8 @@ builderAppend v = Builder $ State $ \(i, st) ->
                                       , curChunk       = newChunk
                                       }))
         else do
-            let (Offset i') = i
-            unsafeWrite (curChunk st) i' v
-            return ((), (i + Offset 1, st))
+            unsafeWrite (curChunk st) i v
+            return ((), (i+1, st))
 
 builderBuild :: PrimMonad m => Int -> Builder (Array ty) (MArray ty) ty m () -> m (Array ty)
 builderBuild sizeChunksI ab

@@ -12,7 +12,7 @@ module Foundation.System.Entropy
 
 
 import           Foundation.Internal.Base
-import           Foundation.Internal.Types
+import           Foundation.Primitive.Types.OffsetSize
 import qualified Foundation.Array.Unboxed.Mutable as A
 import qualified Foundation.Array.Unboxed as A
 import           Control.Exception

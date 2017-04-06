@@ -12,7 +12,7 @@ module Foundation.String.Encoding.UTF32
     ) where
 
 import Foundation.Internal.Base
-import Foundation.Internal.Types
+import Foundation.Primitive.Types.OffsetSize
 import Foundation.Primitive.Monad
 import GHC.Prim
 import GHC.Word

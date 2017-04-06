@@ -18,6 +18,7 @@ module Foundation.Array.Unboxed.Mutable
     -- * Property queries
     , sizeInMutableBytesOfContent
     , mutableLength
+    , mutableLengthSize
     , mutableSame
     -- * Allocation & Copy
     , new
@@ -40,9 +41,9 @@ import           GHC.Types
 import           GHC.Ptr
 import           Foundation.Internal.Base
 import qualified Foundation.Internal.Environment as Environment
-import           Foundation.Internal.Types
 import           Foundation.Internal.Primitive
 import           Foundation.Internal.Proxy
+import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
 import           Foundation.Primitive.FinalPtr
@@ -75,40 +76,40 @@ mvectorProxyTy _ = Proxy
 -- | read a cell in a mutable array.
 --
 -- If the index is out of bounds, an error is raised.
-read :: (PrimMonad prim, PrimType ty) => MUArray ty (PrimState prim) -> Int -> prim ty
+read :: (PrimMonad prim, PrimType ty) => MUArray ty (PrimState prim) -> Offset ty -> prim ty
 read array n
-    | n < 0 || n >= len = primThrow (OutOfBound OOB_Read n len)
-    | otherwise         = unsafeRead array n
-  where len = mutableLength array
+    | isOutOfBound n len = primOutOfBound OOB_Read n len
+    | otherwise          = unsafeRead array n
+  where len = mutableLengthSize array
 {-# INLINE read #-}
 
 -- | read from a cell in a mutable array without bounds checking.
 --
 -- Reading from invalid memory can return unpredictable and invalid values.
 -- use 'read' if unsure.
-unsafeRead :: (PrimMonad prim, PrimType ty) => MUArray ty (PrimState prim) -> Int -> prim ty
-unsafeRead (MUVecMA start _ _ mba) i = primMbaRead mba (start+.i)
-unsafeRead (MUVecAddr start _ fptr) i = withFinalPtr fptr $ \(Ptr addr) -> primAddrRead addr (start+.i)
+unsafeRead :: (PrimMonad prim, PrimType ty) => MUArray ty (PrimState prim) -> Offset ty -> prim ty
+unsafeRead (MUVecMA start _ _ mba) i = primMbaRead mba (start + i)
+unsafeRead (MUVecAddr start _ fptr) i = withFinalPtr fptr $ \(Ptr addr) -> primAddrRead addr (start + i)
 {-# INLINE unsafeRead #-}
 
 -- | Write to a cell in a mutable array.
 --
 -- If the index is out of bounds, an error is raised.
-write :: (PrimMonad prim, PrimType ty) => MUArray ty (PrimState prim) -> Int -> ty -> prim ()
+write :: (PrimMonad prim, PrimType ty) => MUArray ty (PrimState prim) -> Offset ty -> ty -> prim ()
 write array n val
-    | n < 0 || n >= len = primThrow (OutOfBound OOB_Write n len)
-    | otherwise         = unsafeWrite array n val
+    | isOutOfBound n len = primOutOfBound OOB_Write n len
+    | otherwise          = unsafeWrite array n val
   where
-    len = mutableLength array
+    len = mutableLengthSize array
 {-# INLINE write #-}
 
 -- | write to a cell in a mutable array without bounds checking.
 --
 -- Writing with invalid bounds will corrupt memory and your program will
 -- become unreliable. use 'write' if unsure.
-unsafeWrite :: (PrimMonad prim, PrimType ty) => MUArray ty (PrimState prim) -> Int -> ty -> prim ()
-unsafeWrite (MUVecMA start _ _ mba)  i v = primMbaWrite mba (start+.i) v
-unsafeWrite (MUVecAddr start _ fptr) i v = withFinalPtr fptr $ \(Ptr addr) -> primAddrWrite addr (start+.i) v
+unsafeWrite :: (PrimMonad prim, PrimType ty) => MUArray ty (PrimState prim) -> Offset ty -> ty -> prim ()
+unsafeWrite (MUVecMA start _ _ mba)  i v = primMbaWrite mba (start+i) v
+unsafeWrite (MUVecAddr start _ fptr) i v = withFinalPtr fptr $ \(Ptr addr) -> primAddrWrite addr (start+i) v
 {-# INLINE unsafeWrite #-}
 
 -- | Create a new pinned mutable array of size @n.
@@ -203,10 +204,10 @@ copyAt (MUVecMA dstStart _ _ dstMba) ed muvec@(MUVecAddr srcStart _ srcFptr) es 
     !(Size (I# nBytes)) = sizeOfE sz n
 copyAt dst od src os n = loop od os
   where
-    !(Offset endIndex) = os `offsetPlusE` n
-    loop !(Offset d) !(Offset i)
+    !endIndex = os `offsetPlusE` n
+    loop !d !i
         | i == endIndex = return ()
-        | otherwise     = unsafeRead src i >>= unsafeWrite dst d >> loop (Offset $ d+1) (Offset $ i+1)
+        | otherwise     = unsafeRead src i >>= unsafeWrite dst d >> loop (d+1) (i+1)
 
 sub :: (PrimMonad prim, PrimType ty)
     => MUArray ty (PrimState prim)
@@ -248,6 +249,10 @@ copyAddr (MUVecAddr start _ fptr) od src os sz =
 mutableLength :: PrimType ty => MUArray ty st -> Int
 mutableLength (MUVecMA _ (Size end) _ _) = end
 mutableLength (MUVecAddr _ (Size end) _) = end
+
+mutableLengthSize :: PrimType ty => MUArray ty st -> Size ty
+mutableLengthSize (MUVecMA _ end _ _) = end
+mutableLengthSize (MUVecAddr _ end _) = end
 
 withMutablePtrHint :: (PrimMonad prim, PrimType ty)
                    => Bool

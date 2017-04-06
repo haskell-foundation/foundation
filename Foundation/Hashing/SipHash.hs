@@ -20,7 +20,7 @@ module Foundation.Hashing.SipHash
 
 import           Data.Bits
 import           Foundation.Internal.Base
-import           Foundation.Internal.Types
+import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Types
 import           Foundation.Hashing.Hasher
 import qualified Foundation.Array.Unboxed as A

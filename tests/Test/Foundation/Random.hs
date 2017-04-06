@@ -71,7 +71,7 @@ randomTestInitialize = do
 
 -- | Append random data to the test state
 randomTestAppend :: RandomTestState s -> UArray Word8 -> ST s ()
-randomTestAppend (RandomTestState buckets) = mapM_ (addVec 1 . fromIntegral) . toList
+randomTestAppend (RandomTestState buckets) = mapM_ (addVec 1 . Offset . fromIntegral) . toList
   where
     addVec a i = mutRead buckets i >>= \d -> mutWrite buckets i $! d+a
 

@@ -11,13 +11,17 @@
 module Foundation.Array.Common
     ( OutOfBound(..)
     , OutOfBoundOperation(..)
-
+    , isOutOfBound
+    , outOfBound
+    , primOutOfBound
     , InvalidRecast(..)
     , RecastSourceSize(..)
     , RecastDestinationSize(..)
     ) where
 
 import           Foundation.Internal.Base
+import           Foundation.Primitive.Types.OffsetSize
+import           Foundation.Primitive.Monad
 
 -- | The type of operation that triggers an OutOfBound exception.
 --
@@ -34,6 +38,18 @@ data OutOfBound = OutOfBound OutOfBoundOperation Int Int
     deriving (Show,Typeable)
 
 instance Exception OutOfBound
+
+outOfBound :: OutOfBoundOperation -> Offset ty -> Size ty -> a
+outOfBound oobop (Offset ofs) (Size sz) = throw (OutOfBound oobop ofs sz)
+{-# INLINE outOfBound #-}
+
+primOutOfBound :: PrimMonad prim => OutOfBoundOperation -> Offset ty -> Size ty -> prim a
+primOutOfBound oobop (Offset ofs) (Size sz) = primThrow (OutOfBound oobop ofs sz)
+{-# INLINE primOutOfBound #-}
+
+isOutOfBound :: Offset ty -> Size ty -> Bool
+isOutOfBound (Offset ty) (Size sz) = ty < 0 || ty >= sz
+{-# INLINE isOutOfBound #-}
 
 newtype RecastSourceSize      = RecastSourceSize Int
     deriving (Show,Eq,Typeable)

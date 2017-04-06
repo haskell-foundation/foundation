@@ -35,7 +35,7 @@ import qualified Foreign.Storable (peek, poke, sizeOf, alignment)
 import           Foreign.C.Types (CChar, CUChar)
 
 import Foundation.Internal.Base
-import Foundation.Internal.Types
+import Foundation.Primitive.Types.OffsetSize
 import Foundation.Internal.Proxy
 import Foundation.Collection
 import Foundation.Collection.Buildable (builderLift)

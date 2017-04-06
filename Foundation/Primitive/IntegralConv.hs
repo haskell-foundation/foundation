@@ -13,6 +13,8 @@ module Foundation.Primitive.IntegralConv
     , word64ToWord32s
     , word64ToWord
     , wordToChar
+    , wordToInt
+    , charToInt
     ) where
 
 #include "MachDeps.h"
@@ -86,6 +88,11 @@ instance IntegralUpsize Int32 Int where
 instance IntegralUpsize Int32 Integer where
     integralUpsize = fromIntegral
 
+instance IntegralUpsize Int Integer where
+    integralUpsize = fromIntegral
+instance IntegralUpsize Int Int64 where
+    integralUpsize = intToInt64
+
 instance IntegralUpsize Int64 Integer where
     integralUpsize = fromIntegral
 
@@ -121,6 +128,13 @@ instance IntegralUpsize Word32 Integer where
     integralUpsize = fromIntegral
 instance IntegralUpsize Word32 Natural where
     integralUpsize = fromIntegral
+
+instance IntegralUpsize Word Integer where
+    integralUpsize = fromIntegral
+instance IntegralUpsize Word Natural where
+    integralUpsize = fromIntegral
+instance IntegralUpsize Word Word64 where
+    integralUpsize = wordToWord64
 
 instance IntegralUpsize Word64 Integer where
     integralUpsize = fromIntegral
@@ -254,11 +268,17 @@ word64ToWord# i = i
 
 #if WORD_SIZE_IN_BITS == 64
 word64ToWord32s :: Word64 -> (# Word32, Word32 #)
-word64ToWord32s (W64# w) = (# W32# (uncheckedShiftRL# w 32#), W32# (narrow32Word# w) #)
+word64ToWord32s (W64# w64) = (# W32# (uncheckedShiftRL# w64 32#), W32# (narrow32Word# w64) #)
 #else
 word64ToWord32s :: Word64 -> (# Word32, Word32 #)
-word64ToWord32s (W64# w) = (# W32# (word64ToWord# (uncheckedShiftRL64# w 32#)), W32# (word64ToWord# w) #)
+word64ToWord32s (W64# w64) = (# W32# (word64ToWord# (uncheckedShiftRL64# w64 32#)), W32# (word64ToWord# w64) #)
 #endif
 
 wordToChar :: Word -> Char
-wordToChar (W# w) = C# (chr# (word2Int# w))
+wordToChar (W# word) = C# (chr# (word2Int# word))
+
+wordToInt :: Word -> Int
+wordToInt (W# word) = I# (word2Int# word)
+
+charToInt :: Char -> Int
+charToInt (C# x) = I# (ord# x)

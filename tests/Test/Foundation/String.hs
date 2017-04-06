@@ -10,6 +10,7 @@ module Test.Foundation.String
 import Foundation
 import Foundation.String
 import Foundation.String.ASCII (AsciiString)
+import Foundation.String.Read
 import Foundation.Collection
 
 import Test.Tasty
@@ -33,6 +34,9 @@ testStringRefs = testGroup "String"
            ]
     , testGroup "ASCII" $
         [  testCollection "Sequential" (Proxy :: Proxy AsciiString) genAsciiChar
+        ]
+    , testGroup "Reading" $
+        [ testProperty "Integer" $ \i -> readInteger (show i) === Just i
         ]
     ]
 

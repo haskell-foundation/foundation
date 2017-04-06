@@ -13,8 +13,8 @@ module Foundation.Foreign.MemoryMap.Types
 
 import GHC.Ptr
 import Foundation.Primitive.FinalPtr
+import Foundation.Primitive.Types.OffsetSize
 import Foundation.Internal.Base
-import Foundation.Internal.Types
 import Foundation.VFS (FilePath)
 
 -- | Contains all the information related to a file mapping,

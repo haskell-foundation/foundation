@@ -17,6 +17,7 @@ module Foundation.Collection.Sequential
     ) where
 
 import           Foundation.Internal.Base
+import           Foundation.Primitive.IntegralConv
 import           Foundation.Collection.Element
 import           Foundation.Collection.Collection
 import qualified Foundation.Collection.List as ListExtra
@@ -35,6 +36,7 @@ class (IsList c, Item c ~ Element c, Monoid c, Collection c) => Sequential c whe
               , filter, reverse
               , uncons, unsnoc, snoc, cons
               , find, sortBy, singleton
+              , replicate
               #-}
 
     -- | Take the first @n elements of a collection
@@ -138,6 +140,9 @@ class (IsList c, Item c ~ Element c, Monoid c, Collection c) => Sequential c whe
     init :: NonEmpty c -> c
     init nel = maybe (error "init") fst $ unsnoc (getNonEmpty nel)
 
+    -- | Create a collection where the element in parameter is repeated N time
+    replicate :: Word -> Element c -> c
+
     -- | Takes two collections and returns True iff the first collection is a prefix of the second.
     isPrefixOf :: Eq (Element c) => c -> c -> Bool
     default isPrefixOf :: Eq c => c -> c -> Bool
@@ -185,6 +190,7 @@ instance Sequential [a] where
     find = Data.List.find
     sortBy = Data.List.sortBy
     singleton = (:[])
+    replicate i = Data.List.replicate (wordToInt i)
     isPrefixOf = Data.List.isPrefixOf
     isSuffixOf = Data.List.isSuffixOf
 
@@ -209,6 +215,7 @@ instance UV.PrimType ty => Sequential (UV.UArray ty) where
     find = UV.find
     sortBy = UV.sortBy
     singleton = fromList . (:[])
+    replicate = UV.replicate
 
 instance Sequential (BA.Array ty) where
     take = BA.take
@@ -230,6 +237,7 @@ instance Sequential (BA.Array ty) where
     find = BA.find
     sortBy = BA.sortBy
     singleton = fromList . (:[])
+    replicate = BA.replicate
 
 instance Sequential S.String where
     take = S.take
@@ -252,3 +260,4 @@ instance Sequential S.String where
     find = S.find
     sortBy = S.sortBy
     singleton = S.singleton
+    replicate = S.replicate

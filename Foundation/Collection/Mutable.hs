@@ -10,8 +10,8 @@ module Foundation.Collection.Mutable
     ) where
 
 import Foundation.Primitive.Monad
+import Foundation.Primitive.Types.OffsetSize
 import Foundation.Internal.Base
-import Foundation.Internal.Types
 
 import qualified Foundation.Array.Unboxed.Mutable as MUV
 import qualified Foundation.Array.Unboxed as UV
@@ -42,7 +42,7 @@ class MutableCollection c where
 
 instance UV.PrimType ty => MutableCollection (MUV.MUArray ty) where
     type MutableFreezed (MUV.MUArray ty) = UV.UArray ty
-    type MutableKey (MUV.MUArray ty) = Int
+    type MutableKey (MUV.MUArray ty) = Offset ty
     type MutableValue (MUV.MUArray ty) = ty
 
     thaw = UV.thaw
@@ -59,7 +59,7 @@ instance UV.PrimType ty => MutableCollection (MUV.MUArray ty) where
 
 instance MutableCollection (BA.MArray ty) where
     type MutableFreezed (BA.MArray ty) = BA.Array ty
-    type MutableKey (BA.MArray ty) = Int
+    type MutableKey (BA.MArray ty) = Offset ty
     type MutableValue (BA.MArray ty) = ty
 
     thaw = BA.thaw
