@@ -8,6 +8,7 @@ module Test.Foundation.String
     ) where
 
 import Foundation
+import Foundation.Primitive
 import Foundation.String
 import Foundation.String.ASCII (AsciiString)
 import Foundation.String.Read
@@ -37,6 +38,10 @@ testStringRefs = testGroup "String"
         ]
     , testGroup "Reading" $
         [ testProperty "Integer" $ \i -> readInteger (show i) === Just i
+        , testProperty "any"     $ \i (v :: Word8) n ->
+            let vw         = integralUpsize v
+                vwExpected = if n == 0 then 0 else vw
+             in readFloatingExact (show i <> "." <> replicate vw '0' <> show n) === Just (i, vwExpected, n)
         ]
     ]
 

@@ -68,6 +68,7 @@ module Foundation.String.UTF8
     , builderBuild
     , readInteger
     , readNatural
+    , readFloatingExact
     -- * Legacy utility
     , lines
     , words
@@ -1251,37 +1252,80 @@ readInteger :: String -> Maybe Integer
 readInteger str
     | sz == 0  = Nothing
     | otherwise =
-        let (# c, nextOfs #) = next str 0
-         in case c of
-            '-'           -> fmap negate (loop 0 nextOfs)
-            _ | isDigit c -> loop (fromDigit c) nextOfs
-              | otherwise -> Nothing
+         let (# modF, startOfs #) = case nextAscii str 0 of
+                                        -- '-'
+                                        (# 0x2d, True #) -> (# negate , 1 #)
+                                        _                -> (# id, 0 #)
+          in case decimalDigits 0 str startOfs of
+                (# acc, True, endOfs #) | endOfs > startOfs -> Just $ modF acc
+                _                                           -> Nothing
   where
     !sz = size str
-    loop :: Integer -> Offset Word8 -> Maybe Integer
-    loop !acc !ofs
-        | ofs .==# sz = Just acc
-        | otherwise   =
-            let (# c, nextOfs #) = next str ofs
-             in if isDigit c
-                    then loop (acc * 10 + fromDigit c) nextOfs
-                    else Nothing
-    isDigit c = c >= '0' && c <= '9'
-    fromDigit c = integralUpsize (c - '0')
 
 readNatural :: String -> Maybe Natural
 readNatural str
     | sz == 0  = Nothing
-    | otherwise = loop 0 0
+    | otherwise =
+        case decimalDigits 0 str 0 of
+            (# acc, True, endOfs #) | endOfs > 0 -> Just $ acc
+            _                                    -> Nothing
   where
     !sz = size str
-    loop :: Natural -> Offset Word8 -> Maybe Natural
-    loop !acc !ofs
-        | ofs .==# sz = Just acc
+
+readFloatingExact :: String -> Maybe (Integer, Word, Natural)
+readFloatingExact str
+    | sz == 0   = Nothing
+    | otherwise =
+        -- try to eat a '-', otherwise call consumeIntegral
+        case nextAscii str 0 of
+            (# _   , False #) -> Nothing
+            (# 0x2d, True #)  -> consumeIntegral negate 1
+            _                 -> consumeIntegral id 0
+  where
+    !sz = size str
+
+    consumeIntegral modF startOfs =
+        case decimalDigits 0 str startOfs of
+            (# _  , True , _      #)                     -> Nothing -- end of stream and no '.'
+            (# acc, False, endOfs #) | endOfs > startOfs -> consumeDot (modF acc) endOfs
+            _                                            -> Nothing
+    -- this is not the end of the stream since otherwise consumeIntegral would have
+    -- return Nothing already
+    consumeDot integral startOfs =
+        case nextAscii str startOfs of
+            (# 0x2e, True #) -> consumeZero integral (startOfs + 1)
+            _                -> Nothing
+    consumeZero integral startOfs = loop 0 startOfs
+      where
+        loop zeroes ofs
+            | ofs .==# sz = if zeroes == 0 then Nothing else Just (integral, 0, 0)
+            | otherwise   =
+                case nextAscii str ofs of
+                    (# _   , False #) -> Nothing
+                    (# 0x30, True #)  -> loop (zeroes+1) (ofs+1)
+                    (# _   , True #)  -> consumeFloat integral zeroes ofs
+
+    consumeFloat integral zeroes startOfs =
+        case decimalDigits 0 str startOfs of
+            (# acc, True, endOfs #) | endOfs > startOfs -> Just (integral, zeroes, acc)
+            _                                           -> Nothing
+
+-- | Take at n decimal digits and accumulate it
+decimalDigits :: (IntegralUpsize Word8 acc, Additive acc)
+              => acc
+              -> String
+              -> Offset Word8
+              -> (# acc, Bool, Offset Word8 #)
+decimalDigits startAcc str startOfs = loop startAcc startOfs
+  where
+    !sz = size str
+    loop acc ofs
+        | ofs .==# sz = (# acc, True, ofs #)
         | otherwise   =
-            let (# c, nextOfs #) = next str ofs
-             in if isDigit c
-                    then loop (acc * 10 + fromDigit c) nextOfs
-                    else Nothing
-    isDigit c = c >= '0' && c <= '9'
-    fromDigit c = integralUpsize (integralCast (c - '0') :: Word)
+            case nextAscii str ofs of
+                (# d, True #) | isDigit d -> loop (scale (10::Word) acc + fromDigit d) (ofs+1)
+                (# _, _ #)                -> (# acc, False, ofs #)
+    ascii0 = 0x30 -- use pattern synonym when we support >= 8.0
+    ascii9 = 0x39
+    isDigit c = c >= ascii0 && c <= ascii9
+    fromDigit c = integralUpsize (c - ascii0)
