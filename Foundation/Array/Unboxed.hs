@@ -194,7 +194,7 @@ unsafeIndex (UVecAddr start _ fptr) n = withUnsafeFinalPtr fptr (\(Ptr addr) -> 
 unsafeIndexer :: (PrimMonad prim, PrimType ty) => UArray ty -> ((Offset ty -> ty) -> prim a) -> prim a
 unsafeIndexer (UVecBA start _ _ ba) f = f (\n -> primBaIndex ba (start + n))
 unsafeIndexer (UVecAddr start _ fptr) f = withFinalPtr fptr $ \(Ptr addr) -> f (\n -> primAddrIndex addr (start + n))
-{-# NOINLINE unsafeIndexer #-}
+{-# INLINE unsafeIndexer #-}
 
 unsafeDewrap :: PrimType ty
              => (ByteArray# -> Offset ty -> a)
@@ -391,8 +391,8 @@ vToList a
     --go :: (Offset ty -> ty) -> ST s [ty]
     go getIdx = loop 0
       where
-        loop i | i .==# len = []
-               | otherwise  = getIdx i : loop (i+1)
+        loop !i | i .==# len = []
+                | otherwise  = getIdx i : loop (i+1)
     {-# INLINE go #-}
 
 -- | Check if two vectors are identical

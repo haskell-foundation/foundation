@@ -27,7 +27,6 @@ module Foundation.Internal.Types
 
 import GHC.Types
 import GHC.Word
-import GHC.Prim (unsafeCoerce#)
 import Foundation.Internal.Base
 import Foundation.Internal.Proxy
 import Foundation.Numerical.Primitives
@@ -94,11 +93,11 @@ offsetRecast szTy (Size szTy2) ofs =
      in Offset (bytes `div` szTy2)
 
 offsetCast :: Proxy (a -> b) -> Offset a -> Offset b
-offsetCast _ o = unsafeCoerce# o
+offsetCast _ (Offset o) = Offset o
 {-# INLINE offsetCast #-}
 
 sizeCast :: Proxy (a -> b) -> Size a -> Size b
-sizeCast _ o = unsafeCoerce# o
+sizeCast _ (Size sz) = Size sz
 {-# INLINE sizeCast #-}
 
 -- TODO add a callstack, or a construction to prevent size == 0 error
