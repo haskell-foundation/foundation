@@ -34,7 +34,7 @@ import qualified Foundation.Array.Unboxed as A
 import           Foundation.Array.Unboxed.Mutable (MUArray)
 import           Foundation.Array.Common
 import           Foundation.Internal.Base
-import           Foundation.Internal.Types
+import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
 import qualified Foundation.Collection as C
 import           Foundation.Numerical

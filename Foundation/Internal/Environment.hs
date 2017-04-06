@@ -14,7 +14,7 @@ module Foundation.Internal.Environment
     ) where
 
 import           Foundation.Internal.Base
-import           Foundation.Internal.Types
+import           Foundation.Primitive.Types.OffsetSize
 import           System.IO.Unsafe          (unsafePerformIO)
 
 #if MIN_VERSION_base(4,6,0)

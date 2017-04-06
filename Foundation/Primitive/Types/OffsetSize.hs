@@ -1,5 +1,5 @@
 -- |
--- Module      : Foundation.Internal.Types
+-- Module      : Foundation.Primitive.Types.OffsetSize
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
@@ -7,7 +7,7 @@
 --
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MagicHash #-}
-module Foundation.Internal.Types
+module Foundation.Primitive.Types.OffsetSize
     ( FileSize(..)
     , Offset(..)
     , Offset8

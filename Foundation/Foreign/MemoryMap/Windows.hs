@@ -7,8 +7,8 @@ import System.Win32.File
 import System.Win32.FileMapping
 import Control.Exception hiding (handle)
 
-import Foundation.Internal.Types
 import Foundation.Internal.Base
+import Foundation.Primitive.Types.OffsetSize
 import Foundation.Primitive.FinalPtr
 import Foundation.VFS
 import Foundation.Foreign.MemoryMap.Types

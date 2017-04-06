@@ -128,7 +128,6 @@ Library
                      Foundation.Internal.IsList
                      Foundation.Internal.Identity
                      Foundation.Internal.Proxy
-                     Foundation.Internal.Types
                      Foundation.Internal.PrimTypes
                      Foundation.Internal.MonadTrans
                      Foundation.Internal.Natural
@@ -144,6 +143,7 @@ Library
                      Foundation.Primitive.Base16
                      Foundation.Primitive.Endianness
                      Foundation.Primitive.Types
+                     Foundation.Primitive.Types.OffsetSize
                      Foundation.Primitive.Monad
                      Foundation.Primitive.Utils
                      Foundation.Primitive.IntegralConv

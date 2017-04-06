@@ -17,7 +17,7 @@ module Foundation.Primitive.Utils
     ) where
 
 import           Foundation.Internal.Base
-import           Foundation.Internal.Types
+import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Internal.Primitive
 import           Foundation.Primitive.Monad
 import           GHC.Prim

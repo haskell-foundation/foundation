@@ -25,7 +25,7 @@ module Foundation.Hashing.FNV
 
 import           Foundation.Internal.Base
 import qualified Foundation.Array.Unboxed as A
-import           Foundation.Internal.Types
+import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Types
 import           Foundation.Numerical
 import           Foundation.Hashing.Hasher

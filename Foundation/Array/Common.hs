@@ -20,7 +20,7 @@ module Foundation.Array.Common
     ) where
 
 import           Foundation.Internal.Base
-import           Foundation.Internal.Types
+import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
 
 -- | The type of operation that triggers an OutOfBound exception.

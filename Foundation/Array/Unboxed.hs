@@ -99,7 +99,7 @@ import qualified Prelude
 import           Foundation.Internal.Base
 import           Foundation.Internal.Primitive
 import           Foundation.Internal.Proxy
-import           Foundation.Internal.Types
+import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Internal.MonadTrans
 import qualified Foundation.Primitive.Base16 as Base16
 import           Foundation.Primitive.Monad

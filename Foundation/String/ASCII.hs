@@ -37,7 +37,7 @@ import qualified Foundation.Array.Unboxed           as Vec
 import qualified Foundation.Array.Unboxed.Mutable   as MVec
 import qualified Foundation.Collection              as C
 import           Foundation.Internal.Base
-import           Foundation.Internal.Types
+import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Numerical
 import           Foundation.Primitive.Monad
 import           Foundation.Foreign

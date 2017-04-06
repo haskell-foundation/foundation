@@ -70,7 +70,7 @@ import           Foundation.Numerical
 import           Foundation.Internal.Base
 import           Foundation.Internal.Proxy
 import           Foundation.Internal.MonadTrans
-import           Foundation.Internal.Types
+import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Types
 import           Foundation.Primitive.IntegralConv
 import           Foundation.Primitive.Monad

@@ -41,9 +41,9 @@ import           GHC.Types
 import           GHC.Ptr
 import           Foundation.Internal.Base
 import qualified Foundation.Internal.Environment as Environment
-import           Foundation.Internal.Types
 import           Foundation.Internal.Primitive
 import           Foundation.Internal.Proxy
+import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
 import           Foundation.Primitive.FinalPtr

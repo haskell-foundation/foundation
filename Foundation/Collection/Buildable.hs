@@ -28,7 +28,7 @@ import           Foundation.Internal.MonadTrans
 -- >>> import Control.Monad.ST
 -- >>> import Foundation.Array.Unboxed
 -- >>> import Foundation.Internal.Base
--- >>> import Foundation.Internal.Types
+-- >>> import Foundation.Primitive.OffsetSize
 
 -- | Collections that can be built chunk by chunk.
 --

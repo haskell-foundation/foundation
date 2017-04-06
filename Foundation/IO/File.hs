@@ -24,7 +24,7 @@ import           System.IO.Error
 import qualified System.IO as S
 import           Foundation.Collection
 import           Foundation.VFS
-import           Foundation.Internal.Types
+import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Internal.Base
 import           Foundation.String
 import           Foundation.Array

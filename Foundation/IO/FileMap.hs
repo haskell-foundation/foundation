@@ -23,7 +23,7 @@ module Foundation.IO.FileMap
     ) where
 
 import           Control.Exception
-import           Foundation.Internal.Types
+import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Internal.Base
 import           Foundation.VFS (FilePath)
 import           Foundation.Primitive.FinalPtr

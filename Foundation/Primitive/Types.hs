@@ -36,7 +36,7 @@ import           GHC.Word
 import           Foreign.C.Types
 import           Foundation.Internal.Proxy
 import           Foundation.Internal.Base
-import           Foundation.Internal.Types
+import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Endianness
 import           Foundation.Primitive.Monad
 import qualified Prelude (quot)

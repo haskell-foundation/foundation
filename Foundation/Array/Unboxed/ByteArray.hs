@@ -6,7 +6,7 @@ module Foundation.Array.Unboxed.ByteArray
     ) where
 
 import Foundation.Internal.Base
-import Foundation.Internal.Types
+import Foundation.Primitive.Types.OffsetSize
 import Foundation.Primitive.Monad
 import Foundation.Array.Unboxed.Mutable
 import Control.Monad (forM_)

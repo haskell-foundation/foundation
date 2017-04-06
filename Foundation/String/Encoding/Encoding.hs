@@ -14,7 +14,7 @@ module Foundation.String.Encoding.Encoding
     ) where
 
 import           Foundation.Internal.Base
-import           Foundation.Internal.Types
+import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
 import           Foundation.Boot.Builder

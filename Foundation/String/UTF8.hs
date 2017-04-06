@@ -82,7 +82,7 @@ import           Foundation.Internal.Base
 import           Foundation.Internal.Natural
 import           Foundation.Internal.MonadTrans
 import           Foundation.Internal.Primitive
-import           Foundation.Internal.Types
+import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Numerical
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types

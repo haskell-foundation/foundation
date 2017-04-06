@@ -10,8 +10,8 @@ module Foundation.Collection.Mutable
     ) where
 
 import Foundation.Primitive.Monad
+import Foundation.Primitive.Types.OffsetSize
 import Foundation.Internal.Base
-import Foundation.Internal.Types
 
 import qualified Foundation.Array.Unboxed.Mutable as MUV
 import qualified Foundation.Array.Unboxed as UV

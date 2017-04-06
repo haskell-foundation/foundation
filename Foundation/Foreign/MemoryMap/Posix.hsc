@@ -42,7 +42,7 @@ module Foundation.Foreign.MemoryMap.Posix
     ) where
 
 import Foundation.Internal.Base
-import Foundation.Internal.Types
+import Foundation.Primitive.Types.OffsetSize
 import System.Posix.Types
 import Foreign.Ptr
 import Foreign.C.Types

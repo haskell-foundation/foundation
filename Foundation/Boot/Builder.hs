@@ -6,7 +6,7 @@ module Foundation.Boot.Builder
 
 import           Foundation.Internal.Base
 import           Foundation.Internal.MonadTrans
-import           Foundation.Internal.Types
+import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
 
 newtype Builder collection mutCollection step state a = Builder

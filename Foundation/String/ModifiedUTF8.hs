@@ -25,7 +25,7 @@ import           GHC.Prim (Addr#)
 import           Control.Monad (mapM_)
 
 import           Foundation.Internal.Base
-import           Foundation.Internal.Types
+import           Foundation.Primitive.Types.OffsetSize
 import qualified Foundation.Array.Unboxed as Vec
 import           Foundation.Array.Unboxed (UArray)
 import           Foundation.Numerical

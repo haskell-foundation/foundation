@@ -28,7 +28,7 @@ module Foundation.Random
     ) where
 
 import           Foundation.Internal.Base
-import           Foundation.Internal.Types
+import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Internal.Proxy
 import           Foundation.Primitive.Monad
 import           Foundation.System.Entropy
