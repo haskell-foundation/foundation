@@ -129,6 +129,13 @@ instance IntegralUpsize Word32 Integer where
 instance IntegralUpsize Word32 Natural where
     integralUpsize = fromIntegral
 
+instance IntegralUpsize Word Integer where
+    integralUpsize = fromIntegral
+instance IntegralUpsize Word Natural where
+    integralUpsize = fromIntegral
+instance IntegralUpsize Word Word64 where
+    integralUpsize = wordToWord64
+
 instance IntegralUpsize Word64 Integer where
     integralUpsize = fromIntegral
 instance IntegralUpsize Word64 Natural where
