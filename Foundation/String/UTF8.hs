@@ -581,10 +581,6 @@ splitAt nI s@(String ba)
 indexN :: Offset Char -> String -> Offset Word8
 indexN !n (String ba) = Vec.unsafeDewrap goVec goAddr ba
   where
-    -- !n = Size nI
-    --end :: Offset Char
-    -- !end = Offset 0 `offsetPlusE` n
-
     goVec :: ByteArray# -> Offset Word8 -> Offset Word8
     goVec !ma !start = loop start (Offset 0)
       where
