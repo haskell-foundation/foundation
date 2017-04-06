@@ -14,9 +14,6 @@ matrix:
   include:
   - env: BUILD=cabal
     language: haskell
-    ghc: 7.4
-  - env: BUILD=cabal
-    language: haskell
     ghc: 7.6
   - env: BUILD=stack RESOLVER=ghc-8.0
     language: generic
@@ -37,6 +34,9 @@ matrix:
     os: osx
     language: generic
     compiler: ghc-8.0
+  - env: BUILD=cabal
+    language: haskell
+    ghc: 7.4
 
   allow_failures:
   - env: BUILD=cabal
