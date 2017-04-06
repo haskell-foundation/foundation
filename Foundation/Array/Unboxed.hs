@@ -332,11 +332,9 @@ create n initializer
     | n == 0    = empty
     | otherwise = runST (new n >>= iter initializer)
   where
-    -- !end = 0 `offsetPlusE` n
     iter :: (PrimType ty, PrimMonad prim) => (Offset ty -> ty) -> MUArray ty (PrimState prim) -> prim (UArray ty)
     iter f ma = loop 0
       where
-        --loop :: Offset ty -> prim (UArray ty)
         loop i
             | i .==# n  = unsafeFreeze ma
             | otherwise = unsafeWrite ma i (f i) >> loop (i+1)
