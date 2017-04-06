@@ -378,8 +378,8 @@ vFromList l = runST $ do
     iter 0 l $ \i x -> unsafeWrite ma i x
     unsafeFreeze ma
   where len = Data.List.length l
-        iter _ [] _ = return ()
-        iter i (x:xs) z = z i x >> iter (i+1) xs z
+        iter _  []     _ = return ()
+        iter !i (x:xs) z = z i x >> iter (i+1) xs z
 
 -- | transform an array to a list.
 vToList :: forall ty . PrimType ty => UArray ty -> [ty]
