@@ -382,16 +382,20 @@ vFromList l = runST $ do
 -- | transform an array to a list.
 vToList :: forall ty . PrimType ty => UArray ty -> [ty]
 vToList a
-    | null a    = []
-    | otherwise = runST (unsafeIndexer a (pureST . go))
+    | len == 0  = []
+    | otherwise = unsafeDewrap goBa goPtr a
   where
     !len = lengthSize a
-    --go :: (Offset ty -> ty) -> ST s [ty]
-    go getIdx = loop 0
+    goBa ba start = loop start
       where
-        loop !i | i .==# len = []
-                | otherwise  = getIdx i : loop (i+1)
-    {-# INLINE go #-}
+        !end = start `offsetPlusE` len
+        loop !i | i == end  = []
+                | otherwise = primBaIndex ba i : loop (i+1)
+    goPtr (Ptr addr) start = pureST (loop start)
+      where
+        !end = start `offsetPlusE` len
+        loop !i | i == end  = []
+                | otherwise = primAddrIndex addr i : loop (i+1)
 
 -- | Check if two vectors are identical
 equal :: (PrimType ty, Eq ty) => UArray ty -> UArray ty -> Bool
