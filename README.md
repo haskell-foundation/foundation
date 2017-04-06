@@ -132,3 +132,15 @@ duplication and further fragmentation.
 
 
 Foundation uses and abuses type families.
+
+
+Code Organisation
+=================
+
+Every foundation modules start by `Foundation`.
+
+* `Foundation` is the prelude replacement module.
+* `Foundation.Internal` contains only compatibilty and re-export from ghc/ghc-prim/base.
+* `Foundation.Primitive` is where all the lowlevel magic happens:
+  * Important types that underpins many others part
+  * Pervasive features
