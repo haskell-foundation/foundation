@@ -23,6 +23,7 @@ import Test.Data.ASCII
 import Test.Data.List
 import Test.Foundation.Collection
 import Test.Foundation.Encoding
+import Test.Foundation.Number -- for Natural instance of Arbitrary on old base
 
 testStringRefs :: TestTree
 testStringRefs = testGroup "String"

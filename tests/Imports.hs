@@ -31,11 +31,6 @@ import qualified Test.Tasty            as Y
 import qualified Test.Tasty.QuickCheck as Y
 import qualified Test.Tasty.HUnit      as Y
 
-#if !(MIN_VERSION_base(4,9,0))
-instance Arbitrary Natural where
-    arbitrary = fromIntegral . abs <$> (arbitrary :: Gen Integer)
-#endif
-
 assertEq :: (Eq a, Show a) => a -> a -> Bool
 assertEq got expected
     | got == expected = True
