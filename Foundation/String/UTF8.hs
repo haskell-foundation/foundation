@@ -1248,6 +1248,9 @@ builderBuild sizeChunksI sb
         Vec.unsafeCopyAtRO mba (sizeAsOffset (end - sz)) x (Offset 0) sz
         fillFromEnd (end - sz) xs mba
 
+-- | Read an Integer from a String
+--
+-- Consume an optional minus sign and many digits until end of string.
 readInteger :: String -> Maybe Integer
 readInteger str
     | sz == 0  = Nothing
@@ -1262,6 +1265,9 @@ readInteger str
   where
     !sz = size str
 
+-- | Read a Natural from a String
+--
+-- Consume many digits until end of string.
 readNatural :: String -> Maybe Natural
 readNatural str
     | sz == 0  = Nothing
@@ -1272,6 +1278,22 @@ readNatural str
   where
     !sz = size str
 
+-- | Read an Floating like number of the form:
+--
+--   [ '-' ] <numbers> '.' <numbers>
+--
+-- Returns a value containing the leading integral part,
+-- the number of zeros after fractional part, and the fractional part
+-- natural.
+--
+-- The code is structure as a simple state machine that do:
+--
+-- * Optionally Consume a '-' sign
+-- * Consume number for the integral part
+-- * Consume '.'
+-- * Consume leading zeros explicitely to gather scale of the fractional part
+-- * Consume remaining digits if not already end of string
+--
 readFloatingExact :: String -> Maybe (Integer, Word, Natural)
 readFloatingExact str
     | sz == 0   = Nothing
@@ -1295,6 +1317,7 @@ readFloatingExact str
         case nextAscii str startOfs of
             (# 0x2e, True #) -> consumeZero integral (startOfs + 1)
             _                -> Nothing
+
     consumeZero integral startOfs = loop 0 startOfs
       where
         loop zeroes ofs
@@ -1310,7 +1333,28 @@ readFloatingExact str
             (# acc, True, endOfs #) | endOfs > startOfs -> Just (integral, zeroes, acc)
             _                                           -> Nothing
 
--- | Take at n decimal digits and accumulate it
+-- | Take decimal digits and accumulate it in `acc`
+--
+-- The loop starts at the offset specified and finish either when:
+--
+-- * It reach the end of the string
+-- * It reach a non-ASCII character
+-- * It reach an ASCII character that is not a digit (0 to 9)
+--
+-- Otherwise each iterations:
+--
+-- * Transform the ASCII digits into a number
+-- * scale the accumulator by 10
+-- * Add the number (between 0 and 9) to the accumulator
+--
+-- It then returns:
+--
+-- * The new accumulated value
+-- * Whether it stop by end of string or not
+-- * The end offset when the loop stopped
+--
+-- If end offset == start offset then no digits have been consumed by
+-- this function
 decimalDigits :: (IntegralUpsize Word8 acc, Additive acc)
               => acc
               -> String
