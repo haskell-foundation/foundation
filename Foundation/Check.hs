@@ -76,26 +76,40 @@ nbFail (PropertyResult _ _ (PropertyFailed _)) = 1
 nbFail (PropertyResult _ _ PropertySuccess)    = 0
 nbFail (GroupResult    _ t _)                  = t
 
-runProp :: Context -> String -> Property -> IO TestResult
-runProp ctx s prop = do
-    (\(e, i) -> PropertyResult s i e) <$> iterProp 0
+-- | return the number of tests runned and the result
+runProp :: Context -> String -> Property -> IO (PropertyResult, Word64)
+runProp ctx s prop = iterProp 1
   where
     nbTests = 100
     iterProp :: Word64 -> IO (PropertyResult, Word64)
     iterProp i
-        | i == nbTests = return (PropertySuccess, nbTests)
+        | i == nbTests = return (PropertySuccess, i)
         | otherwise    = do
             r <- toResult i
             case r of
-                PropertyFailed e -> return (PropertyFailed e, i)
-                PropertySuccess  -> iterProp (i+1)
-    toResult :: Word64 -> IO PropertyResult
+                (PropertyFailed e, _)               -> return (PropertyFailed e, i)
+                (PropertySuccess, cont) | cont      -> iterProp (i+1)
+                                        | otherwise -> return (PropertySuccess, i)
+    toResult :: Word64 -> IO (PropertyResult, Bool)
     toResult it =
                 (propertyToResult <$> evaluate (runGen (unProp prop) (rngIt it) params))
-        `catch` (\(e :: SomeException) -> return $ PropertyFailed (fromList $ show e))
+        `catch` (\(e :: SomeException) -> return (PropertyFailed (fromList $ show e), False))
 
-    propertyToResult False = PropertyFailed "property failed"
-    propertyToResult True  = PropertySuccess
+    propertyToResult (PropertyTestFailed, args) =
+        let flattenArgs !i (PropertyArg a p) =
+                "parameter " <> fromList (show i) <> " : " <> a <> "\n" : flattenArgs (i+1) p
+            flattenArgs _  (PropertyEOA propCheck)   =
+                case propCheck of
+                    PropertyEquality a b -> ["equality check fail\n"
+                                         <> "   left: " <> a <> "\n"
+                                         <> "  right: " <> b]
+                    PropertyBoolean      -> ["Property failed"]
+         in (PropertyFailed (mconcat $ flattenArgs (1 :: Word) args), False)
+    propertyToResult (PropertyTestSuccess, args) = (PropertySuccess, hasArg)
+      where
+        hasArg = case args of
+            PropertyEOA {} -> False
+            _              -> True
 
     !rngIt  = genRng (contextSeed ctx) (s : contextGroups ctx)
     !params = GenParams { genMaxSizeIntegral = 32   -- 256 bits maximum numbers
@@ -126,14 +140,17 @@ defaultMain test = do
 
     runTest :: Context -> Test -> IO TestResult
     runTest ctx (Group s l) = do
-        putStr (replicate (contextLevel ctx) ' ')
-        putStrLn s
+        printIndent ctx s
         results <- mapM (runTest (appendContext s ctx)) l
         return $ GroupResult s (foldl' (+) 0 $ fmap nbFail results) results
     runTest ctx (Property name prop) = do
-        v <- runProp ctx name (property prop)
-        putStrLn $ fromList (show v)
-        return v
+        (res, nbTests) <- runProp ctx name (property prop)
+        case res of
+            PropertySuccess  -> printIndent ctx $ "[  OK   ]   " <> name <> " (" <> fromList (show nbTests) <> " completed)"
+            PropertyFailed e -> printIndent ctx $ "[ ERROR ]   " <> name <> "\n" <> e
+        return (PropertyResult name nbTests res)
 
     runTest _ (Unit _ _) = do
         error "not implemented"
+
+    printIndent ctx s = putStrLn (replicate (contextLevel ctx) ' ' <> s)
