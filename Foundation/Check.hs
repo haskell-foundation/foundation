@@ -28,6 +28,7 @@ import           Foundation.IO.Terminal
 import           Foundation.Check.Gen
 import           Foundation.Check.Arbitrary
 import           Foundation.Check.Property
+import           Foundation.Random
 import           Foundation.Monad
 import           Control.Exception (evaluate, SomeException)
 import           System.Exit
@@ -122,7 +123,9 @@ defaultMain :: Test -> IO ()
 defaultMain test = do
     -- parse arguments
     --let arguments = [ "seed", "j" ]
-    let seed = 10
+
+    -- generate a new seed
+    seed <- getRandomPrimType
 
     let context = Context { contextLevel  = 0
                           , contextGroups = []
