@@ -10,7 +10,7 @@ import Numeric.Natural
 
 #else
 
-import Prelude (Show,Eq,Ord,Enum,Num(..),Real(..),Integral(..),Integer,error,(<), (>), otherwise)
+import Prelude (Show(..),Eq,Ord,Enum,Num(..),Real(..),Integral(..),Integer,error,(<), (>), otherwise)
 import Data.Typeable
 
 newtype Natural = Natural Integer
