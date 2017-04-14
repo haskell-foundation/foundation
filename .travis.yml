@@ -40,6 +40,10 @@ matrix:
   - env: BUILD=cabal
     language: haskell
     ghc: 7.4
+  - env: BUILD=stack RESOLVER=ghc-8.0 EXPERIMENTAL="--flag foundation:experimental"
+    language: generic
+    addons: { apt: { packages: [ libgmp-dev ] } }
+    compiler: ghc-8.0
 
   allow_failures:
   - env: BUILD=cabal
@@ -47,6 +51,10 @@ matrix:
     ghc: 7.4
   - env: BUILD=stack RESOLVER=ghc-8.2
     language: generic
+  - env: BUILD=stack RESOLVER=ghc-8.0 EXPERIMENTAL="--flag foundation:experimental"
+    language: generic
+    addons: { apt: { packages: [ libgmp-dev ] } }
+    compiler: ghc-8.0
 
 install:
   - export PATH=$HOME/.local/bin::$HOME/.cabal/bin:$PATH
@@ -72,7 +80,11 @@ script:
   case "$BUILD" in
     stack)
       rm stack.yaml && ln -sv .travis/stack-${RESOLVER}.yaml stack.yaml
-      stack --no-terminal test --flag foundation:bounds-check --install-ghc --coverage --bench --no-run-benchmarks --haddock --no-haddock-deps
+      stack --no-terminal test \
+          --flag foundation:bounds-check ${EXPERIMENTAL} \
+          --install-ghc \
+          --coverage --bench --no-run-benchmarks \
+          --haddock --no-haddock-deps
       ;;
     cabal)
       cabal install --only-dependencies --enable-tests
