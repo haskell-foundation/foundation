@@ -1,0 +1,28 @@
+compiler: ghc-8.2.0.20170404
+compiler-check: match-exact
+resolver: lts-8.8
+setup-info:
+  ghc:
+    linux64:
+      8.2.0.20170404:
+        url: https://downloads.haskell.org/~ghc/8.2.1-rc1/ghc-8.2.0.20170404-x86_64-deb8-linux.tar.xz
+        content-length: 138846620
+        sha1: 3fd303b5753b095ce020131405dcf43199e6b447
+    macosx:
+      8.2.0.20170404:
+        url: https://downloads.haskell.org/~ghc/8.2.1-rc1/ghc-8.2.0.20170404-x86_64-apple-darwin.tar.xz
+        content-length: 124010408
+        sha1: 301de7f5b6ed87ade2182ed2552df2ef39b98b03
+    # The Windows build is broken :(
+    # https://www.reddit.com/r/haskell/comments/64he68/announce_ghc_821_release_candidate_1/dg2b5ei/
+    windows64:
+      8.2.0.20170404:
+        url: https://downloads.haskell.org/~ghc/8.2.1-rc1/ghc-8.2.0.20170404-x86_64-unknown-mingw32.tar.xz
+        content-length: 173924808
+        sha1: 5cfd11230ff95423a7b19104232247e3fab0dba3
+
+packages:
+- '.'
+extra-deps: []
+flags: {}
+extra-package-dbs: []
