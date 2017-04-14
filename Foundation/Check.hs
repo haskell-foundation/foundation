@@ -13,9 +13,13 @@ module Foundation.Check
     , Test(..)
     , testName
     -- * Property
+    , PropertyCheck
     , Property(..)
     , IsProperty(..)
     , (===)
+    , propertyCompare
+    , propertyAnd
+    , propertyFail
     -- * As Program
     , defaultMain
     ) where
@@ -97,14 +101,14 @@ runProp ctx s prop = iterProp 1
         `catch` (\(e :: SomeException) -> return (PropertyFailed (fromList $ show e), False))
 
     propertyToResult (PropertyTestFailed, args) =
-        let flattenArgs !i (PropertyArg a p) =
+        let flattenPropCheck (PropertyBinaryOp name a b) =
+                    [name <> " check fail\n" <> "   left: " <> a <> "\n" <> "  right: " <> b]
+            flattenPropCheck PropertyBoolean     = ["Property failed"]
+            flattenPropCheck (PropertyFail e)    = ["Property failed: " <> e]
+            flattenPropCheck (PropertyAnd a1 a2) = ["And Property failed:\n "] <> flattenPropCheck a1 <> ["\n"] <> flattenPropCheck a2
+            flattenArgs !i (PropertyArg a p) =
                 "parameter " <> fromList (show i) <> " : " <> a <> "\n" : flattenArgs (i+1) p
-            flattenArgs _  (PropertyEOA propCheck)   =
-                case propCheck of
-                    PropertyEquality a b -> ["equality check fail\n"
-                                         <> "   left: " <> a <> "\n"
-                                         <> "  right: " <> b]
-                    PropertyBoolean      -> ["Property failed"]
+            flattenArgs _  (PropertyEOA propCheck) = flattenPropCheck propCheck
          in (PropertyFailed (mconcat $ flattenArgs (1 :: Word) args), False)
     propertyToResult (PropertyTestSuccess, args) = (PropertySuccess, hasArg)
       where
