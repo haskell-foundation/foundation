@@ -68,6 +68,7 @@ module Foundation.String.UTF8
     , builderBuild
     , readInteger
     , readNatural
+    , readDouble
     , readFloatingExact
     -- * Legacy utility
     , lines
@@ -89,6 +90,7 @@ import           Foundation.Numerical
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
 import           Foundation.Primitive.IntegralConv
+import           Foundation.Primitive.Floating
 import           Foundation.Boot.Builder
 import qualified Foundation.Boot.List as List
 import           Foundation.String.UTF8Table
@@ -1278,13 +1280,33 @@ readNatural str
   where
     !sz = size str
 
+-- | Try to read a Double
+readDouble :: String -> Maybe Double
+readDouble s =
+    readFloatingExact s $ \integral mFloating mExponant ->
+        case (mFloating, mExponant) of
+            (Nothing, Nothing)             -> Just $                         integerToDouble integral
+            (Nothing, Just exponant)       -> Just $ withExponant exponant $ integerToDouble integral
+            (Just floating, Nothing)       -> Just $                         (integerToDouble integral + floatingToDouble floating)
+            (Just floating, Just exponant) -> Just $ withExponant exponant $ (integerToDouble integral + floatingToDouble floating)
+  where
+    withExponant e v = v * doubleExponant 10 e
+    floatingToDouble (digits, n) = naturalToDouble n / scale digits 10
+
+type ReadFloatingCallback a = Integer               -- integral part
+                           -> Maybe (Word, Natural) -- optional number of zero and number representing floating part
+                           -> Maybe Int             -- optional integer representing exponent in base 10
+                           -> Maybe a
+
 -- | Read an Floating like number of the form:
 --
---   [ '-' ] <numbers> '.' <numbers>
+--   [ '-' ] <numbers> [ '.' <numbers> ] [ ( 'e' | 'E' ) [ '-' ] <number> ]
 --
--- Returns a value containing the leading integral part,
--- the number of zeros after fractional part, and the fractional part
--- natural.
+-- Call a function with:
+--
+-- * The leading integral part
+-- * The floating part (number of digits after fractional part, and number) if any
+-- * The exponant if any
 --
 -- The code is structure as a simple state machine that do:
 --
@@ -1293,9 +1315,10 @@ readNatural str
 -- * Consume '.'
 -- * Consume leading zeros explicitely to gather scale of the fractional part
 -- * Consume remaining digits if not already end of string
+-- * Optionally Consume a 'e' or 'E' follow by an optional '-' and an optional number
 --
-readFloatingExact :: String -> Maybe (Integer, Word, Natural)
-readFloatingExact str
+readFloatingExact :: String -> ReadFloatingCallback a -> Maybe a
+readFloatingExact str f
     | sz == 0   = Nothing
     | otherwise =
         -- try to eat a '-', otherwise call consumeIntegral
@@ -1308,30 +1331,56 @@ readFloatingExact str
 
     consumeIntegral modF startOfs =
         case decimalDigits 0 str startOfs of
-            (# _  , True , _      #)                     -> Nothing -- end of stream and no '.'
+            (# acc, True , endOfs #) | endOfs > startOfs -> f acc Nothing Nothing -- end of stream and no '.'
             (# acc, False, endOfs #) | endOfs > startOfs -> consumeDot (modF acc) endOfs
             _                                            -> Nothing
+
     -- this is not the end of the stream since otherwise consumeIntegral would have
-    -- return Nothing already
+    -- returned already
+    -- try either to consume '.' or pass state to consumeExponant
     consumeDot integral startOfs =
         case nextAscii str startOfs of
-            (# 0x2e, True #) -> consumeZero integral (startOfs + 1)
-            _                -> Nothing
+            (# _   , False #) -> Nothing
+            (# 0x2e, True #)  -> consumeZero integral (startOfs + 1)
+            (# _   , True #)  -> consumeExponant integral Nothing startOfs
 
     consumeZero integral startOfs = loop 0 startOfs
       where
-        loop zeroes ofs
-            | ofs .==# sz = if zeroes == 0 then Nothing else Just (integral, 0, 0)
+        loop nbDigits ofs
+            | ofs .==# sz = if nbDigits == 0 then Nothing else f integral (Just (nbDigits, 0)) Nothing
             | otherwise   =
                 case nextAscii str ofs of
                     (# _   , False #) -> Nothing
-                    (# 0x30, True #)  -> loop (zeroes+1) (ofs+1)
-                    (# _   , True #)  -> consumeFloat integral zeroes ofs
+                    (# 0x30, True #)  -> loop (nbDigits+1) (ofs+1)
+                    (# _   , True #)  -> consumeFloat integral nbDigits ofs
 
-    consumeFloat integral zeroes startOfs =
+    consumeFloat integral nbDigits startOfs =
         case decimalDigits 0 str startOfs of
-            (# acc, True, endOfs #) | endOfs > startOfs -> Just (integral, zeroes, acc)
+            (# acc, True, endOfs #) | endOfs > startOfs -> let (Size !diff) = endOfs - startOfs
+                                                            in consumeExponant integral (Just (nbDigits+integralCast diff, acc)) endOfs
             _                                           -> Nothing
+
+    consumeExponant !integral !floating !startOfs
+        | startOfs .==# sz = f integral floating Nothing
+        | otherwise        =
+            -- consume 'E' or 'e'
+            case nextAscii str startOfs of
+                (# _   , False #) -> Nothing -- more character but no ascii
+                (# 0x45, True  #) -> consumeExponantSign (startOfs+1)
+                (# 0x65, True  #) -> consumeExponantSign (startOfs+1)
+                (# _   , True  #) -> Nothing
+      where
+        consumeExponantSign ofs
+            | ofs .==# sz = Nothing
+            | otherwise   =
+                case nextAscii str ofs of
+                    (# _   , False #) -> Nothing
+                    (# 0x2d, True  #) -> consumeExponantNumber negate (ofs+1)
+                    (# _   , True  #) -> consumeExponantNumber id     ofs
+        consumeExponantNumber signFct ofs =
+            case decimalDigits 0 str ofs of
+                (# acc, True, endOfs #) | endOfs > ofs -> f integral floating (Just $ signFct acc)
+                _                                      -> Nothing
 
 -- | Take decimal digits and accumulate it in `acc`
 --

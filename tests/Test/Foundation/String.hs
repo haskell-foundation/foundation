@@ -8,11 +8,8 @@ module Test.Foundation.String
     ) where
 
 import Foundation
-import Foundation.Primitive
 import Foundation.String
 import Foundation.String.ASCII (AsciiString)
-import Foundation.String.Read
-import Foundation.Collection
 
 import Test.Tasty
 import Test.Tasty.QuickCheck
@@ -23,7 +20,6 @@ import Test.Data.ASCII
 import Test.Data.List
 import Test.Foundation.Collection
 import Test.Foundation.Encoding
-import Test.Foundation.Number -- for Natural instance of Arbitrary on old base
 
 testStringRefs :: TestTree
 testStringRefs = testGroup "String"
@@ -36,13 +32,6 @@ testStringRefs = testGroup "String"
            ]
     , testGroup "ASCII" $
         [  testCollection "Sequential" (Proxy :: Proxy AsciiString) genAsciiChar
-        ]
-    , testGroup "Reading" $
-        [ testProperty "Integer" $ \i -> readInteger (show i) === Just i
-        , testProperty "any"     $ \i (v :: Word8) n ->
-            let vw         = integralUpsize v
-                vwExpected = if n == 0 then 0 else vw
-             in readFloatingExact (show i <> "." <> replicate vw '0' <> show n) === Just (i, vwExpected, n)
         ]
     ]
 
