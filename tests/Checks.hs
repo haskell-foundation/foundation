@@ -60,7 +60,7 @@ main = defaultMain $ Group "foundation"
                 ]
             , Group "Double"
                 [ Property "case1" $ readDouble "96152.5" === Just 96152.5
-                , Property "case2" $ maybe (propertyFail "Nothing") (doubleEqualApprox 1.2300000000000002e102) $ readDouble "123e100"
+                , Property "case2" $ maybe (propertyFail "Nothing") (doubleEqualApprox 1.2300000000000002e102) $ readDouble "1.2300000000000002e102"
                 , Property "case3" $ maybe (propertyFail "Nothing") (doubleEqualApprox 0.00001204) $ readDouble "0.00001204"
                 , Property "case4" $ maybe (propertyFail "Nothing") (doubleEqualApprox 2.5e12) $ readDouble "2.5e12"
                 , Property "case5" $ maybe (propertyFail "Nothing") (doubleEqualApprox 6.0e-4) $ readDouble "6.0e-4"
