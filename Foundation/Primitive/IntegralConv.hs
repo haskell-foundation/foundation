@@ -149,6 +149,9 @@ instance IntegralUpsize Word64 Integer where
 instance IntegralUpsize Word64 Natural where
     integralUpsize = fromIntegral
 
+instance IntegralUpsize Natural Integer where
+    integralUpsize = fromIntegral
+
 instance IntegralDownsize Int Int8 where
     integralDownsize      (I# i) = I8# (narrow8Int# i)
     integralDownsizeCheck = integralDownsizeBounded integralDownsize
