@@ -1357,6 +1357,8 @@ readFloatingExact str f
     consumeFloat integral nbDigits startOfs =
         case decimalDigits 0 str startOfs of
             (# acc, True, endOfs #) | endOfs > startOfs -> let (Size !diff) = endOfs - startOfs
+                                                            in f integral (Just (nbDigits+integralCast diff, acc)) Nothing
+            (# acc, False, endOfs #) | endOfs > startOfs -> let (Size !diff) = endOfs - startOfs
                                                             in consumeExponant integral (Just (nbDigits+integralCast diff, acc)) endOfs
             _                                           -> Nothing
 
