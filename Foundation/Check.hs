@@ -100,21 +100,36 @@ runProp ctx s prop = iterProp 1
                 (propertyToResult <$> evaluate (runGen (unProp prop) (rngIt it) params))
         `catch` (\(e :: SomeException) -> return (PropertyFailed (fromList $ show e), False))
 
-    propertyToResult (PropertyTestFailed, args) =
-        let flattenPropCheck (PropertyBinaryOp name a b) =
-                    [name <> " check fail\n" <> "   left: " <> a <> "\n" <> "  right: " <> b]
-            flattenPropCheck PropertyBoolean     = ["Property failed"]
-            flattenPropCheck (PropertyFail e)    = ["Property failed: " <> e]
-            flattenPropCheck (PropertyAnd a1 a2) = ["And Property failed:\n "] <> flattenPropCheck a1 <> ["\n"] <> flattenPropCheck a2
-            flattenArgs !i (PropertyArg a p) =
-                "parameter " <> fromList (show i) <> " : " <> a <> "\n" : flattenArgs (i+1) p
-            flattenArgs _  (PropertyEOA propCheck) = flattenPropCheck propCheck
-         in (PropertyFailed (mconcat $ flattenArgs (1 :: Word) args), False)
-    propertyToResult (PropertyTestSuccess, args) = (PropertySuccess, hasArg)
+    propertyToResult p =
+        let args   = getArgs p
+            checks = getChecks p
+         in if checkHasFailed checks
+                then printError args checks
+                else (PropertySuccess, length args > 0)
+
+    printError args checks = (PropertyFailed (mconcat $ loop 1 args), False)
       where
-        hasArg = case args of
-            PropertyEOA {} -> False
-            _              -> True
+        loop :: Word -> [String] -> [String]
+        loop _ []      = printChecks checks
+        loop !i (a:as) = "parameter " <> fromList (show i) <> " : " <> a <> "\n" : loop (i+1) as
+    printChecks (PropertyBinaryOp True name _ _)  = []
+    printChecks (PropertyBinaryOp False name a b) = [name <> " checked fail\n" <> "   left: " <> a <> "\n" <> "  right: " <> b]
+    printChecks (PropertyNamed True _)            = []
+    printChecks (PropertyNamed False name)        = ["Check " <> name <> " failed"]
+    printChecks (PropertyBoolean True)            = []
+    printChecks (PropertyBoolean False)           = ["Check failed"]
+    printChecks (PropertyFail _ e)                = ["Check failed: " <> e]
+    printChecks (PropertyAnd True _ _)            = []
+    printChecks (PropertyAnd False a1 a2)
+        | checkHasFailed a1 && checkHasFailed a2  = ["And Property failed:\n    && left: "] <> printChecks a1 <> ["\n"] <> ["   && right: "] <> printChecks a2
+        | checkHasFailed a1                       = ["And Property failed:\n    && left: "] <> printChecks a1 <> ["\n"]
+        | otherwise                               = ["And Property failed:\n   && right: "] <> printChecks a2 <> ["\n"]
+
+    getArgs (PropertyArg a p) = a : getArgs p
+    getArgs (PropertyEOA _) = []
+
+    getChecks (PropertyArg _ p) = getChecks p
+    getChecks (PropertyEOA c  ) = c
 
     !rngIt  = genRng (contextSeed ctx) (s : contextGroups ctx)
     !params = GenParams { genMaxSizeIntegral = 32   -- 256 bits maximum numbers
