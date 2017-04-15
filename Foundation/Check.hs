@@ -169,7 +169,7 @@ defaultMain test = do
         (res, nbTests) <- runProp ctx name (property prop)
         case res of
             PropertySuccess  -> printIndent ctx $ "[  OK   ]   " <> name <> " (" <> fromList (show nbTests) <> " completed)"
-            PropertyFailed e -> printIndent ctx $ "[ ERROR ]   " <> name <> "\n" <> e
+            PropertyFailed e -> printIndent ctx $ "[ ERROR ]   " <> name <> " after " <> fromList (show nbTests) <> " tests\n" <> e
         return (PropertyResult name nbTests res)
 
     runTest _ (Unit _ _) = do
