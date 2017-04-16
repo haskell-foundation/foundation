@@ -1,3 +1,10 @@
+## 0.0.7
+
+* Improve Checks: random seed, new properties and improved printing
+* Add ability to parse Natural, Integer, and Double from String
+* Temporarily remove compilation of experimental network resolution introduced in 0.0.5 for windows building.
+* Cleanup Offset and Size fixing some bug in String module
+
 ## 0.0.6
 
 * Fix build on Centos 6.x / older linux distribution
