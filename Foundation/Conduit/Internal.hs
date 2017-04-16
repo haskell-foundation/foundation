@@ -18,6 +18,7 @@ module Foundation.Conduit.Internal
     , MonadResource(..)
     , runResourceT
     , await
+    , awaitForever
     , yield
     , yieldOr
     , leftover
@@ -143,6 +144,11 @@ await' f g = Conduit $ \rest -> Await
     (const $ unConduit f rest)
 {-# INLINE await' #-}
 {-# RULES "conduit: await >>= maybe" [2] forall x y. await >>= maybe x y = await' x y #-}
+
+awaitForever :: (input -> Conduit input output monad b) -> Conduit input output monad ()
+awaitForever f = Conduit $ \rest ->
+    let go = Await (\i -> unConduit (f i) (const go)) rest
+     in go
 
 -- | Send a value downstream.
 yield :: Monad m => o -> Conduit i o m ()
