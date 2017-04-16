@@ -12,6 +12,7 @@ import           Foundation.Internal.Base
 import           Foundation.Internal.Natural
 import           Foundation.Primitive
 import           Foundation.Primitive.IntegralConv (wordToChar)
+import           Foundation.Primitive.Floating (integerToDouble, naturalToDouble, doubleExponant)
 import           Foundation.Check.Gen
 import           Foundation.Random
 import           Foundation.Bits
@@ -60,6 +61,11 @@ instance Arbitrary Bool where
 instance Arbitrary String where
     arbitrary = genWithParams $ \params ->
         fromList <$> (genMax (genMaxSizeString params) >>= \i -> replicateM (integralCast i) arbitrary)
+
+instance Arbitrary Double where
+    arbitrary = toDouble <$> arbitrary <*> arbitrary <*> arbitrary
+      where toDouble i n Nothing  = integerToDouble i + (naturalToDouble n / 100000)
+            toDouble i n (Just e) = (integerToDouble i + (naturalToDouble n / 1000000)) * (integerToDouble e)
 
 instance Arbitrary a => Arbitrary (Maybe a) where
     arbitrary = frequency $ nonEmpty_ [ (1, pure Nothing), (4, Just <$> arbitrary) ]

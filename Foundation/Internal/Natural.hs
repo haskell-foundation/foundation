@@ -10,11 +10,14 @@ import Numeric.Natural
 
 #else
 
-import Prelude (Show,Eq,Ord,Enum,Num(..),Real(..),Integral(..),Integer,error,(<), (>), otherwise)
+import Prelude (Show(..),Eq,Ord,Enum,Num(..),Real(..),Integral(..),Integer,error,(<), (>), otherwise)
 import Data.Typeable
 
 newtype Natural = Natural Integer
-    deriving (Show,Eq,Ord,Enum,Typeable)
+    deriving (Eq,Ord,Enum,Typeable)
+
+instance Show Natural where
+    show (Natural i) = show i
 
 -- re-create the buggy Num instance for Natural
 instance Num Natural where

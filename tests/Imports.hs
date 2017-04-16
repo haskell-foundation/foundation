@@ -26,6 +26,7 @@ import Test.Tasty.QuickCheck   as X (QuickCheckVerbose(..))
 import Test.Tasty.HUnit        as X hiding (testCase, assert, assertFailure)
 import Test.QuickCheck.Monadic as X
 
+
 import qualified Test.Tasty            as Y
 import qualified Test.Tasty.QuickCheck as Y
 import qualified Test.Tasty.HUnit      as Y

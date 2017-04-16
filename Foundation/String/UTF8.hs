@@ -68,6 +68,8 @@ module Foundation.String.UTF8
     , builderBuild
     , readInteger
     , readNatural
+    , readDouble
+    , readFloatingExact
     -- * Legacy utility
     , lines
     , words
@@ -79,6 +81,7 @@ import qualified Foundation.Array.Unboxed           as C
 import           Foundation.Array.Unboxed.ByteArray (MutableByteArray)
 import qualified Foundation.Array.Unboxed.Mutable   as MVec
 import           Foundation.Internal.Base
+import           Foundation.Bits
 import           Foundation.Internal.Natural
 import           Foundation.Internal.MonadTrans
 import           Foundation.Internal.Primitive
@@ -87,6 +90,7 @@ import           Foundation.Numerical
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
 import           Foundation.Primitive.IntegralConv
+import           Foundation.Primitive.Floating
 import           Foundation.Boot.Builder
 import qualified Foundation.Boot.List as List
 import           Foundation.String.UTF8Table
@@ -346,6 +350,14 @@ writeWithBuilder c =
     toContinuation :: Word# -> Word#
     toContinuation w = or# (and# w 0x3f##) 0x80##
 
+-- A variant of 'next' when you want the next character
+-- to be ASCII only. if Bool is False, then it's not ascii,
+-- otherwise it is and the return Word8 is valid.
+nextAscii :: String -> Offset8 -> (# Word8, Bool #)
+nextAscii (String ba) n = (# w, not (testBit w 7) #)
+  where
+    !w = Vec.unsafeIndex ba n
+
 next :: String -> Offset8 -> (# Char, Offset8 #)
 next (String ba) n =
     case getNbBytes# h of
@@ -572,10 +584,6 @@ splitAt nI s@(String ba)
 indexN :: Offset Char -> String -> Offset Word8
 indexN !n (String ba) = Vec.unsafeDewrap goVec goAddr ba
   where
-    -- !n = Size nI
-    --end :: Offset Char
-    -- !end = Offset 0 `offsetPlusE` n
-
     goVec :: ByteArray# -> Offset Word8 -> Offset Word8
     goVec !ma !start = loop start (Offset 0)
       where
@@ -1242,41 +1250,184 @@ builderBuild sizeChunksI sb
         Vec.unsafeCopyAtRO mba (sizeAsOffset (end - sz)) x (Offset 0) sz
         fillFromEnd (end - sz) xs mba
 
+-- | Read an Integer from a String
+--
+-- Consume an optional minus sign and many digits until end of string.
 readInteger :: String -> Maybe Integer
 readInteger str
     | sz == 0  = Nothing
     | otherwise =
-        let (# c, nextOfs #) = next str 0
-         in case c of
-            '-'           -> fmap negate (loop 0 nextOfs)
-            _ | isDigit c -> loop (fromDigit c) nextOfs
-              | otherwise -> Nothing
+         let (# modF, startOfs #) = case nextAscii str 0 of
+                                        -- '-'
+                                        (# 0x2d, True #) -> (# negate , 1 #)
+                                        _                -> (# id, 0 #)
+          in case decimalDigits 0 str startOfs of
+                (# acc, True, endOfs #) | endOfs > startOfs -> Just $ modF acc
+                _                                           -> Nothing
   where
     !sz = size str
-    loop :: Integer -> Offset Word8 -> Maybe Integer
-    loop !acc !ofs
-        | ofs .==# sz = Just acc
-        | otherwise   =
-            let (# c, nextOfs #) = next str ofs
-             in if isDigit c
-                    then loop (acc * 10 + fromDigit c) nextOfs
-                    else Nothing
-    isDigit c = c >= '0' && c <= '9'
-    fromDigit c = integralUpsize (c - '0')
 
+-- | Read a Natural from a String
+--
+-- Consume many digits until end of string.
 readNatural :: String -> Maybe Natural
 readNatural str
     | sz == 0  = Nothing
-    | otherwise = loop 0 0
+    | otherwise =
+        case decimalDigits 0 str 0 of
+            (# acc, True, endOfs #) | endOfs > 0 -> Just $ acc
+            _                                    -> Nothing
   where
     !sz = size str
-    loop :: Natural -> Offset Word8 -> Maybe Natural
-    loop !acc !ofs
-        | ofs .==# sz = Just acc
+
+-- | Try to read a Double
+readDouble :: String -> Maybe Double
+readDouble s =
+    readFloatingExact s $ \isNegative integral mFloating mExponant ->
+        case (mFloating, mExponant) of
+            (Nothing, Nothing)             -> Just $ applySign isNegative $                         naturalToDouble integral
+            (Nothing, Just exponant)       -> Just $ applySign isNegative $ withExponant exponant $ naturalToDouble integral
+            (Just floating, Nothing)       -> Just $ applySign isNegative $                         (naturalToDouble integral + floatingToDouble floating)
+            (Just floating, Just exponant) -> Just $ applySign isNegative $ withExponant exponant $ (naturalToDouble integral + floatingToDouble floating)
+  where
+    applySign True = negate
+    applySign False = id
+    withExponant e v = v * doubleExponant 10 e
+    floatingToDouble (digits, n) = naturalToDouble n / (10 ^ digits)
+
+type ReadFloatingCallback a = Bool                  -- sign
+                           -> Natural               -- integral part
+                           -> Maybe (Word, Natural) -- optional number of zero and number representing floating part
+                           -> Maybe Int             -- optional integer representing exponent in base 10
+                           -> Maybe a
+
+-- | Read an Floating like number of the form:
+--
+--   [ '-' ] <numbers> [ '.' <numbers> ] [ ( 'e' | 'E' ) [ '-' ] <number> ]
+--
+-- Call a function with:
+--
+-- * A boolean representing if the number is negative
+-- * The leading integral part
+-- * The floating part (number of digits after fractional part, and number) if any
+-- * The exponant if any
+--
+-- The code is structured as a simple state machine that:
+--
+-- * Optionally Consume a '-' sign
+-- * Consume number for the integral part
+-- * Optionally
+--   * Consume '.'
+--   * Consume leading zeros explicitely to gather scale of the fractional part
+--   * Consume remaining digits if not already end of string
+-- * Optionally Consume a 'e' or 'E' follow by an optional '-' and a number
+--
+readFloatingExact :: String -> ReadFloatingCallback a -> Maybe a
+readFloatingExact str f
+    | sz == 0   = Nothing
+    | otherwise =
+        -- try to eat a '-', otherwise call consumeIntegral
+        case nextAscii str 0 of
+            (# _   , False #) -> Nothing
+            (# 0x2d, True #)  -> consumeIntegral True 1
+            _                 -> consumeIntegral False 0
+  where
+    !sz = size str
+
+    consumeIntegral isNegative startOfs =
+        case decimalDigits 0 str startOfs of
+            (# acc, True , endOfs #) | endOfs > startOfs -> f isNegative acc Nothing Nothing -- end of stream and no '.'
+            (# acc, False, endOfs #) | endOfs > startOfs -> consumeDot isNegative acc endOfs
+            _                                            -> Nothing
+
+    -- this is not the end of the stream since otherwise consumeIntegral would have
+    -- returned already
+    -- try either to consume '.' or pass state to consumeExponant
+    consumeDot isNegative integral startOfs =
+        case nextAscii str startOfs of
+            (# _   , False #) -> Nothing
+            (# 0x2e, True #)  -> consumeZero isNegative integral (startOfs + 1)
+            (# _   , True #)  -> consumeExponant isNegative integral Nothing startOfs
+
+    consumeZero isNegative integral startOfs = loop 0 startOfs
+      where
+        loop nbDigits ofs
+            | ofs .==# sz = if nbDigits == 0 then Nothing else f isNegative integral (Just (nbDigits, 0)) Nothing
+            | otherwise   =
+                case nextAscii str ofs of
+                    (# _   , False #) -> Nothing
+                    (# 0x30, True #)  -> loop (nbDigits+1) (ofs+1)
+                    (# c   , True #)
+                        | c == 0x45 || c == 0x65 -> if nbDigits > 0 then consumeExponant isNegative integral (Just (nbDigits, 0)) ofs else Nothing
+                        | otherwise              -> consumeFloat isNegative integral nbDigits ofs
+
+    consumeFloat isNegative integral nbDigits startOfs =
+        case decimalDigits 0 str startOfs of
+            (# acc, True, endOfs #) | endOfs > startOfs -> let (Size !diff) = endOfs - startOfs
+                                                            in f isNegative integral (Just (nbDigits+integralCast diff, acc)) Nothing
+            (# acc, False, endOfs #) | endOfs > startOfs -> let (Size !diff) = endOfs - startOfs
+                                                            in consumeExponant isNegative integral (Just (nbDigits+integralCast diff, acc)) endOfs
+            _                                           -> Nothing
+
+    consumeExponant !isNegative !integral !floating !startOfs
+        | startOfs .==# sz = f isNegative integral floating Nothing
+        | otherwise        =
+            -- consume 'E' or 'e'
+            case nextAscii str startOfs of
+                (# _   , False #) -> Nothing -- more character but no ascii
+                (# 0x45, True  #) -> consumeExponantSign (startOfs+1)
+                (# 0x65, True  #) -> consumeExponantSign (startOfs+1)
+                (# _   , True  #) -> Nothing
+      where
+        consumeExponantSign ofs
+            | ofs .==# sz = Nothing
+            | otherwise   =
+                case nextAscii str ofs of
+                    (# _   , False #) -> Nothing
+                    (# 0x2d, True  #) -> consumeExponantNumber negate (ofs+1)
+                    (# _   , True  #) -> consumeExponantNumber id     ofs
+        consumeExponantNumber signFct ofs =
+            case decimalDigits 0 str ofs of
+                (# acc, True, endOfs #) | endOfs > ofs -> f isNegative integral floating (Just $ signFct acc)
+                _                                      -> Nothing
+
+-- | Take decimal digits and accumulate it in `acc`
+--
+-- The loop starts at the offset specified and finish either when:
+--
+-- * It reach the end of the string
+-- * It reach a non-ASCII character
+-- * It reach an ASCII character that is not a digit (0 to 9)
+--
+-- Otherwise each iterations:
+--
+-- * Transform the ASCII digits into a number
+-- * scale the accumulator by 10
+-- * Add the number (between 0 and 9) to the accumulator
+--
+-- It then returns:
+--
+-- * The new accumulated value
+-- * Whether it stop by end of string or not
+-- * The end offset when the loop stopped
+--
+-- If end offset == start offset then no digits have been consumed by
+-- this function
+decimalDigits :: (IntegralUpsize Word8 acc, Additive acc)
+              => acc
+              -> String
+              -> Offset Word8
+              -> (# acc, Bool, Offset Word8 #)
+decimalDigits startAcc str startOfs = loop startAcc startOfs
+  where
+    !sz = size str
+    loop acc ofs
+        | ofs .==# sz = (# acc, True, ofs #)
         | otherwise   =
-            let (# c, nextOfs #) = next str ofs
-             in if isDigit c
-                    then loop (acc * 10 + fromDigit c) nextOfs
-                    else Nothing
-    isDigit c = c >= '0' && c <= '9'
-    fromDigit c = integralUpsize (integralCast (c - '0') :: Word)
+            case nextAscii str ofs of
+                (# d, True #) | isDigit d -> loop (scale (10::Word) acc + fromDigit d) (ofs+1)
+                (# _, _ #)                -> (# acc, False, ofs #)
+    ascii0 = 0x30 -- use pattern synonym when we support >= 8.0
+    ascii9 = 0x39
+    isDigit c = c >= ascii0 && c <= ascii9
+    fromDigit c = integralUpsize (c - ascii0)
