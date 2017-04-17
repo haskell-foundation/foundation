@@ -105,21 +105,31 @@ benchsString = bgroup "String"
 
     benchRead = bgroup "Read" $
         [ bgroup "Integer"
-            [ bgroup "10000" (diffTextString (maybe undefined id . readInteger) (either undefined fst . Text.decimal) (toList $ show 10000))
-            , bgroup "1234567891234567890" (diffTextString (maybe undefined id . readInteger) (either undefined fst . Text.decimal) (toList $ show 1234567891234567890))
+            [ bgroup "10000" (diffTextString stringReadInteger textReadInteger (toList $ show 10000))
+            , bgroup "1234567891234567890" (diffTextString stringReadInteger textReadInteger (toList $ show 1234567891234567890))
             ]
         , bgroup "Int"
-            [ bgroup "12345" (diffBsTextString ((maybe undefined id . readIntegral) :: String -> Int)
-                                               ((either undefined fst . Text.decimal) :: Text.Text -> Int)
-                                               ((maybe undefined fst . ByteString.readInt) :: ByteString.ByteString -> Int)
-                                               (toList $ show 12345)
-                             )
+            [ bgroup "12345" (diffBsTextString stringReadInt textReadInt bsReadInt (toList $ show 12345))
             ]
         , bgroup "Double"
             [ bgroup "100.56e23" (diffTextString (maybe undefined id . readDouble) (either undefined fst . Text.double) (toList $ show 100.56e23))
             , bgroup "-123.1247" (diffTextString (maybe undefined id . readDouble) (either undefined fst . Text.double) (toList $ show (-123.1247)))
             ]
         ]
+      where
+        bsReadInt :: ByteString.ByteString -> Int
+        bsReadInt = maybe undefined fst . ByteString.readInt
+        textReadInt :: Text.Text -> Int
+        textReadInt = either undefined fst . Text.decimal
+        stringReadInt :: String -> Int
+        stringReadInt = maybe undefined id . readIntegral
+
+        bsReadInteger :: ByteString.ByteString -> Integer
+        bsReadInteger = maybe undefined fst . ByteString.readInteger
+        textReadInteger :: Text.Text -> Integer
+        textReadInteger = either undefined fst . Text.decimal
+        stringReadInteger :: String -> Integer
+        stringReadInteger = maybe undefined id . readIntegral
 
 
     toString :: ([Char] -> String) -> [Char] -> Benchmarkable
