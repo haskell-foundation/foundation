@@ -67,6 +67,7 @@ module Foundation.String.UTF8
     , builderAppend
     , builderBuild
     , readInteger
+    , readIntegral
     , readNatural
     , readDouble
     , readFloatingExact
@@ -1286,19 +1287,31 @@ stringDewrap withBa withPtr (String ba) = C.unsafeDewrap withBa withPtr ba
 -- | Read an Integer from a String
 --
 -- Consume an optional minus sign and many digits until end of string.
-readInteger :: String -> Maybe Integer
-readInteger str
-    | sz == 0  = Nothing
-    | otherwise =
-         let (# modF, startOfs #) = case nextAscii str 0 of
-                                        -- '-'
-                                        (# 0x2d, True #) -> (# negate , 1 #)
-                                        _                -> (# id, 0 #)
-          in case decimalDigits 0 str startOfs of
-                (# acc, True, endOfs #) | endOfs > startOfs -> Just $ modF acc
-                _                                           -> Nothing
+readIntegral :: (HasNegation i, IntegralUpsize Word8 i, Additive i, Multiplicative i, IsIntegral i) => String -> Maybe i
+readIntegral str
+    | sz == 0   = Nothing
+    | otherwise = stringDewrap withBa withPtr str
   where
     !sz = size str
+    withBa ba ofs =
+        let negativeSign = expectAsciiBA ba ofs 0x2d
+            startOfs     = if negativeSign then succ ofs else ofs
+         in case decimalDigitsBA 0 ba endOfs startOfs of
+                (# acc, True, endOfs' #) | endOfs' > startOfs -> Just $! if negativeSign then negate acc else acc
+                _                                             -> Nothing
+      where !endOfs = ofs `offsetPlusE` sz
+    withPtr ptr ofs = return $
+        let negativeSign = expectAsciiPtr ptr ofs 0x2d
+            startOfs     = if negativeSign then succ ofs else ofs
+         in case decimalDigitsPtr 0 ptr endOfs startOfs of
+                (# acc, True, endOfs' #) | endOfs' > startOfs -> Just $! if negativeSign then negate acc else acc
+                _                                             -> Nothing
+      where !endOfs = ofs `offsetPlusE` sz
+{-# SPECIALISE readIntegral :: String -> Maybe Integer #-}
+{-# SPECIALISE readIntegral :: String -> Maybe Int #-}
+
+readInteger :: String -> Maybe Integer
+readInteger = readIntegral
 
 -- | Read a Natural from a String
 --
@@ -1465,3 +1478,43 @@ decimalDigits startAcc str startOfs = loop startAcc startOfs
     ascii9 = 0x39
     isDigit c = c >= ascii0 && c <= ascii9
     fromDigit c = integralUpsize (c - ascii0)
+
+-- | same as decimalDigitsBA for a bytearray#
+decimalDigitsBA :: (IntegralUpsize Word8 acc, Additive acc, Multiplicative acc, Integral acc)
+                => acc
+                -> ByteArray#
+                -> Offset Word8 -- end offset
+                -> Offset Word8 -- start offset
+                -> (# acc, Bool, Offset Word8 #)
+decimalDigitsBA startAcc ba !endOfs !startOfs = loop startAcc startOfs
+  where
+    loop !acc !ofs
+        | ofs == endOfs = (# acc, True, ofs #)
+        | otherwise     =
+            case nextAsciiDigitBA ba ofs of
+                (# d, True #) -> loop (10 * acc + integralUpsize d) (succ ofs)
+                (# _, _ #)    -> (# acc, False, ofs #)
+{-# SPECIALIZE decimalDigitsBA :: Integer -> ByteArray# -> Offset Word8 -> Offset Word8 -> (# Integer, Bool, Offset Word8 #) #-}
+{-# SPECIALIZE decimalDigitsBA :: Natural -> ByteArray# -> Offset Word8 -> Offset Word8 -> (# Natural, Bool, Offset Word8 #) #-}
+{-# SPECIALIZE decimalDigitsBA :: Int -> ByteArray# -> Offset Word8 -> Offset Word8 -> (# Int, Bool, Offset Word8 #) #-}
+{-# SPECIALIZE decimalDigitsBA :: Word -> ByteArray# -> Offset Word8 -> Offset Word8 -> (# Word, Bool, Offset Word8 #) #-}
+
+-- | same as decimalDigitsBA specialized for ptr #
+decimalDigitsPtr :: (IntegralUpsize Word8 acc, Additive acc, Multiplicative acc, Integral acc)
+                 => acc
+                 -> Ptr Word8
+                 -> Offset Word8 -- end offset
+                 -> Offset Word8 -- start offset
+                 -> (# acc, Bool, Offset Word8 #)
+decimalDigitsPtr startAcc ptr !endOfs !startOfs = loop startAcc startOfs
+  where
+    loop !acc !ofs
+        | ofs == endOfs = (# acc, True, ofs #)
+        | otherwise     =
+            case nextAsciiDigitPtr ptr ofs of
+                (# d, True #) -> loop (10 * acc + integralUpsize d) (succ ofs)
+                (# _, _ #)    -> (# acc, False, ofs #)
+{-# SPECIALIZE decimalDigitsPtr :: Integer -> Ptr Word8 -> Offset Word8 -> Offset Word8 -> (# Integer, Bool, Offset Word8 #) #-}
+{-# SPECIALIZE decimalDigitsPtr :: Natural -> Ptr Word8 -> Offset Word8 -> Offset Word8 -> (# Natural, Bool, Offset Word8 #) #-}
+{-# SPECIALIZE decimalDigitsPtr :: Int -> Ptr Word8 -> Offset Word8 -> Offset Word8 -> (# Int, Bool, Offset Word8 #) #-}
+{-# SPECIALIZE decimalDigitsPtr :: Word -> Ptr Word8 -> Offset Word8 -> Offset Word8 -> (# Word, Bool, Offset Word8 #) #-}
