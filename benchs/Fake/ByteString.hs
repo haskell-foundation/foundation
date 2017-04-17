@@ -7,6 +7,8 @@ module Fake.ByteString
     , break
     , reverse
     , filter
+    , readInt
+    , readInteger
     ) where
 
 import Prelude (undefined)
@@ -20,3 +22,5 @@ take        = undefined
 break   _ _ = (undefined, undefined)
 reverse     = undefined
 filter _    = undefined
+readInt _    = undefined
+readInteger _ = undefined

@@ -16,6 +16,7 @@ import Sys
 
 #ifdef BENCH_ALL
 import qualified Data.ByteString as ByteString
+import qualified Data.ByteString.Char8 as ByteString (readInt, readInteger)
 import qualified Data.Text as Text
 import qualified Data.Text.Read as Text
 #else
@@ -49,6 +50,23 @@ benchsString = bgroup "String"
       where
         s = fromList dat
         t = Text.pack dat
+
+    diffBsTextString :: (String -> a)
+                   -> (Text.Text -> b)
+                   -> (ByteString.ByteString -> c)
+                   -> [Char]
+                   -> [Benchmark]
+    diffBsTextString foundationBench textBench bytestringBench dat =
+        [ bench "String" $ whnf foundationBench s
+#ifdef BENCH_ALL
+        , bench "Text"   $ whnf textBench t
+        , bench "ByteString" $ whnf bytestringBench b
+#endif
+        ]
+      where
+        s = fromList dat
+        t = Text.pack dat
+        b = ByteString.pack $ Prelude.map (fromIntegral . fromEnum) dat
 
     allDat :: [(String, [Char])]
     allDat = [ ("ascii", rdFoundationEn)
@@ -89,6 +107,13 @@ benchsString = bgroup "String"
         [ bgroup "Integer"
             [ bgroup "10000" (diffTextString (maybe undefined id . readInteger) (either undefined fst . Text.decimal) (toList $ show 10000))
             , bgroup "1234567891234567890" (diffTextString (maybe undefined id . readInteger) (either undefined fst . Text.decimal) (toList $ show 1234567891234567890))
+            ]
+        , bgroup "Int"
+            [ bgroup "12345" (diffBsTextString ((maybe undefined id . readIntegral) :: String -> Int)
+                                               ((either undefined fst . Text.decimal) :: Text.Text -> Int)
+                                               ((maybe undefined fst . ByteString.readInt) :: ByteString.ByteString -> Int)
+                                               (toList $ show 12345)
+                             )
             ]
         , bgroup "Double"
             [ bgroup "100.56e23" (diffTextString (maybe undefined id . readDouble) (either undefined fst . Text.double) (toList $ show 100.56e23))
