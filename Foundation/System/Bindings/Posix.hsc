@@ -229,9 +229,7 @@ sysPosix_O_RDONLY
     , sysPosix_O_APPEND
     , sysPosix_O_CREAT
     , sysPosix_O_TRUNC
-    , sysPosix_O_EXCL
-    , sysPosix_O_NOFOLLOW
-    , sysPosix_O_CLOEXEC :: COpenFlags
+    , sysPosix_O_EXCL :: COpenFlags
 sysPosix_O_RDONLY   = (#const O_RDONLY)
 sysPosix_O_WRONLY   = (#const O_WRONLY)
 sysPosix_O_RDWR     = ((#const O_RDONLY) .|. (#const O_WRONLY))
@@ -240,8 +238,16 @@ sysPosix_O_APPEND   = (#const O_APPEND)
 sysPosix_O_CREAT    = (#const O_CREAT)
 sysPosix_O_TRUNC    = (#const O_TRUNC)
 sysPosix_O_EXCL     = (#const O_EXCL)
+
+#ifdef O_NOFOLLOW
+sysPosix_O_NOFOLLOW :: COpenFlags
 sysPosix_O_NOFOLLOW = (#const O_NOFOLLOW)
+#endif
+
+#ifdef O_CLOEXEC
+sysPosix_O_CLOEXEC :: COpenFlags
 sysPosix_O_CLOEXEC  = (#const O_CLOEXEC)
+#endif
 
 sysPosix_PROT_NONE
     , sysPosix_PROT_READ

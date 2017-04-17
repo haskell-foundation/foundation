@@ -38,10 +38,15 @@ sysLinux_O_TMPFILE   = (#const __O_TMPFILE)
 sysLinux_O_TMPFILE   = 0
 #endif
 
-sysLinux_IN_NONBLOCK
-    , sysLinux_IN_CLOEXEC :: CInotifyFlags
+#ifdef IN_NONBLOCK
+sysLinux_IN_NONBLOCK :: CInotifyFlags
 sysLinux_IN_NONBLOCK = (#const IN_NONBLOCK)
+#endif
+
+#ifdef IN_CLOEXEC
+sysLinux_IN_CLOEXEC :: CInotifyFlags
 sysLinux_IN_CLOEXEC  = (#const IN_CLOEXEC)
+#endif
 
 sysLinux_IN_ACCESS
     , sysLinux_IN_ATTRIB
