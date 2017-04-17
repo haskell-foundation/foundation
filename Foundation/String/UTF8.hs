@@ -1366,6 +1366,7 @@ readFloatingExact str f
             _                 -> consumeIntegral False 0
   where
     !sz = size str
+    eofs = 0 `offsetPlusE` sz
 
     consumeIntegral isNegative startOfs =
         case decimalDigits 0 str startOfs of
@@ -1385,7 +1386,7 @@ readFloatingExact str f
     consumeZero isNegative integral startOfs = loop 0 startOfs
       where
         loop nbDigits ofs
-            | ofs .==# sz = if nbDigits == 0 then Nothing else f isNegative integral (Just (nbDigits, 0)) Nothing
+            | ofs == eofs = if nbDigits == 0 then Nothing else f isNegative integral (Just (nbDigits, 0)) Nothing
             | otherwise   =
                 case nextAscii str ofs of
                     (# _   , False #) -> Nothing
@@ -1403,7 +1404,7 @@ readFloatingExact str f
             _                                           -> Nothing
 
     consumeExponant !isNegative !integral !floating !startOfs
-        | startOfs .==# sz = f isNegative integral floating Nothing
+        | startOfs == eofs = f isNegative integral floating Nothing
         | otherwise        =
             -- consume 'E' or 'e'
             case nextAscii str startOfs of
@@ -1413,7 +1414,7 @@ readFloatingExact str f
                 (# _   , True  #) -> Nothing
       where
         consumeExponantSign ofs
-            | ofs .==# sz = Nothing
+            | ofs == eofs = Nothing
             | otherwise   =
                 case nextAscii str ofs of
                     (# _   , False #) -> Nothing
