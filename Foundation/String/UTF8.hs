@@ -1276,6 +1276,13 @@ builderBuild sizeChunksI sb
         Vec.unsafeCopyAtRO mba (sizeAsOffset (end - sz)) x (Offset 0) sz
         fillFromEnd (end - sz) xs mba
 
+stringDewrap :: (ByteArray# -> Offset Word8 -> a)
+             -> (Ptr Word8 -> Offset Word8 -> ST s a)
+             -> String
+             -> a
+stringDewrap withBa withPtr (String ba) = C.unsafeDewrap withBa withPtr ba
+{-# INLINE stringDewrap #-}
+
 -- | Read an Integer from a String
 --
 -- Consume an optional minus sign and many digits until end of string.
