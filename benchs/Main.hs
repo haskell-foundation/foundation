@@ -87,12 +87,12 @@ benchsString = bgroup "String"
 
     benchRead = bgroup "Read" $
         [ bgroup "Integer"
-            [ bgroup "10000" (diffTextString readInteger (either undefined fst . Text.decimal) (toList $ show 10000))
-            , bgroup "1234567891234567890" (diffTextString readInteger (either undefined fst . Text.decimal) (toList $ show 1234567891234567890))
+            [ bgroup "10000" (diffTextString (maybe undefined id . readInteger) (either undefined fst . Text.decimal) (toList $ show 10000))
+            , bgroup "1234567891234567890" (diffTextString (maybe undefined id . readInteger) (either undefined fst . Text.decimal) (toList $ show 1234567891234567890))
             ]
         , bgroup "Double"
-            [ bgroup "100.56e23" (diffTextString readDouble (either undefined fst . Text.double) (toList $ show 100.56e23))
-            , bgroup "-123.1247" (diffTextString readDouble (either undefined fst . Text.double) (toList $ show (-123.1247)))
+            [ bgroup "100.56e23" (diffTextString (maybe undefined id . readDouble) (either undefined fst . Text.double) (toList $ show 100.56e23))
+            , bgroup "-123.1247" (diffTextString (maybe undefined id . readDouble) (either undefined fst . Text.double) (toList $ show (-123.1247)))
             ]
         ]
 
