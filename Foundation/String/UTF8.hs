@@ -358,6 +358,32 @@ nextAscii (String ba) n = (# w, not (testBit w 7) #)
   where
     !w = Vec.unsafeIndex ba n
 
+-- same as nextAscii but with a ByteArray#
+nextAsciiBA :: ByteArray# -> Offset8 -> (# Word8, Bool #)
+nextAsciiBA ba n = (# w, not (testBit w 7) #)
+  where
+    !w = primBaIndex ba n
+{-# INLINE nextAsciiBA #-}
+
+-- | nextAsciiBa specialized to get a digit between 0 and 9 (included)
+nextAsciiDigitBA :: ByteArray# -> Offset8 -> (# Word8, Bool #)
+nextAsciiDigitBA ba n = (# d, d < 0xa #)
+  where !d = primBaIndex ba n - 0x30
+{-# INLINE nextAsciiDigitBA #-}
+
+nextAsciiDigitPtr :: Ptr Word8 -> Offset8 -> (# Word8, Bool #)
+nextAsciiDigitPtr (Ptr addr) n = (# d, d < 0xa #)
+  where !d = primAddrIndex addr n - 0x30
+{-# INLINE nextAsciiDigitPtr #-}
+
+expectAsciiBA :: ByteArray# -> Offset8 -> Word8 -> Bool
+expectAsciiBA ba n v = primBaIndex ba n == v
+{-# INLINE expectAsciiBA #-}
+
+expectAsciiPtr :: Ptr Word8 -> Offset8 -> Word8 -> Bool
+expectAsciiPtr (Ptr ptr) n v = primAddrIndex ptr n == v
+{-# INLINE expectAsciiPtr #-}
+
 next :: String -> Offset8 -> (# Char, Offset8 #)
 next (String ba) n =
     case getNbBytes# h of
