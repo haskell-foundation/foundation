@@ -1,5 +1,6 @@
 module Foundation.String.Read
     ( readInteger
+    , readIntegral
     , readNatural
     , readDouble
     , readFloatingExact
