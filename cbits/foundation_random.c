@@ -9,6 +9,7 @@
 
 #if defined(FOUNDATION_SYSTEM_LINUX)
 #include <sys/syscall.h>
+#include <linux/types.h>
 #include <linux/random.h>
 #include <unistd.h>
 #define _GNU_SOURCE
