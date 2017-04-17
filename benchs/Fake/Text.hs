@@ -8,6 +8,7 @@ module Fake.Text
     , filter
     , reverse
     , decimal
+    , double
     ) where
 
 import Prelude (undefined)
@@ -22,3 +23,4 @@ filter _    = undefined
 reverse     = undefined
 any         = undefined
 decimal     = undefined
+double      = undefined
