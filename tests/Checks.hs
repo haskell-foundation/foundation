@@ -16,7 +16,7 @@ testAdditive _ = Group "Additive"
     , Property "a + b == b + a" $ \(v1 :: a) v2 -> v1 + v2 === v2 + v1
     ]
 
-readFloatingExact' :: String -> Maybe (Bool, Natural, Maybe (Word, Natural), Maybe Int)
+readFloatingExact' :: String -> Maybe (Bool, Natural, Word, Maybe Int)
 readFloatingExact' s = readFloatingExact s (\s x y z -> Just (s,x,y,z))
 
 doubleEqualApprox :: Double -> Double -> PropertyCheck
@@ -50,13 +50,17 @@ main = defaultMain $ Group "foundation"
                 , Property "just-sign"     $ readFloatingExact' "-" === Nothing
                 , Property "extra-content" $ readFloatingExact' "-123a" === Nothing
                 , Property "no-dot-after"  $ readFloatingExact' "-123." === Nothing
-                , Property "case1"         $ readFloatingExact' "-123.1" === Just (True, 123, Just (1, 1), Nothing)
-                , Property "case2"         $ readFloatingExact' "10001.001" === Just (False, 10001, Just (3, 1), Nothing)
+                , Property "case0"         $ readFloatingExact' "124890" === Just (False, 124890, 0, Nothing)
+                , Property "case1"         $ readFloatingExact' "-123.1" === Just (True, 1231, 1, Nothing)
+                , Property "case2"         $ readFloatingExact' "10001.001" === Just (False, 10001001, 3, Nothing)
+{-
                 , Property "any"           $ \s i (v :: Word8) n ->
+                                                let (integral,floating) = i `divMod` (10^v)
                                                 let vw = integralUpsize v :: Word
                                                     sfloat = show n
                                                     digits = integralCast (length sfloat) + vw
                                                  in readFloatingExact' ((if s then "-" else "") <> show i <> "." <> replicate vw '0' <> sfloat) === Just (s, i, Just (digits, n), Nothing)
+-}
                 ]
             , Group "Double"
                 [ Property "case1" $ readDouble "96152.5" === Just 96152.5
@@ -64,6 +68,7 @@ main = defaultMain $ Group "foundation"
                 , Property "case3" $ maybe (propertyFail "Nothing") (doubleEqualApprox 0.00001204) $ readDouble "0.00001204"
                 , Property "case4" $ maybe (propertyFail "Nothing") (doubleEqualApprox 2.5e12) $ readDouble "2.5e12"
                 , Property "case5" $ maybe (propertyFail "Nothing") (doubleEqualApprox 6.0e-4) $ readDouble "6.0e-4"
+                , Property "case6" $ maybe (propertyFail "Nothing") ((===) (-31.548)) $ readDouble "-31.548"
                 , Property "Prelude.read" $ \(d :: Double) -> case readDouble (show d) of
                                                                   Nothing -> propertyFail "Nothing"
                                                                   Just d' -> d' `doubleEqualApprox` (Prelude.read $ toList $ show d)

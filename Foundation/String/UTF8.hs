@@ -1333,22 +1333,22 @@ readNatural str
 -- | Try to read a Double
 readDouble :: String -> Maybe Double
 readDouble s =
-    readFloatingExact s $ \isNegative integral mFloating mExponant ->
-        case (mFloating, mExponant) of
-            (Nothing, Nothing)             -> Just $ applySign isNegative $                         naturalToDouble integral
-            (Nothing, Just exponant)       -> Just $ applySign isNegative $ withExponant exponant $ naturalToDouble integral
-            (Just floating, Nothing)       -> Just $ applySign isNegative $                         (naturalToDouble integral + floatingToDouble floating)
-            (Just floating, Just exponant) -> Just $ applySign isNegative $ withExponant exponant $ (naturalToDouble integral + floatingToDouble floating)
+    readFloatingExact s $ \isNegative integral floatingDigits mExponant ->
+        Just $ applySign isNegative $ case (floatingDigits, mExponant) of
+            (0, Nothing)              ->                         naturalToDouble integral
+            (0, Just exponant)        -> withExponant exponant $ naturalToDouble integral
+            (floating, Nothing)       ->                         applyFloating floating $ naturalToDouble integral
+            (floating, Just exponant) -> withExponant exponant $ applyFloating floating $ naturalToDouble integral
   where
     applySign True = negate
     applySign False = id
     withExponant e v = v * doubleExponant 10 e
-    floatingToDouble (digits, n) = naturalToDouble n / (10 ^ digits)
+    applyFloating digits n = n / (10 ^ digits)
 
-type ReadFloatingCallback a = Bool                  -- sign
-                           -> Natural               -- integral part
-                           -> Maybe (Word, Natural) -- optional number of zero and number representing floating part
-                           -> Maybe Int             -- optional integer representing exponent in base 10
+type ReadFloatingCallback a = Bool      -- sign
+                           -> Natural   -- integral part
+                           -> Word      -- number of digits in floating section
+                           -> Maybe Int -- optional integer representing exponent in base 10
                            -> Maybe a
 
 -- | Read an Floating like number of the form:
@@ -1358,8 +1358,8 @@ type ReadFloatingCallback a = Bool                  -- sign
 -- Call a function with:
 --
 -- * A boolean representing if the number is negative
--- * The leading integral part
--- * The floating part (number of digits after fractional part, and number) if any
+-- * The digits part represented as a single natural number (123.456 is represented as 123456)
+-- * The number of digits in the fractional part (e.g. 123.456 => 3)
 -- * The exponant if any
 --
 -- The code is structured as a simple state machine that:
@@ -1383,23 +1383,23 @@ readFloatingExact str f
 
     consumeIntegral !isNegative startOfs =
         case decimalDigits 0 str startOfs of
-            (# acc, True , endOfs #) | endOfs > startOfs -> f isNegative acc Nothing Nothing -- end of stream and no '.'
+            (# acc, True , endOfs #) | endOfs > startOfs -> f isNegative acc 0 Nothing -- end of stream and no '.'
             (# acc, False, endOfs #) | endOfs > startOfs ->
                 if expectAscii str endOfs 0x2e
-                    then consumeFloat isNegative acc 0 (endOfs + 1)
-                    else consumeExponant isNegative acc Nothing endOfs
+                    then consumeFloat isNegative acc (endOfs + 1)
+                    else consumeExponant isNegative acc 0 endOfs
             _                                            -> Nothing
 
-    consumeFloat isNegative integral nbDigits startOfs =
-        case decimalDigits 0 str startOfs of
+    consumeFloat isNegative integral startOfs =
+        case decimalDigits integral str startOfs of
             (# acc, True, endOfs #) | endOfs > startOfs -> let (Size !diff) = endOfs - startOfs
-                                                            in f isNegative integral (Just (nbDigits+integralCast diff, acc)) Nothing
+                                                            in f isNegative acc (integralCast diff) Nothing
             (# acc, False, endOfs #) | endOfs > startOfs -> let (Size !diff) = endOfs - startOfs
-                                                            in consumeExponant isNegative integral (Just (nbDigits+integralCast diff, acc)) endOfs
+                                                            in consumeExponant isNegative acc (integralCast diff) endOfs
             _                                           -> Nothing
 
-    consumeExponant !isNegative !integral !floating !startOfs
-        | startOfs == eofs = f isNegative integral floating Nothing
+    consumeExponant !isNegative !integral !floatingDigits !startOfs
+        | startOfs == eofs = f isNegative integral floatingDigits Nothing
         | otherwise        =
             -- consume 'E' or 'e'
             case nextAscii str startOfs of
@@ -1414,7 +1414,7 @@ readFloatingExact str f
 
         consumeExponantNumber exponantNegative ofs =
             case decimalDigits 0 str ofs of
-                (# acc, True, endOfs #) | endOfs > ofs -> f isNegative integral floating (Just $! if exponantNegative then negate acc else acc)
+                (# acc, True, endOfs #) | endOfs > ofs -> f isNegative integral floatingDigits (Just $! if exponantNegative then negate acc else acc)
                 _                                      -> Nothing
 
 -- | Take decimal digits and accumulate it in `acc`
