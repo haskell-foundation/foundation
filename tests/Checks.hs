@@ -69,6 +69,7 @@ main = defaultMain $ Group "foundation"
                 , Property "case4" $ maybe (propertyFail "Nothing") (doubleEqualApprox 2.5e12) $ readDouble "2.5e12"
                 , Property "case5" $ maybe (propertyFail "Nothing") (doubleEqualApprox 6.0e-4) $ readDouble "6.0e-4"
                 , Property "case6" $ maybe (propertyFail "Nothing") ((===) (-31.548)) $ readDouble "-31.548"
+                , Property "case7" $ readDouble "1e100000000" === Just (1/0)
                 , Property "Prelude.read" $ \(d :: Double) -> case readDouble (show d) of
                                                                   Nothing -> propertyFail "Nothing"
                                                                   Just d' -> d' `doubleEqualApprox` (Prelude.read $ toList $ show d)
