@@ -377,6 +377,10 @@ nextAsciiDigitPtr (Ptr addr) n = (# d, d < 0xa #)
   where !d = primAddrIndex addr n - 0x30
 {-# INLINE nextAsciiDigitPtr #-}
 
+expectAscii :: String -> Offset8 -> Word8 -> Bool
+expectAscii (String ba) n v = Vec.unsafeIndex ba n == v
+{-# INLINE expectAscii #-}
+
 expectAsciiBA :: ByteArray# -> Offset8 -> Word8 -> Bool
 expectAsciiBA ba n v = primBaIndex ba n == v
 {-# INLINE expectAsciiBA #-}
@@ -1364,7 +1368,6 @@ type ReadFloatingCallback a = Bool                  -- sign
 -- * Consume number for the integral part
 -- * Optionally
 --   * Consume '.'
---   * Consume leading zeros explicitely to gather scale of the fractional part
 --   * Consume remaining digits if not already end of string
 -- * Optionally Consume a 'e' or 'E' follow by an optional '-' and a number
 --
@@ -1372,41 +1375,20 @@ readFloatingExact :: String -> ReadFloatingCallback a -> Maybe a
 readFloatingExact str f
     | sz == 0   = Nothing
     | otherwise =
-        -- try to eat a '-', otherwise call consumeIntegral
-        case nextAscii str 0 of
-            (# _   , False #) -> Nothing
-            (# 0x2d, True #)  -> consumeIntegral True 1
-            _                 -> consumeIntegral False 0
+        let !isNegative = expectAscii str 0 0x2d
+         in consumeIntegral isNegative (if isNegative then 1 else 0)
   where
     !sz = size str
     eofs = 0 `offsetPlusE` sz
 
-    consumeIntegral isNegative startOfs =
+    consumeIntegral !isNegative startOfs =
         case decimalDigits 0 str startOfs of
             (# acc, True , endOfs #) | endOfs > startOfs -> f isNegative acc Nothing Nothing -- end of stream and no '.'
-            (# acc, False, endOfs #) | endOfs > startOfs -> consumeDot isNegative acc endOfs
+            (# acc, False, endOfs #) | endOfs > startOfs ->
+                if expectAscii str endOfs 0x2e
+                    then consumeFloat isNegative acc 0 (endOfs + 1)
+                    else consumeExponant isNegative acc Nothing endOfs
             _                                            -> Nothing
-
-    -- this is not the end of the stream since otherwise consumeIntegral would have
-    -- returned already
-    -- try either to consume '.' or pass state to consumeExponant
-    consumeDot isNegative integral startOfs =
-        case nextAscii str startOfs of
-            (# _   , False #) -> Nothing
-            (# 0x2e, True #)  -> consumeZero isNegative integral (startOfs + 1)
-            (# _   , True #)  -> consumeExponant isNegative integral Nothing startOfs
-
-    consumeZero isNegative integral startOfs = loop 0 startOfs
-      where
-        loop nbDigits ofs
-            | ofs == eofs = if nbDigits == 0 then Nothing else f isNegative integral (Just (nbDigits, 0)) Nothing
-            | otherwise   =
-                case nextAscii str ofs of
-                    (# _   , False #) -> Nothing
-                    (# 0x30, True #)  -> loop (nbDigits+1) (ofs+1)
-                    (# c   , True #)
-                        | c == 0x45 || c == 0x65 -> if nbDigits > 0 then consumeExponant isNegative integral (Just (nbDigits, 0)) ofs else Nothing
-                        | otherwise              -> consumeFloat isNegative integral nbDigits ofs
 
     consumeFloat isNegative integral nbDigits startOfs =
         case decimalDigits 0 str startOfs of
@@ -1421,21 +1403,18 @@ readFloatingExact str f
         | otherwise        =
             -- consume 'E' or 'e'
             case nextAscii str startOfs of
-                (# _   , False #) -> Nothing -- more character but no ascii
-                (# 0x45, True  #) -> consumeExponantSign (startOfs+1)
-                (# 0x65, True  #) -> consumeExponantSign (startOfs+1)
-                (# _   , True  #) -> Nothing
+                (# 0x45, True #) -> consumeExponantSign (startOfs+1)
+                (# 0x65, True #) -> consumeExponantSign (startOfs+1)
+                (# _   , _    #) -> Nothing
       where
         consumeExponantSign ofs
             | ofs == eofs = Nothing
-            | otherwise   =
-                case nextAscii str ofs of
-                    (# _   , False #) -> Nothing
-                    (# 0x2d, True  #) -> consumeExponantNumber negate (ofs+1)
-                    (# _   , True  #) -> consumeExponantNumber id     ofs
-        consumeExponantNumber signFct ofs =
+            | otherwise   = let exponantNegative = expectAscii str ofs 0x2d
+                             in consumeExponantNumber exponantNegative (if exponantNegative then ofs + 1 else ofs)
+
+        consumeExponantNumber exponantNegative ofs =
             case decimalDigits 0 str ofs of
-                (# acc, True, endOfs #) | endOfs > ofs -> f isNegative integral floating (Just $ signFct acc)
+                (# acc, True, endOfs #) | endOfs > ofs -> f isNegative integral floating (Just $! if exponantNegative then negate acc else acc)
                 _                                      -> Nothing
 
 -- | Take decimal digits and accumulate it in `acc`
