@@ -3,13 +3,45 @@
 --
 -- This is useful to keep a non-modifiable value
 -- in a context
+
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+
 module Foundation.Monad.Reader
-    ( ReaderT
+    ( -- * MonadReader
+      MonadReader(..)
+    , asks
+
+    , -- * ReaderT
+      ReaderT
     , runReaderT
     ) where
 
-import Foundation.Internal.Base (($), (.), const)
+import Foundation.Internal.Base (($), (.), const, id)
 import Foundation.Monad.Base
+
+class Monad m => MonadReader r m where
+    {-# MINIMAL (ask | reader), local #-}
+
+    -- | Retrieves the monad environment.
+    ask   :: m r
+    ask = reader id
+
+    -- | Executes a computation in a modified environment.
+    local :: (r -> r) -- ^ The function to modify the environment.
+          -> m a      -- ^ @Reader@ to run in the modified environment.
+          -> m a
+
+    -- | Retrieves a function of the current environment.
+    reader :: (r -> a) -- ^ The selector function to apply to the environment.
+           -> m a
+    reader f = ask >>= return . f
+
+-- | Retrieves a function of the current environment.
+asks :: MonadReader r m
+     => (r -> a) -- ^ The selector function to apply to the environment.
+     -> m a
+asks = reader
 
 -- | Reader Transformer
 newtype ReaderT r m a = ReaderT { runReaderT :: r -> m a }
@@ -47,3 +79,7 @@ instance MonadThrow m => MonadThrow (ReaderT r m) where
 
 instance MonadCatch m => MonadCatch (ReaderT r m) where
     catch (ReaderT m) c = ReaderT $ \r -> m r `catch` (\e -> runReaderT (c e) r)
+
+instance Monad m => MonadReader r (ReaderT r m) where
+    ask = ReaderT return
+    local f m = ReaderT $ runReaderT m . f
