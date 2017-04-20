@@ -4,12 +4,19 @@
 -- This is useful to keep a non-modifiable value
 -- in a context
 module Foundation.Monad.Reader
-    ( ReaderT
+    ( -- * MonadReader
+      MonadReader(..)
+    , -- * ReaderT
+      ReaderT
     , runReaderT
     ) where
 
 import Foundation.Internal.Base (($), (.), const)
 import Foundation.Monad.Base
+
+class Monad m => MonadReader m where
+    type ReaderContext m
+    ask :: m (ReaderContext m)
 
 -- | Reader Transformer
 newtype ReaderT r m a = ReaderT { runReaderT :: r -> m a }
@@ -47,3 +54,7 @@ instance MonadThrow m => MonadThrow (ReaderT r m) where
 
 instance MonadCatch m => MonadCatch (ReaderT r m) where
     catch (ReaderT m) c = ReaderT $ \r -> m r `catch` (\e -> runReaderT (c e) r)
+
+instance Monad m => MonadReader (ReaderT r m) where
+    type ReaderContext (ReaderT r m) = r
+    ask = ReaderT return
