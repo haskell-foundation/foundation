@@ -17,7 +17,7 @@ module Foundation.Monad.Reader
     , runReaderT
     ) where
 
-import Foundation.Internal.Base (($), (.), const, id, (<$>))
+import Foundation.Internal.Base (($), (.), const, id)
 import Foundation.Monad.Base
 
 class Monad m => MonadReader r m where
@@ -35,7 +35,7 @@ class Monad m => MonadReader r m where
     -- | Retrieves a function of the current environment.
     reader :: (r -> a) -- ^ The selector function to apply to the environment.
            -> m a
-    reader f = f <$> ask
+    reader f = ask >>= return . f
 
 -- | Retrieves a function of the current environment.
 asks :: MonadReader r m
