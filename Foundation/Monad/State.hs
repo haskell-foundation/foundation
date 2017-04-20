@@ -1,11 +1,27 @@
 {-# LANGUAGE TupleSections #-}
 module Foundation.Monad.State
-    ( StateT
+    ( -- * MonadState
+      MonadState(..)
+    , get
+    , put
+
+    , -- * StateT
+      StateT
     , runStateT
     ) where
 
-import Foundation.Internal.Base (($), (.))
+import Foundation.Internal.Base (($), (.), const)
 import Foundation.Monad.Base
+
+class Monad m => MonadState m where
+    type State m
+    withState :: (State m -> (a, State m)) -> m a
+
+get :: MonadState m => m (State m)
+get = withState $ \s -> (s, s)
+
+put :: MonadState m => State m -> m ()
+put s = withState $ const ((), s)
 
 -- | State Transformer
 newtype StateT s m a = StateT { runStateT :: s -> m (a, s) }
@@ -46,3 +62,7 @@ instance (Functor m, MonadThrow m) => MonadThrow (StateT s m) where
 
 instance (Functor m, MonadCatch m) => MonadCatch (StateT s m) where
     catch (StateT m) c = StateT $ \s1 -> m s1 `catch` (\e -> runStateT (c e) s1)
+
+instance Monad m => MonadState (StateT s m) where
+    type State (StateT s m) = s
+    withState f = StateT $ return . f
