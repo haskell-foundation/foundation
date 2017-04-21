@@ -279,7 +279,7 @@ Test-Suite check-foundation
   type:              exitcode-stdio-1.0
   hs-source-dirs:    tests
   Main-is:           Checks.hs
-  Other-modules:
+  Other-modules:      Test.Checks.Property.Collection
   Default-Extensions: NoImplicitPrelude
                       RebindableSyntax
                       OverloadedStrings
