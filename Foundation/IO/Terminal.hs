@@ -8,11 +8,14 @@
 module Foundation.IO.Terminal
     ( putStrLn
     , putStr
+    , stdin
+    , stdout
     ) where
 
 import           Foundation.Internal.Base
 import           Foundation.String
 import qualified Prelude
+import           System.IO (stdin, stdout)
 
 -- | Print a string to standard output
 putStr :: String -> IO ()
