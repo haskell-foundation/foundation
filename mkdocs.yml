@@ -13,6 +13,8 @@ pages:
 - Core documentation:
   - Collection: core-collection.md
   - Numerical: core-numerical.md
+- Advanced:
+  - Runtime option: advanced-runtime.md
 #- Project documentation:
 # - Contributors Guide: CONTRIBUTING.md
 #  - Maintainer guide: MAINTAINER_GUIDE.md
