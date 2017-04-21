@@ -1,0 +1,22 @@
+site_name: The Haskell Foundation Framework
+site_description: The Haskell Foundation Framework
+site_author: Foundation contributors
+repo_url: https://github.com/haskell-foundation/foundation/tree/master/docs
+copyright: Copyright (c) 2016-2017, Foundation contributors
+docs_dir: docs
+site_dir: _site
+theme: readthedocs
+
+pages:
+- Home: home.md
+- Changelog: CHANGELOG.md
+- Core documentation:
+  - Collection: core-collection.md
+  - Numerical: core-numerical.md
+#- Project documentation:
+# - Contributors Guide: CONTRIBUTING.md
+#  - Maintainer guide: MAINTAINER_GUIDE.md
+
+markdown_extensions:
+- toc:
+    permalink: true
