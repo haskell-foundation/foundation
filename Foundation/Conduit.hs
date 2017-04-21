@@ -3,6 +3,7 @@ module Foundation.Conduit
     , ResourceT
     , ZipSink (..)
     , await
+    , awaitForever
     , yield
     , yieldOr
     , leftover
