@@ -6,8 +6,8 @@ setup-info:
     linux64:
       8.2.0.20170404:
         url: https://downloads.haskell.org/~ghc/8.2.1-rc1/ghc-8.2.0.20170404-x86_64-deb7-linux.tar.xz
-        content-length: 138846620
-        sha1: 3fd303b5753b095ce020131405dcf43199e6b447
+        content-length: 137421020
+        sha1: 84d33e396324d739350eb53c213322004faea851
     macosx:
       8.2.0.20170404:
         url: https://downloads.haskell.org/~ghc/8.2.1-rc1/ghc-8.2.0.20170404-x86_64-apple-darwin.tar.xz
