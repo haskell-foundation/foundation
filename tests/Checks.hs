@@ -7,7 +7,6 @@ module Main where
 import Foundation
 import Foundation.Array
 import Foundation.Foreign
-import Foundation.Class.Storable
 import Foundation.List.DList
 import Foundation.Primitive
 import Foundation.Check
