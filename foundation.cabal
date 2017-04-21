@@ -41,7 +41,7 @@ source-repository head
 Flag experimental
   Description:       Enable building experimental features, known as highly unstable or without good support cross-platform
   Default:           False
-  Manual:            False
+  Manual:            True
 
 Flag bench-all
   Description:       Add some comparaison benchmarks against other haskell libraries
@@ -51,9 +51,14 @@ Flag bench-all
 Flag minimal-deps
   Description:       Build fully with minimal deps (no criterion, no quickcheck, no doctest)
   Default:           False
-  Manual:            False
+  Manual:            True
 
 Flag bounds-check
+  Description:       Add extra friendly boundary check for unsafe array operations
+  Default:           False
+  Manual:            True
+
+Flag doctest
   Description:       Add extra friendly boundary check for unsafe array operations
   Default:           False
   Manual:            True
@@ -290,12 +295,16 @@ Test-Suite doctest
   Main-is:           DocTest.hs
   Default-Extensions: NoImplicitPrelude
                       RebindableSyntax
-  if flag(minimal-deps) || impl(ghc < 7.10)
+  if flag(minimal-deps)
     -- TODO: for no, force unbuildable anyway
     Buildable:       False
-    Build-Depends:     base >= 3 && < 5
-                     , doctest >= 0.9
-  Buildable:         False
+  else
+    if flag(doctest)
+      Build-Depends:     base >= 3 && < 5
+                       , doctest >= 0.9
+      Buildable:     True
+    else
+      Buildable:     False
 
 Benchmark bench
   Main-Is:           Main.hs
