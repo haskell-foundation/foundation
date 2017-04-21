@@ -67,8 +67,10 @@ module Foundation.String.UTF8
     , builderAppend
     , builderBuild
     , readInteger
+    , readIntegral
     , readNatural
     , readDouble
+    , readRational
     , readFloatingExact
     -- * Legacy utility
     , lines
@@ -105,6 +107,7 @@ import           GHC.Char
  -- temporary
 import qualified Data.List
 import           Data.Data
+import           Data.Ratio
 import qualified Prelude
 
 import           Foundation.String.ModifiedUTF8     (fromModified)
@@ -357,6 +360,42 @@ nextAscii :: String -> Offset8 -> (# Word8, Bool #)
 nextAscii (String ba) n = (# w, not (testBit w 7) #)
   where
     !w = Vec.unsafeIndex ba n
+
+-- same as nextAscii but with a ByteArray#
+nextAsciiBA :: ByteArray# -> Offset8 -> (# Word8, Bool #)
+nextAsciiBA ba n = (# w, not (testBit w 7) #)
+  where
+    !w = primBaIndex ba n
+{-# INLINE nextAsciiBA #-}
+
+-- same as nextAscii but with a ByteArray#
+nextAsciiPtr :: Ptr Word8 -> Offset8 -> (# Word8, Bool #)
+nextAsciiPtr (Ptr addr) n = (# w, not (testBit w 7) #)
+  where !w = primAddrIndex addr n
+{-# INLINE nextAsciiPtr #-}
+
+-- | nextAsciiBa specialized to get a digit between 0 and 9 (included)
+nextAsciiDigitBA :: ByteArray# -> Offset8 -> (# Word8, Bool #)
+nextAsciiDigitBA ba n = (# d, d < 0xa #)
+  where !d = primBaIndex ba n - 0x30
+{-# INLINE nextAsciiDigitBA #-}
+
+nextAsciiDigitPtr :: Ptr Word8 -> Offset8 -> (# Word8, Bool #)
+nextAsciiDigitPtr (Ptr addr) n = (# d, d < 0xa #)
+  where !d = primAddrIndex addr n - 0x30
+{-# INLINE nextAsciiDigitPtr #-}
+
+expectAscii :: String -> Offset8 -> Word8 -> Bool
+expectAscii (String ba) n v = Vec.unsafeIndex ba n == v
+{-# INLINE expectAscii #-}
+
+expectAsciiBA :: ByteArray# -> Offset8 -> Word8 -> Bool
+expectAsciiBA ba n v = primBaIndex ba n == v
+{-# INLINE expectAsciiBA #-}
+
+expectAsciiPtr :: Ptr Word8 -> Offset8 -> Word8 -> Bool
+expectAsciiPtr (Ptr ptr) n v = primAddrIndex ptr n == v
+{-# INLINE expectAsciiPtr #-}
 
 next :: String -> Offset8 -> (# Char, Offset8 #)
 next (String ba) n =
@@ -1250,22 +1289,41 @@ builderBuild sizeChunksI sb
         Vec.unsafeCopyAtRO mba (sizeAsOffset (end - sz)) x (Offset 0) sz
         fillFromEnd (end - sz) xs mba
 
+stringDewrap :: (ByteArray# -> Offset Word8 -> a)
+             -> (Ptr Word8 -> Offset Word8 -> ST s a)
+             -> String
+             -> a
+stringDewrap withBa withPtr (String ba) = C.unsafeDewrap withBa withPtr ba
+{-# INLINE stringDewrap #-}
+
 -- | Read an Integer from a String
 --
 -- Consume an optional minus sign and many digits until end of string.
-readInteger :: String -> Maybe Integer
-readInteger str
-    | sz == 0  = Nothing
-    | otherwise =
-         let (# modF, startOfs #) = case nextAscii str 0 of
-                                        -- '-'
-                                        (# 0x2d, True #) -> (# negate , 1 #)
-                                        _                -> (# id, 0 #)
-          in case decimalDigits 0 str startOfs of
-                (# acc, True, endOfs #) | endOfs > startOfs -> Just $ modF acc
-                _                                           -> Nothing
+readIntegral :: (HasNegation i, IntegralUpsize Word8 i, Additive i, Multiplicative i, IsIntegral i) => String -> Maybe i
+readIntegral str
+    | sz == 0   = Nothing
+    | otherwise = stringDewrap withBa withPtr str
   where
     !sz = size str
+    withBa ba ofs =
+        let negativeSign = expectAsciiBA ba ofs 0x2d
+            startOfs     = if negativeSign then succ ofs else ofs
+         in case decimalDigitsBA 0 ba endOfs startOfs of
+                (# acc, True, endOfs' #) | endOfs' > startOfs -> Just $! if negativeSign then negate acc else acc
+                _                                             -> Nothing
+      where !endOfs = ofs `offsetPlusE` sz
+    withPtr ptr ofs = return $
+        let negativeSign = expectAsciiPtr ptr ofs 0x2d
+            startOfs     = if negativeSign then succ ofs else ofs
+         in case decimalDigitsPtr 0 ptr endOfs startOfs of
+                (# acc, True, endOfs' #) | endOfs' > startOfs -> Just $! if negativeSign then negate acc else acc
+                _                                             -> Nothing
+      where !endOfs = ofs `offsetPlusE` sz
+{-# SPECIALISE readIntegral :: String -> Maybe Integer #-}
+{-# SPECIALISE readIntegral :: String -> Maybe Int #-}
+
+readInteger :: String -> Maybe Integer
+readInteger = readIntegral
 
 -- | Read a Natural from a String
 --
@@ -1283,22 +1341,41 @@ readNatural str
 -- | Try to read a Double
 readDouble :: String -> Maybe Double
 readDouble s =
-    readFloatingExact s $ \isNegative integral mFloating mExponant ->
-        case (mFloating, mExponant) of
-            (Nothing, Nothing)             -> Just $ applySign isNegative $                         naturalToDouble integral
-            (Nothing, Just exponant)       -> Just $ applySign isNegative $ withExponant exponant $ naturalToDouble integral
-            (Just floating, Nothing)       -> Just $ applySign isNegative $                         (naturalToDouble integral + floatingToDouble floating)
-            (Just floating, Just exponant) -> Just $ applySign isNegative $ withExponant exponant $ (naturalToDouble integral + floatingToDouble floating)
+    readFloatingExact s $ \isNegative integral floatingDigits mExponant ->
+        Just $ applySign isNegative $ case (floatingDigits, mExponant) of
+            (0, Nothing)              ->                         naturalToDouble integral
+            (0, Just exponent)        -> withExponant exponent $ naturalToDouble integral
+            (floating, Nothing)       ->                         applyFloating floating $ naturalToDouble integral
+            (floating, Just exponent) -> withExponant exponent $ applyFloating floating $ naturalToDouble integral
   where
     applySign True = negate
     applySign False = id
     withExponant e v = v * doubleExponant 10 e
-    floatingToDouble (digits, n) = naturalToDouble n / (10 ^ digits)
+    applyFloating digits n = n / (10 Prelude.^ digits)
 
-type ReadFloatingCallback a = Bool                  -- sign
-                           -> Natural               -- integral part
-                           -> Maybe (Word, Natural) -- optional number of zero and number representing floating part
-                           -> Maybe Int             -- optional integer representing exponent in base 10
+-- | Try to read a floating number as a Rational
+--
+-- Note that for safety reason, only exponent between -10000 and 10000 is allowed
+-- as otherwise DoS/OOM is very likely. if you don't want this behavior,
+-- switching to a scientific type (not provided yet) that represent the
+-- exponent separately is the advised solution.
+readRational :: String -> Maybe Prelude.Rational
+readRational s =
+    readFloatingExact s $ \isNegative integral floatingDigits mExponant ->
+        case mExponant of
+            Just exponent
+                | exponent < -10000 || exponent > 10000 -> Nothing
+                | otherwise                             -> Just $ modF isNegative integral % (10 Prelude.^ (integralCast floatingDigits - exponent))
+            Nothing                                     -> Just $ modF isNegative integral % (10 Prelude.^ floatingDigits)
+  where
+    modF True  = negate . integralUpsize
+    modF False = integralUpsize
+
+
+type ReadFloatingCallback a = Bool      -- sign
+                           -> Natural   -- integral part
+                           -> Word      -- number of digits in floating section
+                           -> Maybe Int -- optional integer representing exponent in base 10
                            -> Maybe a
 
 -- | Read an Floating like number of the form:
@@ -1308,9 +1385,9 @@ type ReadFloatingCallback a = Bool                  -- sign
 -- Call a function with:
 --
 -- * A boolean representing if the number is negative
--- * The leading integral part
--- * The floating part (number of digits after fractional part, and number) if any
--- * The exponant if any
+-- * The digits part represented as a single natural number (123.456 is represented as 123456)
+-- * The number of digits in the fractional part (e.g. 123.456 => 3)
+-- * The exponent if any
 --
 -- The code is structured as a simple state machine that:
 --
@@ -1318,78 +1395,96 @@ type ReadFloatingCallback a = Bool                  -- sign
 -- * Consume number for the integral part
 -- * Optionally
 --   * Consume '.'
---   * Consume leading zeros explicitely to gather scale of the fractional part
 --   * Consume remaining digits if not already end of string
 -- * Optionally Consume a 'e' or 'E' follow by an optional '-' and a number
 --
 readFloatingExact :: String -> ReadFloatingCallback a -> Maybe a
 readFloatingExact str f
     | sz == 0   = Nothing
-    | otherwise =
-        -- try to eat a '-', otherwise call consumeIntegral
-        case nextAscii str 0 of
-            (# _   , False #) -> Nothing
-            (# 0x2d, True #)  -> consumeIntegral True 1
-            _                 -> consumeIntegral False 0
+    | otherwise = stringDewrap withBa withPtr str
   where
     !sz = size str
 
-    consumeIntegral isNegative startOfs =
-        case decimalDigits 0 str startOfs of
-            (# acc, True , endOfs #) | endOfs > startOfs -> f isNegative acc Nothing Nothing -- end of stream and no '.'
-            (# acc, False, endOfs #) | endOfs > startOfs -> consumeDot isNegative acc endOfs
-            _                                            -> Nothing
-
-    -- this is not the end of the stream since otherwise consumeIntegral would have
-    -- returned already
-    -- try either to consume '.' or pass state to consumeExponant
-    consumeDot isNegative integral startOfs =
-        case nextAscii str startOfs of
-            (# _   , False #) -> Nothing
-            (# 0x2e, True #)  -> consumeZero isNegative integral (startOfs + 1)
-            (# _   , True #)  -> consumeExponant isNegative integral Nothing startOfs
-
-    consumeZero isNegative integral startOfs = loop 0 startOfs
+    withBa ba stringStart =
+        let !isNegative = expectAsciiBA ba stringStart 0x2d
+         in consumeIntegral isNegative (if isNegative then stringStart+1 else stringStart)
       where
-        loop nbDigits ofs
-            | ofs .==# sz = if nbDigits == 0 then Nothing else f isNegative integral (Just (nbDigits, 0)) Nothing
-            | otherwise   =
-                case nextAscii str ofs of
-                    (# _   , False #) -> Nothing
-                    (# 0x30, True #)  -> loop (nbDigits+1) (ofs+1)
-                    (# c   , True #)
-                        | c == 0x45 || c == 0x65 -> if nbDigits > 0 then consumeExponant isNegative integral (Just (nbDigits, 0)) ofs else Nothing
-                        | otherwise              -> consumeFloat isNegative integral nbDigits ofs
+        eofs = stringStart `offsetPlusE` sz
+        consumeIntegral !isNegative startOfs =
+            case decimalDigitsBA 0 ba eofs startOfs of
+                (# acc, True , endOfs #) | endOfs > startOfs -> f isNegative acc 0 Nothing -- end of stream and no '.'
+                (# acc, False, endOfs #) | endOfs > startOfs ->
+                    if expectAsciiBA ba endOfs 0x2e
+                        then consumeFloat isNegative acc (endOfs + 1)
+                        else consumeExponant isNegative acc 0 endOfs
+                _                                            -> Nothing
 
-    consumeFloat isNegative integral nbDigits startOfs =
-        case decimalDigits 0 str startOfs of
-            (# acc, True, endOfs #) | endOfs > startOfs -> let (Size !diff) = endOfs - startOfs
-                                                            in f isNegative integral (Just (nbDigits+integralCast diff, acc)) Nothing
-            (# acc, False, endOfs #) | endOfs > startOfs -> let (Size !diff) = endOfs - startOfs
-                                                            in consumeExponant isNegative integral (Just (nbDigits+integralCast diff, acc)) endOfs
-            _                                           -> Nothing
+        consumeFloat isNegative integral startOfs =
+            case decimalDigitsBA integral ba eofs startOfs of
+                (# acc, True, endOfs #) | endOfs > startOfs -> let (Size !diff) = endOfs - startOfs
+                                                                in f isNegative acc (integralCast diff) Nothing
+                (# acc, False, endOfs #) | endOfs > startOfs -> let (Size !diff) = endOfs - startOfs
+                                                                in consumeExponant isNegative acc (integralCast diff) endOfs
+                _                                           -> Nothing
 
-    consumeExponant !isNegative !integral !floating !startOfs
-        | startOfs .==# sz = f isNegative integral floating Nothing
-        | otherwise        =
-            -- consume 'E' or 'e'
-            case nextAscii str startOfs of
-                (# _   , False #) -> Nothing -- more character but no ascii
-                (# 0x45, True  #) -> consumeExponantSign (startOfs+1)
-                (# 0x65, True  #) -> consumeExponantSign (startOfs+1)
-                (# _   , True  #) -> Nothing
+        consumeExponant !isNegative !integral !floatingDigits !startOfs
+            | startOfs == eofs = f isNegative integral floatingDigits Nothing
+            | otherwise        =
+                -- consume 'E' or 'e'
+                case nextAsciiBA ba startOfs of
+                    (# 0x45, True #) -> consumeExponantSign (startOfs+1)
+                    (# 0x65, True #) -> consumeExponantSign (startOfs+1)
+                    (# _   , _    #) -> Nothing
+          where
+            consumeExponantSign ofs
+                | ofs == eofs = Nothing
+                | otherwise   = let exponentNegative = expectAsciiBA ba ofs 0x2d
+                                 in consumeExponantNumber exponentNegative (if exponentNegative then ofs + 1 else ofs)
+
+            consumeExponantNumber exponentNegative ofs =
+                case decimalDigitsBA 0 ba eofs ofs of
+                    (# acc, True, endOfs #) | endOfs > ofs -> f isNegative integral floatingDigits (Just $! if exponentNegative then negate acc else acc)
+                    _                                      -> Nothing
+    withPtr ptr stringStart = return $
+        let !isNegative = expectAsciiPtr ptr stringStart 0x2d
+         in consumeIntegral isNegative (if isNegative then stringStart+1 else stringStart)
       where
-        consumeExponantSign ofs
-            | ofs .==# sz = Nothing
-            | otherwise   =
-                case nextAscii str ofs of
-                    (# _   , False #) -> Nothing
-                    (# 0x2d, True  #) -> consumeExponantNumber negate (ofs+1)
-                    (# _   , True  #) -> consumeExponantNumber id     ofs
-        consumeExponantNumber signFct ofs =
-            case decimalDigits 0 str ofs of
-                (# acc, True, endOfs #) | endOfs > ofs -> f isNegative integral floating (Just $ signFct acc)
-                _                                      -> Nothing
+        eofs = stringStart `offsetPlusE` sz
+        consumeIntegral !isNegative startOfs =
+            case decimalDigitsPtr 0 ptr eofs startOfs of
+                (# acc, True , endOfs #) | endOfs > startOfs -> f isNegative acc 0 Nothing -- end of stream and no '.'
+                (# acc, False, endOfs #) | endOfs > startOfs ->
+                    if expectAsciiPtr ptr endOfs 0x2e
+                        then consumeFloat isNegative acc (endOfs + 1)
+                        else consumeExponant isNegative acc 0 endOfs
+                _                                            -> Nothing
+
+        consumeFloat isNegative integral startOfs =
+            case decimalDigitsPtr integral ptr eofs startOfs of
+                (# acc, True, endOfs #) | endOfs > startOfs -> let (Size !diff) = endOfs - startOfs
+                                                                in f isNegative acc (integralCast diff) Nothing
+                (# acc, False, endOfs #) | endOfs > startOfs -> let (Size !diff) = endOfs - startOfs
+                                                                in consumeExponant isNegative acc (integralCast diff) endOfs
+                _                                           -> Nothing
+
+        consumeExponant !isNegative !integral !floatingDigits !startOfs
+            | startOfs == eofs = f isNegative integral floatingDigits Nothing
+            | otherwise        =
+                -- consume 'E' or 'e'
+                case nextAsciiPtr ptr startOfs of
+                    (# 0x45, True #) -> consumeExponantSign (startOfs+1)
+                    (# 0x65, True #) -> consumeExponantSign (startOfs+1)
+                    (# _   , _    #) -> Nothing
+          where
+            consumeExponantSign ofs
+                | ofs == eofs = Nothing
+                | otherwise   = let exponentNegative = expectAsciiPtr ptr ofs 0x2d
+                                 in consumeExponantNumber exponentNegative (if exponentNegative then ofs + 1 else ofs)
+
+            consumeExponantNumber exponentNegative ofs =
+                case decimalDigitsPtr 0 ptr eofs ofs of
+                    (# acc, True, endOfs #) | endOfs > ofs -> f isNegative integral floatingDigits (Just $! if exponentNegative then negate acc else acc)
+                    _                                      -> Nothing
 
 -- | Take decimal digits and accumulate it in `acc`
 --
@@ -1431,3 +1526,43 @@ decimalDigits startAcc str startOfs = loop startAcc startOfs
     ascii9 = 0x39
     isDigit c = c >= ascii0 && c <= ascii9
     fromDigit c = integralUpsize (c - ascii0)
+
+-- | same as decimalDigitsBA for a bytearray#
+decimalDigitsBA :: (IntegralUpsize Word8 acc, Additive acc, Multiplicative acc, Integral acc)
+                => acc
+                -> ByteArray#
+                -> Offset Word8 -- end offset
+                -> Offset Word8 -- start offset
+                -> (# acc, Bool, Offset Word8 #)
+decimalDigitsBA startAcc ba !endOfs !startOfs = loop startAcc startOfs
+  where
+    loop !acc !ofs
+        | ofs == endOfs = (# acc, True, ofs #)
+        | otherwise     =
+            case nextAsciiDigitBA ba ofs of
+                (# d, True #) -> loop (10 * acc + integralUpsize d) (succ ofs)
+                (# _, _ #)    -> (# acc, False, ofs #)
+{-# SPECIALIZE decimalDigitsBA :: Integer -> ByteArray# -> Offset Word8 -> Offset Word8 -> (# Integer, Bool, Offset Word8 #) #-}
+{-# SPECIALIZE decimalDigitsBA :: Natural -> ByteArray# -> Offset Word8 -> Offset Word8 -> (# Natural, Bool, Offset Word8 #) #-}
+{-# SPECIALIZE decimalDigitsBA :: Int -> ByteArray# -> Offset Word8 -> Offset Word8 -> (# Int, Bool, Offset Word8 #) #-}
+{-# SPECIALIZE decimalDigitsBA :: Word -> ByteArray# -> Offset Word8 -> Offset Word8 -> (# Word, Bool, Offset Word8 #) #-}
+
+-- | same as decimalDigitsBA specialized for ptr #
+decimalDigitsPtr :: (IntegralUpsize Word8 acc, Additive acc, Multiplicative acc, Integral acc)
+                 => acc
+                 -> Ptr Word8
+                 -> Offset Word8 -- end offset
+                 -> Offset Word8 -- start offset
+                 -> (# acc, Bool, Offset Word8 #)
+decimalDigitsPtr startAcc ptr !endOfs !startOfs = loop startAcc startOfs
+  where
+    loop !acc !ofs
+        | ofs == endOfs = (# acc, True, ofs #)
+        | otherwise     =
+            case nextAsciiDigitPtr ptr ofs of
+                (# d, True #) -> loop (10 * acc + integralUpsize d) (succ ofs)
+                (# _, _ #)    -> (# acc, False, ofs #)
+{-# SPECIALIZE decimalDigitsPtr :: Integer -> Ptr Word8 -> Offset Word8 -> Offset Word8 -> (# Integer, Bool, Offset Word8 #) #-}
+{-# SPECIALIZE decimalDigitsPtr :: Natural -> Ptr Word8 -> Offset Word8 -> Offset Word8 -> (# Natural, Bool, Offset Word8 #) #-}
+{-# SPECIALIZE decimalDigitsPtr :: Int -> Ptr Word8 -> Offset Word8 -> Offset Word8 -> (# Int, Bool, Offset Word8 #) #-}
+{-# SPECIALIZE decimalDigitsPtr :: Word -> Ptr Word8 -> Offset Word8 -> Offset Word8 -> (# Word, Bool, Offset Word8 #) #-}
