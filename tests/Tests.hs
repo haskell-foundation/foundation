@@ -25,7 +25,6 @@ import Test.Foundation.Conduit
 import Test.Foundation.Number
 import Test.Foundation.Array
 import Test.Foundation.ChunkedUArray
-import Test.Foundation.DList
 import Test.Foundation.String
 import Test.Foundation.Parser
 import Test.Foundation.Storable
@@ -342,7 +341,6 @@ tests =
                  in if assertEq x1 x2 then return () else error "failed..."
             ]
         ]
-    , testDList
     ]
 
 testCaseModifiedUTF8 :: [Char] -> String -> Assertion
