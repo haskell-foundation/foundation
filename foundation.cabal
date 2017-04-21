@@ -88,6 +88,7 @@ Library
                      Foundation.Foreign
                      Foundation.Collection
                      Foundation.Primitive
+                     Foundation.List.DList
                      Foundation.Monad
                      Foundation.Monad.Reader
                      Foundation.Monad.State
