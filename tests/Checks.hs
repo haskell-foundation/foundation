@@ -26,11 +26,11 @@ testAdditive _ = Group "Additive"
     ]
 
 readFloatingExact' :: String -> Maybe (Bool, Natural, Word, Maybe Int)
-readFloatingExact' s = readFloatingExact s (\s x y z -> Just (s,x,y,z))
+readFloatingExact' str = readFloatingExact str (\s x y z -> Just (s,x,y,z))
 
 doubleEqualApprox :: Double -> Double -> PropertyCheck
 doubleEqualApprox d1 d2 = (propertyCompare pName1 (<) (negate lim) d) `propertyAnd` (propertyCompare pName2 (<) d lim)
-  where 
+  where
         d = d2 - d1
 
         pName1 = show (negate lim) <> " < " <> show d2 <> " - " <> show d1 <> " (== " <> show d <> " )"
