@@ -70,6 +70,7 @@ module Foundation.String.UTF8
     , readIntegral
     , readNatural
     , readDouble
+    , readRational
     , readFloatingExact
     -- * Legacy utility
     , lines
@@ -106,6 +107,7 @@ import           GHC.Char
  -- temporary
 import qualified Data.List
 import           Data.Data
+import           Data.Ratio
 import qualified Prelude
 
 import           Foundation.String.ModifiedUTF8     (fromModified)
@@ -1350,6 +1352,25 @@ readDouble s =
     applySign False = id
     withExponant e v = v * doubleExponant 10 e
     applyFloating digits n = n / (10 Prelude.^ digits)
+
+-- | Try to read a floating number as a Rational
+--
+-- Note that for safety reason, only exponent between -10000 and 10000 is allowed
+-- as otherwise DoS/OOM is very likely. if you don't want this behavior,
+-- switching to a scientific type (not provided yet) that represent the
+-- exponent separately is the advised solution.
+readRational :: String -> Maybe Prelude.Rational
+readRational s =
+    readFloatingExact s $ \isNegative integral floatingDigits mExponant ->
+        case mExponant of
+            Just exponent
+                | exponent < -10000 || exponent > 10000 -> Nothing
+                | otherwise                             -> Just $ modF isNegative integral % (10 Prelude.^ (integralCast floatingDigits - exponent))
+            Nothing                                     -> Just $ modF isNegative integral % (10 Prelude.^ floatingDigits)
+  where
+    modF True  = negate . integralUpsize
+    modF False = integralUpsize
+
 
 type ReadFloatingCallback a = Bool      -- sign
                            -> Natural   -- integral part

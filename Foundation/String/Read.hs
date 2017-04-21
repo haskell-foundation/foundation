@@ -3,6 +3,7 @@ module Foundation.String.Read
     , readIntegral
     , readNatural
     , readDouble
+    , readRational
     , readFloatingExact
     ) where
 

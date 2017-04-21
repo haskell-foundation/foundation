@@ -7,6 +7,7 @@ import Foundation.Check
 import Foundation.String.Read
 import Foundation.Numerical
 import qualified Prelude
+import Data.Ratio
 
 testAdditive :: forall a . (Show a, Eq a, Additive a, Arbitrary a) => Proxy a -> Test
 testAdditive _ = Group "Additive"
@@ -73,6 +74,9 @@ main = defaultMain $ Group "foundation"
                 , Property "Prelude.read" $ \(d :: Double) -> case readDouble (show d) of
                                                                   Nothing -> propertyFail "Nothing"
                                                                   Just d' -> d' `doubleEqualApprox` (Prelude.read $ toList $ show d)
+                ]
+            , Group "rational"
+                [ Property "case1" $ readRational "124.098" === Just (124098 % 1000)
                 ]
             ]
         ]
