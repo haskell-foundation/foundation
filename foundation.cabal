@@ -252,6 +252,7 @@ Test-Suite test-foundation
                      Test.Foundation.Encoding
                      Test.Foundation.Parser
                      Test.Foundation.Array
+                     Test.Foundation.DList
                      Test.Foundation.String
                      Test.Foundation.Storable
                      Test.Foundation.Random
