@@ -1,3 +1,10 @@
+## 0.0.8
+
+* Add MonadReader and MonadState
+* Improve performance of numerical read parsers (integral, double)
+* Improve precision of double read parser
+* Add Textual conduit combinator (fromBytes, toBytes, lines)
+
 ## 0.0.7
 
 * Improve Checks: random seed, new properties and improved printing
