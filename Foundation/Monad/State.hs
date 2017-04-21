@@ -63,6 +63,6 @@ instance (Functor m, MonadThrow m) => MonadThrow (StateT s m) where
 instance (Functor m, MonadCatch m) => MonadCatch (StateT s m) where
     catch (StateT m) c = StateT $ \s1 -> m s1 `catch` (\e -> runStateT (c e) s1)
 
-instance Monad m => MonadState (StateT s m) where
+instance (Functor m, Monad m) => MonadState (StateT s m) where
     type State (StateT s m) = s
     withState f = StateT $ return . f
