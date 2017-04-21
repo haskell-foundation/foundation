@@ -25,5 +25,7 @@ setup-info:
 packages:
 - '.'
 extra-deps: []
-flags: {}
+flags:
+  foundation:
+    minimal-deps: true
 extra-package-dbs: []

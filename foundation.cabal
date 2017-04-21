@@ -48,6 +48,11 @@ Flag bench-all
   Default:           False
   Manual:            True
 
+Flag minimal-deps
+  Description:       Build fully with minimal deps (no criterion, no quickcheck, no doctest)
+  Default:           False
+  Manual:            False
+
 Flag bounds-check
   Description:       Add extra friendly boundary check for unsafe array operations
   Default:           False
@@ -248,7 +253,10 @@ Test-Suite test-foundation
                      Imports
   Default-Extensions: NoImplicitPrelude
                       RebindableSyntax
-  Build-Depends:     base >= 3 && < 5
+  if flag(minimal-deps)
+    Buildable: False
+  else
+    Build-Depends:   base >= 3 && < 5
                    , mtl
                    , QuickCheck
                    , tasty
@@ -284,7 +292,7 @@ Test-Suite doctest
                    , doctest >= 0.9
   Default-Extensions: NoImplicitPrelude
                       RebindableSyntax
-  if impl(ghc < 7.6)
+  if flag(minimal-deps) || impl(ghc < 7.10)
     Buildable:       False
   Buildable:         False
 
@@ -300,7 +308,10 @@ Benchmark bench
   type:              exitcode-stdio-1.0
   Default-Extensions: NoImplicitPrelude
                       BangPatterns
-  Build-depends:     base >= 4, criterion, foundation
-  if flag(bench-all)
-    CPP-Options:     -DBENCH_ALL
-    Build-depends:   text, attoparsec, vector, bytestring
+  if flag(minimal-deps) || impl(ghc < 7.10)
+    Buildable: False
+  else
+    Build-depends:     base >= 4, criterion, foundation
+    if flag(bench-all)
+      CPP-Options:     -DBENCH_ALL
+      Build-depends:   text, attoparsec, vector, bytestring
