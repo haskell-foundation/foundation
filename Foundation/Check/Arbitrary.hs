@@ -12,7 +12,7 @@ import           Foundation.Internal.Base
 import           Foundation.Internal.Natural
 import           Foundation.Primitive
 import           Foundation.Primitive.IntegralConv (wordToChar)
-import           Foundation.Primitive.Floating (integerToDouble, naturalToDouble)
+import           Foundation.Primitive.Floating
 import           Foundation.Check.Gen
 import           Foundation.Random
 import           Foundation.Bits
@@ -62,6 +62,10 @@ instance Arbitrary String where
     arbitrary = genWithParams $ \params ->
         fromList <$> (genMax (genMaxSizeString params) >>= \i -> replicateM (integralCast i) arbitrary)
 
+instance Arbitrary Float where
+    arbitrary = toFloat <$> arbitrary <*> arbitrary <*> arbitrary
+      where toFloat i n Nothing  = integerToFloat i + (naturalToFloat n / 100000)
+            toFloat i n (Just e) = (integerToFloat i + (naturalToFloat n / 1000000)) * (integerToFloat e)
 instance Arbitrary Double where
     arbitrary = toDouble <$> arbitrary <*> arbitrary <*> arbitrary
       where toDouble i n Nothing  = integerToDouble i + (naturalToDouble n / 100000)
