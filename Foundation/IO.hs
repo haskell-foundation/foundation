@@ -11,6 +11,8 @@ module Foundation.IO
     -- * Terminal
       Foundation.IO.Terminal.putStrLn
     , Foundation.IO.Terminal.putStr
+    , Foundation.IO.Terminal.stdin
+    , Foundation.IO.Terminal.stdout
     -- * File
     , Foundation.IO.File.IOMode(..)
     , Foundation.IO.File.openFile

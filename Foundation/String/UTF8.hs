@@ -731,10 +731,12 @@ break predicate s@(String ba) = runST $ Vec.unsafeIndexer ba go
 
 -- | Break a string into 2 strings at the first occurence of the character
 breakElem :: Char -> String -> (String, String)
-breakElem !el s@(String ba) =
-    case asUTF8Char el of
-        UTF8_1 w -> let (# v1,v2 #) = Vec.splitElem w ba in (String v1, String v2)
-        _        -> runST $ Vec.unsafeIndexer ba go
+breakElem !el s@(String ba)
+    | sz == 0   = (mempty, mempty)
+    | otherwise =
+        case asUTF8Char el of
+            UTF8_1 w -> let (# v1,v2 #) = Vec.splitElem w ba in (String v1, String v2)
+            _        -> runST $ Vec.unsafeIndexer ba go
   where
     sz = size s
     end = azero `offsetPlusE` sz
@@ -916,12 +918,14 @@ charToBytes c
 
 -- | Monomorphically map the character in a string and return the transformed one
 charMap :: (Char -> Char) -> String -> String
-charMap f src =
-    let !(elems, nbBytes) = allocateAndFill [] (Offset 0) (Size 0)
-     in runST $ do
-            dest <- new nbBytes
-            copyLoop dest elems (Offset 0 `offsetPlusE` nbBytes)
-            freeze dest
+charMap f src
+    | srcSz == 0 = mempty
+    | otherwise  =
+        let !(elems, nbBytes) = allocateAndFill [] (Offset 0) (Size 0)
+         in runST $ do
+                dest <- new nbBytes
+                copyLoop dest elems (Offset 0 `offsetPlusE` nbBytes)
+                freeze dest
   where
     !srcSz = size src
     srcEnd = azero `offsetPlusE` srcSz

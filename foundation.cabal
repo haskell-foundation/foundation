@@ -62,6 +62,7 @@ Library
                      Foundation.Class.Bifunctor
                      Foundation.Class.Storable
                      Foundation.Conduit
+                     Foundation.Conduit.Textual
                      Foundation.Convertible
                      Foundation.String
                      Foundation.String.ASCII
