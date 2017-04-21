@@ -1342,9 +1342,9 @@ readDouble s =
     readFloatingExact s $ \isNegative integral floatingDigits mExponant ->
         Just $ applySign isNegative $ case (floatingDigits, mExponant) of
             (0, Nothing)              ->                         naturalToDouble integral
-            (0, Just exponant)        -> withExponant exponant $ naturalToDouble integral
+            (0, Just exponent)        -> withExponant exponent $ naturalToDouble integral
             (floating, Nothing)       ->                         applyFloating floating $ naturalToDouble integral
-            (floating, Just exponant) -> withExponant exponant $ applyFloating floating $ naturalToDouble integral
+            (floating, Just exponent) -> withExponant exponent $ applyFloating floating $ naturalToDouble integral
   where
     applySign True = negate
     applySign False = id
@@ -1366,7 +1366,7 @@ type ReadFloatingCallback a = Bool      -- sign
 -- * A boolean representing if the number is negative
 -- * The digits part represented as a single natural number (123.456 is represented as 123456)
 -- * The number of digits in the fractional part (e.g. 123.456 => 3)
--- * The exponant if any
+-- * The exponent if any
 --
 -- The code is structured as a simple state machine that:
 --
@@ -1417,12 +1417,12 @@ readFloatingExact str f
           where
             consumeExponantSign ofs
                 | ofs == eofs = Nothing
-                | otherwise   = let exponantNegative = expectAsciiBA ba ofs 0x2d
-                                 in consumeExponantNumber exponantNegative (if exponantNegative then ofs + 1 else ofs)
+                | otherwise   = let exponentNegative = expectAsciiBA ba ofs 0x2d
+                                 in consumeExponantNumber exponentNegative (if exponentNegative then ofs + 1 else ofs)
 
-            consumeExponantNumber exponantNegative ofs =
+            consumeExponantNumber exponentNegative ofs =
                 case decimalDigitsBA 0 ba eofs ofs of
-                    (# acc, True, endOfs #) | endOfs > ofs -> f isNegative integral floatingDigits (Just $! if exponantNegative then negate acc else acc)
+                    (# acc, True, endOfs #) | endOfs > ofs -> f isNegative integral floatingDigits (Just $! if exponentNegative then negate acc else acc)
                     _                                      -> Nothing
     withPtr ptr stringStart = return $
         let !isNegative = expectAsciiPtr ptr stringStart 0x2d
@@ -1457,12 +1457,12 @@ readFloatingExact str f
           where
             consumeExponantSign ofs
                 | ofs == eofs = Nothing
-                | otherwise   = let exponantNegative = expectAsciiPtr ptr ofs 0x2d
-                                 in consumeExponantNumber exponantNegative (if exponantNegative then ofs + 1 else ofs)
+                | otherwise   = let exponentNegative = expectAsciiPtr ptr ofs 0x2d
+                                 in consumeExponantNumber exponentNegative (if exponentNegative then ofs + 1 else ofs)
 
-            consumeExponantNumber exponantNegative ofs =
+            consumeExponantNumber exponentNegative ofs =
                 case decimalDigitsPtr 0 ptr eofs ofs of
-                    (# acc, True, endOfs #) | endOfs > ofs -> f isNegative integral floatingDigits (Just $! if exponantNegative then negate acc else acc)
+                    (# acc, True, endOfs #) | endOfs > ofs -> f isNegative integral floatingDigits (Just $! if exponentNegative then negate acc else acc)
                     _                                      -> Nothing
 
 -- | Take decimal digits and accumulate it in `acc`
