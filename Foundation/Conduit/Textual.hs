@@ -5,8 +5,9 @@ module Foundation.Conduit.Textual
     ) where
 
 import           Foundation.Internal.Base hiding (throw)
-import           Foundation.Array.Unboxed
+import           Foundation.Array.Unboxed (UArray)
 import           Foundation.String (String)
+import           Foundation.Collection
 import qualified Foundation.String.UTF8 as S
 import           Foundation.Conduit.Internal
 import           Foundation.Monad
@@ -15,16 +16,21 @@ import           Foundation.Monad
 --
 -- This is very similar to Prelude lines except
 -- it work directly on Conduit
+--
+-- Note that if the newline character is not coming,
+-- this function will keep accumulating data until OOM
 lines :: Monad m => Conduit String String m ()
-lines = await >>= maybe (finish mempty) (go mempty)
+lines = await >>= maybe (finish []) (go [])
   where
-    finish buf = if S.null buf then return () else yield buf
+    mconcatRev = mconcat . reverse
 
-    go current nextBuf =
+    finish l = if null l then return () else yield (mconcatRev l)
+
+    go prevs nextBuf =
         case S.uncons next' of
-            Just (_, rest') -> yield (current `mappend` line) >> go mempty rest'
+            Just (_, rest') -> yield (mconcatRev (line : prevs)) >> go mempty rest'
             Nothing         ->
-                let nextCurrent = current `mappend` nextBuf
+                let nextCurrent = nextBuf : prevs
                  in await >>= maybe (finish nextCurrent) (go nextCurrent)
       where (line, next') = S.breakElem '\n' nextBuf
 
