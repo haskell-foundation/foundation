@@ -25,25 +25,7 @@ import Test.Utils.Foreign
 
 testChunkedUArrayRefs :: TestTree
 testChunkedUArrayRefs = testGroup "ChunkedArray"
-    [ testGroup "Unboxed"
-        [ testCollection "ChunkedUArray(W8)"  (Proxy :: Proxy (ChunkedUArray Word8))  arbitrary
-        , testCollection "ChunkedUArray(W16)" (Proxy :: Proxy (ChunkedUArray Word16)) arbitrary
-        , testCollection "ChunkedUArray(W32)" (Proxy :: Proxy (ChunkedUArray Word32)) arbitrary
-        , testCollection "ChunkedUArray(W64)" (Proxy :: Proxy (ChunkedUArray Word64)) arbitrary
-        , testCollection "ChunkedUArray(I8)"  (Proxy :: Proxy (ChunkedUArray Int8))   arbitrary
-        , testCollection "ChunkedUArray(I16)" (Proxy :: Proxy (ChunkedUArray Int16))  arbitrary
-        , testCollection "ChunkedUArray(I32)" (Proxy :: Proxy (ChunkedUArray Int32))  arbitrary
-        , testCollection "ChunkedUArray(I64)" (Proxy :: Proxy (ChunkedUArray Int64))  arbitrary
-        , testCollection "ChunkedUArray(F32)" (Proxy :: Proxy (ChunkedUArray Float))  arbitrary
-        , testCollection "ChunkedUArray(F64)" (Proxy :: Proxy (ChunkedUArray Double)) arbitrary
-        , testCollection "ChunkedUArray(BE W16)" (Proxy :: Proxy (ChunkedUArray (BE Word16))) (toBE <$> arbitrary)
-        , testCollection "ChunkedUArray(BE W32)" (Proxy :: Proxy (ChunkedUArray (BE Word32))) (toBE <$> arbitrary)
-        , testCollection "ChunkedUArray(BE W64)" (Proxy :: Proxy (ChunkedUArray (BE Word64))) (toBE <$> arbitrary)
-        , testCollection "ChunkedUArray(LE W16)" (Proxy :: Proxy (ChunkedUArray (LE Word16))) (toLE <$> arbitrary)
-        , testCollection "ChunkedUArray(LE W32)" (Proxy :: Proxy (ChunkedUArray (LE Word32))) (toLE <$> arbitrary)
-        , testCollection "ChunkedUArray(LE W64)" (Proxy :: Proxy (ChunkedUArray (LE Word64))) (toLE <$> arbitrary)
-        ]
-    , testGroup "Unboxed-Foreign"
+    [ testGroup "Unboxed-Foreign"
         [ testGroup "UArray(W8)"  (testUnboxedForeign (Proxy :: Proxy (ChunkedUArray Word8))  arbitrary)
         , testGroup "UArray(W16)" (testUnboxedForeign (Proxy :: Proxy (ChunkedUArray Word16)) arbitrary)
         , testGroup "UArray(W32)" (testUnboxedForeign (Proxy :: Proxy (ChunkedUArray Word32)) arbitrary)
@@ -60,27 +42,6 @@ testChunkedUArrayRefs = testGroup "ChunkedArray"
         , testGroup "UArray(LE W16)" (testUnboxedForeign (Proxy :: Proxy (ChunkedUArray (LE Word16))) (toLE <$> arbitrary))
         , testGroup "UArray(LE W32)" (testUnboxedForeign (Proxy :: Proxy (ChunkedUArray (LE Word32))) (toLE <$> arbitrary))
         , testGroup "UArray(LE W64)" (testUnboxedForeign (Proxy :: Proxy (ChunkedUArray (LE Word64))) (toLE <$> arbitrary))
-        ]
-    , testGroup "Boxed"
-        [ testCollection "Array(W8)"  (Proxy :: Proxy (Array Word8))  arbitrary
-        , testCollection "Array(W16)" (Proxy :: Proxy (Array Word16)) arbitrary
-        , testCollection "Array(W32)" (Proxy :: Proxy (Array Word32)) arbitrary
-        , testCollection "Array(W64)" (Proxy :: Proxy (Array Word64)) arbitrary
-        , testCollection "Array(I8)"  (Proxy :: Proxy (Array Int8))   arbitrary
-        , testCollection "Array(I16)" (Proxy :: Proxy (Array Int16))  arbitrary
-        , testCollection "Array(I32)" (Proxy :: Proxy (Array Int32))  arbitrary
-        , testCollection "Array(I64)" (Proxy :: Proxy (Array Int64))  arbitrary
-        , testCollection "Array(F32)" (Proxy :: Proxy (Array Float))  arbitrary
-        , testCollection "Array(F64)" (Proxy :: Proxy (Array Double)) arbitrary
-        , testCollection "Array(Int)" (Proxy :: Proxy (Array Int))  arbitrary
-        , testCollection "Array(Int,Int)" (Proxy :: Proxy (Array (Int,Int)))  arbitrary
-        , testCollection "Array(Integer)" (Proxy :: Proxy (Array Integer)) arbitrary
-        , testCollection "Array(BE W16)" (Proxy :: Proxy (Array (BE Word16))) (toBE <$> arbitrary)
-        , testCollection "Array(BE W32)" (Proxy :: Proxy (Array (BE Word32))) (toBE <$> arbitrary)
-        , testCollection "Array(BE W64)" (Proxy :: Proxy (Array (BE Word64))) (toBE <$> arbitrary)
-        , testCollection "Array(LE W16)" (Proxy :: Proxy (Array (LE Word16))) (toLE <$> arbitrary)
-        , testCollection "Array(LE W32)" (Proxy :: Proxy (Array (LE Word32))) (toLE <$> arbitrary)
-        , testCollection "Array(LE W64)" (Proxy :: Proxy (Array (LE Word64))) (toLE <$> arbitrary)
         ]
     ]
 
