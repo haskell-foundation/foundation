@@ -7,9 +7,11 @@ module Fake.Text
     , any
     , filter
     , reverse
+    , decimal
+    , double
     ) where
 
-import Prelude (undefined)
+import Prelude (undefined, Either(..))
 
 data Text = Text
 
@@ -20,3 +22,9 @@ take        = undefined
 filter _    = undefined
 reverse     = undefined
 any         = undefined
+
+decimal :: Text -> Either a (b, c)
+decimal = undefined
+
+double :: Text -> Either a (b, c)
+double = undefined

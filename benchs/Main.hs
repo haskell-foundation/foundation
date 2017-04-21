@@ -8,6 +8,7 @@ import GHC.ST
 
 import Foundation
 import Foundation.Collection
+import Foundation.String.Read
 import BenchUtil.Common
 import BenchUtil.RefData
 
@@ -15,7 +16,9 @@ import Sys
 
 #ifdef BENCH_ALL
 import qualified Data.ByteString as ByteString
+import qualified Data.ByteString.Char8 as ByteString (readInt, readInteger)
 import qualified Data.Text as Text
+import qualified Data.Text.Read as Text
 #else
 import qualified Fake.ByteString as ByteString
 import qualified Fake.Text as Text
@@ -31,6 +34,7 @@ benchsString = bgroup "String"
     , benchBuildable
     , benchReverse
     , benchFilter
+    , benchRead
     ]
   where
     diffTextString :: (String -> a)
@@ -46,6 +50,23 @@ benchsString = bgroup "String"
       where
         s = fromList dat
         t = Text.pack dat
+
+    diffBsTextString :: (String -> a)
+                   -> (Text.Text -> b)
+                   -> (ByteString.ByteString -> c)
+                   -> [Char]
+                   -> [Benchmark]
+    diffBsTextString foundationBench textBench bytestringBench dat =
+        [ bench "String" $ whnf foundationBench s
+#ifdef BENCH_ALL
+        , bench "Text"   $ whnf textBench t
+        , bench "ByteString" $ whnf bytestringBench b
+#endif
+        ]
+      where
+        s = fromList dat
+        t = Text.pack dat
+        b = ByteString.pack $ Prelude.map (fromIntegral . fromEnum) dat
 
     allDat :: [(String, [Char])]
     allDat = [ ("ascii", rdFoundationEn)
@@ -81,6 +102,35 @@ benchsString = bgroup "String"
     benchFilter = bgroup "Filter" $
         fmap (\(n, dat) -> bgroup n $ diffTextString (filter (> 'b')) (Text.filter (> 'b')) dat)
             allDat
+
+    benchRead = bgroup "Read" $
+        [ bgroup "Integer"
+            [ bgroup "10000" (diffTextString stringReadInteger textReadInteger (toList $ show 10000))
+            , bgroup "1234567891234567890" (diffTextString stringReadInteger textReadInteger (toList $ show 1234567891234567890))
+            ]
+        , bgroup "Int"
+            [ bgroup "12345" (diffBsTextString stringReadInt textReadInt bsReadInt (toList $ show 12345))
+            ]
+        , bgroup "Double"
+            [ bgroup "100.56e23" (diffTextString (maybe undefined id . readDouble) (either undefined fst . Text.double) (toList $ show 100.56e23))
+            , bgroup "-123.1247" (diffTextString (maybe undefined id . readDouble) (either undefined fst . Text.double) (toList $ show (-123.1247)))
+            ]
+        ]
+      where
+        bsReadInt :: ByteString.ByteString -> Int
+        bsReadInt = maybe undefined fst . ByteString.readInt
+        textReadInt :: Text.Text -> Int
+        textReadInt = either undefined fst . Text.decimal
+        stringReadInt :: String -> Int
+        stringReadInt = maybe undefined id . readIntegral
+
+        bsReadInteger :: ByteString.ByteString -> Integer
+        bsReadInteger = maybe undefined fst . ByteString.readInteger
+        textReadInteger :: Text.Text -> Integer
+        textReadInteger = either undefined fst . Text.decimal
+        stringReadInteger :: String -> Integer
+        stringReadInteger = maybe undefined id . readIntegral
+
 
     toString :: ([Char] -> String) -> [Char] -> Benchmarkable
     toString = whnf
@@ -134,6 +184,7 @@ benchsByteArray = bgroup "ByteArray"
 
     benchFilter = bgroup "Filter" $
         fmap (\(n, dat) -> bgroup n $ diffByteString (filter (> 100)) (ByteString.filter (> 100)) dat) allDat
+
 --------------------------------------------------------------------------
 
 benchsTypes = bgroup "types"

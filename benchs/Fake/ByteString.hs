@@ -7,9 +7,11 @@ module Fake.ByteString
     , break
     , reverse
     , filter
+    , readInt
+    , readInteger
     ) where
 
-import Prelude (undefined)
+import Prelude (undefined, Maybe(..))
 
 data ByteString = ByteString
 
@@ -20,3 +22,8 @@ take        = undefined
 break   _ _ = (undefined, undefined)
 reverse     = undefined
 filter _    = undefined
+
+readInt :: ByteString -> Maybe (a,b)
+readInt _    = undefined
+readInteger :: ByteString -> Maybe (a,b)
+readInteger _ = undefined

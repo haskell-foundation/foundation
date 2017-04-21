@@ -12,7 +12,7 @@ import           Foundation.Internal.Base
 import           Foundation.Internal.Natural
 import           Foundation.Primitive
 import           Foundation.Primitive.IntegralConv (wordToChar)
-import           Foundation.Primitive.Floating (integerToDouble, naturalToDouble, doubleExponant)
+import           Foundation.Primitive.Floating (integerToDouble, naturalToDouble)
 import           Foundation.Check.Gen
 import           Foundation.Random
 import           Foundation.Bits

@@ -112,7 +112,7 @@ runProp ctx s prop = iterProp 1
         loop :: Word -> [String] -> [String]
         loop _ []      = printChecks checks
         loop !i (a:as) = "parameter " <> fromList (show i) <> " : " <> a <> "\n" : loop (i+1) as
-    printChecks (PropertyBinaryOp True name _ _)  = []
+    printChecks (PropertyBinaryOp True _ _ _)     = []
     printChecks (PropertyBinaryOp False name a b) = [name <> " checked fail\n" <> "   left: " <> a <> "\n" <> "  right: " <> b]
     printChecks (PropertyNamed True _)            = []
     printChecks (PropertyNamed False name)        = ["Check " <> name <> " failed"]
