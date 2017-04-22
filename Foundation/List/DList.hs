@@ -46,7 +46,6 @@ instance Applicative DList where
 instance Monad DList where
     (>>=) m k = foldr (mappend . k) mempty m
     return = singleton
-    fail _ = mempty
 
 type instance Element (DList a) = a
 
