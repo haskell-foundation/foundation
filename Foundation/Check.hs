@@ -9,6 +9,7 @@ module Foundation.Check
     , oneof
     , elements
     , frequency
+    , between
     -- test
     , Test(..)
     , testName
@@ -20,6 +21,7 @@ module Foundation.Check
     , propertyCompare
     , propertyAnd
     , propertyFail
+    , forAll
     -- * As Program
     , defaultMain
     ) where

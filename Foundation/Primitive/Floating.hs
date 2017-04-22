@@ -2,6 +2,8 @@ module Foundation.Primitive.Floating
     ( integerToDouble
     , naturalToDouble
     , doubleExponant
+    , integerToFloat
+    , naturalToFloat
     ) where
 
 import           GHC.Types
@@ -19,3 +21,9 @@ naturalToDouble = integerToDouble . Prelude.toInteger
 
 doubleExponant :: Double -> Int -> Double
 doubleExponant = (Prelude.^^)
+
+integerToFloat :: Integer -> Float
+integerToFloat = Prelude.fromInteger
+
+naturalToFloat :: Natural -> Float
+naturalToFloat = integerToFloat . Prelude.toInteger

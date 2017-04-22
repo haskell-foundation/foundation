@@ -1,13 +1,20 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies #-}
 module Main where
 
+
 import Foundation
+import Foundation.Array
+import Foundation.Foreign
+import Foundation.List.DList
 import Foundation.Primitive
 import Foundation.Check
 import Foundation.String.Read
-import Foundation.Numerical
 import qualified Prelude
 import Data.Ratio
+
+import Test.Checks.Property.Collection
 
 testAdditive :: forall a . (Show a, Eq a, Additive a, Arbitrary a) => Proxy a -> Test
 testAdditive _ = Group "Additive"
@@ -18,11 +25,11 @@ testAdditive _ = Group "Additive"
     ]
 
 readFloatingExact' :: String -> Maybe (Bool, Natural, Word, Maybe Int)
-readFloatingExact' s = readFloatingExact s (\s x y z -> Just (s,x,y,z))
+readFloatingExact' str = readFloatingExact str (\s x y z -> Just (s,x,y,z))
 
 doubleEqualApprox :: Double -> Double -> PropertyCheck
 doubleEqualApprox d1 d2 = (propertyCompare pName1 (<) (negate lim) d) `propertyAnd` (propertyCompare pName2 (<) d lim)
-  where 
+  where
         d = d2 - d1
 
         pName1 = show (negate lim) <> " < " <> show d2 <> " - " <> show d1 <> " (== " <> show d <> " )"
@@ -80,4 +87,70 @@ main = defaultMain $ Group "foundation"
                 ]
             ]
         ]
+    , collectionProperties "DList a" (Proxy :: Proxy (DList Word8)) arbitrary
+    , Group "Array"
+      [ Group "Unboxed"
+        [ collectionProperties "UArray(W8)"  (Proxy :: Proxy (UArray Word8))  arbitrary
+        , collectionProperties "UArray(W16)" (Proxy :: Proxy (UArray Word16)) arbitrary
+        , collectionProperties "UArray(W32)" (Proxy :: Proxy (UArray Word32)) arbitrary
+        , collectionProperties "UArray(W64)" (Proxy :: Proxy (UArray Word64)) arbitrary
+        , collectionProperties "UArray(I8)"  (Proxy :: Proxy (UArray Int8))   arbitrary
+        , collectionProperties "UArray(I16)" (Proxy :: Proxy (UArray Int16))  arbitrary
+        , collectionProperties "UArray(I32)" (Proxy :: Proxy (UArray Int32))  arbitrary
+        , collectionProperties "UArray(I64)" (Proxy :: Proxy (UArray Int64))  arbitrary
+        , collectionProperties "UArray(F32)" (Proxy :: Proxy (UArray Float))  arbitrary
+        , collectionProperties "UArray(F64)" (Proxy :: Proxy (UArray Double)) arbitrary
+        , collectionProperties "UArray(CChar)"  (Proxy :: Proxy (UArray CChar))  (CChar <$> arbitrary)
+        , collectionProperties "UArray(CUChar)" (Proxy :: Proxy (UArray CUChar)) (CUChar <$> arbitrary)
+        , collectionProperties "UArray(BE W16)" (Proxy :: Proxy (UArray (BE Word16))) (toBE <$> arbitrary)
+        , collectionProperties "UArray(BE W32)" (Proxy :: Proxy (UArray (BE Word32))) (toBE <$> arbitrary)
+        , collectionProperties "UArray(BE W64)" (Proxy :: Proxy (UArray (BE Word64))) (toBE <$> arbitrary)
+        , collectionProperties "UArray(LE W16)" (Proxy :: Proxy (UArray (LE Word16))) (toLE <$> arbitrary)
+        , collectionProperties "UArray(LE W32)" (Proxy :: Proxy (UArray (LE Word32))) (toLE <$> arbitrary)
+        , collectionProperties "UArray(LE W64)" (Proxy :: Proxy (UArray (LE Word64))) (toLE <$> arbitrary)
+        ]
+      , Group "Boxed"
+        [ collectionProperties "Array(W8)"  (Proxy :: Proxy (Array Word8))  arbitrary
+        , collectionProperties "Array(W16)" (Proxy :: Proxy (Array Word16)) arbitrary
+        , collectionProperties "Array(W32)" (Proxy :: Proxy (Array Word32)) arbitrary
+        , collectionProperties "Array(W64)" (Proxy :: Proxy (Array Word64)) arbitrary
+        , collectionProperties "Array(I8)"  (Proxy :: Proxy (Array Int8))   arbitrary
+        , collectionProperties "Array(I16)" (Proxy :: Proxy (Array Int16))  arbitrary
+        , collectionProperties "Array(I32)" (Proxy :: Proxy (Array Int32))  arbitrary
+        , collectionProperties "Array(I64)" (Proxy :: Proxy (Array Int64))  arbitrary
+        , collectionProperties "Array(F32)" (Proxy :: Proxy (Array Float))  arbitrary
+        , collectionProperties "Array(F64)" (Proxy :: Proxy (Array Double)) arbitrary
+        , collectionProperties "Array(Int)" (Proxy :: Proxy (Array Int))  arbitrary
+        , collectionProperties "Array(Int,Int)" (Proxy :: Proxy (Array (Int,Int)))  arbitrary
+        , collectionProperties "Array(Integer)" (Proxy :: Proxy (Array Integer)) arbitrary
+        , collectionProperties "Array(CChar)"   (Proxy :: Proxy (Array CChar))  (CChar <$> arbitrary)
+        , collectionProperties "Array(CUChar)"  (Proxy :: Proxy (Array CUChar)) (CUChar <$> arbitrary)
+        , collectionProperties "Array(BE W16)"  (Proxy :: Proxy (Array (BE Word16))) (toBE <$> arbitrary)
+        , collectionProperties "Array(BE W32)"  (Proxy :: Proxy (Array (BE Word32))) (toBE <$> arbitrary)
+        , collectionProperties "Array(BE W64)"  (Proxy :: Proxy (Array (BE Word64))) (toBE <$> arbitrary)
+        , collectionProperties "Array(LE W16)"  (Proxy :: Proxy (Array (LE Word16))) (toLE <$> arbitrary)
+        , collectionProperties "Array(LE W32)"  (Proxy :: Proxy (Array (LE Word32))) (toLE <$> arbitrary)
+        , collectionProperties "Array(LE W64)"  (Proxy :: Proxy (Array (LE Word64))) (toLE <$> arbitrary)
+        ]
+      ]
+    , Group "ChunkedUArray"
+      [ Group "Unboxed"
+        [ collectionProperties "ChunkedUArray(W8)"  (Proxy :: Proxy (ChunkedUArray Word8))  arbitrary
+        , collectionProperties "ChunkedUArray(W16)" (Proxy :: Proxy (ChunkedUArray Word16)) arbitrary
+        , collectionProperties "ChunkedUArray(W32)" (Proxy :: Proxy (ChunkedUArray Word32)) arbitrary
+        , collectionProperties "ChunkedUArray(W64)" (Proxy :: Proxy (ChunkedUArray Word64)) arbitrary
+        , collectionProperties "ChunkedUArray(I8)"  (Proxy :: Proxy (ChunkedUArray Int8))   arbitrary
+        , collectionProperties "ChunkedUArray(I16)" (Proxy :: Proxy (ChunkedUArray Int16))  arbitrary
+        , collectionProperties "ChunkedUArray(I32)" (Proxy :: Proxy (ChunkedUArray Int32))  arbitrary
+        , collectionProperties "ChunkedUArray(I64)" (Proxy :: Proxy (ChunkedUArray Int64))  arbitrary
+        , collectionProperties "ChunkedUArray(F32)" (Proxy :: Proxy (ChunkedUArray Float))  arbitrary
+        , collectionProperties "ChunkedUArray(F64)" (Proxy :: Proxy (ChunkedUArray Double)) arbitrary
+        , collectionProperties "ChunkedUArray(BE W16)" (Proxy :: Proxy (ChunkedUArray (BE Word16))) (toBE <$> arbitrary)
+        , collectionProperties "ChunkedUArray(BE W32)" (Proxy :: Proxy (ChunkedUArray (BE Word32))) (toBE <$> arbitrary)
+        , collectionProperties "ChunkedUArray(BE W64)" (Proxy :: Proxy (ChunkedUArray (BE Word64))) (toBE <$> arbitrary)
+        , collectionProperties "ChunkedUArray(LE W16)" (Proxy :: Proxy (ChunkedUArray (LE Word16))) (toLE <$> arbitrary)
+        , collectionProperties "ChunkedUArray(LE W32)" (Proxy :: Proxy (ChunkedUArray (LE Word32))) (toLE <$> arbitrary)
+        , collectionProperties "ChunkedUArray(LE W64)" (Proxy :: Proxy (ChunkedUArray (LE Word64))) (toLE <$> arbitrary)
+        ]
+      ]
     ]

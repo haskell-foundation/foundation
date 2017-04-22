@@ -88,6 +88,7 @@ Library
                      Foundation.Foreign
                      Foundation.Collection
                      Foundation.Primitive
+                     Foundation.List.DList
                      Foundation.Monad
                      Foundation.Monad.Reader
                      Foundation.Monad.State
@@ -277,7 +278,7 @@ Test-Suite check-foundation
   type:              exitcode-stdio-1.0
   hs-source-dirs:    tests
   Main-is:           Checks.hs
-  Other-modules:
+  Other-modules:      Test.Checks.Property.Collection
   Default-Extensions: NoImplicitPrelude
                       RebindableSyntax
                       OverloadedStrings
