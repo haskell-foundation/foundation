@@ -21,14 +21,14 @@ import           Foreign.C.Types
 import           System.Posix.Types
 
 -- | Integral Literal support
--- 
+--
 -- e.g. 123 :: Integer
 --      123 :: Word8
 class Integral a where
     fromInteger :: Integer -> a
 
 -- | Fractional Literal support
--- 
+--
 -- e.g. 1.2  :: Double
 --      0.03 :: Float
 class Fractional a where
@@ -69,6 +69,8 @@ instance Integral CSize where
 instance Integral CInt where
     fromInteger a = Prelude.fromInteger a
 instance Integral COff where
+    fromInteger a = Prelude.fromInteger a
+instance Integral CUIntPtr where
     fromInteger a = Prelude.fromInteger a
 
 instance Integral Float where
