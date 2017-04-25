@@ -5,8 +5,9 @@
 * Improve precision of double read parser
 * Add Textual conduit combinator (fromBytes, toBytes, lines)
 * Add DList
-* Fix building on latest Win32
+* Fix building on latest Win32, RHEL 5.8
 * Add NormalForm
+* Export some functions in Internal module to manipulate unboxed mutable array
 
 ## 0.0.7
 
