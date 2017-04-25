@@ -18,11 +18,14 @@ module Foundation.Tuple
 
 import Foundation.Internal.Base
 import Foundation.Class.Bifunctor
+import Foundation.Primitive
 
 -- | Strict tuple (a,b)
 data Tuple2 a b = Tuple2 !a !b
     deriving (Show,Eq,Ord,Typeable,Data,Generic)
 
+instance (NormalForm a, NormalForm b) => NormalForm (Tuple2 a b) where
+    toNormalForm (Tuple2 a b) = toNormalForm a `seq` toNormalForm b
 instance Bifunctor Tuple2 where
   bimap f g (Tuple2 a b) = Tuple2 (f a) (g b)
 
@@ -30,9 +33,16 @@ instance Bifunctor Tuple2 where
 data Tuple3 a b c = Tuple3 !a !b !c
     deriving (Show,Eq,Ord,Typeable,Data,Generic)
 
+instance (NormalForm a, NormalForm b, NormalForm c) => NormalForm (Tuple3 a b c) where
+    toNormalForm (Tuple3 a b c) = toNormalForm a `seq` toNormalForm b `seq` toNormalForm c
+
 -- | Strict tuple (a,b,c,d)
 data Tuple4 a b c d = Tuple4 !a !b !c !d
     deriving (Show,Eq,Ord,Typeable,Data,Generic)
+
+instance (NormalForm a, NormalForm b, NormalForm c, NormalForm d)
+      => NormalForm (Tuple4 a b c d) where
+    toNormalForm (Tuple4 a b c d) = toNormalForm a `seq` toNormalForm b `seq` toNormalForm c `seq` toNormalForm d
 
 -- | Class of product types that have a first element
 class Fstable a where

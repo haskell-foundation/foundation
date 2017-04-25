@@ -104,6 +104,7 @@ import           Foundation.Internal.MonadTrans
 import qualified Foundation.Primitive.Base16 as Base16
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
+import           Foundation.Primitive.NormalForm
 import           Foundation.Primitive.IntegralConv
 import           Foundation.Primitive.FinalPtr
 import           Foundation.Primitive.Utils
@@ -136,6 +137,9 @@ instance Data ty => Data (UArray ty) where
 arrayType :: DataType
 arrayType = mkNoRepType "Foundation.UArray"
 
+instance NormalForm (UArray ty) where
+    toNormalForm (UVecBA _ _ _ !_) = ()
+    toNormalForm (UVecAddr _ _ _) = ()
 instance (PrimType ty, Show ty) => Show (UArray ty) where
     show v = show (toList v)
 instance (PrimType ty, Eq ty) => Eq (UArray ty) where

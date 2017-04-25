@@ -20,7 +20,6 @@ module Foundation.Array.Boxed
     , mutableLength
     , mutableLengthSize
     , copy
-    , copyAt
     , unsafeCopyAtRO
     , thaw
     , new
@@ -72,6 +71,7 @@ import           Foundation.Internal.Proxy
 import           Foundation.Internal.MonadTrans
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Types
+import           Foundation.Primitive.NormalForm
 import           Foundation.Primitive.IntegralConv
 import           Foundation.Primitive.Monad
 import           Foundation.Array.Common
@@ -92,6 +92,14 @@ instance Data ty => Data (Array ty) where
 
 arrayType :: DataType
 arrayType = mkNoRepType "Foundation.Array"
+
+instance NormalForm a => NormalForm (Array a) where
+    toNormalForm arr = loop 0
+      where
+        !sz = lengthSize arr
+        loop !i
+            | i .==# sz = ()
+            | otherwise = unsafeIndex arr i `seq` loop (i+1)
 
 -- | Mutable Array of a
 data MArray a st = MArray {-# UNPACK #-} !(Offset a)

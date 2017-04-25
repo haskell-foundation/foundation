@@ -161,6 +161,7 @@ Library
                      Foundation.Primitive.Types
                      Foundation.Primitive.Types.OffsetSize
                      Foundation.Primitive.Monad
+                     Foundation.Primitive.NormalForm
                      Foundation.Primitive.Utils
                      Foundation.Primitive.IntegralConv
                      Foundation.Primitive.Floating

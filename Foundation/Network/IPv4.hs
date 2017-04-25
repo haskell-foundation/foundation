@@ -32,9 +32,11 @@ import Foundation.Collection (Sequential, Element, elem)
 
 -- | IPv4 data type
 newtype IPv4 = IPv4 Word32
-  deriving (Eq, Ord, Typeable, Hashable)
+    deriving (Eq, Ord, Typeable, Hashable)
 instance Show IPv4 where
     show = toLString
+instance NormalForm IPv4 where
+    toNormalForm !_ = ()
 instance IsString IPv4 where
     fromString = fromLString
 instance Storable IPv4 where
