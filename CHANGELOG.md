@@ -6,6 +6,7 @@
 * Add Textual conduit combinator (fromBytes, toBytes, lines)
 * Add DList
 * Fix building on latest Win32
+* Add NormalForm
 
 ## 0.0.7
 
