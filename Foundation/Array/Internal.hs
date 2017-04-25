@@ -17,6 +17,11 @@ module Foundation.Array.Internal
     , withPtr
     , recast
     , toHexadecimal
+    -- * Mutable facilities
+    , new
+    , newPinned
+    , withMutablePtr
     ) where
 
 import           Foundation.Array.Unboxed
+import           Foundation.Array.Unboxed.Mutable
