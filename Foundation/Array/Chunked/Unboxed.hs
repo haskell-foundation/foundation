@@ -30,6 +30,7 @@ import           Foundation.Internal.Base
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Numerical
 import           Foundation.Primitive.Types
+import           Foundation.Primitive
 import           GHC.ST
 
 
@@ -38,6 +39,8 @@ newtype ChunkedUArray ty = ChunkedUArray (Array (UArray ty))
 
 instance PrimType ty => Eq (ChunkedUArray ty) where
   (==) = equal
+instance NormalForm (ChunkedUArray ty) where
+    toNormalForm (ChunkedUArray spine) = toNormalForm spine
 
 instance Monoid (ChunkedUArray a) where
     mempty  = empty
