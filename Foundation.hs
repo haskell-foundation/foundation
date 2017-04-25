@@ -39,6 +39,9 @@ module Foundation
     , Prelude.asTypeOf
     , Prelude.undefined
     , Prelude.seq
+    , Foundation.Primitive.NormalForm
+    , Foundation.Primitive.deepseq
+    , Foundation.Primitive.force
       -- ** Type classes
     , Prelude.Show
     , show
@@ -169,6 +172,7 @@ import           Foundation.Tuple
 
 import qualified Foundation.Class.Bifunctor
 import           Foundation.Primitive.Types.OffsetSize (Size(..), Offset(..))
+import qualified Foundation.Primitive
 import           Foundation.Internal.NumLiteral
 import           Foundation.Internal.Natural
 
