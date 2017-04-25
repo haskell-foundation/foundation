@@ -59,7 +59,7 @@ import Foundation
 Advanced settings
 ----------------------
 
-Please check out the chapter [Advanced Usage Options](docs/Advanced.md) in the
+Please check out the chapter [Advanced Usage Options](docs/advanced-runtime.md) in the
 documentation.
 
 
