@@ -11,6 +11,7 @@
 
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE CPP #-}
 
 module Foundation.Class.Storable
     ( Storable(..)
@@ -27,24 +28,22 @@ module Foundation.Class.Storable
     , pokeArrayEndedBy
     ) where
 
+#include "MachDeps.h"
+
 import GHC.Types (Double, Float)
 
 import Foreign.Ptr (castPtr)
 import qualified Foreign.Ptr
-import qualified Foreign.Storable (peek, poke, sizeOf, alignment)
+import qualified Foreign.Storable (peek, poke)
 import           Foreign.C.Types (CChar, CUChar)
 
 import Foundation.Internal.Base
 import Foundation.Primitive.Types.OffsetSize
-import Foundation.Internal.Proxy
 import Foundation.Collection
 import Foundation.Collection.Buildable (builderLift)
 import Foundation.Primitive.Types
 import Foundation.Primitive.Endianness
 import Foundation.Numerical
-
-toProxy :: proxy ty -> Proxy ty
-toProxy _ = Proxy
 
 -- | Storable type of self determined size.
 --
@@ -170,65 +169,62 @@ instance Storable (Ptr a) where
     poke = Foreign.Storable.poke
 
 instance StorableFixed CChar where
-    size      = primSizeInBytes . toProxy
-    alignment = primSizeInBytes . toProxy
+    size      = const SIZEOF_CHAR
+    alignment = const ALIGNMENT_CHAR
 instance StorableFixed CUChar where
-    size      = primSizeInBytes . toProxy
-    alignment = primSizeInBytes . toProxy
+    size      = const SIZEOF_WORD8
+    alignment = const ALIGNMENT_WORD8
 instance StorableFixed Char where
-    size      = primSizeInBytes . toProxy
-    alignment = primSizeInBytes . toProxy
+    size      = const SIZEOF_HSCHAR
+    alignment = const ALIGNMENT_HSCHAR
 instance StorableFixed Double where
-    size      = primSizeInBytes . toProxy
-    alignment = primSizeInBytes . toProxy
+    size      = const SIZEOF_HSDOUBLE
+    alignment = const ALIGNMENT_HSDOUBLE
 instance StorableFixed Float where
-    size      = primSizeInBytes . toProxy
-    alignment = primSizeInBytes . toProxy
+    size      = const SIZEOF_HSFLOAT
+    alignment = const ALIGNMENT_HSFLOAT
 instance StorableFixed Int8 where
-    size      = primSizeInBytes . toProxy
-    alignment = primSizeInBytes . toProxy
+    size      = const SIZEOF_INT8
+    alignment = const ALIGNMENT_INT8
 instance StorableFixed Int16 where
-    size      = primSizeInBytes . toProxy
-    alignment = primSizeInBytes . toProxy
+    size      = const SIZEOF_INT16
+    alignment = const ALIGNMENT_INT16
 instance StorableFixed Int32 where
-    size      = primSizeInBytes . toProxy
-    alignment = primSizeInBytes . toProxy
+    size      = const SIZEOF_INT32
+    alignment = const ALIGNMENT_INT32
 instance StorableFixed Int64 where
-    size      = primSizeInBytes . toProxy
-    alignment = primSizeInBytes . toProxy
+    size      = const SIZEOF_INT64
+    alignment = const ALIGNMENT_INT64
 instance StorableFixed Word8 where
-    size      = primSizeInBytes . toProxy
-    alignment = primSizeInBytes . toProxy
+    size      = const SIZEOF_WORD8
+    alignment = const ALIGNMENT_WORD8
 instance StorableFixed Word16 where
-    size      = primSizeInBytes . toProxy
-    alignment = primSizeInBytes . toProxy
+    size      = const SIZEOF_WORD16
+    alignment = const ALIGNMENT_WORD16
 instance StorableFixed (BE Word16) where
-    size      = primSizeInBytes . toProxy
-    alignment = primSizeInBytes . toProxy
+    size      = const SIZEOF_WORD16
+    alignment = const ALIGNMENT_WORD16
 instance StorableFixed (LE Word16) where
-    size      = primSizeInBytes . toProxy
-    alignment = primSizeInBytes . toProxy
+    size      = const SIZEOF_WORD16
+    alignment = const ALIGNMENT_WORD16
 instance StorableFixed Word32 where
-    size      = primSizeInBytes . toProxy
-    alignment = primSizeInBytes . toProxy
+    size      = const SIZEOF_WORD32
+    alignment = const ALIGNMENT_WORD32
 instance StorableFixed (BE Word32) where
-    size      = primSizeInBytes . toProxy
-    alignment = primSizeInBytes . toProxy
+    size      = const SIZEOF_WORD32
+    alignment = const ALIGNMENT_WORD32
 instance StorableFixed (LE Word32) where
-    size      = primSizeInBytes . toProxy
-    alignment = primSizeInBytes . toProxy
+    size      = const SIZEOF_WORD32
+    alignment = const ALIGNMENT_WORD32
 instance StorableFixed Word64 where
-    size      = primSizeInBytes . toProxy
-    alignment = primSizeInBytes . toProxy
+    size      = const SIZEOF_WORD64
+    alignment = const ALIGNMENT_WORD64
 instance StorableFixed (BE Word64) where
-    size      = primSizeInBytes . toProxy
-    alignment = primSizeInBytes . toProxy
+    size      = const SIZEOF_WORD64
+    alignment = const ALIGNMENT_WORD64
 instance StorableFixed (LE Word64) where
-    size      = primSizeInBytes . toProxy
-    alignment = primSizeInBytes . toProxy
+    size      = const SIZEOF_WORD64
+    alignment = const ALIGNMENT_WORD64
 instance StorableFixed (Ptr a) where
-    size      = Size . Foreign.Storable.sizeOf    . toUndefined
-    alignment = Size . Foreign.Storable.alignment . toUndefined
-
-toUndefined :: proxy a -> a
-toUndefined _ = undefined
+    size      = const SIZEOF_HSPTR
+    alignment = const ALIGNMENT_HSPTR
