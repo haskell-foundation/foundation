@@ -18,6 +18,8 @@ data UUID = UUID {-# UNPACK #-} !Word64 {-# UNPACK #-} !Word64
     deriving (Eq,Ord,Typeable)
 instance Show UUID where
     show = toLString
+instance NormalForm UUID where
+    toNormalForm !_ = ()
 instance Hashable UUID where
     hashMix (UUID a b) = hashMix a . hashMix b
 instance Storable UUID where

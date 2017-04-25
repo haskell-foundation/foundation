@@ -43,7 +43,9 @@ import Foundation.Bits
 
 -- | IPv6 data type
 data IPv6 = IPv6 {-# UNPACK #-} !Word64 {-# UNPACK #-} !Word64
-  deriving (Eq, Ord, Typeable)
+    deriving (Eq, Ord, Typeable)
+instance NormalForm IPv6 where
+    toNormalForm !_ = ()
 instance Hashable IPv6 where
     hashMix (IPv6 w1 w2) = hashMix w1 . hashMix w2
 instance Show IPv6 where

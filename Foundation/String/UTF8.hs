@@ -91,6 +91,7 @@ import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Numerical
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
+import           Foundation.Primitive.NormalForm
 import           Foundation.Primitive.IntegralConv
 import           Foundation.Primitive.Floating
 import           Foundation.Boot.Builder
@@ -128,6 +129,9 @@ instance Data String where
     toConstr s   = mkConstr stringType (show s) [] Prefix
     dataTypeOf _ = stringType
     gunfold _ _  = error "gunfold"
+
+instance NormalForm String where
+    toNormalForm (String ba) = toNormalForm ba
 
 stringType :: DataType
 stringType = mkNoRepType "Foundation.String"

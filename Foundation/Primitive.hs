@@ -23,9 +23,15 @@ module Foundation.Primitive
     , IntegralUpsize(..)
     , IntegralDownsize(..)
     , IntegralCast(..)
+
+    -- * Evaluation
+    , NormalForm(..)
+    , force
+    , deepseq
     ) where
 
 import Foundation.Primitive.Types
 import Foundation.Primitive.Monad
 import Foundation.Primitive.Endianness
 import Foundation.Primitive.IntegralConv
+import Foundation.Primitive.NormalForm

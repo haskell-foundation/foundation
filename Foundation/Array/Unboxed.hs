@@ -104,6 +104,7 @@ import           Foundation.Internal.MonadTrans
 import qualified Foundation.Primitive.Base16 as Base16
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
+import           Foundation.Primitive.NormalForm
 import           Foundation.Primitive.IntegralConv
 import           Foundation.Primitive.FinalPtr
 import           Foundation.Primitive.Utils
@@ -136,6 +137,9 @@ instance Data ty => Data (UArray ty) where
 arrayType :: DataType
 arrayType = mkNoRepType "Foundation.UArray"
 
+instance NormalForm (UArray ty) where
+    toNormalForm (UVecBA _ _ _ !_) = ()
+    toNormalForm (UVecAddr _ _ _) = ()
 instance (PrimType ty, Show ty) => Show (UArray ty) where
     show v = show (toList v)
 instance (PrimType ty, Eq ty) => Eq (UArray ty) where
@@ -359,9 +363,16 @@ createFromIO size filler
 -----------------------------------------------------------------------
 -- higher level collection implementation
 -----------------------------------------------------------------------
+data BA0 = BA0 !ByteArray# -- zero ba
 
-empty :: PrimType ty => UArray ty
-empty = UVecAddr (Offset 0) (Size 0) (FinalPtr $ error "empty de-referenced")
+empty_ :: BA0
+empty_ = runST $ primitive $ \s1 ->
+    case newByteArray# 0# s1           of { (# s2, mba #) ->
+    case unsafeFreezeByteArray# mba s2 of { (# s3, ba  #) ->
+        (# s3, BA0 ba #) }}
+
+empty :: UArray ty
+empty = UVecBA 0 0 unpinned ba where !(BA0 ba) = empty_
 
 singleton :: PrimType ty => ty -> UArray ty
 singleton ty = create 1 (const ty)
