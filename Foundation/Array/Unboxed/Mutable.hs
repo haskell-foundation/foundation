@@ -137,8 +137,8 @@ newUnpinned n = newFake n Proxy
                 !(Size (I# bytes)) = sizeOfE (primSizeInBytes ty) sz
         {-# INLINE newFake #-}
 
-empty :: (PrimMonad prim, PrimType ty) => prim (MUArray ty (PrimState prim))
-empty = newUnpinned 0
+empty :: PrimMonad prim => prim (MUArray ty (PrimState prim))
+empty = primitive $ \s1 -> case newByteArray# 0# s1 of { (# s2, mba #) -> (# s2, MUVecMA 0 0 unpinned mba #) }
 
 -- | Create a new mutable array of size @n.
 --
