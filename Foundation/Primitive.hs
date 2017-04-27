@@ -31,6 +31,10 @@ module Foundation.Primitive
 
     -- * These
     , These(..)
+
+    -- * Block of memory
+    , Block
+    , MutableBlock
     ) where
 
 import Foundation.Primitive.Types
@@ -39,3 +43,4 @@ import Foundation.Primitive.Endianness
 import Foundation.Primitive.IntegralConv
 import Foundation.Primitive.NormalForm
 import Foundation.Primitive.These
+import Foundation.Primitive.Block
