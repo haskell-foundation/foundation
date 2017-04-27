@@ -21,7 +21,7 @@ import           Data.Typeable
 import           Control.Arrow ((***))
 import           Foundation.Array.Boxed (Array)
 import qualified Foundation.Array.Boxed as A
-import           Foundation.Array.Common
+import           Foundation.Primitive.Exception
 import           Foundation.Array.Unboxed (UArray)
 import qualified Foundation.Array.Unboxed as U
 import           Foundation.Class.Bifunctor

@@ -17,7 +17,7 @@ import           Foundation.Collection.Element
 import qualified Data.List
 import qualified Foundation.Array.Unboxed as UV
 import qualified Foundation.Array.Boxed as BA
-import qualified Foundation.Array.Common as A
+import qualified Foundation.Primitive.Exception as A
 import qualified Foundation.String.UTF8 as S
 
 -- | Collection of elements that can indexed by int

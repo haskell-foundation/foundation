@@ -32,7 +32,7 @@ module Foundation.Array.Bitmap
 import           Foundation.Array.Unboxed (UArray)
 import qualified Foundation.Array.Unboxed as A
 import           Foundation.Array.Unboxed.Mutable (MUArray)
-import           Foundation.Array.Common
+import           Foundation.Primitive.Exception
 import           Foundation.Internal.Base
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad

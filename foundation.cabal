@@ -158,6 +158,7 @@ Library
                      Foundation.IO.Terminal
                      Foundation.Primitive.Base16
                      Foundation.Primitive.Endianness
+                     Foundation.Primitive.Exception
                      Foundation.Primitive.Types
                      Foundation.Primitive.Types.OffsetSize
                      Foundation.Primitive.Monad
@@ -173,7 +174,6 @@ Library
                      Foundation.Monad.Identity
                      Foundation.Monad.Base
                      Foundation.Array.Chunked.Unboxed
-                     Foundation.Array.Common
                      Foundation.Array.Unboxed
                      Foundation.Array.Unboxed.Mutable
                      Foundation.Array.Unboxed.ByteArray

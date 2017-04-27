@@ -74,7 +74,7 @@ import           Foundation.Primitive.Types
 import           Foundation.Primitive.NormalForm
 import           Foundation.Primitive.IntegralConv
 import           Foundation.Primitive.Monad
-import           Foundation.Array.Common
+import           Foundation.Primitive.Exception
 import           Foundation.Boot.Builder
 import qualified Foundation.Boot.List as List
 import qualified Prelude

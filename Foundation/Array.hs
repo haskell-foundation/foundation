@@ -24,7 +24,7 @@ module Foundation.Array
     , OutOfBound
     ) where
 
-import           Foundation.Array.Common
+import           Foundation.Primitive.Exception
 import           Foundation.Array.Boxed
 import           Foundation.Array.Unboxed
 import           Foundation.Array.Unboxed.Mutable

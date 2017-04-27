@@ -108,7 +108,7 @@ import           Foundation.Primitive.NormalForm
 import           Foundation.Primitive.IntegralConv
 import           Foundation.Primitive.FinalPtr
 import           Foundation.Primitive.Utils
-import           Foundation.Array.Common
+import           Foundation.Primitive.Exception
 import           Foundation.Array.Unboxed.Mutable hiding (sub)
 import           Foundation.Numerical
 import           Foundation.Boot.Builder

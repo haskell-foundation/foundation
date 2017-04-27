@@ -1,5 +1,5 @@
 -- |
--- Module      : Foundation.Array.Common
+-- Module      : Foundation.Primitive.Exception
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
@@ -8,7 +8,7 @@
 -- Common part for vectors
 --
 {-# LANGUAGE DeriveDataTypeable #-}
-module Foundation.Array.Common
+module Foundation.Primitive.Exception
     ( OutOfBound(..)
     , OutOfBoundOperation(..)
     , isOutOfBound
