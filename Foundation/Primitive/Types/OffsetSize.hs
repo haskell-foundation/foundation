@@ -18,6 +18,8 @@ module Foundation.Primitive.Types.OffsetSize
     , offsetCast
     , sizeCast
     , sizeLastOffset
+    , sizeAsOffset
+    , offsetAsSize
     , (+.)
     , (.==#)
     , Size(..)
@@ -105,6 +107,15 @@ sizeLastOffset :: Size a -> Offset a
 sizeLastOffset (Size s)
     | s > 0     = Offset (pred s)
     | otherwise = error "last offset on size 0"
+
+sizeAsOffset :: Size a -> Offset a
+sizeAsOffset (Size a) = Offset a
+{-# INLINE sizeAsOffset #-}
+
+offsetAsSize :: Offset a -> Size a
+offsetAsSize (Offset a) = Size a
+{-# INLINE offsetAsSize #-}
+
 
 -- | Size of a data structure in bytes.
 type Size8 = Size Word8
