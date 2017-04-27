@@ -1,3 +1,7 @@
+-- |
+-- Module      : Foundation.Primitive.Block
+-- License     : BSD-style
+-- Maintainer  : Haskell Foundation
 --
 -- A block of memory that contains elements of a type,
 -- very similar to an unboxed array but with the key difference:
