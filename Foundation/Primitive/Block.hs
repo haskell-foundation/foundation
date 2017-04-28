@@ -50,6 +50,8 @@ module Foundation.Primitive.Block
     , splitAt
     , break
     , span
+    -- * Foreign interfaces
+    , unsafeCopyToPtr
     ) where
 
 import           GHC.Prim
@@ -101,6 +103,14 @@ lengthBytes (Block ba) = Size (I# (sizeofByteArray# ba))
 unsafeIndex :: forall ty . PrimType ty => Block ty -> Offset ty -> ty
 unsafeIndex (Block ba) n = primBaIndex ba n
 {-# INLINE unsafeIndex #-}
+
+-- | Copy all the block content to the memory starting at the destination address
+unsafeCopyToPtr :: forall ty prim . PrimMonad prim
+                => Block ty -- ^ the source block to copy
+                -> Ptr ty   -- ^ The destination address where the copy is going to start
+                -> prim ()
+unsafeCopyToPtr (Block blk) (Ptr p) = primitive $ \s1 ->
+    (# copyByteArrayToAddr# blk 0# p (sizeofByteArray# blk) s1, () #)
 
 -- | Create a new array of size @n by settings each cells through the
 -- function @f.
