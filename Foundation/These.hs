@@ -31,3 +31,6 @@ instance Bifunctor These where
     bimap fa _  (This a)    = This  (fa a)
     bimap _  fb (That b)    = That  (fb b)
     bimap fa fb (These a b) = These (fa a) (fb b)
+
+instance Functor (These a) where
+    fmap = second
