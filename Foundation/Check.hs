@@ -27,7 +27,7 @@ module Foundation.Check
     , defaultMain
     ) where
 
-import qualified Prelude (fromIntegral)
+import qualified Prelude (fromIntegral, read)
 import           Foundation.Internal.Base
 import           Foundation.Class.Bifunctor (bimap)
 import           Foundation.Collection
@@ -43,6 +43,7 @@ import           Foundation.Monad.State
 import           Foundation.List.DList
 import           Control.Exception (evaluate, SomeException)
 import           System.Exit
+import           System.Environment (getArgs)
 
 -- different type of tests
 data Test where
@@ -85,18 +86,35 @@ nbTests :: TestResult -> Word64
 nbTests (PropertyResult _ t _) = t
 nbTests (GroupResult _ _ l) = foldl' (+) 0 $ fmap nbTests l
 
+parseArgs :: [[Char]] -> Config -> Config
+parseArgs [] cfg = cfg
+parseArgs ("--seed":[])     _  = error "option `--seed' is missing a parameter"
+parseArgs ("--seed":x:xs)  cfg = parseArgs xs $ cfg { getSeed = Prelude.read x }
+parseArgs ("--tests":[])   _   = error "option `--tests' is missing a parameter"
+parseArgs ("--tests":x:xs) cfg = parseArgs xs $ cfg { numTests = Prelude.read x }
+parseArgs ("--quiet":xs)   cfg = parseArgs xs $ cfg { displayOptions = DisplayTerminalErrorOnly }
+parseArgs ("--verbose":xs) cfg = parseArgs xs $ cfg { displayOptions = DisplayTerminalVerbose }
+parseArgs ("--help":_)     _   = error $ mconcat
+    [ "--seed <seed>: the seed to use to generate arbitrary value.\n"
+    , "--tests <tests>: the number of tests to perform for every property tests.\n"
+    , "--quiet: print only the errors to the standard output\n"
+    , "--verbose: print every property tests to the stand output.\n"
+    ]
+parseArgs (x:_) _ = error $ "unknown parameter: " <> show x
+
 -- | Run tests
 defaultMain :: Test -> IO ()
 defaultMain t = do
-    -- parse arguments
-    --let arguments = [ "seed", "j" ]
-
     -- generate a new seed
     seed <- getRandomPrimType
+    -- parse arguments
+    cfg <- flip parseArgs (defaultConfig seed) <$> getArgs
 
-    (_, cfg) <- runStateT (runCheck $ test t) $ defaultConfig seed
-    let oks = testPassed cfg
-        kos = testFailed cfg
+    putStrLn $ "\nSeed: " <> fromList (show $ getSeed cfg) <> "\n"
+
+    (_, cfg') <- runStateT (runCheck $ test t) cfg
+    let oks = testPassed cfg'
+        kos = testFailed cfg'
         tot = oks + kos
     if kos > 0
         then do
@@ -213,6 +231,7 @@ displayPropertySucceed name nb = do
 
 displayPropertyFailed :: String -> Word64 -> String -> Check ()
 displayPropertyFailed name nb w = do
+    seed <- getSeed <$> get
     i <- indent <$> get
     liftIO $ do
         putStrLn $ mconcat
@@ -222,6 +241,7 @@ displayPropertyFailed name nb w = do
           , fromList $ show nb
           , if nb == 1 then " test" else " tests:"
           ]
+        putStrLn $ replicate i ' ' <> "   use param: --seed " <> fromList (show seed)
         putStrLn w
 
 pushGroup :: String -> [Test] -> Check TestResult
