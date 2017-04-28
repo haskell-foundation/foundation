@@ -102,6 +102,7 @@ Library
                      Foundation.UUID
                      Foundation.System.Entropy
                      Foundation.System.Bindings
+                     Foundation.These
   Other-modules:     Foundation.Boot.Builder
                      Foundation.Boot.List
                      Foundation.String.Internal
