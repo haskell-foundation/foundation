@@ -513,13 +513,13 @@ copyToPtr :: forall ty prim . (PrimType ty, PrimMonad prim)
 copyToPtr (UVecBA start sz _ ba) (Ptr p) = primitive $ \s1 ->
     (# copyByteArrayToAddr# ba offset p szBytes s1, () #)
   where
-    !(Offset (I# offset)) = offsetOfE (primSizeInBytes (Proxy :: Proxy ty)) start
+    !(Offset (I# offset)) = primOffsetOfE start
     !(Size (I# szBytes)) = sizeInBytes sz
 copyToPtr (UVecAddr start sz fptr) dst =
     unsafePrimFromIO $ withFinalPtr fptr $ \ptr -> copyBytes dst (ptr `plusPtr` os) szBytes
   where
-    !(Offset os)   = offsetOfE (primSizeInBytes (Proxy :: Proxy ty)) start
-    (Size szBytes) = sizeInBytes sz
+    !(Offset os)    = primOffsetOfE start
+    !(Size szBytes) = sizeInBytes sz
 
 withPtr :: (PrimMonad prim, PrimType ty)
         => UArray ty
