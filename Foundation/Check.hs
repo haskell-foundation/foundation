@@ -59,6 +59,11 @@ testName (Unit s _)     = s
 testName (Property s _) = s
 testName (Group s _)    = s
 
+groupHasSubGroup :: [Test] -> Bool
+groupHasSubGroup [] = False
+groupHasSubGroup (Group{}:_) = True
+groupHasSubGroup (_:xs) = groupHasSubGroup xs
+
 data PropertyResult =
       PropertySuccess
     | PropertyFailed  String
@@ -69,12 +74,16 @@ data TestResult =
     | GroupResult    String HasFailures [TestResult]
     deriving (Show)
 
-type HasFailures = Word
+type HasFailures = Word64
 
 nbFail :: TestResult -> HasFailures
 nbFail (PropertyResult _ _ (PropertyFailed _)) = 1
 nbFail (PropertyResult _ _ PropertySuccess)    = 0
 nbFail (GroupResult    _ t _)                  = t
+
+nbTests :: TestResult -> Word64
+nbTests (PropertyResult _ t _) = t
+nbTests (GroupResult _ _ l) = foldl' (+) 0 $ fmap nbTests l
 
 -- | Run tests
 defaultMain :: Test -> IO ()
@@ -126,21 +135,25 @@ data Config = Config
         -- ^ the number of tests to perform on every property.
         --
         -- default: 100
-    , displayOptions :: ![DisplayOption]
+    , displayOptions :: !DisplayOption
     }
 
 data DisplayOption
     = DisplayTerminalErrorOnly
+    | DisplayGroupOnly
     | DisplayTerminalVerbose
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Enum, Bounded, Show)
 
 onDisplayOption :: DisplayOption -> Check () -> Check ()
 onDisplayOption opt chk = do
-    on <- elem opt . displayOptions <$> get
+    on <- (<=) opt . displayOptions <$> get
     if on then chk else return ()
 
 whenErrorOnly :: Check () -> Check ()
 whenErrorOnly = onDisplayOption DisplayTerminalErrorOnly
+
+whenGroupOnly :: Check () -> Check ()
+whenGroupOnly = onDisplayOption DisplayGroupOnly
 
 whenVerbose :: Check () -> Check ()
 whenVerbose = onDisplayOption DisplayTerminalVerbose
@@ -163,7 +176,7 @@ defaultConfig s = Config
     , getSeed      = s
     , getGenParams = params
     , numTests     = 100
-    , displayOptions = [DisplayTerminalErrorOnly]
+    , displayOptions = DisplayGroupOnly
     }
   where
     params = GenParams
@@ -176,36 +189,57 @@ test :: Test -> Check TestResult
 test (Group s l) = pushGroup s l
 test (Unit _ _) = undefined
 test (Property name prop) = do
-    whenVerbose $ displayCurrentProperty name
-    r'@(PropertyResult _ _ r) <- testProperty name (property prop)
-    whenErrorOnly $ case r of
-        PropertySuccess  -> return ()
-        PropertyFailed w -> displayPropertyFailed name w
+    r'@(PropertyResult _ nb r) <- testProperty name (property prop)
+    case r of
+        PropertySuccess  -> whenVerbose $ displayPropertySucceed name nb
+        PropertyFailed w -> whenErrorOnly $ displayPropertyFailed name nb w
     return r'
 
-displayCurrentProperty :: String -> Check ()
-displayCurrentProperty name = do
-    path <- toList . testPath <$> get
-    liftIO $ putStrLn $ intercalate "::" $ path <> [name]
+displayCurrent :: String -> Check ()
+displayCurrent name = do
+    i <- indent <$> get
+    liftIO $ putStrLn $ replicate i ' ' <> name
 
-displayPropertyFailed :: String -> String -> Check ()
-displayPropertyFailed name w = do
-    path <- toList . testPath <$> get
+displayPropertySucceed :: String -> Word64 -> Check ()
+displayPropertySucceed name nb = do
+    i <- indent <$> get
+    liftIO $ putStrLn $ mconcat
+        [ replicate i ' '
+        , " ✓ ", name
+        , " ("
+        , fromList $ show nb
+        , if nb == 1 then " test)" else " tests)"
+        ]
+
+displayPropertyFailed :: String -> Word64 -> String -> Check ()
+displayPropertyFailed name nb w = do
+    i <- indent <$> get
     liftIO $ do
-        putStrLn $ (intercalate "::" $ path <> [name]) <> " ERROR"
+        putStrLn $ mconcat
+          [ replicate i ' '
+          , " ✗ ", name
+          , " failed after "
+          , fromList $ show nb
+          , if nb == 1 then " test" else " tests:"
+          ]
         putStrLn w
 
 pushGroup :: String -> [Test] -> Check TestResult
 pushGroup name list = do
-    withState $ \s -> ((), s { testPath = push (testPath s) name, indent = indent s + 1 })
+    whenGroupOnly $ if groupHasSubGroup list then displayCurrent name else return ()
+    withState $ \s -> ((), s { testPath = push (testPath s) name, indent = indent s + 2 })
     results <- mapM test list
-    withState $ \s -> ((), s { testPath = pop (testPath s), indent = indent s - 1 })
-    return $ GroupResult name (foldl' (+) 0 $ fmap nbFail results) results
+    withState $ \s -> ((), s { testPath = pop (testPath s), indent = indent s - 2 })
+    let totFail = foldl' (+) 0 $ fmap nbFail results
+        tot = foldl'(+) 0 $ fmap nbTests results
+    whenGroupOnly $ case (groupHasSubGroup list, totFail) of
+        (True, _)              -> return ()
+        (False, n) | n > 0     -> displayPropertyFailed name n ""
+                   | otherwise -> displayPropertySucceed name tot
+    return $ GroupResult name totFail results
   where
     push = snoc
-    pop c = case unsnoc c of
-        Nothing     -> mempty
-        Just (c, _) -> c
+    pop = maybe mempty fst . unsnoc
 
 testProperty :: String -> Property -> Check TestResult
 testProperty name prop = do
@@ -215,8 +249,8 @@ testProperty name prop = do
 
     maxTests <- numTests <$> get
 
-    (res, nbTests) <- iterProp 1 maxTests rngIt
-    return (PropertyResult name nbTests res)
+    (res, nb) <- iterProp 1 maxTests rngIt
+    return (PropertyResult name nb res)
   where
     iterProp !n !limit !rngIt
       | n == limit = passed >> return (PropertySuccess, n)
@@ -246,8 +280,8 @@ testProperty name prop = do
         loop _ []      = printChecks checks
         loop !i (a:as) = "parameter " <> fromList (show i) <> " : " <> a <> "\n" : loop (i+1) as
     printChecks (PropertyBinaryOp True _ _ _)     = []
-    printChecks (PropertyBinaryOp False name a b) =
-        [ "Property `a " <> name <> " b' failed where:\n"
+    printChecks (PropertyBinaryOp False n a b) =
+        [ "Property `a " <> n <> " b' failed where:\n"
         , "    a = " <> a <> "\n"
         , "        " <> bl1 <> "\n"
         , "    b = " <> b <> "\n"
@@ -256,7 +290,7 @@ testProperty name prop = do
       where
         (bl1, bl2) = diffBlame a b
     printChecks (PropertyNamed True _)            = []
-    printChecks (PropertyNamed False name)        = ["Property " <> name <> " failed"]
+    printChecks (PropertyNamed False e)           = ["Property " <> e <> " failed"]
     printChecks (PropertyBoolean True)            = []
     printChecks (PropertyBoolean False)           = ["Property failed"]
     printChecks (PropertyFail _ e)                = ["Property failed: " <> e]

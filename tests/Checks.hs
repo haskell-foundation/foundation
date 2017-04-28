@@ -17,10 +17,10 @@ import Data.Ratio
 
 import Test.Checks.Property.Collection
 
-testAdditive :: forall a . (Show a, Eq a, Typeable a, Additive a, Arbitrary a) => Proxy a -> Test
+testAdditive :: forall a . (Enum a, Show a, Eq a, Typeable a, Additive a, Arbitrary a) => Proxy a -> Test
 testAdditive _ = Group "Additive"
     [ Property "eq"             $ azero === (azero :: a)
-    , Property "a + azero == a" $ \(v :: a)     -> v + azero === v
+    , Property "a + azero == a" $ \(v :: a)     -> v + azero === succ v
     , Property "azero + a == a" $ \(v :: a)     -> azero + v === v
     , Property "a + b == b + a" $ \(v1 :: a) v2 -> v1 + v2 === v2 + v1
     ]
