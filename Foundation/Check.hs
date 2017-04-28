@@ -27,7 +27,9 @@ module Foundation.Check
     , defaultMain
     ) where
 
+import qualified Prelude (fromIntegral)
 import           Foundation.Internal.Base
+import           Foundation.Class.Bifunctor (bimap)
 import           Foundation.Collection
 import           Foundation.Numerical
 import           Foundation.String
@@ -244,20 +246,51 @@ testProperty name prop = do
         loop _ []      = printChecks checks
         loop !i (a:as) = "parameter " <> fromList (show i) <> " : " <> a <> "\n" : loop (i+1) as
     printChecks (PropertyBinaryOp True _ _ _)     = []
-    printChecks (PropertyBinaryOp False name a b) = [name <> " checked fail\n" <> "   left: " <> a <> "\n" <> "  right: " <> b]
+    printChecks (PropertyBinaryOp False name a b) =
+        [ "Property `a " <> name <> " b' failed where:\n"
+        , "    a = " <> a <> "\n"
+        , "        " <> bl1 <> "\n"
+        , "    b = " <> b <> "\n"
+        , "        " <> bl2 <> "\n"
+        ]
+      where
+        (bl1, bl2) = diffBlame a b
     printChecks (PropertyNamed True _)            = []
-    printChecks (PropertyNamed False name)        = ["Check " <> name <> " failed"]
+    printChecks (PropertyNamed False name)        = ["Property " <> name <> " failed"]
     printChecks (PropertyBoolean True)            = []
-    printChecks (PropertyBoolean False)           = ["Check failed"]
-    printChecks (PropertyFail _ e)                = ["Check failed: " <> e]
+    printChecks (PropertyBoolean False)           = ["Property failed"]
+    printChecks (PropertyFail _ e)                = ["Property failed: " <> e]
     printChecks (PropertyAnd True _ _)            = []
-    printChecks (PropertyAnd False a1 a2)
-        | checkHasFailed a1 && checkHasFailed a2  = ["And Property failed:\n    && left: "] <> printChecks a1 <> ["\n"] <> ["   && right: "] <> printChecks a2
-        | checkHasFailed a1                       = ["And Property failed:\n    && left: "] <> printChecks a1 <> ["\n"]
-        | otherwise                               = ["And Property failed:\n   && right: "] <> printChecks a2 <> ["\n"]
+    printChecks (PropertyAnd False a1 a2) =
+            [ "Property `cond1 && cond2' failed where:\n"
+            , "   cond1 = " <> h1 <> "\n"
+
+            ]
+            <> ((<>) "           " <$>  hs1)
+            <>
+            [ "   cond2 = " <> h2 <> "\n"
+            ]
+            <> ((<>) "           " <$> hs2)
+      where
+        (h1, hs1) = f a1
+        (h2, hs2) = f a2
+        f a = case printChecks a of
+                      [] -> ("Succeed", [])
+                      (x:xs) -> (x, xs)
 
     getArgs (PropertyArg a p) = a : getArgs p
     getArgs (PropertyEOA _) = []
 
     getChecks (PropertyArg _ p) = getChecks p
     getChecks (PropertyEOA c  ) = c
+
+diffBlame :: String -> String -> (String, String)
+diffBlame a b = bimap fromList fromList $ go ([], []) (toList a) (toList b)
+  where
+    go (acc1, acc2) [] [] = (acc1, acc2)
+    go (acc1, acc2) l1 [] = (acc1 <> blaming (length l1), acc2)
+    go (acc1, acc2) [] l2 = (acc1                       , acc2 <> blaming (length l2))
+    go (acc1, acc2) (x:xs) (y:ys)
+        | x == y    = go (acc1 <> " ", acc2 <> " ") xs ys
+        | otherwise = go (acc1 <> "^", acc2 <> "^") xs ys
+    blaming n = replicate (Prelude.fromIntegral n) '^'

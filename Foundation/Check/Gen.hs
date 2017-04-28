@@ -38,7 +38,7 @@ genRng seed groups = \iteration -> genRngNewNoFail $ A.unsafeRecast $ fromList [
     w3 = rngSeed * 4
 
     (SipHash rngSeed) = hashEnd $ hashMixBytes hashData iHashState
-    hashData = toBytes UTF8 $ intercalate "::" (reverse groups)
+    hashData = toBytes UTF8 $ intercalate "::" groups
     iHashState :: Sip1_3
     iHashState = hashNewParam (SipKey seed 0x12345678)
 
