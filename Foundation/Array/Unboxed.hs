@@ -37,6 +37,7 @@ module Foundation.Array.Unboxed
     , create
     , createFromIO
     , sub
+    , copyToPtr
     , withPtr
     , withMutablePtr
     , unsafeFreezeShrink
@@ -95,6 +96,7 @@ import           GHC.Word
 import           GHC.ST
 import           GHC.Ptr
 import           GHC.ForeignPtr (ForeignPtr)
+import           Foreign.Marshal.Utils (copyBytes)
 import qualified Prelude
 import           Foundation.Internal.Base
 import           Foundation.Internal.Primitive
@@ -502,6 +504,22 @@ unsafeUpdate array modifiers = runST (thaw array >>= doUpdate modifiers)
                 loop ((i,v):xs) = unsafeWrite ma i v >> loop xs
                 {-# INLINE loop #-}
         {-# INLINE doUpdate #-}
+
+-- | Copy all the block content to the memory starting at the destination address
+copyToPtr :: forall ty prim . (PrimType ty, PrimMonad prim)
+          => UArray ty -- ^ the source array to copy
+          -> Ptr ty    -- ^ The destination address where the copy is going to start
+          -> prim ()
+copyToPtr (UVecBA start sz _ ba) (Ptr p) = primitive $ \s1 ->
+    (# copyByteArrayToAddr# ba offset p szBytes s1, () #)
+  where
+    !(Offset (I# offset)) = offsetOfE (primSizeInBytes (Proxy :: Proxy ty)) start
+    !(Size (I# szBytes)) = sizeInBytes sz
+copyToPtr (UVecAddr start sz fptr) dst =
+    unsafePrimFromIO $ withFinalPtr fptr $ \ptr -> copyBytes dst (ptr `plusPtr` os) szBytes
+  where
+    !(Offset os)   = offsetOfE (primSizeInBytes (Proxy :: Proxy ty)) start
+    (Size szBytes) = sizeInBytes sz
 
 withPtr :: (PrimMonad prim, PrimType ty)
         => UArray ty
