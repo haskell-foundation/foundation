@@ -10,6 +10,7 @@ import Foundation.Foreign
 import Foundation.List.DList
 import Foundation.Primitive
 import Foundation.Check
+import Foundation.String
 import Foundation.String.Read
 import qualified Prelude
 import Data.Ratio
@@ -85,6 +86,10 @@ main = defaultMain $ Group "foundation"
             , Group "rational"
                 [ Property "case1" $ readRational "124.098" === Just (124098 % 1000)
                 ]
+            ]
+        , Group "conversion"
+            [ Property "lower" $ lower "This is MY test" === "this is my test"
+            , Property "upper" $ upper "This is MY test" === "THIS IS MY TEST"
             ]
         ]
     , collectionProperties "DList a" (Proxy :: Proxy (DList Word8)) arbitrary

@@ -30,6 +30,8 @@ module Foundation.String
     , ValidationFailure(..)
     , lines
     , words
+    , upper
+    , lower
     ) where
 
 import Foundation.String.UTF8

@@ -72,6 +72,8 @@ module Foundation.String.UTF8
     , readDouble
     , readRational
     , readFloatingExact
+    , upper
+    , lower
     -- * Legacy utility
     , lines
     , words
@@ -109,6 +111,7 @@ import           GHC.Char
 import qualified Data.List
 import           Data.Data
 import           Data.Ratio
+import           Data.Char
 import qualified Prelude
 
 import           Foundation.String.ModifiedUTF8     (fromModified)
@@ -1574,3 +1577,13 @@ decimalDigitsPtr startAcc ptr !endOfs !startOfs = loop startAcc startOfs
 {-# SPECIALIZE decimalDigitsPtr :: Natural -> Ptr Word8 -> Offset Word8 -> Offset Word8 -> (# Natural, Bool, Offset Word8 #) #-}
 {-# SPECIALIZE decimalDigitsPtr :: Int -> Ptr Word8 -> Offset Word8 -> Offset Word8 -> (# Int, Bool, Offset Word8 #) #-}
 {-# SPECIALIZE decimalDigitsPtr :: Word -> Ptr Word8 -> Offset Word8 -> Offset Word8 -> (# Word, Bool, Offset Word8 #) #-}
+
+-- | Convert a 'String' to the upper-case equivalent.
+--   Does not properly support multicharacter Unicode conversions.
+upper :: String -> String
+upper = charMap toUpper
+
+-- | Convert a 'String' to the upper-case equivalent.
+--   Does not properly support multicharacter Unicode conversions.
+lower :: String -> String
+lower = charMap toLower
