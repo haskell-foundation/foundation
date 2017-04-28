@@ -520,6 +520,7 @@ copyToPtr (UVecAddr start sz fptr) dst =
   where
     !(Offset os)    = primOffsetOfE start
     !(Size szBytes) = sizeInBytes sz
+data TmpBA = TmpBA ByteArray#
 
 withPtr :: (PrimMonad prim, PrimType ty)
         => UArray ty
@@ -535,12 +536,13 @@ withPtr vec@(UVecBA start _ pstatus a) f
     | otherwise        = do
         -- TODO don't copy the whole vector, and just allocate+copy the slice.
         let !sz# = sizeofByteArray# a
-        a' <- primitive $ \s -> do
+        (TmpBA ba) <- primitive $ \s -> do
             case newAlignedPinnedByteArray# sz# 8# s of { (# s2, mba #) ->
             case copyByteArray# a 0# mba 0# sz# s2 of { s3 ->
-            case unsafeFreezeByteArray# mba s3 of { (# s4, ba #) ->
-                (# s4, Ptr (byteArrayContents# ba) `plusPtr` os #) }}}
-        f a'
+            case unsafeFreezeByteArray# mba s3 of { (# s4, ba #) -> (# s4, TmpBA ba #) }}}
+        r <- f (Ptr (byteArrayContents# ba))
+        unsafePrimFromIO $ primitive $ \s -> case touch# ba s of { s2 -> (# s2, () #) }
+        pure r
   where
     sz           = primSizeInBytes (vectorProxyTy vec)
     !(Offset os) = offsetOfE sz start
