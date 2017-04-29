@@ -61,6 +61,7 @@ import           GHC.ST
 import qualified Data.List
 import           Foundation.Internal.Base hiding (fromList, toList)
 import           Foundation.Internal.Proxy
+import           Foundation.Internal.Primitive
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Exception
@@ -110,7 +111,7 @@ unsafeCopyToPtr :: forall ty prim . PrimMonad prim
                 -> Ptr ty   -- ^ The destination address where the copy is going to start
                 -> prim ()
 unsafeCopyToPtr (Block blk) (Ptr p) = primitive $ \s1 ->
-    (# copyByteArrayToAddr# blk 0# p (sizeofByteArray# blk) s1, () #)
+    (# compatCopyByteArrayToAddr# blk 0# p (sizeofByteArray# blk) s1, () #)
 
 -- | Create a new array of size @n by settings each cells through the
 -- function @f.

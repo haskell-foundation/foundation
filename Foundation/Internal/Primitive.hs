@@ -14,6 +14,7 @@ module Foundation.Internal.Primitive
     , compatAndI#
     , compatQuotRemInt#
     , compatCopyAddrToByteArray#
+    , compatCopyByteArrayToAddr#
     , compatMkWeak#
     , compatGetSizeofMutableByteArray#
     , compatShrinkMutableByteArray#
@@ -94,6 +95,24 @@ compatCopyAddrToByteArray# addr ba ofs sz stini =
                 (# st2, w #) -> loop (o +# 1#) (i +# 1#) (writeWord8Array# ba o w st2)
 #endif
 {-# INLINE compatCopyAddrToByteArray# #-}
+
+-- | A version friendly fo copyByteArrayToAddr#
+--
+-- only available from GHC 7.8
+compatCopyByteArrayToAddr# :: ByteArray# -> Int# -> Addr# -> Int# -> State# s -> State# s
+#if MIN_VERSION_base(4,7,0)
+compatCopyByteArrayToAddr# = copyByteArrayToAddr#
+#else
+compatCopyByteArrayToAddr# ba ofs addrIni sz stini =
+    loop ofs 0# stini
+  where
+    loop o i st
+        | bool# (i ==# sz)  = st
+        | Prelude.otherwise =
+            case readWord8Array# ba o st of
+                (# st2, w #) -> loop (o +# 1#) (i +# 1#) (writeWord8OffAddr# ba i w st2)
+#endif
+{-# INLINE compatCopyByteArrayToAddr# #-}
 
 -- | A mkWeak# version that keep working on 8.0
 --
