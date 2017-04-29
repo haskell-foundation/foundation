@@ -102,7 +102,6 @@ Library
                      Foundation.UUID
                      Foundation.System.Entropy
                      Foundation.System.Bindings
-                     Foundation.These
   Other-modules:     Foundation.Boot.Builder
                      Foundation.Boot.List
                      Foundation.String.Internal
@@ -167,6 +166,7 @@ Library
                      Foundation.Primitive.IntegralConv
                      Foundation.Primitive.Floating
                      Foundation.Primitive.FinalPtr
+                     Foundation.Primitive.These
                      Foundation.Monad.MonadIO
                      Foundation.Monad.Exception
                      Foundation.Monad.Transformer

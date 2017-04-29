@@ -1,5 +1,5 @@
 -- |
--- Module      : Foundation.These
+-- Module      : Foundation.Primitive.These
 -- License     : BSD-style
 -- Maintainer  : Nicolas Di Prima <nicolas@primetype.co.uk>
 -- Stability   : stable
@@ -7,7 +7,7 @@
 --
 -- @These a b@, sum type to represent either @a@ or @b@ or both.
 --
-module Foundation.These
+module Foundation.Primitive.These
     ( These(..)
     ) where
 

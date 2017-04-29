@@ -28,6 +28,9 @@ module Foundation.Primitive
     , NormalForm(..)
     , force
     , deepseq
+
+    -- * These
+    , These(..)
     ) where
 
 import Foundation.Primitive.Types
@@ -35,3 +38,4 @@ import Foundation.Primitive.Monad
 import Foundation.Primitive.Endianness
 import Foundation.Primitive.IntegralConv
 import Foundation.Primitive.NormalForm
+import Foundation.Primitive.These
