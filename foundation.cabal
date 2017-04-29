@@ -166,6 +166,7 @@ Library
                      Foundation.Primitive.IntegralConv
                      Foundation.Primitive.Floating
                      Foundation.Primitive.FinalPtr
+                     Foundation.Primitive.These
                      Foundation.Monad.MonadIO
                      Foundation.Monad.Exception
                      Foundation.Monad.Transformer
