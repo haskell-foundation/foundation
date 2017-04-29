@@ -103,14 +103,13 @@ compatCopyByteArrayToAddr# :: ByteArray# -> Int# -> Addr# -> Int# -> State# s ->
 #if MIN_VERSION_base(4,7,0)
 compatCopyByteArrayToAddr# = copyByteArrayToAddr#
 #else
-compatCopyByteArrayToAddr# ba ofs addrIni sz stini =
+compatCopyByteArrayToAddr# ba ofs addr sz stini =
     loop ofs 0# stini
   where
     loop o i st
         | bool# (i ==# sz)  = st
         | Prelude.otherwise =
-            case readWord8Array# ba o st of
-                (# st2, w #) -> loop (o +# 1#) (i +# 1#) (writeWord8OffAddr# ba i w st2)
+            loop (o +# 1#) (i +# 1#) (writeWord8OffAddr# addr i (indexWord8Array# ba o) st)
 #endif
 {-# INLINE compatCopyByteArrayToAddr# #-}
 
