@@ -30,6 +30,7 @@ module Foundation.Check
 import qualified Prelude (fromIntegral, read)
 import           Foundation.Internal.Base
 import           Foundation.Class.Bifunctor (bimap)
+import           Foundation.System.Info (os, OS(..))
 import           Foundation.Collection
 import           Foundation.Numerical
 import           Foundation.String
@@ -223,11 +224,25 @@ displayPropertySucceed name nb = do
     i <- indent <$> get
     liftIO $ putStrLn $ mconcat
         [ replicate i ' '
-        , " ✓ ", name
+        , successString, name
         , " ("
         , fromList $ show nb
         , if nb == 1 then " test)" else " tests)"
         ]
+
+successString :: String
+successString = case os of
+    Right Linux -> " ✓ "
+    Right OSX   -> " ✓ "
+    _           -> "[SUCCESS]"
+{-# NOINLINE successString #-}
+
+failureString :: String
+failureString = case os of
+    Right Linux -> " ✗ "
+    Right OSX   -> " ✗ "
+    _           -> "[ ERROR ]"
+{-# NOINLINE failureString #-}
 
 displayPropertyFailed :: String -> Word64 -> String -> Check ()
 displayPropertyFailed name nb w = do
@@ -236,7 +251,7 @@ displayPropertyFailed name nb w = do
     liftIO $ do
         putStrLn $ mconcat
           [ replicate i ' '
-          , " ✗ ", name
+          , failureString, name
           , " failed after "
           , fromList $ show nb
           , if nb == 1 then " test" else " tests:"
