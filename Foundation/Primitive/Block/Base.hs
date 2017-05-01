@@ -36,6 +36,7 @@ import           Foundation.Primitive.Types
 
 -- | A block of memory containing unpacked bytes representing values of type 'ty'
 data Block ty = Block ByteArray#
+    deriving (Typeable)
 
 instance Data ty => Data (Block ty) where
     dataTypeOf _ = blockType
