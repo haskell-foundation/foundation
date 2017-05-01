@@ -158,7 +158,7 @@ Library
                      Foundation.IO.File
                      Foundation.IO.Terminal
                      Foundation.Primitive.Base16
-                     Foundation.Primitive.Block
+                     Foundation.Primitive.Block.Base
                      Foundation.Primitive.Block.Mutable
                      Foundation.Primitive.Endianness
                      Foundation.Primitive.Exception
