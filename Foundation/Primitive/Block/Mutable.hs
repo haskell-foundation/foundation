@@ -36,9 +36,13 @@
 module Foundation.Primitive.Block.Mutable
     ( Block(..)
     , MutableBlock(..)
+    , mutableLengthSize
+    , mutableLengthBytes
     , new
     , isPinned
     , iterSet
+    , read
+    , write
     , unsafeNew
     , unsafeWrite
     , unsafeRead
@@ -54,6 +58,7 @@ import           GHC.Prim
 import           GHC.Types
 import           Foundation.Internal.Base
 import           Foundation.Internal.Proxy
+import           Foundation.Primitive.Exception
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
 import           Foundation.Numerical
@@ -69,6 +74,10 @@ mutableLengthSize (MutableBlock mba) =
         !elems              = quotInt# (sizeofMutableByteArray# mba) szBits
      in Size (I# elems)
 {-# INLINE[1] mutableLengthSize #-}
+
+mutableLengthBytes :: MutableBlock ty st -> Size Word8
+mutableLengthBytes (MutableBlock mba) = Size (I# (sizeofMutableByteArray# mba))
+{-# INLINE[1] mutableLengthBytes #-}
 
 -- | Return if a Mutable Block is pinned or not
 isPinned :: MutableBlock ty st -> Bool
@@ -90,3 +99,24 @@ iterSet f ma = loop 0
         | i .==# sz = pure ()
         | otherwise = unsafeWrite ma i (f i) >> loop (i+1)
     {-# INLINE loop #-}
+
+-- | read a cell in a mutable array.
+--
+-- If the index is out of bounds, an error is raised.
+read :: (PrimMonad prim, PrimType ty) => MutableBlock ty (PrimState prim) -> Offset ty -> prim ty
+read array n
+    | isOutOfBound n len = primOutOfBound OOB_Read n len
+    | otherwise          = unsafeRead array n
+  where len = mutableLengthSize array
+{-# INLINE read #-}
+
+-- | Write to a cell in a mutable array.
+--
+-- If the index is out of bounds, an error is raised.
+write :: (PrimMonad prim, PrimType ty) => MutableBlock ty (PrimState prim) -> Offset ty -> ty -> prim ()
+write array n val
+    | isOutOfBound n len = primOutOfBound OOB_Write n len
+    | otherwise          = unsafeWrite array n val
+  where
+    len = mutableLengthSize array
+{-# INLINE write #-}
