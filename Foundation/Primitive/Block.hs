@@ -25,6 +25,7 @@ module Foundation.Primitive.Block
     , unsafeFreeze
     , unsafeIndex
     , thaw
+    , freeze
     , copy
     -- * safer api
     , create
@@ -41,11 +42,18 @@ module Foundation.Primitive.Block
     , unsnoc
     , sub
     , splitAt
+    , revSplitAt
+    , splitOn
     , break
     , span
     , elem
     , all
     , any
+    , find
+    , filter
+    , reverse
+    , sortBy
+    , intersperse
     -- * Foreign interfaces
     , unsafeCopyToPtr
     ) where
@@ -53,7 +61,8 @@ module Foundation.Primitive.Block
 import           GHC.Prim
 import           GHC.Types
 import           GHC.ST
-import           Foundation.Internal.Base hiding (fromList, toList)
+import qualified Data.List
+import           Foundation.Internal.Base
 import           Foundation.Internal.Proxy
 import           Foundation.Internal.Primitive
 import           Foundation.Primitive.Types.OffsetSize
@@ -108,6 +117,15 @@ thaw array = do
     M.unsafeCopyBytesRO ma 0 array 0 (lengthBytes array)
     return ma
 {-# INLINE thaw #-}
+
+freeze :: (PrimType ty, PrimMonad prim) => MutableBlock ty (PrimState prim) -> prim (Block ty)
+freeze ma = do
+    ma' <- unsafeNew len
+    M.unsafeCopyBytes ma' 0 ma 0 len
+    --M.copyAt ma' (Offset 0) ma (Offset 0) len
+    unsafeFreeze ma'
+  where
+    len = M.mutableLengthBytes ma
 
 -- | Copy every cells of an existing Block to a new Block
 copy :: PrimType ty => Block ty -> Block ty
@@ -176,16 +194,16 @@ snoc vec e
      !len = lengthSize vec
 
 sub :: PrimType ty => Block ty -> Offset ty -> Offset ty -> Block ty
-sub vec start end
+sub blk start end
     | start >= end = mempty
     | otherwise    = runST $ do
-        dst <- new len
-        M.unsafeCopyElementsRO dst 0 vec start newLen
+        dst <- new newLen
+        M.unsafeCopyElementsRO dst 0 blk start newLen
         unsafeFreeze dst
   where
     newLen = end' - start
     end' = min end (start `offsetPlusE` (end - start))
-    !len = lengthSize vec
+    !len = lengthSize blk
 
 uncons :: PrimType ty => Block ty -> Maybe (ty, Block ty)
 uncons vec
@@ -203,19 +221,24 @@ unsnoc vec
     !nbElems = lengthSize vec
 
 splitAt :: PrimType ty => Size ty -> Block ty -> (Block ty, Block ty)
-splitAt nbElems v
-    | nbElems <= 0 = (mempty, v)
-    | n == vlen    = (v, mempty)
+splitAt nbElems blk
+    | nbElems <= 0 = (mempty, blk)
+    | n == vlen    = (blk, mempty)
     | otherwise    = runST $ do
         left  <- new nbElems
         right <- new (vlen - nbElems)
-        M.unsafeCopyElementsRO left  0 v 0                      nbElems
-        M.unsafeCopyElementsRO right 0 v (sizeAsOffset nbElems) (vlen - nbElems)
+        M.unsafeCopyElementsRO left  0 blk 0                      nbElems
+        M.unsafeCopyElementsRO right 0 blk (sizeAsOffset nbElems) (vlen - nbElems)
 
         (,) <$> unsafeFreeze left <*> unsafeFreeze right
   where
     n    = min nbElems vlen
-    vlen = lengthSize v
+    vlen = lengthSize blk
+
+revSplitAt :: PrimType ty => Size ty -> Block ty -> (Block ty, Block ty)
+revSplitAt n blk
+    | n <= 0    = (mempty, blk)
+    | otherwise = let (x,y) = splitAt (lengthSize blk - n) blk in (y,x)
 
 break :: PrimType ty => (ty -> Bool) -> Block ty -> (Block ty, Block ty)
 break predicate blk = findBreak 0
@@ -256,3 +279,108 @@ any p blk = loop 0
         | i .==# len            = False
         | p (unsafeIndex blk i) = True
         | otherwise             = loop (i+1)
+
+splitOn :: PrimType ty => (ty -> Bool) -> Block ty -> [Block ty]
+splitOn predicate blk
+    | len == 0  = [mempty]
+    | otherwise = go 0 0
+  where
+    !len = lengthSize blk
+    go !prevIdx !idx
+        | idx .==# len = [sub blk prevIdx idx]
+        | otherwise    =
+            let e = unsafeIndex blk idx
+                idx' = idx + 1
+             in if predicate e
+                    then sub blk prevIdx idx : go idx' idx'
+                    else go prevIdx idx'
+
+find :: PrimType ty => (ty -> Bool) -> Block ty -> Maybe ty
+find predicate vec = loop 0
+  where
+    !len = lengthSize vec
+    loop i
+        | i .==# len = Nothing
+        | otherwise  =
+            let e = unsafeIndex vec i
+             in if predicate e then Just e else loop (i+1)
+
+filter :: PrimType ty => (ty -> Bool) -> Block ty -> Block ty
+filter predicate vec = fromList $ Data.List.filter predicate $ toList vec
+
+reverse :: forall ty . PrimType ty => Block ty -> Block ty
+reverse blk
+    | len == 0  = mempty
+    | otherwise = runST $ do
+        mb <- new len
+        go mb
+        unsafeFreeze mb
+  where
+    !len = lengthSize blk
+    !endOfs = 0 `offsetPlusE` len
+
+    go :: MutableBlock ty s -> ST s ()
+    go mb = loop endOfs 0
+      where
+        loop o i
+            | i .==# len = pure ()
+            | otherwise  = unsafeWrite mb o' (unsafeIndex blk i) >> loop o' (i+1)
+          where o' = pred o
+
+sortBy :: forall ty . PrimType ty => (ty -> ty -> Ordering) -> Block ty -> Block ty
+sortBy xford vec
+    | len == 0  = mempty
+    | otherwise = runST (thaw vec >>= doSort xford)
+  where
+    len = lengthSize vec
+    doSort :: (PrimType ty, PrimMonad prim) => (ty -> ty -> Ordering) -> MutableBlock ty (PrimState prim) -> prim (Block ty)
+    doSort ford ma = qsort 0 (sizeLastOffset len) >> unsafeFreeze ma
+      where
+        qsort lo hi
+            | lo >= hi  = return ()
+            | otherwise = do
+                p <- partition lo hi
+                qsort lo (pred p)
+                qsort (p+1) hi
+        partition lo hi = do
+            pivot <- unsafeRead ma hi
+            let loop i j
+                    | j == hi   = pure i
+                    | otherwise = do
+                        aj <- unsafeRead ma j
+                        i' <- if ford aj pivot == GT
+                                then pure i
+                                else do
+                                    ai <- unsafeRead ma i
+                                    unsafeWrite ma j ai
+                                    unsafeWrite ma i aj
+                                    pure $ i + 1
+                        loop i' (j+1)
+
+            i <- loop lo lo
+            ai  <- unsafeRead ma i
+            ahi <- unsafeRead ma hi
+            unsafeWrite ma hi ai
+            unsafeWrite ma i ahi
+            pure i
+
+intersperse :: forall ty . PrimType ty => ty -> Block ty -> Block ty
+intersperse sep blk
+    | len <= 1  = blk
+    | otherwise = runST $ do
+        mb <- new newSize
+        go mb
+        unsafeFreeze mb
+  where
+    !len = lengthSize blk
+    newSize = len + len - 1
+
+    go :: MutableBlock ty s -> ST s ()
+    go mb = loop 0 0
+      where
+        loop !o !i
+            | i .==# (len - 1) = unsafeWrite mb o (unsafeIndex blk i)
+            | otherwise        = do
+                unsafeWrite mb o     (unsafeIndex blk i)
+                unsafeWrite mb (o+1) sep
+                loop (o+2) (i+1)
