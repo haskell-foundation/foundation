@@ -15,6 +15,7 @@ import           Foundation.Internal.Base
 import           Foundation.Collection.Element
 import qualified Data.List
 import qualified Foundation.Array.Unboxed as UV
+import qualified Foundation.Primitive.Block as BLK
 import qualified Foundation.Array.Boxed as BA
 
 -- | Give the ability to fold a collection on itself
@@ -59,3 +60,7 @@ instance Foldable (BA.Array ty) where
     foldl = BA.foldl
     foldr = BA.foldr
     foldl' = BA.foldl'
+instance UV.PrimType ty => Foldable (BLK.Block ty) where
+    foldl = BLK.foldl
+    foldr = BLK.foldr
+    foldl' = BLK.foldl'
