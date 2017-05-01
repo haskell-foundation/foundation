@@ -15,6 +15,7 @@ import           Foundation.Internal.Base
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Collection.Element
 import qualified Data.List
+import qualified Foundation.Primitive.Block as BLK
 import qualified Foundation.Array.Unboxed as UV
 import qualified Foundation.Array.Boxed as BA
 import qualified Foundation.Primitive.Exception as A
@@ -32,6 +33,18 @@ instance IndexedCollection [a] where
                         []  -> Nothing
                         x:_ -> Just x
     findIndex predicate = fmap Offset . Data.List.findIndex predicate
+
+instance UV.PrimType ty => IndexedCollection (BLK.Block ty) where
+    (!) l n
+        | A.isOutOfBound n (BLK.lengthSize l) = Nothing
+        | otherwise                           = Just $ BLK.index l n
+    findIndex predicate c = loop 0
+      where
+        !len = BLK.lengthSize c
+        loop i
+            | i .==# len                      = Nothing
+            | predicate (BLK.unsafeIndex c i) = Just i
+            | otherwise                       = Nothing
 
 instance UV.PrimType ty => IndexedCollection (UV.UArray ty) where
     (!) l n

@@ -18,11 +18,13 @@ module Foundation.Collection.Sequential
 
 import           Foundation.Internal.Base
 import           Foundation.Primitive.IntegralConv
+import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Collection.Element
 import           Foundation.Collection.Collection
 import qualified Foundation.Collection.List as ListExtra
 import qualified Data.List
 import qualified Foundation.Array.Unboxed as UV
+import qualified Foundation.Primitive.Block as BLK
 import qualified Foundation.Array.Boxed as BA
 import qualified Foundation.String.UTF8 as S
 
@@ -194,6 +196,24 @@ instance Sequential [a] where
     isPrefixOf = Data.List.isPrefixOf
     isSuffixOf = Data.List.isSuffixOf
 
+instance UV.PrimType ty => Sequential (BLK.Block ty) where
+    splitAt n = BLK.splitAt (Size n)
+    revSplitAt n = BLK.revSplitAt (Size n)
+    splitOn = BLK.splitOn
+    break = BLK.break
+    intersperse = BLK.intersperse
+    span = BLK.span
+    filter = BLK.filter
+    reverse = BLK.reverse
+    uncons = BLK.uncons
+    unsnoc = BLK.unsnoc
+    snoc = BLK.snoc
+    cons = BLK.cons
+    find = BLK.find
+    sortBy = BLK.sortBy
+    singleton = BLK.singleton
+    replicate = BLK.replicate
+
 instance UV.PrimType ty => Sequential (UV.UArray ty) where
     take = UV.take
     revTake = UV.revTake
@@ -236,7 +256,7 @@ instance Sequential (BA.Array ty) where
     cons = BA.cons
     find = BA.find
     sortBy = BA.sortBy
-    singleton = fromList . (:[])
+    singleton = BA.singleton
     replicate = BA.replicate
 
 instance Sequential S.String where

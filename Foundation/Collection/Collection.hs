@@ -31,6 +31,7 @@ module Foundation.Collection.Collection
 import           Foundation.Internal.Base
 import           Foundation.Collection.Element
 import qualified Data.List
+import qualified Foundation.Primitive.Block as BLK
 import qualified Foundation.Array.Unboxed as UV
 import qualified Foundation.Array.Boxed as BA
 import qualified Foundation.String.UTF8 as S
@@ -108,6 +109,15 @@ instance Collection [a] where
 
     any = Data.List.any
     all = Data.List.all
+
+instance UV.PrimType ty => Collection (BLK.Block ty) where
+    null = (==) 0 . BLK.length
+    length = BLK.length
+    elem = BLK.elem
+    minimum = Data.List.minimum . toList . getNonEmpty
+    maximum = Data.List.maximum . toList . getNonEmpty
+    all = BLK.all
+    any = BLK.any
 
 instance UV.PrimType ty => Collection (UV.UArray ty) where
     null = UV.null
