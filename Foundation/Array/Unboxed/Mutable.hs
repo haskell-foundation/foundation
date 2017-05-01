@@ -293,7 +293,7 @@ withMutablePtrHint skipCopy skipCopyBack vec@(MUVecMA start vecSz pstatus a) f
 -- and the change will be reflected in the mutable array
 --
 -- If the mutable array is unpinned, a trampoline buffer
--- is created and the data is only copy when 'f' return.
+-- is created and the data is only copied when 'f' return.
 withMutablePtr :: (PrimMonad prim, PrimType ty)
                => MUArray ty (PrimState prim)
                -> (Ptr ty -> prim a)
