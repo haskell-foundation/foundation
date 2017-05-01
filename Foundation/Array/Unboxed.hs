@@ -547,6 +547,7 @@ withPtr vec@(UVecBA start _ pstatus a) f
   where
     sz           = primSizeInBytes (vectorProxyTy vec)
     !(Offset os) = offsetOfE sz start
+{-# INLINE withPtr #-}
 
 recast :: (PrimType a, PrimType b) => UArray a -> UArray b
 recast = recast_ Proxy Proxy
