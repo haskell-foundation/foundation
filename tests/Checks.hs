@@ -94,7 +94,27 @@ main = defaultMain $ Group "foundation"
         ]
     , collectionProperties "DList a" (Proxy :: Proxy (DList Word8)) arbitrary
     , Group "Array"
-      [ Group "Unboxed"
+      [ Group "Block"
+        [ collectionProperties "Block(W8)"  (Proxy :: Proxy (Block Word8))  arbitrary
+        , collectionProperties "Block(W16)" (Proxy :: Proxy (Block Word16)) arbitrary
+        , collectionProperties "Block(W32)" (Proxy :: Proxy (Block Word32)) arbitrary
+        , collectionProperties "Block(W64)" (Proxy :: Proxy (Block Word64)) arbitrary
+        , collectionProperties "Block(I8)"  (Proxy :: Proxy (Block Int8))   arbitrary
+        , collectionProperties "Block(I16)" (Proxy :: Proxy (Block Int16))  arbitrary
+        , collectionProperties "Block(I32)" (Proxy :: Proxy (Block Int32))  arbitrary
+        , collectionProperties "Block(I64)" (Proxy :: Proxy (Block Int64))  arbitrary
+        , collectionProperties "Block(F32)" (Proxy :: Proxy (Block Float))  arbitrary
+        , collectionProperties "Block(F64)" (Proxy :: Proxy (Block Double)) arbitrary
+        , collectionProperties "Block(CChar)"  (Proxy :: Proxy (Block CChar))  (CChar <$> arbitrary)
+        , collectionProperties "Block(CUChar)" (Proxy :: Proxy (Block CUChar)) (CUChar <$> arbitrary)
+        , collectionProperties "Block(BE W16)" (Proxy :: Proxy (Block (BE Word16))) (toBE <$> arbitrary)
+        , collectionProperties "Block(BE W32)" (Proxy :: Proxy (Block (BE Word32))) (toBE <$> arbitrary)
+        , collectionProperties "Block(BE W64)" (Proxy :: Proxy (Block (BE Word64))) (toBE <$> arbitrary)
+        , collectionProperties "Block(LE W16)" (Proxy :: Proxy (Block (LE Word16))) (toLE <$> arbitrary)
+        , collectionProperties "Block(LE W32)" (Proxy :: Proxy (Block (LE Word32))) (toLE <$> arbitrary)
+        , collectionProperties "Block(LE W64)" (Proxy :: Proxy (Block (LE Word64))) (toLE <$> arbitrary)
+        ]
+      , Group "Unboxed"
         [ collectionProperties "UArray(W8)"  (Proxy :: Proxy (UArray Word8))  arbitrary
         , collectionProperties "UArray(W16)" (Proxy :: Proxy (UArray Word16)) arbitrary
         , collectionProperties "UArray(W32)" (Proxy :: Proxy (UArray Word32)) arbitrary

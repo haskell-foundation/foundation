@@ -9,9 +9,11 @@ module Foundation.Collection.Mutable
     ( MutableCollection(..)
     ) where
 
-import Foundation.Primitive.Monad
-import Foundation.Primitive.Types.OffsetSize
-import Foundation.Internal.Base
+import           Foundation.Primitive.Monad
+import           Foundation.Primitive.Types.OffsetSize
+import qualified Foundation.Primitive.Block         as BLK
+import qualified Foundation.Primitive.Block.Mutable as BLK
+import           Foundation.Internal.Base
 
 import qualified Foundation.Array.Unboxed.Mutable as MUV
 import qualified Foundation.Array.Unboxed as UV
@@ -56,6 +58,23 @@ instance UV.PrimType ty => MutableCollection (MUV.MUArray ty) where
     mutUnsafeRead = MUV.unsafeRead
     mutWrite = MUV.write
     mutRead = MUV.read
+
+instance UV.PrimType ty => MutableCollection (BLK.MutableBlock ty) where
+    type MutableFreezed (BLK.MutableBlock ty) = BLK.Block ty
+    type MutableKey (BLK.MutableBlock ty) = Offset ty
+    type MutableValue (BLK.MutableBlock ty) = ty
+
+    thaw = BLK.thaw
+    freeze = BLK.freeze
+    unsafeThaw = BLK.unsafeThaw
+    unsafeFreeze = BLK.unsafeFreeze
+
+    mutNew i = BLK.new (Size i)
+
+    mutUnsafeWrite = BLK.unsafeWrite
+    mutUnsafeRead = BLK.unsafeRead
+    mutWrite = BLK.write
+    mutRead = BLK.read
 
 instance MutableCollection (BA.MArray ty) where
     type MutableFreezed (BA.MArray ty) = BA.Array ty

@@ -15,6 +15,7 @@ module Foundation.Array.Internal
     ( UArray(..)
     , fromForeignPtr
     , withPtr
+    , copyToPtr
     , recast
     , toHexadecimal
     -- * Mutable facilities

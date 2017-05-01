@@ -22,6 +22,7 @@ module Foundation.Primitive.Types
     , sizeRecast
     , offsetAsSize
     , sizeAsOffset
+    , sizeInBytes
     , primWordGetByteAndShift
     , primWord64GetByteAndShift
     , primWord64GetHiLo
@@ -482,6 +483,9 @@ sizeRecast = doRecast Proxy Proxy
                 (Size bytes) = sizeOfE szA sz
              in Size (bytes `Prelude.quot` szB)
 
+sizeInBytes :: forall a . PrimType a => Size a -> Size Word8
+sizeInBytes sz = sizeOfE (primSizeInBytes (Proxy :: Proxy a)) sz
+
 primOffsetRecast :: (PrimType a, PrimType b) => Offset a -> Offset b
 primOffsetRecast = doRecast Proxy Proxy
   where doRecast :: (PrimType a, PrimType b) => Proxy a -> Proxy b -> Offset a -> Offset b
@@ -495,14 +499,6 @@ primOffsetOfE :: PrimType a => Offset a -> Offset8
 primOffsetOfE = getOffset Proxy
   where getOffset :: PrimType a => Proxy a -> Offset a -> Offset8
         getOffset proxy = offsetOfE (primSizeInBytes proxy)
-
-sizeAsOffset :: Size a -> Offset a
-sizeAsOffset (Size a) = Offset a
-{-# INLINE sizeAsOffset #-}
-
-offsetAsSize :: Offset a -> Size a
-offsetAsSize (Offset a) = Size a
-{-# INLINE offsetAsSize #-}
 
 primWordGetByteAndShift :: Word# -> (# Word#, Word# #)
 primWordGetByteAndShift w = (# and# w 0xff##, uncheckedShiftRL# w 8# #)

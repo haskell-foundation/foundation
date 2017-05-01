@@ -47,7 +47,7 @@ import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
 import           Foundation.Primitive.FinalPtr
-import           Foundation.Array.Common
+import           Foundation.Primitive.Exception
 import           Foundation.Numerical
 -- import           Foreign.Marshal.Utils (copyBytes)
 

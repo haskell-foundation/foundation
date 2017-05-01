@@ -37,6 +37,7 @@ module Foundation.Array.Unboxed
     , create
     , createFromIO
     , sub
+    , copyToPtr
     , withPtr
     , withMutablePtr
     , unsafeFreezeShrink
@@ -95,6 +96,7 @@ import           GHC.Word
 import           GHC.ST
 import           GHC.Ptr
 import           GHC.ForeignPtr (ForeignPtr)
+import           Foreign.Marshal.Utils (copyBytes)
 import qualified Prelude
 import           Foundation.Internal.Base
 import           Foundation.Internal.Primitive
@@ -108,7 +110,7 @@ import           Foundation.Primitive.NormalForm
 import           Foundation.Primitive.IntegralConv
 import           Foundation.Primitive.FinalPtr
 import           Foundation.Primitive.Utils
-import           Foundation.Array.Common
+import           Foundation.Primitive.Exception
 import           Foundation.Array.Unboxed.Mutable hiding (sub)
 import           Foundation.Numerical
 import           Foundation.Boot.Builder
@@ -503,6 +505,24 @@ unsafeUpdate array modifiers = runST (thaw array >>= doUpdate modifiers)
                 {-# INLINE loop #-}
         {-# INLINE doUpdate #-}
 
+-- | Copy all the block content to the memory starting at the destination address
+copyToPtr :: forall ty prim . (PrimType ty, PrimMonad prim)
+          => UArray ty -- ^ the source array to copy
+          -> Ptr ty    -- ^ The destination address where the copy is going to start
+          -> prim ()
+copyToPtr (UVecBA start sz _ ba) (Ptr p) = primitive $ \s1 ->
+    (# compatCopyByteArrayToAddr# ba offset p szBytes s1, () #)
+  where
+    !(Offset (I# offset)) = primOffsetOfE start
+    !(Size (I# szBytes)) = sizeInBytes sz
+copyToPtr (UVecAddr start sz fptr) dst =
+    unsafePrimFromIO $ withFinalPtr fptr $ \ptr -> copyBytes dst (ptr `plusPtr` os) szBytes
+  where
+    !(Offset os)    = primOffsetOfE start
+    !(Size szBytes) = sizeInBytes sz
+
+data TmpBA = TmpBA ByteArray#
+
 withPtr :: (PrimMonad prim, PrimType ty)
         => UArray ty
         -> (Ptr ty -> prim a)
@@ -517,15 +537,17 @@ withPtr vec@(UVecBA start _ pstatus a) f
     | otherwise        = do
         -- TODO don't copy the whole vector, and just allocate+copy the slice.
         let !sz# = sizeofByteArray# a
-        a' <- primitive $ \s -> do
+        (TmpBA ba) <- primitive $ \s -> do
             case newAlignedPinnedByteArray# sz# 8# s of { (# s2, mba #) ->
             case copyByteArray# a 0# mba 0# sz# s2 of { s3 ->
-            case unsafeFreezeByteArray# mba s3 of { (# s4, ba #) ->
-                (# s4, Ptr (byteArrayContents# ba) `plusPtr` os #) }}}
-        f a'
+            case unsafeFreezeByteArray# mba s3 of { (# s4, ba #) -> (# s4, TmpBA ba #) }}}
+        r <- f (Ptr (byteArrayContents# ba))
+        unsafePrimFromIO $ primitive $ \s -> case touch# ba s of { s2 -> (# s2, () #) }
+        pure r
   where
     sz           = primSizeInBytes (vectorProxyTy vec)
     !(Offset os) = offsetOfE sz start
+{-# INLINE withPtr #-}
 
 recast :: (PrimType a, PrimType b) => UArray a -> UArray b
 recast = recast_ Proxy Proxy
