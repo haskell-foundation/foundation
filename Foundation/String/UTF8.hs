@@ -98,7 +98,7 @@ import           Foundation.Primitive.IntegralConv
 import           Foundation.Primitive.Floating
 import           Foundation.Boot.Builder
 import qualified Foundation.Boot.List as List
-import           Foundation.String.UTF8Table
+import           Foundation.Primitive.UTF8.Table
 import           GHC.Prim
 import           GHC.ST
 import           GHC.Types
