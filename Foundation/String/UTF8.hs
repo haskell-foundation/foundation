@@ -99,6 +99,7 @@ import           Foundation.Primitive.Floating
 import           Foundation.Boot.Builder
 import qualified Foundation.Boot.List as List
 import           Foundation.Primitive.UTF8.Table
+import           Foundation.Primitive.UTF8.Helper
 import           GHC.Prim
 import           GHC.ST
 import           GHC.Types
@@ -277,14 +278,6 @@ mutableValidate mba ofsStart sz = do
                                 else return (pos, Just InvalidContinuation)
                         _ -> error "internal error"
 
-skipNextHeaderValue :: Word8 -> Size Word8
-skipNextHeaderValue !x
-    | x < 0xC0  = Size 1 -- 0b11000000
-    | x < 0xE0  = Size 2 -- 0b11100000
-    | x < 0xF0  = Size 3 -- 0b11110000
-    | otherwise = Size 4
-{-# INLINE skipNextHeaderValue #-}
-
 nextWithIndexer :: (Offset Word8 -> Word8)
                 -> Offset Word8
                 -> (Char, Offset Word8)
@@ -368,41 +361,9 @@ nextAscii (String ba) n = (# w, not (testBit w 7) #)
   where
     !w = Vec.unsafeIndex ba n
 
--- same as nextAscii but with a ByteArray#
-nextAsciiBA :: ByteArray# -> Offset8 -> (# Word8, Bool #)
-nextAsciiBA ba n = (# w, not (testBit w 7) #)
-  where
-    !w = primBaIndex ba n
-{-# INLINE nextAsciiBA #-}
-
--- same as nextAscii but with a ByteArray#
-nextAsciiPtr :: Ptr Word8 -> Offset8 -> (# Word8, Bool #)
-nextAsciiPtr (Ptr addr) n = (# w, not (testBit w 7) #)
-  where !w = primAddrIndex addr n
-{-# INLINE nextAsciiPtr #-}
-
--- | nextAsciiBa specialized to get a digit between 0 and 9 (included)
-nextAsciiDigitBA :: ByteArray# -> Offset8 -> (# Word8, Bool #)
-nextAsciiDigitBA ba n = (# d, d < 0xa #)
-  where !d = primBaIndex ba n - 0x30
-{-# INLINE nextAsciiDigitBA #-}
-
-nextAsciiDigitPtr :: Ptr Word8 -> Offset8 -> (# Word8, Bool #)
-nextAsciiDigitPtr (Ptr addr) n = (# d, d < 0xa #)
-  where !d = primAddrIndex addr n - 0x30
-{-# INLINE nextAsciiDigitPtr #-}
-
 expectAscii :: String -> Offset8 -> Word8 -> Bool
 expectAscii (String ba) n v = Vec.unsafeIndex ba n == v
 {-# INLINE expectAscii #-}
-
-expectAsciiBA :: ByteArray# -> Offset8 -> Word8 -> Bool
-expectAsciiBA ba n v = primBaIndex ba n == v
-{-# INLINE expectAsciiBA #-}
-
-expectAsciiPtr :: Ptr Word8 -> Offset8 -> Word8 -> Bool
-expectAsciiPtr (Ptr ptr) n v = primAddrIndex ptr n == v
-{-# INLINE expectAsciiPtr #-}
 
 next :: String -> Offset8 -> (# Char, Offset8 #)
 next (String ba) n =
@@ -439,50 +400,6 @@ next (String ba) n =
                 (or# (uncheckedShiftL# (and# c2 0x3f##) 6#)
                     (and# c3 0x3f##))
             )
-
--- | Different way to encode a Character in UTF8 represented as an ADT
-data UTF8Char =
-      UTF8_1 {-# UNPACK #-} !Word8
-    | UTF8_2 {-# UNPACK #-} !Word8 {-# UNPACK #-} !Word8
-    | UTF8_3 {-# UNPACK #-} !Word8 {-# UNPACK #-} !Word8 {-# UNPACK #-} !Word8
-    | UTF8_4 {-# UNPACK #-} !Word8 {-# UNPACK #-} !Word8 {-# UNPACK #-} !Word8 {-# UNPACK #-} !Word8
-
-asUTF8Char :: Char -> UTF8Char
-asUTF8Char !c
-  | bool# (ltWord# x 0x80##   ) = encode1
-  | bool# (ltWord# x 0x800##  ) = encode2
-  | bool# (ltWord# x 0x10000##) = encode3
-  | otherwise                   = encode4
-    where
-      !(I# xi) = fromEnum c
-      !x       = int2Word# xi
-
-      encode1 = UTF8_1 (W8# x)
-      encode2 =
-          let !x1 = W8# (or# (uncheckedShiftRL# x 6#) 0xc0##)
-              !x2 = toContinuation x
-           in UTF8_2 x1 x2
-      encode3 =
-          let !x1 = W8# (or# (uncheckedShiftRL# x 12#) 0xe0##)
-              !x2 = toContinuation (uncheckedShiftRL# x 6#)
-              !x3 = toContinuation x
-           in UTF8_3 x1 x2 x3
-      encode4 =
-          let !x1 = W8# (or# (uncheckedShiftRL# x 18#) 0xf0##)
-              !x2 = toContinuation (uncheckedShiftRL# x 12#)
-              !x3 = toContinuation (uncheckedShiftRL# x 6#)
-              !x4 = toContinuation x
-           in UTF8_4 x1 x2 x3 x4
-
-      toContinuation :: Word# -> Word8
-      toContinuation w = W8# (or# (and# w 0x3f##) 0x80##)
-      {-# INLINE toContinuation #-}
-
-numBytes :: UTF8Char -> Size8
-numBytes UTF8_1{} = Size 1
-numBytes UTF8_2{} = Size 2
-numBytes UTF8_3{} = Size 3
-numBytes UTF8_4{} = Size 4
 
 writeUTF8Char :: PrimMonad prim => MutableString (PrimState prim) -> Offset8 -> UTF8Char -> prim ()
 writeUTF8Char (MutableString mba) i (UTF8_1 x1) =

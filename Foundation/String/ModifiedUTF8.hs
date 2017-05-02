@@ -30,7 +30,7 @@ import qualified Foundation.Array.Unboxed as Vec
 import           Foundation.Array.Unboxed (UArray)
 import           Foundation.Numerical
 import           Foundation.Primitive.FinalPtr
-import           Foundation.String.UTF8Table
+import           Foundation.Primitive.UTF8.Table
 
 -- helper function to read some bytes from the given byte reader
 accessBytes :: Offset Word8 -> (Offset Word8 -> Word8) -> ([Word8], Offset Word8)
