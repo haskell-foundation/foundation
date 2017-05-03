@@ -139,7 +139,7 @@ Library
                      Foundation.Internal.ByteSwap
                      Foundation.Internal.CallStack
                      Foundation.Internal.Environment
-                     Foundation.Internal.Error
+                     Foundation.Primitive.Error
                      Foundation.Internal.Primitive
                      Foundation.Internal.IsList
                      Foundation.Internal.Identity

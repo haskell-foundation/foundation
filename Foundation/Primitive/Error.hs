@@ -3,7 +3,7 @@
 {-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE CPP #-}
-module Foundation.Internal.Error
+module Foundation.Primitive.Error
     ( error
     ) where
 
