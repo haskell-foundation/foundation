@@ -40,7 +40,7 @@ import           GHC.Prim
 import           GHC.Types
 import           GHC.Ptr
 import           Foundation.Internal.Base
-import qualified Foundation.Internal.Environment as Environment
+import qualified Foundation.Primitive.Runtime as Runtime
 import           Foundation.Internal.Primitive
 import           Foundation.Internal.Proxy
 import           Foundation.Primitive.Types.OffsetSize
@@ -155,7 +155,7 @@ new sz
   where
     -- Safe to use here: If the value changes during runtime, this will only
     -- have an impact on newly created arrays.
-    maxSizeUnpinned = Environment.unsafeUArrayUnpinnedMaxSize
+    maxSizeUnpinned = Runtime.unsafeUArrayUnpinnedMaxSize
 {-# INLINE new #-}
 
 mutableSame :: MUArray ty st -> MUArray ty st -> Bool

@@ -5,6 +5,7 @@
 -- Stability   : experimental
 -- Portability : portable
 --
+{-# LANGUAGE OverloadedStrings #-}
 module Foundation.IO.File
     ( FilePath
     , openFile
@@ -25,9 +26,7 @@ import qualified System.IO as S
 import           Foundation.Collection
 import           Foundation.VFS
 import           Foundation.Primitive.Types.OffsetSize
-import           Foundation.Internal.Base
-import           Foundation.String
-import           Foundation.Array
+import           Foundation.Primitive.Imports
 import           Foundation.Array.Internal
 import           Foundation.Numerical
 import qualified Foundation.Array.Unboxed.Mutable as V
@@ -89,7 +88,7 @@ hPut h arr = withPtr arr $ \ptr -> S.hPutBuf h ptr (length arr)
 invalidBufferSize :: [Char] -> Handle -> Int -> IO a
 invalidBufferSize functionName handle size =
     ioError $ mkIOError illegalOperationErrorType
-                        (functionName <> " invalid array size: " <> show size)
+                        (functionName <> " invalid array size: " <> toList (show size))
                         (Just handle)
                         Nothing
 
@@ -148,6 +147,7 @@ foldTextFile chunkf ini fp = do
                             error ("foldTextFile: invalid UTF8 sequence: byte position: " <> show (absPos + pos))
                     chunkf s acc >>= loop (absPos + Offset r)
                 else error ("foldTextFile: read failed") -- FIXME
+{-# DEPRECATED foldTextFile "use conduit instead" #-}
 
 blockSize :: Int
 blockSize = 4096

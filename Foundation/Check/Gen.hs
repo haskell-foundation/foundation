@@ -11,7 +11,7 @@ module Foundation.Check.Gen
     , genWithParams
     ) where
 
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Imports
 import           Foundation.Collection
 import           Foundation.Random
 import           Foundation.String

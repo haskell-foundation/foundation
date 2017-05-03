@@ -1,5 +1,5 @@
 -- |
--- Module      : Foundation.String.UTF8Table
+-- Module      : Foundation.Primitive.UTF8.Table
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
@@ -8,7 +8,7 @@
 -- UTF8 lookup tables for fast continuation & nb bytes per header queries
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
-module Foundation.String.UTF8Table
+module Foundation.Primitive.UTF8.Table
     ( isContinuation
     , getNbBytes
     , isContinuation#

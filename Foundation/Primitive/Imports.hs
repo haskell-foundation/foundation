@@ -1,12 +1,12 @@
 -- |
--- Module      : Foundation.Internal.Base
+-- Module      : Foundation.Primitive.Imports
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
 -- Portability : portable
 --
--- internal re-export of all the good base bits
-module Foundation.Internal.Base
+-- re-export of all the base prelude and basic primitive stuffs
+module Foundation.Primitive.Imports
     ( (Prelude.$)
     , (Prelude.$!)
     , (Prelude.&&)
@@ -22,11 +22,12 @@ module Foundation.Internal.Base
     , Prelude.either
     , Prelude.flip
     , Prelude.const
-    , Prelude.error
+    , Foundation.Primitive.Error.error
     , Prelude.and
     , Prelude.undefined
     , Prelude.seq
-    , Prelude.Show (..)
+    , Prelude.Show
+    , Foundation.Primitive.Show.show
     , Prelude.Ord (..)
     , Prelude.Eq (..)
     , Prelude.Bounded (..)
@@ -39,7 +40,13 @@ module Foundation.Internal.Base
     , Prelude.Bool (..)
     , Prelude.Int
     , Prelude.Integer
+    , Foundation.Internal.Natural.Natural
+    , Foundation.Primitive.Types.OffsetSize.Offset
+    , Foundation.Primitive.Types.OffsetSize.Size
     , Prelude.Char
+    , Foundation.Primitive.UTF8.Base.String
+    , Foundation.Array.Unboxed.UArray
+    , Foundation.Array.Boxed.Array
     , Foundation.Internal.NumLiteral.Integral (..)
     , Foundation.Internal.NumLiteral.Fractional (..)
     , Foundation.Internal.NumLiteral.HasNegation (..)
@@ -47,6 +54,8 @@ module Foundation.Internal.Base
     , Data.Word.Word8, Data.Word.Word16, Data.Word.Word32, Data.Word.Word64, Data.Word.Word
     , Prelude.Double, Prelude.Float
     , Prelude.IO
+    , FP32
+    , FP64
     , Foundation.Internal.IsList.IsList (..)
     , GHC.Exts.IsString (..)
     , GHC.Generics.Generic (..)
@@ -62,7 +71,6 @@ module Foundation.Internal.Base
     , Control.Exception.throwIO
     , GHC.Ptr.Ptr(..)
     , ifThenElse
-    , internalError
     ) where
 
 import qualified Prelude
@@ -75,17 +83,23 @@ import qualified Data.Typeable
 import qualified Data.Word
 import qualified Data.Int
 import qualified Foundation.Internal.IsList
+import qualified Foundation.Internal.Natural
 import qualified Foundation.Internal.NumLiteral
+import qualified Foundation.Array.Unboxed
+import qualified Foundation.Array.Boxed
+import qualified Foundation.Primitive.UTF8.Base
+import qualified Foundation.Primitive.Error
+import qualified Foundation.Primitive.Show
+import qualified Foundation.Primitive.Types.OffsetSize
 import qualified GHC.Exts
 import qualified GHC.Generics
 import qualified GHC.Ptr
 import           GHC.Exts (fromString)
 
--- | Only to use internally for internal error cases
-internalError :: [Prelude.Char] -> a
-internalError s = Prelude.error ("Internal Error: the impossible happened: " Prelude.++ s)
-
 -- | for support of if .. then .. else
 ifThenElse :: Prelude.Bool -> a -> a -> a
 ifThenElse Prelude.True  e1 _  = e1
 ifThenElse Prelude.False _  e2 = e2
+
+type FP32 = Prelude.Float
+type FP64 = Prelude.Double

@@ -15,16 +15,16 @@ class FloatingPoint a where
     floatDecode :: a -> (Integer, Int)
     floatEncode :: Integer -> Int -> a
 
-instance FloatingPoint FP32 where
-    floatRadix _ = Prelude.floatRadix (0.0 :: FP32)
-    floatDigits _ = Prelude.floatDigits (0.0 :: FP32)
-    floatRange _ = Prelude.floatRange (0.0 :: FP32)
+instance FloatingPoint Float where
+    floatRadix _ = Prelude.floatRadix (0.0 :: Float)
+    floatDigits _ = Prelude.floatDigits (0.0 :: Float)
+    floatRange _ = Prelude.floatRange (0.0 :: Float)
     floatDecode = Prelude.decodeFloat
     floatEncode = Prelude.encodeFloat
 
-instance FloatingPoint FP64 where
-    floatRadix _ = Prelude.floatRadix (0.0 :: FP64)
-    floatDigits _ = Prelude.floatDigits (0.0 :: FP64)
-    floatRange _ = Prelude.floatRange (0.0 :: FP64)
+instance FloatingPoint Double where
+    floatRadix _ = Prelude.floatRadix (0.0 :: Double)
+    floatDigits _ = Prelude.floatDigits (0.0 :: Double)
+    floatRange _ = Prelude.floatRange (0.0 :: Double)
     floatDecode = Prelude.decodeFloat
     floatEncode = Prelude.encodeFloat

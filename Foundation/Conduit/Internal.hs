@@ -10,6 +10,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Foundation.Conduit.Internal
     ( Pipe(..)
     , Conduit(..)
@@ -29,7 +30,7 @@ module Foundation.Conduit.Internal
     , bracketConduit
     ) where
 
-import Foundation.Internal.Base hiding (throw)
+import Foundation.Primitive.Imports hiding (throw)
 import Foundation.Monad
 import Foundation.Numerical
 import Foundation.Primitive.Monad

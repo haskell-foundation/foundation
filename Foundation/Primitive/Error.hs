@@ -3,12 +3,12 @@
 {-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE CPP #-}
-module Foundation.Internal.Error
+module Foundation.Primitive.Error
     ( error
     ) where
 
 import           GHC.Prim
-import           Foundation.String.UTF8
+import           Foundation.Primitive.UTF8.Base
 import           Foundation.Internal.CallStack
 
 #if MIN_VERSION_base(4,9,0)

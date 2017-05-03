@@ -112,7 +112,6 @@ Library
                      Foundation.String.Encoding.UTF32
                      Foundation.String.Encoding.ASCII7
                      Foundation.String.Encoding.ISO_8859_1
-                     Foundation.String.UTF8Table
                      Foundation.String.ModifiedUTF8
                      Foundation.Tuple
                      Foundation.Hashing.FNV
@@ -140,7 +139,7 @@ Library
                      Foundation.Internal.ByteSwap
                      Foundation.Internal.CallStack
                      Foundation.Internal.Environment
-                     Foundation.Internal.Error
+                     Foundation.Primitive.Error
                      Foundation.Internal.Primitive
                      Foundation.Internal.IsList
                      Foundation.Internal.Identity
@@ -171,6 +170,12 @@ Library
                      Foundation.Primitive.Floating
                      Foundation.Primitive.FinalPtr
                      Foundation.Primitive.These
+                     Foundation.Primitive.Show
+                     Foundation.Primitive.UTF8.Table
+                     Foundation.Primitive.UTF8.Helper
+                     Foundation.Primitive.UTF8.Base
+                     Foundation.Primitive.Runtime
+                     Foundation.Primitive.Imports
                      Foundation.Monad.MonadIO
                      Foundation.Monad.Exception
                      Foundation.Monad.Transformer
