@@ -17,7 +17,7 @@ module Foundation.Check.Property
     ) where
 
 import Foundation.Primitive.Imports
-import Foundation.Internal.Proxy (Proxy)
+import Foundation.Internal.Proxy (Proxy(..))
 import Foundation.Check.Gen
 import Foundation.Check.Arbitrary
 
