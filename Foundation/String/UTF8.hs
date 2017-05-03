@@ -85,7 +85,6 @@ import qualified Foundation.Array.Unboxed           as C
 import           Foundation.Array.Unboxed.ByteArray (MutableByteArray)
 import qualified Foundation.Array.Unboxed.Mutable   as MVec
 import           Foundation.Internal.Base
-import           Foundation.Bits
 import           Foundation.Internal.Natural
 import           Foundation.Internal.MonadTrans
 import           Foundation.Internal.Primitive
@@ -93,13 +92,12 @@ import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Numerical
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
-import           Foundation.Primitive.NormalForm
 import           Foundation.Primitive.IntegralConv
 import           Foundation.Primitive.Floating
 import           Foundation.Boot.Builder
-import qualified Foundation.Boot.List as List
 import           Foundation.Primitive.UTF8.Table
 import           Foundation.Primitive.UTF8.Helper
+import           Foundation.Primitive.UTF8.Base
 import           GHC.Prim
 import           GHC.ST
 import           GHC.Types
@@ -110,54 +108,15 @@ import           GHC.Char
 
  -- temporary
 import qualified Data.List
-import           Data.Data
 import           Data.Ratio
-import           Data.Char
+import           Data.Char (toUpper, toLower)
 import qualified Prelude
-
-import           Foundation.String.ModifiedUTF8     (fromModified)
-import           GHC.CString                  (unpackCString#,
-                                               unpackCStringUtf8#)
 
 import qualified Foundation.String.Encoding.Encoding   as Encoder
 import qualified Foundation.String.Encoding.ASCII7     as Encoder
 import qualified Foundation.String.Encoding.UTF16      as Encoder
 import qualified Foundation.String.Encoding.UTF32      as Encoder
 import qualified Foundation.String.Encoding.ISO_8859_1 as Encoder
-
--- | Opaque packed array of characters in the UTF8 encoding
-newtype String = String (UArray Word8)
-    deriving (Typeable, Monoid, Eq, Ord)
-
-instance Data String where
-    toConstr s   = mkConstr stringType (show s) [] Prefix
-    dataTypeOf _ = stringType
-    gunfold _ _  = error "gunfold"
-
-instance NormalForm String where
-    toNormalForm (String ba) = toNormalForm ba
-
-stringType :: DataType
-stringType = mkNoRepType "Foundation.String"
-
--- | Mutable String Buffer.
---
--- Note that it's hard to use properly since the UTF8 encoding
--- is variable, and thus you can't mutable previously filled
--- data without potentially have to move all the data around.
---
--- See 'charMap' for an idea of the scale of the problem
-newtype MutableString st = MutableString (MutableByteArray st)
-    deriving (Typeable)
-
-instance Show String where
-    show = show . sToList
-instance IsString String where
-    fromString = sFromList
-instance IsList String where
-    type Item String = Char
-    fromList = sFromList
-    toList = sToList
 
 -- | Possible failure related to validating bytes of UTF8 sequences.
 data ValidationFailure = InvalidHeader
@@ -283,17 +242,13 @@ nextWithIndexer :: (Offset Word8 -> Word8)
                 -> (Char, Offset Word8)
 nextWithIndexer getter off =
     case getNbBytes# h of
-        0# -> (toChar h, off + aone)
-        1# -> (toChar (decode2 (getter $ off + aone)), off + atwo)
-        2# -> (toChar (decode3 (getter $ off + aone) (getter $ off + atwo)), off + athree)
-        3# -> (toChar (decode4 (getter $ off + aone) (getter $ off + atwo) (getter $ off + athree))
-              , off + afour)
+        0# -> (toChar h, off + 1)
+        1# -> (toChar (decode2 (getter $ off + 1)), off + 2)
+        2# -> (toChar (decode3 (getter $ off + 1) (getter $ off + 2)), off + 3)
+        3# -> (toChar (decode4 (getter $ off + 1) (getter $ off + 2) (getter $ off + 3))
+              , off + 4)
         r -> error ("next: internal error: invalid input: " <> show (I# r) <> " " <> show (W# h))
   where
-    aone = Offset 1
-    atwo = Offset 2
-    athree = Offset 3
-    afour = Offset 4
     !(W8# h) = getter off
 
     toChar :: Word# -> Char
@@ -353,54 +308,6 @@ writeWithBuilder c =
     toContinuation :: Word# -> Word#
     toContinuation w = or# (and# w 0x3f##) 0x80##
 
--- A variant of 'next' when you want the next character
--- to be ASCII only. if Bool is False, then it's not ascii,
--- otherwise it is and the return Word8 is valid.
-nextAscii :: String -> Offset8 -> (# Word8, Bool #)
-nextAscii (String ba) n = (# w, not (testBit w 7) #)
-  where
-    !w = Vec.unsafeIndex ba n
-
-expectAscii :: String -> Offset8 -> Word8 -> Bool
-expectAscii (String ba) n v = Vec.unsafeIndex ba n == v
-{-# INLINE expectAscii #-}
-
-next :: String -> Offset8 -> (# Char, Offset8 #)
-next (String ba) n =
-    case getNbBytes# h of
-        0# -> (# toChar h, n + 1 #)
-        1# -> (# toChar (decode2 (Vec.unsafeIndex ba (n + 1))) , n + 2 #)
-        2# -> (# toChar (decode3 (Vec.unsafeIndex ba (n + 1))
-                                 (Vec.unsafeIndex ba (n + 2))) , n + 3 #)
-        3# -> (# toChar (decode4 (Vec.unsafeIndex ba (n + 1))
-                                 (Vec.unsafeIndex ba (n + 2))
-                                 (Vec.unsafeIndex ba (n + 3))) , n + 4 #)
-        r -> error ("next: internal error: invalid input: offset=" <> show n <> " table=" <> show (I# r) <> " h=" <> show (W# h))
-  where
-    !(W8# h) = Vec.unsafeIndex ba n
-
-    toChar :: Word# -> Char
-    toChar w = C# (chr# (word2Int# w))
-
-    decode2 :: Word8 -> Word#
-    decode2 (W8# c1) =
-        or# (uncheckedShiftL# (and# h 0x1f##) 6#)
-            (and# c1 0x3f##)
-
-    decode3 :: Word8 -> Word8 -> Word#
-    decode3 (W8# c1) (W8# c2) =
-        or# (uncheckedShiftL# (and# h 0xf##) 12#)
-            (or# (uncheckedShiftL# (and# c1 0x3f##) 6#)
-                 (and# c2 0x3f##))
-
-    decode4 :: Word8 -> Word8 -> Word8 -> Word#
-    decode4 (W8# c1) (W8# c2) (W8# c3) =
-        or# (uncheckedShiftL# (and# h 0x7##) 18#)
-            (or# (uncheckedShiftL# (and# c1 0x3f##) 12#)
-                (or# (uncheckedShiftL# (and# c2 0x3f##) 6#)
-                    (and# c3 0x3f##))
-            )
-
 writeUTF8Char :: PrimMonad prim => MutableString (PrimState prim) -> Offset8 -> UTF8Char -> prim ()
 writeUTF8Char (MutableString mba) i (UTF8_1 x1) =
     Vec.unsafeWrite mba i     x1
@@ -418,99 +325,12 @@ writeUTF8Char (MutableString mba) i (UTF8_4 x1 x2 x3 x4) = do
     Vec.unsafeWrite mba (i+3) x4
 {-# INLINE writeUTF8Char #-}
 
-write :: PrimMonad prim => MutableString (PrimState prim) -> Offset8 -> Char -> prim Offset8
-write (MutableString mba) i c =
-    if      bool# (ltWord# x 0x80##   ) then encode1
-    else if bool# (ltWord# x 0x800##  ) then encode2
-    else if bool# (ltWord# x 0x10000##) then encode3
-    else                                     encode4
-  where
-    !(I# xi) = fromEnum c
-    !x       = int2Word# xi
-
-    encode1 = Vec.unsafeWrite mba i (W8# x) >> return (i + 1)
-
-    encode2 = do
-        let x1  = or# (uncheckedShiftRL# x 6#) 0xc0##
-            x2  = toContinuation x
-        Vec.unsafeWrite mba i     (W8# x1)
-        Vec.unsafeWrite mba (i+1) (W8# x2)
-        return (i + 2)
-
-    encode3 = do
-        let x1  = or# (uncheckedShiftRL# x 12#) 0xe0##
-            x2  = toContinuation (uncheckedShiftRL# x 6#)
-            x3  = toContinuation x
-        Vec.unsafeWrite mba i     (W8# x1)
-        Vec.unsafeWrite mba (i+1) (W8# x2)
-        Vec.unsafeWrite mba (i+2) (W8# x3)
-        return (i + 3)
-
-    encode4 = do
-        let x1  = or# (uncheckedShiftRL# x 18#) 0xf0##
-            x2  = toContinuation (uncheckedShiftRL# x 12#)
-            x3  = toContinuation (uncheckedShiftRL# x 6#)
-            x4  = toContinuation x
-        Vec.unsafeWrite mba i     (W8# x1)
-        Vec.unsafeWrite mba (i+1) (W8# x2)
-        Vec.unsafeWrite mba (i+2) (W8# x3)
-        Vec.unsafeWrite mba (i+3) (W8# x4)
-        return (i + 4)
-
-    toContinuation :: Word# -> Word#
-    toContinuation w = or# (and# w 0x3f##) 0x80##
-{-# INLINE write #-}
-
-freeze :: PrimMonad prim => MutableString (PrimState prim) -> prim String
-freeze (MutableString mba) = String `fmap` C.unsafeFreeze mba
-{-# INLINE freeze #-}
-
 unsafeFreezeShrink :: PrimMonad prim => MutableString (PrimState prim) -> Size Word8 -> prim String
 unsafeFreezeShrink (MutableString mba) s = String <$> Vec.unsafeFreezeShrink mba s
 {-# INLINE unsafeFreezeShrink #-}
 
 ------------------------------------------------------------------------
 -- real functions
-
--- | Convert a String to a list of characters
---
--- The list is lazily created as evaluation needed
-sToList :: String -> [Char]
-sToList s = loop azero
-  where
-    !nbBytes = size s
-    end = azero `offsetPlusE` nbBytes
-    loop idx
-        | idx == end = []
-        | otherwise  =
-            let (# c , idx' #) = next s idx in c : loop idx'
-
-{-# RULES
-"String sFromList" forall s .
-  sFromList (unpackCString# s) = String $ fromModified s
-  #-}
-{-# RULES
-"String sFromList" forall s .
-  sFromList (unpackCStringUtf8# s) = String $ fromModified s
-  #-}
-
--- | Create a new String from a list of characters
---
--- The list is strictly and fully evaluated before
--- creating the new String, as the size need to be
--- computed before filling.
-sFromList :: [Char] -> String
-sFromList l = runST (new bytes >>= startCopy)
-  where
-    -- count how many bytes
-    !bytes = List.sum $ fmap (charToBytes . fromEnum) l
-
-    startCopy :: MutableString (PrimState (ST st)) -> ST st String
-    startCopy ms = loop azero l
-      where
-        loop _   []     = freeze ms
-        loop idx (c:xs) = write ms idx c >>= \idx' -> loop idx' xs
-{-# INLINE [0] sFromList #-}
 
 -- | Check if a String is null
 null :: String -> Bool
@@ -548,13 +368,13 @@ indexN :: Offset Char -> String -> Offset Word8
 indexN !n (String ba) = Vec.unsafeDewrap goVec goAddr ba
   where
     goVec :: ByteArray# -> Offset Word8 -> Offset Word8
-    goVec !ma !start = loop start (Offset 0)
+    goVec !ma !start = loop start 0
       where
         !len = start `offsetPlusE` Vec.lengthSize ba
         loop :: Offset Word8 -> Offset Char -> Offset Word8
         loop !idx !i
             | idx >= len || i >= n = sizeAsOffset (idx - start)
-            | otherwise              = loop (idx `offsetPlusE` d) (i + Offset 1)
+            | otherwise            = loop (idx `offsetPlusE` d) (i + Offset 1)
           where d = skipNextHeaderValue (primBaIndex ma idx)
     {-# INLINE goVec #-}
 
@@ -749,12 +569,6 @@ unsafeCopyFrom src dstBytes f = new dstBytes >>= fill (Offset 0) (Offset 0) (Off
         | otherwise = do (nextSrcIdx, nextDstIdx) <- f' src srcI srcIdx dst' dstIdx
                          fill (srcI + Offset 1) nextSrcIdx nextDstIdx f' dst'
 
--- | size in bytes.
---
--- this size is available in o(1)
-size :: String -> Size8
-size (String ba) = Size $ C.length ba
-
 -- | Length of a String using Size
 --
 -- this size is available in o(n)
@@ -813,12 +627,6 @@ singleton c = runST $ do
   where
     !nbBytes = charToBytes (fromEnum c)
 
--- | Allocate a MutableString of a specific size in bytes.
-new :: PrimMonad prim
-    => Size8 -- ^ in number of bytes, not of elements.
-    -> prim (MutableString (PrimState prim))
-new n = MutableString `fmap` MVec.new n
-
 -- | Unsafely create a string of up to @sz@ bytes.
 --
 -- The callback @f@ needs to return the number of bytes filled in the underlaying
@@ -831,14 +639,6 @@ create sz f = do
     if filled == sz
         then freeze ms
         else take filled `fmap` freeze ms
-
-charToBytes :: Int -> Size8
-charToBytes c
-    | c < 0x80     = Size 1
-    | c < 0x800    = Size 2
-    | c < 0x10000  = Size 3
-    | c < 0x110000 = Size 4
-    | otherwise    = error ("invalid code point: " `mappend` show c)
 
 -- | Monomorphically map the character in a string and return the transformed one
 charMap :: (Char -> Char) -> String -> String

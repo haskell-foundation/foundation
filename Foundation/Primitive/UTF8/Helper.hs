@@ -117,3 +117,11 @@ skipNextHeaderValue !x
     | x < 0xF0  = Size 3 -- 0b11110000
     | otherwise = Size 4
 {-# INLINE skipNextHeaderValue #-}
+
+charToBytes :: Int -> Size8
+charToBytes c
+    | c < 0x80     = Size 1
+    | c < 0x800    = Size 2
+    | c < 0x10000  = Size 3
+    | c < 0x110000 = Size 4
+    | otherwise    = error ("invalid code point: " `mappend` show c)
