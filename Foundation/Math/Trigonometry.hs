@@ -36,7 +36,7 @@ class Trigonometry a where
     -- | hyperbolic tangent-1
     atanh :: a -> a
 
-instance Trigonometry FP32 where
+instance Trigonometry Float where
     pi = Prelude.pi
     sin = Prelude.sin
     cos = Prelude.cos
@@ -51,7 +51,7 @@ instance Trigonometry FP32 where
     acosh = Prelude.acosh
     atanh = Prelude.atanh
 
-instance Trigonometry FP64 where
+instance Trigonometry Double where
     pi = Prelude.pi
     sin = Prelude.sin
     cos = Prelude.cos

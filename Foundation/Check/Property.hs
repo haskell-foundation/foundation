@@ -16,10 +16,9 @@ module Foundation.Check.Property
     , propertyFail
     ) where
 
-import Foundation.Internal.Base
+import Foundation.Primitive.Imports
 import Foundation.Check.Gen
 import Foundation.Check.Arbitrary
-import Foundation.String
 
 type PropertyTestResult = Bool
 
@@ -65,12 +64,12 @@ forAll generator tst = Prop $ do
     a <- generator
     augment a <$> unProp (property (tst a))
   where
-    augment a arg = PropertyArg (fromList $ show a) arg
+    augment a arg = PropertyArg (show a) arg
 
 (===) :: (Show a, Eq a) => a -> a -> PropertyCheck
 (===) a b =
-    let sa = fromList (show a)
-        sb = fromList (show b)
+    let sa = show a
+        sb = show b
      in PropertyBinaryOp (a == b) "==" sa sb
 infix 4 ===
 
@@ -81,8 +80,8 @@ propertyCompare :: Show a
                 -> a                -- ^ value right of the operator
                 -> PropertyCheck
 propertyCompare name op a b =
-    let sa = fromList (show a)
-        sb = fromList (show b)
+    let sa = show a
+        sb = show b
      in PropertyBinaryOp (a `op` b) name sa sb
 
 propertyAnd :: PropertyCheck -> PropertyCheck -> PropertyCheck

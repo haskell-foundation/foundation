@@ -1,5 +1,6 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Foundation.Check.Arbitrary
     ( Arbitrary(..)
     , frequency
@@ -8,8 +9,7 @@ module Foundation.Check.Arbitrary
     , between
     ) where
 
-import           Foundation.Internal.Base
-import           Foundation.Internal.Natural
+import           Foundation.Primitive.Imports
 import           Foundation.Primitive
 import           Foundation.Primitive.IntegralConv (wordToChar)
 import           Foundation.Primitive.Floating
@@ -17,9 +17,7 @@ import           Foundation.Check.Gen
 import           Foundation.Random
 import           Foundation.Bits
 import           Foundation.Collection
-import           Foundation.Array
 import           Foundation.Numerical
-import           Foundation.String
 import           Control.Monad (replicateM)
 
 -- | How to generate an arbitrary value for 'a'
@@ -137,7 +135,7 @@ frequency (getNonEmpty -> l) = between (0, sum) >>= pickOne l
     pickOne ((k,x):xs) n
         | n <= k    = x
         | otherwise = pickOne xs (n-k)
-    pickOne _ _ = internalError "frequency"
+    pickOne _ _ = error "frequency"
 
 oneof :: NonEmpty [Gen a] -> Gen a
 oneof ne = frequency (nonEmptyFmap (\x -> (1, x)) ne)

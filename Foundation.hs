@@ -173,6 +173,7 @@ import           Foundation.Tuple
 import qualified Foundation.Class.Bifunctor
 import           Foundation.Primitive.Types.OffsetSize (Size(..), Offset(..))
 import qualified Foundation.Primitive
+import           Foundation.Primitive.Show
 import           Foundation.Internal.NumLiteral
 import           Foundation.Internal.Natural
 
@@ -190,14 +191,6 @@ default (Prelude.Integer, Prelude.Double)
 
 -- | Alias to Prelude String ([Char]) for compatibility purpose
 type LString = Prelude.String
-
--- | Use the Show class to create a String.
---
--- Note that this is not efficient, since
--- an intermediate [Char] is going to be
--- created before turning into a real String.
-show :: Prelude.Show a => a -> String
-show = fromList Prelude.. Prelude.show
 
 -- | Returns a list of the program's command line arguments (not including the program name).
 getArgs :: Prelude.IO [String]

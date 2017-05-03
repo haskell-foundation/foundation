@@ -12,8 +12,7 @@ module Foundation.IO.Terminal
     , stdout
     ) where
 
-import           Foundation.Internal.Base
-import           Foundation.String
+import           Foundation.Primitive.Imports
 import qualified Prelude
 import           System.IO (stdin, stdout)
 

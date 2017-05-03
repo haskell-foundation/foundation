@@ -170,10 +170,12 @@ Library
                      Foundation.Primitive.Floating
                      Foundation.Primitive.FinalPtr
                      Foundation.Primitive.These
+                     Foundation.Primitive.Show
                      Foundation.Primitive.UTF8.Table
                      Foundation.Primitive.UTF8.Helper
                      Foundation.Primitive.UTF8.Base
                      Foundation.Primitive.Runtime
+                     Foundation.Primitive.Imports
                      Foundation.Monad.MonadIO
                      Foundation.Monad.Exception
                      Foundation.Monad.Transformer

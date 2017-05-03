@@ -17,6 +17,7 @@
 -- In doubt, use 'readFile' or other simple routine that brings
 -- the content of the file in IO.
 --
+{-# LANGUAGE OverloadedStrings #-}
 module Foundation.IO.FileMap
     ( fileMapRead
     , fileMapReadWith
@@ -24,7 +25,7 @@ module Foundation.IO.FileMap
 
 import           Control.Exception
 import           Foundation.Primitive.Types.OffsetSize
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Imports
 import           Foundation.VFS (FilePath)
 import           Foundation.Primitive.FinalPtr
 import qualified Foundation.Array.Unboxed as V
