@@ -172,6 +172,7 @@ Library
                      Foundation.Primitive.These
                      Foundation.Primitive.UTF8.Table
                      Foundation.Primitive.UTF8.Helper
+                     Foundation.Primitive.UTF8.Base
                      Foundation.Monad.MonadIO
                      Foundation.Monad.Exception
                      Foundation.Monad.Transformer

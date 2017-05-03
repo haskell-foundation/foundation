@@ -8,7 +8,7 @@ module Foundation.Internal.Error
     ) where
 
 import           GHC.Prim
-import           Foundation.String.UTF8
+import           Foundation.Primitive.UTF8.Base
 import           Foundation.Internal.CallStack
 
 #if MIN_VERSION_base(4,9,0)

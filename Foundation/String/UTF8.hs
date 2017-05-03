@@ -38,7 +38,6 @@ module Foundation.String.UTF8
     , copy
     , ValidationFailure(..)
     , index
-    , sToList
     , null
     , drop
     , take
