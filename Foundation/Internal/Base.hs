@@ -54,7 +54,7 @@ module Foundation.Internal.Base
     , Data.Data.Data (..)
     , Data.Data.mkNoRepType
     , Data.Data.DataType
-    , Data.Typeable.Typeable
+    , Foundation.Internal.Typeable.Typeable
     , Data.Monoid.Monoid (..)
     , (Data.Monoid.<>)
     , Control.Exception.Exception
@@ -71,11 +71,11 @@ import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Data.Monoid
 import qualified Data.Data
-import qualified Data.Typeable
 import qualified Data.Word
 import qualified Data.Int
 import qualified Foundation.Internal.IsList
 import qualified Foundation.Internal.NumLiteral
+import qualified Foundation.Internal.Typeable
 import qualified GHC.Exts
 import qualified GHC.Generics
 import qualified GHC.Ptr
