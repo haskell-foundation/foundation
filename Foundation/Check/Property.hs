@@ -16,8 +16,9 @@ module Foundation.Check.Property
     , propertyFail
     ) where
 
-import Foundation.Primitive.Imports
+import Foundation.Primitive.Imports hiding (Typeable)
 import Foundation.Internal.Proxy (Proxy(..))
+import Foundation.Internal.Typeable
 import Foundation.Check.Gen
 import Foundation.Check.Arbitrary
 
@@ -74,10 +75,10 @@ forAll generator tst = Prop $ do
     let sa = pretty a Proxy
         sb = pretty b Proxy
      in PropertyBinaryOp (a == b) "==" sa sb
-  where
-    pretty :: (Show a, Typeable a) => a -> Proxy a -> String
-    pretty a' pa = show a' <> " :: " <> show (typeRep pa)
 infix 4 ===
+
+pretty :: (Show a, Typeable a) => a -> Proxy a -> String
+pretty a pa = show a <> " :: " <> show (typeRep pa)
 
 propertyCompare :: (Show a, Typeable a)
                 => String           -- ^ name of the function used for comparaison, e.g. (<)
@@ -89,9 +90,6 @@ propertyCompare name op a b =
     let sa = pretty a Proxy
         sb = pretty b Proxy
      in PropertyBinaryOp (a `op` b) name sa sb
-  where
-    pretty :: (Show a, Typeable a) => a -> Proxy a -> String
-    pretty a' pa = show a' <> " :: " <> show (typeRep pa)
 
 propertyAnd :: PropertyCheck -> PropertyCheck -> PropertyCheck
 propertyAnd c1 c2 =
