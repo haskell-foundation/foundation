@@ -22,10 +22,6 @@ matrix:
   - env: BUILD=cabal
     language: haskell
     ghc: 7.8
-  - env: BUILD=stack RESOLVER=ghc-7.8
-    language: generic
-    addons: { apt: { packages: [ libgmp-dev ] } }
-    compiler: ghc-7.8
   - env: BUILD=stack RESOLVER=ghc-7.10
     language: generic
     addons: { apt: { packages: [ libgmp-dev ] } }
