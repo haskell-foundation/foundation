@@ -16,9 +16,13 @@ module Foundation.Check.Property
     , propertyFail
     ) where
 
-import Foundation.Primitive.Imports
+import Foundation.Primitive.Imports hiding (Typeable)
+import Foundation.Internal.Proxy (Proxy(..))
+import Foundation.Internal.Typeable
 import Foundation.Check.Gen
 import Foundation.Check.Arbitrary
+
+import Data.Typeable
 
 type PropertyTestResult = Bool
 
@@ -66,22 +70,25 @@ forAll generator tst = Prop $ do
   where
     augment a arg = PropertyArg (show a) arg
 
-(===) :: (Show a, Eq a) => a -> a -> PropertyCheck
+(===) :: (Show a, Eq a, Typeable a) => a -> a -> PropertyCheck
 (===) a b =
-    let sa = show a
-        sb = show b
+    let sa = pretty a Proxy
+        sb = pretty b Proxy
      in PropertyBinaryOp (a == b) "==" sa sb
 infix 4 ===
 
-propertyCompare :: Show a
+pretty :: (Show a, Typeable a) => a -> Proxy a -> String
+pretty a pa = show a <> " :: " <> show (typeRep pa)
+
+propertyCompare :: (Show a, Typeable a)
                 => String           -- ^ name of the function used for comparaison, e.g. (<)
                 -> (a -> a -> Bool) -- ^ function used for value comparaison
                 -> a                -- ^ value left of the operator
                 -> a                -- ^ value right of the operator
                 -> PropertyCheck
 propertyCompare name op a b =
-    let sa = show a
-        sb = show b
+    let sa = pretty a Proxy
+        sb = pretty b Proxy
      in PropertyBinaryOp (a `op` b) name sa sb
 
 propertyAnd :: PropertyCheck -> PropertyCheck -> PropertyCheck

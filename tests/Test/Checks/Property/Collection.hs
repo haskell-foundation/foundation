@@ -72,6 +72,7 @@ toListP p x = toList (asProxyTypeOf x p)
 --
 collectionProperties :: forall collection
                       . ( Sequential collection
+                        , Typeable collection, Typeable (Element collection)
                         , Eq collection,   Eq (Element collection)
                         , Show collection, Show (Element collection)
                         , Ord collection,  Ord (Element collection)
@@ -95,6 +96,7 @@ collectionProperties name proxy genElement = Group name
 testEqualityProperties :: forall collection
                         . ( IsList collection
                           , Element collection ~ Item collection
+                          , Typeable collection
                           , Eq collection,   Eq (Element collection)
                           , Show collection, Show (Element collection)
                           , Ord collection,  Ord (Element collection)
@@ -115,6 +117,7 @@ testEqualityProperties proxy genElement = Group "equality"
 testOrderingProperties :: forall collection
                         . ( IsList collection
                           , Element collection ~ Item collection
+                          , Typeable collection
                           , Eq collection,   Eq (Element collection)
                           , Show collection, Show (Element collection)
                           , Ord collection,  Ord (Element collection)
@@ -131,6 +134,7 @@ testOrderingProperties proxy genElement = Group "ordering"
 
 testIsListPropertyies :: forall collection
                        . ( IsList collection, Eq collection, Show collection
+                         , Typeable collection, Typeable (Element collection)
                          , Element collection ~ Item collection
                          , Eq (Item collection), Show (Item collection)
                          )
@@ -145,6 +149,7 @@ testIsListPropertyies proxy genElement = Group "IsList"
 
 testMonoidProperties :: forall collection
                       . ( Monoid collection, IsList collection, Eq collection, Show collection
+                        , Typeable collection, Typeable (Element collection)
                         , Element collection ~ Item collection
                         , Eq (Item collection), Show (Item collection)
                         )
@@ -168,6 +173,7 @@ testMonoidProperties proxy genElement = Group "Monoid"
 --
 testCollectionProperties :: forall collection
                           . ( Collection collection
+                            , Typeable collection, Typeable (Element collection)
                             , Show (Element collection), Eq (Element collection)
                                                        , Ord (Element collection)
                             , Ord collection
@@ -200,6 +206,7 @@ testCollectionProperties proxy genElement = Group "Collection"
 
 testSequentialProperties :: forall collection
                           . ( Sequential collection
+                            , Typeable collection, Typeable (Element collection)
                             , Eq collection, Eq (Element collection)
                             , Ord collection, Ord (Element collection)
                             , Show collection, Show (Element collection)
@@ -291,6 +298,7 @@ testSequentialProperties proxy genElement = Group "Sequential"
 
     testSplitOn :: ( Sequential a
                    , Show a, Show (Element a)
+                   , Typeable a
                    , Eq (Element a)
                    , Eq a, Ord a, Ord (Item a), Show a
                    )
