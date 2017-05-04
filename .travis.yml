@@ -18,6 +18,7 @@ matrix:
     compiler: ghc-8.0
   - env: BUILD=stack RESOLVER=ghc-8.2
     language: generic
+    compiler: ghc-8.2
     addons: { apt: { packages: [ libgmp-dev ] } }
   - env: BUILD=cabal
     language: haskell
