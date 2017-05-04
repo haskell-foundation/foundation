@@ -86,6 +86,8 @@ library
                      Foundation.VFS.URI
                      Foundation.Math.Trigonometry
                      Foundation.Hashing
+                     Foundation.JSON.Types
+                     Foundation.JSON.Parse
                      Foundation.Foreign
                      Foundation.Collection
                      Foundation.Primitive
