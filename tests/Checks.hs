@@ -1,6 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE Rank2Types #-}
 module Main where
 
 
@@ -16,6 +17,49 @@ import qualified Prelude
 import Data.Ratio
 
 import Test.Checks.Property.Collection
+
+applyFstToSnd :: (String, String -> b) -> b
+applyFstToSnd (a, fab) = fab a
+
+matrixToGroup name l = Group name $ Prelude.concat $ fmap (fmap applyFstToSnd . snd) l
+
+functorProxy :: Proxy f -> Proxy ty -> Proxy (f ty)
+functorProxy _ _ = Proxy
+
+primTypesMatrixArbitrary :: (forall ty . (PrimType ty, Typeable ty, Show ty, Ord ty) => Proxy ty -> Gen ty -> a)
+                         -> [(String, [(String, a)])]
+primTypesMatrixArbitrary f =
+    [ ("Words",
+        [ ("W8", f (Proxy :: Proxy Word8) arbitrary)
+        , ("W16", f (Proxy :: Proxy Word16) arbitrary)
+        , ("W32", f (Proxy :: Proxy Word32) arbitrary)
+        , ("W64", f (Proxy :: Proxy Word64) arbitrary)
+        , ("Word", f (Proxy :: Proxy Word) arbitrary)
+        ])
+    , ("Ints",
+        [ ("I8", f (Proxy :: Proxy Int8) arbitrary)
+        , ("I16", f (Proxy :: Proxy Int16) arbitrary)
+        , ("I32", f (Proxy :: Proxy Int32) arbitrary)
+        , ("I64", f (Proxy :: Proxy Int64) arbitrary)
+        , ("Int", f (Proxy :: Proxy Int) arbitrary)
+        ])
+    , ("Floating",
+        [ ("FP32", f (Proxy :: Proxy Float) arbitrary)
+        , ("FP64", f (Proxy :: Proxy Double) arbitrary)
+        ])
+    , ("C-Types",
+        [ ("CChar", f (Proxy :: Proxy CChar) (CChar <$> arbitrary))
+        , ("CUChar", f (Proxy :: Proxy CUChar) (CUChar <$> arbitrary))
+        ])
+    , ("Endian",
+        [ ("BE-W16", f (Proxy :: Proxy (BE Word16)) (toBE <$> arbitrary))
+        , ("BE-W32", f (Proxy :: Proxy (BE Word32)) (toBE <$> arbitrary))
+        , ("BE-W64", f (Proxy :: Proxy (BE Word64)) (toBE <$> arbitrary))
+        , ("LE-W16", f (Proxy :: Proxy (LE Word16)) (toLE <$> arbitrary))
+        , ("LE-W32", f (Proxy :: Proxy (LE Word32)) (toLE <$> arbitrary))
+        , ("LE-W64", f (Proxy :: Proxy (LE Word64)) (toLE <$> arbitrary))
+        ])
+    ]
 
 testAdditive :: forall a . (Show a, Eq a, Typeable a, Additive a, Arbitrary a) => Proxy a -> Test
 testAdditive _ = Group "Additive"
@@ -94,46 +138,10 @@ main = defaultMain $ Group "foundation"
         ]
     , collectionProperties "DList a" (Proxy :: Proxy (DList Word8)) arbitrary
     , Group "Array"
-      [ Group "Block"
-        [ collectionProperties "Block(W8)"  (Proxy :: Proxy (Block Word8))  arbitrary
-        , collectionProperties "Block(W16)" (Proxy :: Proxy (Block Word16)) arbitrary
-        , collectionProperties "Block(W32)" (Proxy :: Proxy (Block Word32)) arbitrary
-        , collectionProperties "Block(W64)" (Proxy :: Proxy (Block Word64)) arbitrary
-        , collectionProperties "Block(I8)"  (Proxy :: Proxy (Block Int8))   arbitrary
-        , collectionProperties "Block(I16)" (Proxy :: Proxy (Block Int16))  arbitrary
-        , collectionProperties "Block(I32)" (Proxy :: Proxy (Block Int32))  arbitrary
-        , collectionProperties "Block(I64)" (Proxy :: Proxy (Block Int64))  arbitrary
-        , collectionProperties "Block(F32)" (Proxy :: Proxy (Block Float))  arbitrary
-        , collectionProperties "Block(F64)" (Proxy :: Proxy (Block Double)) arbitrary
-        , collectionProperties "Block(CChar)"  (Proxy :: Proxy (Block CChar))  (CChar <$> arbitrary)
-        , collectionProperties "Block(CUChar)" (Proxy :: Proxy (Block CUChar)) (CUChar <$> arbitrary)
-        , collectionProperties "Block(BE W16)" (Proxy :: Proxy (Block (BE Word16))) (toBE <$> arbitrary)
-        , collectionProperties "Block(BE W32)" (Proxy :: Proxy (Block (BE Word32))) (toBE <$> arbitrary)
-        , collectionProperties "Block(BE W64)" (Proxy :: Proxy (Block (BE Word64))) (toBE <$> arbitrary)
-        , collectionProperties "Block(LE W16)" (Proxy :: Proxy (Block (LE Word16))) (toLE <$> arbitrary)
-        , collectionProperties "Block(LE W32)" (Proxy :: Proxy (Block (LE Word32))) (toLE <$> arbitrary)
-        , collectionProperties "Block(LE W64)" (Proxy :: Proxy (Block (LE Word64))) (toLE <$> arbitrary)
-        ]
-      , Group "Unboxed"
-        [ collectionProperties "UArray(W8)"  (Proxy :: Proxy (UArray Word8))  arbitrary
-        , collectionProperties "UArray(W16)" (Proxy :: Proxy (UArray Word16)) arbitrary
-        , collectionProperties "UArray(W32)" (Proxy :: Proxy (UArray Word32)) arbitrary
-        , collectionProperties "UArray(W64)" (Proxy :: Proxy (UArray Word64)) arbitrary
-        , collectionProperties "UArray(I8)"  (Proxy :: Proxy (UArray Int8))   arbitrary
-        , collectionProperties "UArray(I16)" (Proxy :: Proxy (UArray Int16))  arbitrary
-        , collectionProperties "UArray(I32)" (Proxy :: Proxy (UArray Int32))  arbitrary
-        , collectionProperties "UArray(I64)" (Proxy :: Proxy (UArray Int64))  arbitrary
-        , collectionProperties "UArray(F32)" (Proxy :: Proxy (UArray Float))  arbitrary
-        , collectionProperties "UArray(F64)" (Proxy :: Proxy (UArray Double)) arbitrary
-        , collectionProperties "UArray(CChar)"  (Proxy :: Proxy (UArray CChar))  (CChar <$> arbitrary)
-        , collectionProperties "UArray(CUChar)" (Proxy :: Proxy (UArray CUChar)) (CUChar <$> arbitrary)
-        , collectionProperties "UArray(BE W16)" (Proxy :: Proxy (UArray (BE Word16))) (toBE <$> arbitrary)
-        , collectionProperties "UArray(BE W32)" (Proxy :: Proxy (UArray (BE Word32))) (toBE <$> arbitrary)
-        , collectionProperties "UArray(BE W64)" (Proxy :: Proxy (UArray (BE Word64))) (toBE <$> arbitrary)
-        , collectionProperties "UArray(LE W16)" (Proxy :: Proxy (UArray (LE Word16))) (toLE <$> arbitrary)
-        , collectionProperties "UArray(LE W32)" (Proxy :: Proxy (UArray (LE Word32))) (toLE <$> arbitrary)
-        , collectionProperties "UArray(LE W64)" (Proxy :: Proxy (UArray (LE Word64))) (toLE <$> arbitrary)
-        ]
+      [ matrixToGroup "Block" $ primTypesMatrixArbitrary $ \prx arb ->
+            \s -> collectionProperties ("Block " <> s) (functorProxy (Proxy :: Proxy Block) prx) arb
+      , matrixToGroup "Unboxed" $ primTypesMatrixArbitrary $ \prx arb ->
+            \s -> collectionProperties ("Unboxed " <> s) (functorProxy (Proxy :: Proxy UArray) prx) arb
       , Group "Boxed"
         [ collectionProperties "Array(W8)"  (Proxy :: Proxy (Array Word8))  arbitrary
         , collectionProperties "Array(W16)" (Proxy :: Proxy (Array Word16)) arbitrary
@@ -159,23 +167,7 @@ main = defaultMain $ Group "foundation"
         ]
       ]
     , Group "ChunkedUArray"
-      [ Group "Unboxed"
-        [ collectionProperties "ChunkedUArray(W8)"  (Proxy :: Proxy (ChunkedUArray Word8))  arbitrary
-        , collectionProperties "ChunkedUArray(W16)" (Proxy :: Proxy (ChunkedUArray Word16)) arbitrary
-        , collectionProperties "ChunkedUArray(W32)" (Proxy :: Proxy (ChunkedUArray Word32)) arbitrary
-        , collectionProperties "ChunkedUArray(W64)" (Proxy :: Proxy (ChunkedUArray Word64)) arbitrary
-        , collectionProperties "ChunkedUArray(I8)"  (Proxy :: Proxy (ChunkedUArray Int8))   arbitrary
-        , collectionProperties "ChunkedUArray(I16)" (Proxy :: Proxy (ChunkedUArray Int16))  arbitrary
-        , collectionProperties "ChunkedUArray(I32)" (Proxy :: Proxy (ChunkedUArray Int32))  arbitrary
-        , collectionProperties "ChunkedUArray(I64)" (Proxy :: Proxy (ChunkedUArray Int64))  arbitrary
-        , collectionProperties "ChunkedUArray(F32)" (Proxy :: Proxy (ChunkedUArray Float))  arbitrary
-        , collectionProperties "ChunkedUArray(F64)" (Proxy :: Proxy (ChunkedUArray Double)) arbitrary
-        , collectionProperties "ChunkedUArray(BE W16)" (Proxy :: Proxy (ChunkedUArray (BE Word16))) (toBE <$> arbitrary)
-        , collectionProperties "ChunkedUArray(BE W32)" (Proxy :: Proxy (ChunkedUArray (BE Word32))) (toBE <$> arbitrary)
-        , collectionProperties "ChunkedUArray(BE W64)" (Proxy :: Proxy (ChunkedUArray (BE Word64))) (toBE <$> arbitrary)
-        , collectionProperties "ChunkedUArray(LE W16)" (Proxy :: Proxy (ChunkedUArray (LE Word16))) (toLE <$> arbitrary)
-        , collectionProperties "ChunkedUArray(LE W32)" (Proxy :: Proxy (ChunkedUArray (LE Word32))) (toLE <$> arbitrary)
-        , collectionProperties "ChunkedUArray(LE W64)" (Proxy :: Proxy (ChunkedUArray (LE Word64))) (toLE <$> arbitrary)
-        ]
+      [ matrixToGroup "Unboxed" $ primTypesMatrixArbitrary $ \prx arb ->
+            \s -> collectionProperties ("Unboxed " <> s) (functorProxy (Proxy :: Proxy ChunkedUArray) prx) arb
       ]
     ]
