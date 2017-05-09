@@ -1,3 +1,15 @@
+## 0.0.9
+
+* Introduce Block & MutableBlock which represent a chunk of memory without slices
+  and are faster/leaner in many cases.
+* Cleanup String code and some primitives boundaries
+* Fix storable alignment tests
+* Add These data type (either a, b or both)
+* Implement checks command line
+* Improve checks terminal output
+* drop support for GHC 7.4 and GHC 7.6
+* Improve performance of copy out of block and uarray
+
 ## 0.0.8
 
 * Add MonadReader and MonadState
