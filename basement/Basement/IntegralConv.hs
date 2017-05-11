@@ -103,6 +103,12 @@ instance IntegralUpsize Word16 Word64 where
     integralUpsize (W16# i) = wordToWord64 (W# i)
 instance IntegralUpsize Word16 Word where
     integralUpsize (W16# i) = W# i
+instance IntegralUpsize Word16 Int where
+    integralUpsize (W16# w) = I# (word2Int# w)
+instance IntegralUpsize Word16 Integer where
+    integralUpsize = fromIntegral
+instance IntegralUpsize Word16 Natural where
+    integralUpsize = fromIntegral
 
 instance IntegralUpsize Word32 Word64 where
     integralUpsize (W32# i) = wordToWord64 (W# i)
@@ -120,6 +126,12 @@ instance IntegralDownsize Int Int16 where
     integralDownsizeCheck = integralDownsizeBounded integralDownsize
 instance IntegralDownsize Int Int32 where
     integralDownsize      (I# i) = I32# (narrow32Int# i)
+    integralDownsizeCheck = integralDownsizeBounded integralDownsize
+instance IntegralDownsize Int Word8 where
+    integralDownsize      (I# i) = W8# (narrow8Word# (int2Word# i))
+    integralDownsizeCheck = integralDownsizeBounded integralDownsize
+instance IntegralDownsize Int Word16 where
+    integralDownsize      (I# i) = W16# (narrow16Word# (int2Word# i))
     integralDownsizeCheck = integralDownsizeBounded integralDownsize
 
 instance IntegralDownsize Int64 Int8 where
