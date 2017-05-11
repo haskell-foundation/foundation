@@ -76,13 +76,7 @@ doMore evs = ParseMore (reverse evs)
 
 type Next a r = JsonParseContext -> UArray Word8 -> [JsonEvent] -> a -> Result r
 
-newtype Parser a = Parser
-    { runParser :: forall r .
-                   JsonParseContext
-                -> UArray Word8
-                -> [JsonEvent]
-                -> Next a r
-                -> Result r }
+newtype Parser a = Parser { runParser :: forall r . Next (Next a r) r }
 
 instance Functor Parser where
     fmap f fa = Parser $ \pc s evs next ->
