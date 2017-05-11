@@ -138,6 +138,8 @@ library
                      Foundation.Collection.Zippable
                      Foundation.Collection.Mappable
                      Foundation.Conduit.Internal
+                     Foundation.JSON.Parse.Internal
+                     Foundation.JSON.Parse.Types
                      Foundation.Numerical.Floating
                      Foundation.IO.File
                      Foundation.Monad.MonadIO

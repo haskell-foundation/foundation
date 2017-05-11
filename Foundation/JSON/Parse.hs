@@ -5,45 +5,24 @@
 --
 -- JSON Parser
 --
-{-# LANGUAGE EmptyDataDecls #-}
+{-# LANGUAGE EmptyDataDecls    #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Foundation.JSON.Parse
     ( JsonParseError(..)
     , JsonParseNesting
     , JsonParseConfiguration(..)
     , defaultParseConfiguration
+    , JsonParseContext
+    , jsonParseContextNew
+    , jsonParse
+    , Result(..)
     ) where
 
-import Foundation.Primitive.Imports
+import           Foundation.Primitive.Imports
+import           Foundation.JSON.Parse.Types
+import           Foundation.JSON.Parse.Internal
+import           Foundation.String.UTF8
+import qualified Data.List as L (reverse)
 
-data JsonParseError =
-      BadChar Word8
-    | PopEmpty
-    | PopUnexpectedMode
-    | NestingLimit
-    | DataLimit
-    | CommentNotAllowed
-    | UnexpectedChar Word8
-    | UnicodeMissingLowSurrogate
-    | UnicodeUnexpectedLowSurrogate
-    | CommaOutOfStructure
-    | Callback
-    | UTF8
-    | EndOfStream
-    deriving (Show,Eq)
-
-data JsonParseNesting
-
-data JsonParseConfiguration = JsonParseConfiguration
-    { maxNesting       :: Size JsonParseNesting -- ^ maximum level of nesting
-    , maxData          :: Size Word8            -- ^ size of data in bytes
-    , allowCommentC    :: Bool                  -- ^ allow C style comment
-    , allowCommentYaml :: Bool                  -- ^ allow Yaml/Python style comment
-    } deriving (Show,Eq)
-
-defaultParseConfiguration :: JsonParseConfiguration
-defaultParseConfiguration = JsonParseConfiguration
-    { maxNesting       = 64
-    , maxData          = 104857 -- 1 mb
-    , allowCommentC    = False
-    , allowCommentYaml = False
-    }
+jsonParse :: JsonParseContext -> String -> Result ()
+jsonParse pc s = runParser pGo pc (toBytes UTF8 s) [] $ \_ s' evs -> ParseOK s' (L.reverse evs)
