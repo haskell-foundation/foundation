@@ -198,6 +198,7 @@ library
                      Foundation.Partial
                      Foundation.System.Entropy.Common
                      Foundation.System.Bindings.Network
+                     Foundation.System.Bindings.Time
 
   include-dirs:      cbits
   c-sources:         cbits/foundation_random.c
