@@ -44,23 +44,35 @@ sysTime_CLOCK_THREAD_CPUTIME_ID = (#const CLOCK_THREAD_CPUTIME_ID)
 sysTime_CLOCK_MONOTONIC_RAW :: CClockId
 sysTime_CLOCK_MONOTONIC_RAW = (#const CLOCK_MONOTONIC_RAW)
 
+#ifdef CLOCK_REALTIME_COARSE
 sysTime_CLOCK_REALTIME_COARSE :: CClockId
 sysTime_CLOCK_REALTIME_COARSE = (#const CLOCK_REALTIME_COARSE)
+#endif
 
+#ifdef CLOCK_MONOTIC_COARSE
 sysTime_CLOCK_MONOTONIC_COARSE :: CClockId
 sysTime_CLOCK_MONOTONIC_COARSE = (#const CLOCK_MONOTONIC_COARSE)
+#endif
 
+#ifdef CLOCK_BOOTTIME
 sysTime_CLOCK_BOOTTIME :: CClockId
 sysTime_CLOCK_BOOTTIME = (#const CLOCK_BOOTTIME)
+#endif
 
+#ifdef CLOCK_REALTIME_ALARM
 sysTime_CLOCK_REALTIME_ALARM :: CClockId
 sysTime_CLOCK_REALTIME_ALARM = (#const CLOCK_REALTIME_ALARM)
+#endif
 
+#ifdef CLOCK_BOOTTIME_ALARM
 sysTime_CLOCK_BOOTTIME_ALARM :: CClockId
 sysTime_CLOCK_BOOTTIME_ALARM = (#const CLOCK_BOOTTIME_ALARM)
+#endif
 
+#ifdef CLOCK_TAI
 sysTime_CLOCK_TAI :: CClockId
 sysTime_CLOCK_TAI = (#const CLOCK_TAI)
+#endif
 
 foreign import ccall unsafe "clock_getres"
     sysTimeClockGetRes :: CClockId -> Ptr CTimeSpec -> IO CInt
