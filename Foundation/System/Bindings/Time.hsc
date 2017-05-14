@@ -28,7 +28,22 @@ size_CTimeZone = #const sizeof(struct timezone)
 size_CTimeT :: CSize
 size_CTimeT = #const sizeof(time_t)
 
-#if !defined __MACH__
+#if defined __APPLE__
+
+#include <Availability.h>
+
+#if !defined(__MAC_10_12) || __MAC_OS_X_VERSION_MIN_REQUIRED < __MAC_10_12
+
+#define CLOCK_REALTIME 0
+#define CLOCK_MONOTONIC 1
+#define CLOCK_PROCESS_CPUTIME_ID 2
+#define CLOCK_THREAD_CPUTIME_ID 3
+
+#define FOUNDATION_SYSTEM_API_NO_CLOCK
+
+#endif
+
+#endif
 
 sysTime_CLOCK_REALTIME
     , sysTime_CLOCK_MONOTONIC :: CClockId
@@ -76,28 +91,17 @@ sysTime_CLOCK_TAI :: CClockId
 sysTime_CLOCK_TAI = (#const CLOCK_TAI)
 #endif
 
+#ifdef FOUNDATION_SYSTEM_API_NO_CLOCK
+foreign import ccall unsafe "foundation_time_clock_getres"
+    sysTimeClockGetRes :: CClockId -> Ptr CTimeSpec -> IO CInt
+foreign import ccall unsafe "foundation_time_clock_gettime"
+    sysTimeClockGetTime :: CClockId -> Ptr CTimeSpec -> IO CInt
+#else
 foreign import ccall unsafe "clock_getres"
     sysTimeClockGetRes :: CClockId -> Ptr CTimeSpec -> IO CInt
 foreign import ccall unsafe "clock_gettime"
     sysTimeClockGetTime :: CClockId -> Ptr CTimeSpec -> IO CInt
-foreign import ccall unsafe "clock_settime"
-    sysTimeClockSetTime :: CClockId -> Ptr CTimeSpec -> IO CInt
-
-#else
-
-#if !defined __GNU__
-
-#include <mach/clock.h>
-#include <mach/mach.h>
-
--- OSX definition
-
-
-#endif
-
 #endif
 
 foreign import ccall unsafe "gettimeofday"
     sysTimeGetTimeOfDay :: Ptr CTimeVal -> Ptr CTimeZone -> IO CInt
-foreign import ccall unsafe "settimeofday"
-    sysTimeSetTimeOfDay :: Ptr CTimeVal -> Ptr CTimeZone -> IO CInt

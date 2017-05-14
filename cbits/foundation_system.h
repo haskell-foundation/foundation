@@ -13,9 +13,15 @@
    #endif
 #elif __APPLE__
     #include "TargetConditionals.h"
+    #include "Availability.h"
+
     #if TARGET_OS_MAC
       #define FOUNDATION_SYSTEM_UNIX
       #define FOUNDATION_SYSTEM_MACOS
+
+      #if !defined(__MAC_10_12) || __MAC_OS_X_VERSION_MIN_REQUIRED < __MAC_10_12
+      #define FOUNDATION_SYSTEM_API_NO_CLOCK
+      #endif
       // Other kinds of Mac OS
     #else
     #   error "foundation: system: Unknown Apple platform"
