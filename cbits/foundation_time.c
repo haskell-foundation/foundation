@@ -21,14 +21,14 @@ typedef enum {
 } clockid_t;
 
 
-static mach_timebase_info_data_t timebase = {0,0};  
+static mach_timebase_info_data_t timebase = {0,0};
 
 int foundation_time_clock_getres(unsigned int clockid, struct timespec *timespec)
 {
 	switch (clockid) {
 	/* clockid = 1 (CLOCK_MONOTONIC), or any other value */
 	case CLOCK_MONOTONIC:
-		if (timebase.denom == 0) mach_timebase_info(timebase); 
+		if (timebase.denom == 0) mach_timebase_info(timebase);
 		timespec->tv_sec = 0;
 		timespec->tv_nsec = timebase.numer / timebase.denom;
 		break;
@@ -48,7 +48,7 @@ int foundation_time_clock_gettime(unsigned int clockid, struct timespec *timespe
 #if 0
 	case CLOCK_MONOTONIC: {
 		uint64_t t, nanos;
-		if (timebase.denom == 0) mach_timebase_info(timebase); 
+		if (timebase.denom == 0) mach_timebase_info(timebase);
 
 		t = mach_absolute_time();
 		nanos = t * (timebase.numer / timebase.denom);
