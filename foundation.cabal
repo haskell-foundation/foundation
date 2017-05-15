@@ -1,7 +1,7 @@
-Name:                foundation
-Version:             0.0.9
-Synopsis:            Alternative prelude with batteries and no dependencies
-Description:
+name:                foundation
+version:             0.0.9
+synopsis:            Alternative prelude with batteries and no dependencies
+description:
     A custom prelude with no dependencies apart from base.
     .
     This package has the following goals:
@@ -19,52 +19,52 @@ Description:
     * Better I/O system with less Lazy IO
     .
     * Usual partial functions distinguished through type system
-License:             BSD3
-License-file:        LICENSE
-Copyright:           Vincent Hanquez <vincent@snarc.org>
-Author:              Vincent Hanquez <vincent@snarc.org>
-Maintainer:          vincent@snarc.org
-Category:            foundation
-Stability:           experimental
-Build-Type:          Simple
-Homepage:            https://github.com/haskell-foundation/foundation
-Bug-Reports:         https://github.com/haskell-foundation/foundation/issues
-Cabal-Version:       >=1.10
-tested-with:         GHC == 7.8.4, GHC == 7.10.3, GHC == 8.0.2
-extra-source-files:  README.md
-                     cbits/*.h
+license:             BSD3
+license-file:        LICENSE
+copyright:           Vincent Hanquez <vincent@snarc.org> 2016-2017
+author:              Vincent Hanquez <vincent@snarc.org>
+maintainer:          vincent@snarc.org
+category:            foundation
+build-type:          Simple
+homepage:            https://github.com/haskell-foundation/foundation
+bug-reports:         https://github.com/haskell-foundation/foundation/issues
+cabal-version:       >=1.10
+tested-with:         GHC==8.0.2, GHC==7.10.3, GHC==7.8.4
+extra-source-files:  cbits/*.h
+extra-doc-files:     README.md
+                     CHANGELOG.md
 
 source-repository head
   type: git
-  location: https://github.com/haskell-foundation/foundation
+  location: https://github.com/haskell-foundation/foundation.git
 
-Flag experimental
-  Description:       Enable building experimental features, known as highly unstable or without good support cross-platform
-  Default:           False
-  Manual:            True
+flag experimental
+  description:       Enable building experimental features, known as highly unstable or without good support cross-platform
+  default:           False
+  manual:            True
 
-Flag bench-all
-  Description:       Add some comparaison benchmarks against other haskell libraries
-  Default:           False
-  Manual:            True
+flag bench-all
+  description:       Add some comparaison benchmarks against other haskell libraries
+  default:           False
+  manual:            True
 
-Flag minimal-deps
-  Description:       Build fully with minimal deps (no criterion, no quickcheck, no doctest)
-  Default:           False
-  Manual:            True
+flag minimal-deps
+  description:       Build fully with minimal deps (no criterion, no quickcheck, no doctest)
+  default:           False
+  manual:            True
 
-Flag bounds-check
-  Description:       Add extra friendly boundary check for unsafe array operations
-  Default:           False
-  Manual:            True
+flag bounds-check
+  description:       Add extra friendly boundary check for unsafe array operations
+  default:           False
+  manual:            True
 
-Flag doctest
-  Description:       Add extra friendly boundary check for unsafe array operations
-  Default:           False
-  Manual:            True
+flag doctest
+  description:       Add extra friendly boundary check for unsafe array operations
+  default:           False
+  manual:            True
 
-Library
-  Exposed-modules:   Foundation
+library
+  exposed-modules:   Foundation
                      Foundation.Numerical
                      Foundation.Array
                      Foundation.Array.Internal
@@ -103,7 +103,7 @@ Library
                      Foundation.UUID
                      Foundation.System.Entropy
                      Foundation.System.Bindings
-  Other-modules:     Foundation.Boot.Builder
+  other-modules:     Foundation.Boot.Builder
                      Foundation.Boot.List
                      Foundation.String.Internal
                      Foundation.String.UTF8
@@ -195,60 +195,60 @@ Library
                      Foundation.System.Bindings.Network
 
   include-dirs:      cbits
-  C-sources:         cbits/foundation_random.c
+  c-sources:         cbits/foundation_random.c
                      cbits/foundation_network.c
 
   if flag(experimental)
-    Exposed-modules: Foundation.Network.HostName
+    exposed-modules: Foundation.Network.HostName
   if os(windows)
-    Exposed-modules: Foundation.System.Bindings.Windows
-    Other-modules:   Foundation.Foreign.MemoryMap.Windows
+    exposed-modules: Foundation.System.Bindings.Windows
+    other-modules:   Foundation.Foreign.MemoryMap.Windows
                      Foundation.System.Entropy.Windows
   else
-    Exposed-modules: Foundation.System.Bindings.Posix
+    exposed-modules: Foundation.System.Bindings.Posix
                      Foundation.System.Bindings.PosixDef
                      Foundation.System.Bindings.Hs
-    Other-modules:   Foundation.Foreign.MemoryMap.Posix
+    other-modules:   Foundation.Foreign.MemoryMap.Posix
                      Foundation.System.Entropy.Unix
   if os(linux)
-    Exposed-modules: Foundation.System.Bindings.Linux
+    exposed-modules: Foundation.System.Bindings.Linux
   if os(osx)
-    Exposed-modules: Foundation.System.Bindings.Macos
+    exposed-modules: Foundation.System.Bindings.Macos
 
   if impl(ghc >= 7.10)
-    Exposed-modules: Foundation.Tuple.Nth
+    exposed-modules: Foundation.Tuple.Nth
                      Foundation.List.SList
                      Foundation.Primitive.Nat
 
-  Default-Extensions: NoImplicitPrelude
+  default-extensions: NoImplicitPrelude
                       RebindableSyntax
                       TypeFamilies
                       BangPatterns
                       DeriveDataTypeable
-  Build-depends:     base >= 4.7 && < 5
+  build-depends:     base >= 4.7 && < 5
                    , ghc-prim
   -- FIXME add suport for armel mipsel
   --  CPP-options: -DARCH_IS_LITTLE_ENDIAN
   -- FIXME add support for powerpc powerpc64 armeb mipseb
   --  CPP-options: -DARCH_IS_BIG_ENDIAN
   if (arch(i386) || arch(x86_64))
-    CPP-options: -DARCH_IS_LITTLE_ENDIAN
+    cpp-options: -DARCH_IS_LITTLE_ENDIAN
   else
-    CPP-options: -DARCH_IS_UNKNOWN_ENDIAN
+    cpp-options: -DARCH_IS_UNKNOWN_ENDIAN
   if os(windows)
-    Build-depends:    Win32
+    build-depends:    Win32
   ghc-options:       -Wall -fwarn-tabs
   default-language:  Haskell2010
   if impl(ghc >= 8.0)
     ghc-options:     -Wno-redundant-constraints
   if flag(bounds-check)
-    CPP-options: -DFOUNDATION_BOUNDS_CHECK
+    cpp-options: -DFOUNDATION_BOUNDS_CHECK
 
-Test-Suite test-foundation
+test-suite test-foundation
   type:              exitcode-stdio-1.0
   hs-source-dirs:    tests
-  Main-is:           Tests.hs
-  Other-modules:     Test.Utils.Foreign
+  main-is:           Tests.hs
+  other-modules:     Test.Utils.Foreign
                      Test.Data.List
                      Test.Data.Network
                      Test.Data.Unicode
@@ -268,12 +268,12 @@ Test-Suite test-foundation
                      Test.Foundation.Random
                      Test.Foundation.Misc
                      Imports
-  Default-Extensions: NoImplicitPrelude
+  default-extensions: NoImplicitPrelude
                       RebindableSyntax
   if flag(minimal-deps)
-    Buildable: False
+    buildable: False
   else
-    Build-Depends:   base >= 3 && < 5
+    build-depends:   base >= 3 && < 5
                    , mtl
                    , QuickCheck
                    , tasty
@@ -285,42 +285,42 @@ Test-Suite test-foundation
   if impl(ghc >= 8.0)
     ghc-options:     -Wno-redundant-constraints
 
-Test-Suite check-foundation
+test-suite check-foundation
   type:              exitcode-stdio-1.0
   hs-source-dirs:    tests
-  Main-is:           Checks.hs
-  Other-modules:      Test.Checks.Property.Collection
-  Default-Extensions: NoImplicitPrelude
+  main-is:           Checks.hs
+  other-modules:      Test.Checks.Property.Collection
+  default-extensions: NoImplicitPrelude
                       RebindableSyntax
                       OverloadedStrings
-  Build-Depends:     base >= 3 && < 5
+  build-depends:     base >= 3 && < 5
                    , foundation
   ghc-options:       -Wall -fno-warn-orphans -fno-warn-missing-signatures
   default-language:  Haskell2010
   if impl(ghc >= 8.0)
     ghc-options:     -Wno-redundant-constraints
 
-Test-Suite doctest
+test-suite doctest
   type:              exitcode-stdio-1.0
   hs-source-dirs:    tests
   default-language:  Haskell2010
-  Main-is:           DocTest.hs
-  Default-Extensions: NoImplicitPrelude
+  main-is:           DocTest.hs
+  default-extensions: NoImplicitPrelude
                       RebindableSyntax
   if flag(minimal-deps)
     -- TODO: for no, force unbuildable anyway
-    Buildable:       False
+    buildable:       False
   else
     if flag(doctest)
-      Build-Depends:     base >= 3 && < 5
+      build-depends:     base >= 3 && < 5
                        , doctest >= 0.9
-      Buildable:     True
+      buildable:     True
     else
-      Buildable:     False
+      buildable:     False
 
 Benchmark bench
-  Main-Is:           Main.hs
-  Other-modules:     BenchUtil.Common
+  main-is:           Main.hs
+  other-modules:     BenchUtil.Common
                      BenchUtil.RefData
                      Sys
                      Fake.ByteString
@@ -328,12 +328,12 @@ Benchmark bench
   hs-source-dirs:    benchs
   default-language:  Haskell2010
   type:              exitcode-stdio-1.0
-  Default-Extensions: NoImplicitPrelude
+  default-extensions: NoImplicitPrelude
                       BangPatterns
   if flag(minimal-deps) || impl(ghc < 7.10)
-    Buildable: False
+    buildable: False
   else
-    Build-depends:     base >= 4, criterion, foundation
+    build-depends:     base >= 4, criterion, foundation
     if flag(bench-all)
-      CPP-Options:     -DBENCH_ALL
-      Build-depends:   text, attoparsec, vector, bytestring
+      cpp-options:     -DBENCH_ALL
+      build-depends:   text, attoparsec, vector, bytestring
