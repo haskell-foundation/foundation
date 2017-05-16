@@ -119,13 +119,13 @@ int foundation_rngV1_generate(uint8_t newkey[CHACHA_KEY_SIZE], uint8_t *dst, uin
 
 	if (!bytes)
 		return 0;
-	for (; bytes >= 64; bytes -= 64, dst += 64) {
+	for (; bytes >= CHACHA_OUTPUT_SIZE; bytes -= CHACHA_OUTPUT_SIZE, dst += CHACHA_OUTPUT_SIZE) {
 		chacha_core(rounds, dst, key, nonce);
 		if (++nonce[0] == 0)
 			nonce[1]++;
 	}
 
-	assert(bytes < 64);
+	assert(bytes < CHACHA_OUTPUT_SIZE);
 
 	chacha_core(rounds, buf, key, nonce);
 	int remaining = CHACHA_OUTPUT_SIZE - bytes;
