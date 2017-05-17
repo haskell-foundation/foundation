@@ -569,6 +569,13 @@ recast = recast_ Proxy Proxy
 unsafeRecast :: (PrimType a, PrimType b) => UArray a -> UArray b
 unsafeRecast (UVecBA start len pinStatus b) = UVecBA (primOffsetRecast start) (sizeRecast len) pinStatus b
 unsafeRecast (UVecAddr start len a) = UVecAddr (primOffsetRecast start) (sizeRecast len) (castFinalPtr a)
+{-# INLINE [1] unsafeRecast #-}
+{-# RULES "unsafeRecast from Word8" [2] forall a . unsafeRecast a = unsafeRecastBytes a #-}
+
+unsafeRecastBytes :: PrimType a => UArray Word8 -> UArray a
+unsafeRecastBytes (UVecBA start len pinStatus b) = UVecBA (primOffsetRecast start) (sizeRecast len) pinStatus b
+unsafeRecastBytes (UVecAddr start len a) = UVecAddr (primOffsetRecast start) (sizeRecast len) (castFinalPtr a)
+{-# INLINE [1] unsafeRecastBytes #-}
 
 null :: UArray ty -> Bool
 null (UVecBA _ sz _ _) = sz == Size 0
