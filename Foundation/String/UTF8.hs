@@ -342,7 +342,7 @@ take :: Int -> String -> String
 take n s@(String ba)
     | n <= 0           = mempty
     | n >= C.length ba = s
-    | otherwise        = let (Offset o) = indexN (Offset n) s in String $ Vec.take o ba
+    | otherwise        = let (Offset o) = indexN (Offset n) s in String $ Vec.unsafeTake (Size o) ba
 
 -- | Create a string with the remaining Chars after dropping @n Chars from the beginning
 drop :: Int -> String -> String
