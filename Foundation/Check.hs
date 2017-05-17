@@ -28,7 +28,7 @@ module Foundation.Check
     ) where
 
 import qualified Prelude (fromIntegral, read)
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Imports
 import           Foundation.Class.Bifunctor (bimap)
 import           Foundation.System.Info (os, OS(..))
 import           Foundation.Collection
@@ -111,7 +111,7 @@ defaultMain t = do
     -- parse arguments
     cfg <- flip parseArgs (defaultConfig seed) <$> getArgs
 
-    putStrLn $ "\nSeed: " <> fromList (show $ getSeed cfg) <> "\n"
+    putStrLn $ "\nSeed: " <> (show $ getSeed cfg) <> "\n"
 
     (_, cfg') <- runStateT (runCheck $ test t) cfg
     let oks = testPassed cfg'
@@ -119,10 +119,10 @@ defaultMain t = do
         tot = oks + kos
     if kos > 0
         then do
-          putStrLn $ "Failed " <> fromList (show kos) <> " out of " <> fromList (show tot)
+          putStrLn $ "Failed " <> show kos <> " out of " <> show tot
           exitFailure
         else do
-          putStrLn $ "Succeed " <> fromList (show oks) <> " test(s)"
+          putStrLn $ "Succeed " <> show oks <> " test(s)"
           exitSuccess
 
 -- | internal check monad for facilitating the tests traversal
@@ -226,7 +226,7 @@ displayPropertySucceed name nb = do
         [ replicate i ' '
         , successString, name
         , " ("
-        , fromList $ show nb
+        , show nb
         , if nb == 1 then " test)" else " tests)"
         ]
 
@@ -253,10 +253,10 @@ displayPropertyFailed name nb w = do
           [ replicate i ' '
           , failureString, name
           , " failed after "
-          , fromList $ show nb
+          , show nb
           , if nb == 1 then " test" else " tests:"
           ]
-        putStrLn $ replicate i ' ' <> "   use param: --seed " <> fromList (show seed)
+        putStrLn $ replicate i ' ' <> "   use param: --seed " <> show seed
         putStrLn w
 
 pushGroup :: String -> [Test] -> Check TestResult
@@ -300,7 +300,7 @@ testProperty name prop = do
           toResult :: Word64 -> GenParams -> IO (PropertyResult, Bool)
           toResult it params =
                     (propertyToResult <$> evaluate (runGen (unProp prop) (rngIt it) params))
-            `catch` (\(e :: SomeException) -> return (PropertyFailed (fromList $ show e), False))
+            `catch` (\(e :: SomeException) -> return (PropertyFailed (show e), False))
 
     propertyToResult p =
         let args   = getArgs p
@@ -313,7 +313,7 @@ testProperty name prop = do
       where
         loop :: Word -> [String] -> [String]
         loop _ []      = printChecks checks
-        loop !i (a:as) = "parameter " <> fromList (show i) <> " : " <> a <> "\n" : loop (i+1) as
+        loop !i (a:as) = "parameter " <> show i <> " : " <> a <> "\n" : loop (i+1) as
     printChecks (PropertyBinaryOp True _ _ _)     = []
     printChecks (PropertyBinaryOp False n a b) =
         [ "Property `a " <> n <> " b' failed where:\n"
