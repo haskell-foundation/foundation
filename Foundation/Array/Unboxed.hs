@@ -60,6 +60,7 @@ module Foundation.Array.Unboxed
     , index
     , null
     , take
+    , unsafeTake
     , drop
     , splitAt
     , revDrop
@@ -592,6 +593,10 @@ take nbElems v
   where
     n    = Size nbElems
     vlen = lengthSize v
+
+unsafeTake :: PrimType ty => Size ty -> UArray ty -> UArray ty
+unsafeTake sz (UVecBA start _ pinst ba) = UVecBA start sz pinst ba
+unsafeTake sz (UVecAddr start _ fptr)   = UVecAddr start sz fptr
 
 drop :: PrimType ty => Int -> UArray ty -> UArray ty
 drop nbElems v
