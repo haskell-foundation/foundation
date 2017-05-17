@@ -28,6 +28,7 @@ module Foundation.Array.Unboxed
     , length
     , lengthSize
     , freeze
+    , freezeFromPtr
     , unsafeFreeze
     , thaw
     , unsafeThaw
@@ -362,6 +363,16 @@ createFromIO size filler
             0             -> return empty -- make sure we don't keep our array referenced by using empty
             _ | r < 0     -> error "filler returned negative number"
               | otherwise -> unsafeFreezeShrink mba r
+
+-- | Freeze a chunk of memory pointed, of specific size into a new unboxed array
+freezeFromPtr :: PrimType ty
+              => Ptr ty
+              -> Size ty
+              -> IO (UArray ty)
+freezeFromPtr p s = do
+    ma <- new s
+    copyFromPtr p s ma
+    unsafeFreeze ma
 
 -----------------------------------------------------------------------
 -- higher level collection implementation
