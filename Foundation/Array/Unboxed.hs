@@ -681,7 +681,6 @@ splitOn xpredicate ivec
     | otherwise = runST $ unsafeIndexer ivec (pureST . go ivec xpredicate)
   where
     !len = lengthSize ivec
-    --go :: PrimType ty => UArray ty -> (ty -> Bool) -> (Offset ty -> ty) -> ST s [UArray ty]
     go v predicate getIdx = loop 0 0
       where
         loop !prevIdx !idx
