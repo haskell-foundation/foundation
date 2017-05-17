@@ -43,6 +43,7 @@ import           Foundation.Monad
 import           Foundation.Monad.State
 import           Foundation.List.DList
 import           Control.Exception (evaluate, SomeException)
+import           Control.Monad (when)
 import           System.Exit
 import           System.Environment (getArgs)
 
@@ -94,12 +95,14 @@ parseArgs ("--seed":x:xs)  cfg = parseArgs xs $ cfg { getSeed = Prelude.read x }
 parseArgs ("--tests":[])   _   = error "option `--tests' is missing a parameter"
 parseArgs ("--tests":x:xs) cfg = parseArgs xs $ cfg { numTests = Prelude.read x }
 parseArgs ("--quiet":xs)   cfg = parseArgs xs $ cfg { displayOptions = DisplayTerminalErrorOnly }
+parseArgs ("--list-tests":xs) cfg = parseArgs xs $ cfg { listTests = True }
 parseArgs ("--verbose":xs) cfg = parseArgs xs $ cfg { displayOptions = DisplayTerminalVerbose }
 parseArgs ("--help":_)     _   = error $ mconcat
     [ "--seed <seed>: the seed to use to generate arbitrary value.\n"
     , "--tests <tests>: the number of tests to perform for every property tests.\n"
     , "--quiet: print only the errors to the standard output\n"
     , "--verbose: print every property tests to the stand output.\n"
+    , "--list-tests: print all test names.\n"
     ]
 parseArgs (x:_) _ = error $ "unknown parameter: " <> show x
 
@@ -110,6 +113,8 @@ defaultMain t = do
     seed <- getRandomPrimType
     -- parse arguments
     cfg <- flip parseArgs (defaultConfig seed) <$> getArgs
+
+    when (listTests cfg) (printTestName >> exitSuccess)
 
     putStrLn $ "\nSeed: " <> (show $ getSeed cfg) <> "\n"
 
@@ -124,6 +129,21 @@ defaultMain t = do
         else do
           putStrLn $ "Succeed " <> show oks <> " test(s)"
           exitSuccess
+  where
+    printTestName = mapM_ (\t -> putStrLn (fqTestName t)) $ testCases [] [] [] t
+      where
+        testCases acc xs pre x =
+            case x of
+                Group s l    -> toList (fmap (\z -> (z, pre)) xs <> acc) (s:pre) l
+                Unit s _     -> (s : pre) : toList acc pre xs
+                Property s _ -> (s : pre) : toList acc pre xs
+
+        toList []           _   []              = []
+        toList ((a,pre):as) _   []              = testCases as [] pre a
+        toList acc          pre (x:xs)          = testCases acc xs pre x
+
+fqTestName :: [String] -> String
+fqTestName = intercalate "/" . reverse
 
 -- | internal check monad for facilitating the tests traversal
 newtype Check a = Check { runCheck :: StateT Config IO a }
@@ -154,6 +174,7 @@ data Config = Config
         -- ^ the number of tests to perform on every property.
         --
         -- default: 100
+    , listTests      :: Bool
     , displayOptions :: !DisplayOption
     }
 
@@ -195,6 +216,7 @@ defaultConfig s = Config
     , getSeed      = s
     , getGenParams = params
     , numTests     = 100
+    , listTests    = False
     , displayOptions = DisplayGroupOnly
     }
   where
