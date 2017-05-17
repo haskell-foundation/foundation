@@ -550,7 +550,7 @@ unsnoc vec
   where
     !len@(Size lenI) = lengthSize vec
 
-find ::  (ty -> Bool) -> Array ty -> Maybe ty
+find :: (ty -> Bool) -> Array ty -> Maybe ty
 find predicate vec = loop 0
   where
     !len = lengthSize vec
