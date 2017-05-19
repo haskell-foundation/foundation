@@ -27,21 +27,20 @@ module Foundation.Check
     , defaultMain
     ) where
 
-import qualified Prelude (fromIntegral, read)
+import qualified Prelude (fromIntegral)
 import           Foundation.Primitive.Imports
 import           Foundation.Class.Bifunctor (bimap)
 import           Foundation.System.Info (os, OS(..))
 import           Foundation.Collection
 import           Foundation.Numerical
-import           Foundation.String
 import           Foundation.IO.Terminal
 import           Foundation.Check.Gen
 import           Foundation.Check.Arbitrary
 import           Foundation.Check.Property
+import           Foundation.Check.Config
 import           Foundation.Random
 import           Foundation.Monad
 import           Foundation.Monad.State
-import           Foundation.List.DList
 import           Control.Exception (evaluate, SomeException)
 import           Control.Monad (when)
 import           System.Exit
@@ -88,31 +87,23 @@ nbTests :: TestResult -> Word64
 nbTests (PropertyResult _ t _) = t
 nbTests (GroupResult _ _ l) = foldl' (+) 0 $ fmap nbTests l
 
-parseArgs :: [[Char]] -> Config -> Config
-parseArgs [] cfg = cfg
-parseArgs ("--seed":[])     _  = error "option `--seed' is missing a parameter"
-parseArgs ("--seed":x:xs)  cfg = parseArgs xs $ cfg { getSeed = Prelude.read x }
-parseArgs ("--tests":[])   _   = error "option `--tests' is missing a parameter"
-parseArgs ("--tests":x:xs) cfg = parseArgs xs $ cfg { numTests = Prelude.read x }
-parseArgs ("--quiet":xs)   cfg = parseArgs xs $ cfg { displayOptions = DisplayTerminalErrorOnly }
-parseArgs ("--list-tests":xs) cfg = parseArgs xs $ cfg { listTests = True }
-parseArgs ("--verbose":xs) cfg = parseArgs xs $ cfg { displayOptions = DisplayTerminalVerbose }
-parseArgs ("--help":_)     _   = error $ mconcat
-    [ "--seed <seed>: the seed to use to generate arbitrary value.\n"
-    , "--tests <tests>: the number of tests to perform for every property tests.\n"
-    , "--quiet: print only the errors to the standard output\n"
-    , "--verbose: print every property tests to the stand output.\n"
-    , "--list-tests: print all test names.\n"
-    ]
-parseArgs (x:_) _ = error $ "unknown parameter: " <> show x
-
 -- | Run tests
 defaultMain :: Test -> IO ()
 defaultMain t = do
     -- generate a new seed
     seed <- getRandomPrimType
     -- parse arguments
-    cfg <- flip parseArgs (defaultConfig seed) <$> getArgs
+    ecfg <- flip parseArgs (defaultConfig seed) . fmap fromList <$> getArgs
+    cfg  <- case ecfg of
+            Left e  -> do
+                putStrLn e
+                mapM_ putStrLn configHelp
+                exitFailure
+            Right c -> pure c
+
+    when (helpRequested cfg) $ do
+        mapM_ putStrLn configHelp
+        exitSuccess
 
     when (listTests cfg) (printTestName >> exitSuccess)
 
@@ -130,17 +121,17 @@ defaultMain t = do
           putStrLn $ "Succeed " <> show oks <> " test(s)"
           exitSuccess
   where
-    printTestName = mapM_ (\t -> putStrLn (fqTestName t)) $ testCases [] [] [] t
+    printTestName = mapM_ (\tst -> putStrLn (fqTestName tst)) $ testCases [] [] [] t
       where
         testCases acc xs pre x =
             case x of
-                Group s l    -> toList (fmap (\z -> (z, pre)) xs <> acc) (s:pre) l
-                Unit s _     -> (s : pre) : toList acc pre xs
-                Property s _ -> (s : pre) : toList acc pre xs
+                Group s l    -> tToList (fmap (\z -> (z, pre)) xs <> acc) (s:pre) l
+                Unit s _     -> (s : pre) : tToList acc pre xs
+                Property s _ -> (s : pre) : tToList acc pre xs
 
-        toList []           _   []              = []
-        toList ((a,pre):as) _   []              = testCases as [] pre a
-        toList acc          pre (x:xs)          = testCases acc xs pre x
+        tToList []           _   []              = []
+        tToList ((a,pre):as) _   []              = testCases as [] pre a
+        tToList acc          pre (x:xs)          = testCases acc xs pre x
 
 fqTestName :: [String] -> String
 fqTestName = intercalate "/" . reverse
@@ -151,38 +142,6 @@ newtype Check a = Check { runCheck :: StateT Config IO a }
 instance MonadState Check where
     type State Check = Config
     withState = Check . withState
-
-type Seed = Word64
-data Config = Config
-    { testPath     :: !(DList String)
-        -- ^ for internal use when pretty printing
-    , indent       :: !Word
-        -- ^ for internal use when pretty printing
-    , testPassed   :: !Word
-    , testFailed   :: !Word
-    , getSeed      :: !Seed
-        -- ^ the seed for the tests
-    , getGenParams :: !GenParams
-        -- ^ Parameters for the generator
-        --
-        -- default:
-        --   * 32bits long numbers;
-        --   * array of 512 elements max;
-        --   * string of 8192 bytes max.
-        --
-    , numTests     :: !Word64
-        -- ^ the number of tests to perform on every property.
-        --
-        -- default: 100
-    , listTests      :: Bool
-    , displayOptions :: !DisplayOption
-    }
-
-data DisplayOption
-    = DisplayTerminalErrorOnly
-    | DisplayGroupOnly
-    | DisplayTerminalVerbose
-  deriving (Eq, Ord, Enum, Bounded, Show)
 
 onDisplayOption :: DisplayOption -> Check () -> Check ()
 onDisplayOption opt chk = do
@@ -203,28 +162,6 @@ passed = withState $ \s -> ((), s { testPassed = testPassed s + 1 })
 
 failed :: Check ()
 failed = withState $ \s -> ((), s { testFailed = testFailed s + 1 })
-
--- | create the default configuration
---
--- see @Config@ for details
-defaultConfig :: Seed -> Config
-defaultConfig s = Config
-    { testPath     = mempty
-    , indent       = 0
-    , testPassed   = 0
-    , testFailed   = 0
-    , getSeed      = s
-    , getGenParams = params
-    , numTests     = 100
-    , listTests    = False
-    , displayOptions = DisplayGroupOnly
-    }
-  where
-    params = GenParams
-        { genMaxSizeIntegral = 32   -- 256 bits maximum numbers
-        , genMaxSizeArray    = 512  -- 512 elements
-        , genMaxSizeString   = 8192 -- 8K string
-        }
 
 test :: Test -> Check TestResult
 test (Group s l) = pushGroup s l
@@ -325,7 +262,7 @@ testProperty name prop = do
             `catch` (\(e :: SomeException) -> return (PropertyFailed (show e), False))
 
     propertyToResult p =
-        let args   = getArgs p
+        let args   = propertyGetArgs p
             checks = getChecks p
          in if checkHasFailed checks
                 then printError args checks
@@ -369,8 +306,8 @@ testProperty name prop = do
                       [] -> ("Succeed", [])
                       (x:xs) -> (x, xs)
 
-    getArgs (PropertyArg a p) = a : getArgs p
-    getArgs (PropertyEOA _) = []
+    propertyGetArgs (PropertyArg a p) = a : propertyGetArgs p
+    propertyGetArgs (PropertyEOA _) = []
 
     getChecks (PropertyArg _ p) = getChecks p
     getChecks (PropertyEOA c  ) = c

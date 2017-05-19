@@ -122,6 +122,7 @@ library
                      Foundation.Check.Gen
                      Foundation.Check.Arbitrary
                      Foundation.Check.Property
+                     Foundation.Check.Config
                      Foundation.Collection.Buildable
                      Foundation.Collection.List
                      Foundation.Collection.Element
