@@ -224,14 +224,15 @@ pushGroup name list = do
     withState $ \s -> ((), s { testPath = push (testPath s) name, indent = indent s + 2 })
     results <- mapM test list
     withState $ \s -> ((), s { testPath = pop (testPath s), indent = indent s - 2 })
-    let totFail = foldl' (+) 0 $ fmap nbFail results
-        tot = foldl'(+) 0 $ fmap nbTests results
+    let totFail = sum $ fmap nbFail results
+        tot = sum $ fmap nbTests results
     whenGroupOnly $ case (groupHasSubGroup list, totFail) of
         (True, _)              -> return ()
         (False, n) | n > 0     -> displayPropertyFailed name n ""
                    | otherwise -> displayPropertySucceed name tot
     return $ GroupResult name totFail results
   where
+    sum = foldl' (+) 0
     push = snoc
     pop = maybe mempty fst . unsnoc
 
