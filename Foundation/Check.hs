@@ -38,6 +38,7 @@ import           Foundation.Check.Gen
 import           Foundation.Check.Arbitrary
 import           Foundation.Check.Property
 import           Foundation.Check.Config
+import           Foundation.List.DList
 import           Foundation.Random
 import           Foundation.Monad
 import           Foundation.Monad.State
@@ -87,13 +88,30 @@ nbTests :: TestResult -> Word64
 nbTests (PropertyResult _ t _) = t
 nbTests (GroupResult _ _ l) = foldl' (+) 0 $ fmap nbTests l
 
+data TestState = TestState
+    { config      :: !Config
+    , getSeed     :: !Seed
+    , indent      :: !Word
+    , testPassed  :: !Word
+    , testFailed  :: !Word
+    , testPath    :: !(DList String)
+    }
+
+newState :: Config -> Seed -> TestState
+newState cfg initSeed = TestState
+    { testPath     = mempty
+    , testPassed   = 0
+    , testFailed   = 0
+    , indent       = 0
+    , getSeed      = initSeed
+    , config       = cfg
+    }
+
 -- | Run tests
 defaultMain :: Test -> IO ()
 defaultMain t = do
-    -- generate a new seed
-    seed <- getRandomPrimType
     -- parse arguments
-    ecfg <- flip parseArgs (defaultConfig seed) . fmap fromList <$> getArgs
+    ecfg <- flip parseArgs defaultConfig . fmap fromList <$> getArgs
     cfg  <- case ecfg of
             Left e  -> do
                 putStrLn e
@@ -101,26 +119,34 @@ defaultMain t = do
                 exitFailure
             Right c -> pure c
 
-    when (helpRequested cfg) $ do
-        mapM_ putStrLn configHelp
-        exitSuccess
+    -- use the user defined seed or generate a new seed
+    seed <- maybe getRandomPrimType pure $ udfSeed cfg
 
+    let testState = newState cfg seed
+
+    when (helpRequested cfg) (mapM_ putStrLn configHelp >> exitSuccess)
     when (listTests cfg) (printTestName >> exitSuccess)
 
-    putStrLn $ "\nSeed: " <> (show $ getSeed cfg) <> "\n"
+    putStrLn $ "\nSeed: " <> show seed <> "\n"
 
-    (_, cfg') <- runStateT (runCheck $ test t) cfg
-    let oks = testPassed cfg'
-        kos = testFailed cfg'
-        tot = oks + kos
-    if kos > 0
-        then do
-          putStrLn $ "Failed " <> show kos <> " out of " <> show tot
-          exitFailure
-        else do
-          putStrLn $ "Succeed " <> show oks <> " test(s)"
-          exitSuccess
+    (_, cfg') <- runStateT (runCheck $ test t) testState
+    summary cfg'
+
   where
+    -- display a summary of the result and use the right exit code
+    summary cfg
+        | kos > 0 = do
+            putStrLn $ "Failed " <> show kos <> " out of " <> show tot
+            exitFailure
+        | otherwise = do
+            putStrLn $ "Succeed " <> show oks <> " test(s)"
+            exitSuccess
+      where
+        oks = testPassed cfg
+        kos = testFailed cfg
+        tot = oks + kos
+
+    -- print all the tests recursively
     printTestName = mapM_ (\tst -> putStrLn (fqTestName tst)) $ testCases [] [] [] t
       where
         testCases acc xs pre x =
@@ -137,15 +163,16 @@ fqTestName :: [String] -> String
 fqTestName = intercalate "/" . reverse
 
 -- | internal check monad for facilitating the tests traversal
-newtype Check a = Check { runCheck :: StateT Config IO a }
+newtype Check a = Check { runCheck :: StateT TestState IO a }
   deriving (Functor, Applicative, Monad, MonadIO)
+
 instance MonadState Check where
-    type State Check = Config
+    type State Check = TestState
     withState = Check . withState
 
 onDisplayOption :: DisplayOption -> Check () -> Check ()
 onDisplayOption opt chk = do
-    on <- (<=) opt . displayOptions <$> get
+    on <- (<=) opt . displayOptions . config <$> get
     if on then chk else return ()
 
 whenErrorOnly :: Check () -> Check ()
@@ -242,7 +269,7 @@ testProperty name prop = do
     path <- testPath <$> get
     let rngIt = genRng seed (name : toList path)
 
-    maxTests <- numTests <$> get
+    maxTests <- numTests . config <$> get
 
     (res, nb) <- iterProp 1 maxTests rngIt
     return (PropertyResult name nb res)
@@ -250,7 +277,7 @@ testProperty name prop = do
     iterProp !n !limit !rngIt
       | n == limit = passed >> return (PropertySuccess, n)
       | otherwise  = do
-          params <- getGenParams <$> get
+          params <- getGenParams . config <$> get
           r <- liftIO $ toResult n params
           case r of
               (PropertyFailed e, _)               -> failed >> return (PropertyFailed e, n)

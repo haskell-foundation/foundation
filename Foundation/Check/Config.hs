@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Foundation.Check.Config
     ( Config(..)
+    , Seed
     , DisplayOption(..)
     , defaultConfig
     , parseArgs
@@ -10,7 +11,6 @@ module Foundation.Check.Config
 import           Foundation.Primitive.Imports
 import           Foundation.Primitive.IntegralConv
 import           Foundation.String.Read
-import           Foundation.List.DList
 import           Foundation.Check.Gen
 
 type Seed = Word64
@@ -21,16 +21,8 @@ data DisplayOption =
     | DisplayTerminalVerbose
     deriving (Eq, Ord, Enum, Bounded, Show)
 
-
 data Config = Config
-    { testPath     :: !(DList String)
-        -- ^ for internal use when pretty printing
-    , indent       :: !Word
-        -- ^ for internal use when pretty printing
-    , testPassed   :: !Word
-    , testFailed   :: !Word
-    , getSeed      :: !Seed
-        -- ^ the seed for the tests
+    { udfSeed      :: Maybe Seed -- ^ optional user specified seed
     , getGenParams :: !GenParams
         -- ^ Parameters for the generator
         --
@@ -52,13 +44,9 @@ data Config = Config
 -- | create the default configuration
 --
 -- see @Config@ for details
-defaultConfig :: Seed -> Config
-defaultConfig s = Config
-    { testPath     = mempty
-    , indent       = 0
-    , testPassed   = 0
-    , testFailed   = 0
-    , getSeed      = s
+defaultConfig :: Config
+defaultConfig = Config
+    { udfSeed      = Nothing
     , getGenParams = params
     , numTests     = 100
     , listTests    = False
@@ -84,7 +72,7 @@ getInteger optionName s =
 parseArgs :: [String] -> Config -> Either ParamError Config
 parseArgs []                cfg   = Right cfg
 parseArgs ("--seed":[])    _      = Left "option `--seed' is missing a parameter"
-parseArgs ("--seed":x:xs)  cfg    = getInteger "seed" x >>= \i -> parseArgs xs $ cfg { getSeed = integralDownsize i }
+parseArgs ("--seed":x:xs)  cfg    = getInteger "seed" x >>= \i -> parseArgs xs $ cfg { udfSeed = Just $ integralDownsize i }
 parseArgs ("--tests":[])   _      = Left "option `--tests' is missing a parameter"
 parseArgs ("--tests":x:xs) cfg    = getInteger "tests" x >>= \i -> parseArgs xs $ cfg { numTests = integralDownsize i }
 parseArgs ("--quiet":xs)   cfg    = parseArgs xs $ cfg { displayOptions = DisplayTerminalErrorOnly }
