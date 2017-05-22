@@ -28,7 +28,6 @@ module Foundation.Array.Unboxed
     , length
     , lengthSize
     , freeze
-    , freezeFromPtr
     , unsafeFreeze
     , thaw
     , unsafeThaw
@@ -37,6 +36,7 @@ module Foundation.Array.Unboxed
     , empty
     , create
     , createFromIO
+    , createFromPtr
     , sub
     , copyToPtr
     , withPtr
@@ -113,7 +113,7 @@ import           Foundation.Primitive.IntegralConv
 import           Foundation.Primitive.FinalPtr
 import           Foundation.Primitive.Utils
 import           Foundation.Primitive.Exception
-import           Foundation.Array.Unboxed.Mutable hiding (sub)
+import           Foundation.Array.Unboxed.Mutable hiding (sub, copyToPtr)
 import           Foundation.Numerical
 import           Foundation.Boot.Builder
 import qualified Data.List
@@ -365,11 +365,11 @@ createFromIO size filler
               | otherwise -> unsafeFreezeShrink mba r
 
 -- | Freeze a chunk of memory pointed, of specific size into a new unboxed array
-freezeFromPtr :: PrimType ty
+createFromPtr :: PrimType ty
               => Ptr ty
               -> Size ty
               -> IO (UArray ty)
-freezeFromPtr p s = do
+createFromPtr p s = do
     ma <- new s
     copyFromPtr p s ma
     unsafeFreeze ma

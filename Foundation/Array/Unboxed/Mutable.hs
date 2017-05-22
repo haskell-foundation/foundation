@@ -27,6 +27,7 @@ module Foundation.Array.Unboxed.Mutable
     , mutableForeignMem
     , copyAt
     , copyFromPtr
+    , copyToPtr
     , sub
     -- , copyAddr
     -- * Reading and Writing cells
@@ -301,7 +302,7 @@ withMutablePtr :: (PrimMonad prim, PrimType ty)
                -> prim a
 withMutablePtr = withMutablePtrHint False False
 
--- | Copy from a pointer, count elements into the mutable array
+-- | Copy from a pointer, @count@ elements, into the mutable array
 copyFromPtr :: forall prim ty . (PrimMonad prim, PrimType ty)
             => Ptr ty -> Size ty -> MUArray ty (PrimState prim) -> prim ()
 copyFromPtr (Ptr p) count (MUVecMA ofs arrSz _ mba)
@@ -319,3 +320,20 @@ copyFromPtr p count (MUVecAddr ofs arrSz fptr)
         sz = primSizeInBytes (Proxy :: Proxy ty)
         !(Size bytes) = sizeOfE sz count
         !(Offset os) = offsetOfE sz ofs
+
+-- | Copy all the block content to the memory starting at the destination address
+copyToPtr :: forall ty prim . (PrimType ty, PrimMonad prim)
+          => MUArray ty (PrimState prim) -- ^ the source mutable array to copy
+          -> Ptr ty                      -- ^ The destination address where the copy is going to start
+          -> prim ()
+copyToPtr (MUVecMA start sz _ ma) (Ptr p) = primitive $ \s1 ->
+    case unsafeFreezeByteArray# ma s1 of
+        (# s2, ba #) -> (# compatCopyByteArrayToAddr# ba offset p szBytes s2, () #)
+  where
+    !(Offset (I# offset)) = primOffsetOfE start
+    !(Size (I# szBytes)) = sizeInBytes sz
+copyToPtr (MUVecAddr start sz fptr) dst =
+    unsafePrimFromIO $ withFinalPtr fptr $ \ptr -> copyBytes dst (ptr `plusPtr` os) szBytes
+  where
+    !(Offset os)    = primOffsetOfE start
+    !(Size szBytes) = sizeInBytes sz
