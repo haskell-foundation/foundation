@@ -73,6 +73,9 @@ module Foundation.String.UTF8
     , readFloatingExact
     , upper
     , lower
+    , isPrefixOf
+    , isSuffixOf
+    , isInfixOf
     -- * Legacy utility
     , lines
     , words
@@ -1303,3 +1306,39 @@ upper = charMap toUpper
 --   Does not properly support multicharacter Unicode conversions.
 lower :: String -> String
 lower = charMap toLower
+
+-- | Check whether the first string is a prefix of the second string.
+isPrefixOf :: String -> String -> Bool
+isPrefixOf (String needle) (String haystack)
+    | needleLen > hayLen = False
+    | otherwise          = needle == C.take needleLen haystack
+  where
+    needleLen = C.length needle
+    hayLen    = C.length haystack
+
+-- | Check whether the first string is a suffix of the second string.
+isSuffixOf :: String -> String -> Bool
+isSuffixOf (String needle) (String haystack)
+    | needleLen > hayLen = False
+    | otherwise          = needle == C.revTake needleLen haystack
+  where
+    needleLen = C.length needle
+    hayLen    = C.length haystack
+
+-- | Check whether the first string is contains within the second string.
+-- 
+-- TODO: implemented the naive way and thus terribly inefficient, reimplement properly
+isInfixOf :: String -> String -> Bool
+isInfixOf (String needle) (String haystack)
+    | needleLen > hayLen = False
+    | otherwise          = loop 0
+  where
+    endOfs    = hayLen - needleLen
+    needleLen = C.length needle
+    hayLen    = C.length haystack
+
+    loop i
+        | i == endOfs           = needle == haystackSub
+        | needle == haystackSub = True
+        | otherwise             = loop (i+1)
+      where haystackSub = C.take needleLen $ C.drop i $ haystack

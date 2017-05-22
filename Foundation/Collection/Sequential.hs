@@ -281,3 +281,5 @@ instance Sequential S.String where
     sortBy = S.sortBy
     singleton = S.singleton
     replicate = S.replicate
+    isSuffixOf = S.isSuffixOf
+    isPrefixOf = S.isPrefixOf
