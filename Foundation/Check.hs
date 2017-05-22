@@ -44,6 +44,7 @@ import           Foundation.Monad
 import           Foundation.Monad.State
 import           Control.Exception (evaluate, SomeException)
 import           Control.Monad (when)
+import           Data.Maybe (catMaybes)
 import           System.Exit
 import           System.Environment (getArgs)
 
@@ -61,6 +62,9 @@ testName :: Test -> String
 testName (Unit s _)     = s
 testName (Property s _) = s
 testName (Group s _)    = s
+
+fqTestName :: [String] -> String
+fqTestName = intercalate "/" . reverse
 
 groupHasSubGroup :: [Test] -> Bool
 groupHasSubGroup [] = False
@@ -107,9 +111,33 @@ newState cfg initSeed = TestState
     , config       = cfg
     }
 
+filterTestMatching :: Config -> Test -> Maybe Test
+filterTestMatching cfg testRoot
+    | null (testNameMatch cfg) = Just testRoot
+    | otherwise                = testFilter [] testRoot
+  where
+    match acc s = or $ fmap (flip isInfixOf currentTestName) $ testNameMatch cfg
+      where currentTestName = fqTestName (s:acc)
+    or [] = False
+    or (x:xs)
+        | x == True = True
+        | otherwise = or xs
+
+    testFilter acc x =
+        case x of
+            Group s l    ->
+                let filtered = catMaybes $ fmap (testFilter (s:acc)) l
+                 in if null filtered then Nothing else Just (Group s filtered)
+            Unit s _
+                | match acc s -> Just x
+                | otherwise   -> Nothing
+            Property s _
+                | match acc s -> Just x
+                | otherwise   -> Nothing
+
 -- | Run tests
 defaultMain :: Test -> IO ()
-defaultMain t = do
+defaultMain allTestRoot = do
     -- parse arguments
     ecfg <- flip parseArgs defaultConfig . fmap fromList <$> getArgs
     cfg  <- case ecfg of
@@ -129,8 +157,11 @@ defaultMain t = do
 
     putStrLn $ "\nSeed: " <> show seed <> "\n"
 
-    (_, cfg') <- runStateT (runCheck $ test t) testState
-    summary cfg'
+    case filterTestMatching cfg allTestRoot of
+        Nothing -> putStrLn "no tests to run" >> exitSuccess
+        Just t  -> do
+            (_, cfg') <- runStateT (runCheck $ test t) testState
+            summary cfg'
 
   where
     -- display a summary of the result and use the right exit code
@@ -147,7 +178,7 @@ defaultMain t = do
         tot = oks + kos
 
     -- print all the tests recursively
-    printTestName = mapM_ (\tst -> putStrLn (fqTestName tst)) $ testCases [] [] [] t
+    printTestName = mapM_ (\tst -> putStrLn (fqTestName tst)) $ testCases [] [] [] allTestRoot
       where
         testCases acc xs pre x =
             case x of
@@ -158,9 +189,6 @@ defaultMain t = do
         tToList []           _   []              = []
         tToList ((a,pre):as) _   []              = testCases as [] pre a
         tToList acc          pre (x:xs)          = testCases acc xs pre x
-
-fqTestName :: [String] -> String
-fqTestName = intercalate "/" . reverse
 
 -- | internal check monad for facilitating the tests traversal
 newtype Check a = Check { runCheck :: StateT TestState IO a }
