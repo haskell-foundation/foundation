@@ -25,4 +25,4 @@ module Foundation.Array.Internal
     ) where
 
 import           Foundation.Array.Unboxed
-import           Foundation.Array.Unboxed.Mutable
+import           Foundation.Array.Unboxed.Mutable hiding (copyToPtr)
