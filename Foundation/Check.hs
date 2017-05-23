@@ -1,4 +1,14 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+-- |
+-- Module      : Foundation.Check
+-- License     : BSD-style
+-- Maintainer  : Vincent Hanquez <vincent@snarc.org>
+-- Stability   : experimental
+-- Portability : portable
+--
+-- A implementation of a test framework
+-- and property expression & testing
+--
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE GADTs #-}
@@ -48,7 +58,7 @@ import           Data.Maybe (catMaybes)
 import           System.Exit
 import           System.Environment (getArgs)
 
--- different type of tests
+-- | different type of tests supported
 data Test where
     -- Unit test
     Unit     :: String -> IO () -> Test
@@ -71,6 +81,7 @@ groupHasSubGroup [] = False
 groupHasSubGroup (Group{}:_) = True
 groupHasSubGroup (_:xs) = groupHasSubGroup xs
 
+-- | Result of a property run
 data PropertyResult =
       PropertySuccess
     | PropertyFailed  String

@@ -1,4 +1,4 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 module Foundation.System.Bindings.PosixDef
     ( CErrno
     , CFd

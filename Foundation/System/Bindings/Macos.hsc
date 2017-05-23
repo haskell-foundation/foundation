@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 module Foundation.System.Bindings.Macos
     where
 

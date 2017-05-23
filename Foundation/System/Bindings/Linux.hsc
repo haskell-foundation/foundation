@@ -11,7 +11,7 @@
 -- Functions defined only for linux
 --
 -----------------------------------------------------------------------------
-
+{-# OPTIONS_HADDOCK hide #-}
 module Foundation.System.Bindings.Linux
    where
 

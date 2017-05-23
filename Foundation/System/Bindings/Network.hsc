@@ -5,6 +5,7 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
+{-# OPTIONS_HADDOCK hide #-}
 module Foundation.System.Bindings.Network
     ( -- * error
       getHErrno
