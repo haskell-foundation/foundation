@@ -157,34 +157,34 @@ defaultMain allTestRoot = do
         tToList acc          pre (x:xs)          = testCases acc xs pre x
 
 -- | internal check monad for facilitating the tests traversal
-newtype Check a = Check { runCheck :: StateT TestState IO a }
+newtype CheckMain a = CheckMain { runCheck :: StateT TestState IO a }
   deriving (Functor, Applicative, Monad, MonadIO)
 
-instance MonadState Check where
-    type State Check = TestState
-    withState = Check . withState
+instance MonadState CheckMain where
+    type State CheckMain = TestState
+    withState = CheckMain . withState
 
-onDisplayOption :: DisplayOption -> Check () -> Check ()
+onDisplayOption :: DisplayOption -> CheckMain () -> CheckMain ()
 onDisplayOption opt chk = do
     on <- (<=) opt . displayOptions . config <$> get
     if on then chk else return ()
 
-whenErrorOnly :: Check () -> Check ()
+whenErrorOnly :: CheckMain () -> CheckMain ()
 whenErrorOnly = onDisplayOption DisplayTerminalErrorOnly
 
-whenGroupOnly :: Check () -> Check ()
+whenGroupOnly :: CheckMain () -> CheckMain ()
 whenGroupOnly = onDisplayOption DisplayGroupOnly
 
-whenVerbose :: Check () -> Check ()
+whenVerbose :: CheckMain () -> CheckMain ()
 whenVerbose = onDisplayOption DisplayTerminalVerbose
 
-passed :: Check ()
+passed :: CheckMain ()
 passed = withState $ \s -> ((), s { testPassed = testPassed s + 1 })
 
-failed :: Check ()
+failed :: CheckMain ()
 failed = withState $ \s -> ((), s { testFailed = testFailed s + 1 })
 
-test :: Test -> Check TestResult
+test :: Test -> CheckMain TestResult
 test (Group s l) = pushGroup s l
 test (Unit _ _) = undefined
 test (Property name prop) = do
@@ -194,12 +194,12 @@ test (Property name prop) = do
         PropertyFailed w -> whenErrorOnly $ displayPropertyFailed name nb w
     return r'
 
-displayCurrent :: String -> Check ()
+displayCurrent :: String -> CheckMain ()
 displayCurrent name = do
     i <- indent <$> get
     liftIO $ putStrLn $ replicate i ' ' <> name
 
-displayPropertySucceed :: String -> Word64 -> Check ()
+displayPropertySucceed :: String -> Word64 -> CheckMain ()
 displayPropertySucceed name nb = do
     i <- indent <$> get
     liftIO $ putStrLn $ mconcat
@@ -224,7 +224,7 @@ failureString = case os of
     _           -> "[ ERROR ]"
 {-# NOINLINE failureString #-}
 
-displayPropertyFailed :: String -> Word64 -> String -> Check ()
+displayPropertyFailed :: String -> Word64 -> String -> CheckMain ()
 displayPropertyFailed name nb w = do
     seed <- getSeed <$> get
     i <- indent <$> get
@@ -239,7 +239,7 @@ displayPropertyFailed name nb w = do
         putStrLn $ replicate i ' ' <> "   use param: --seed " <> show seed
         putStrLn w
 
-pushGroup :: String -> [Test] -> Check TestResult
+pushGroup :: String -> [Test] -> CheckMain TestResult
 pushGroup name list = do
     whenGroupOnly $ if groupHasSubGroup list then displayCurrent name else return ()
     withState $ \s -> ((), s { testPath = push (testPath s) name, indent = indent s + 2 })
@@ -257,7 +257,7 @@ pushGroup name list = do
     push = snoc
     pop = maybe mempty fst . unsnoc
 
-testProperty :: String -> Property -> Check TestResult
+testProperty :: String -> Property -> CheckMain TestResult
 testProperty name prop = do
     seed <- getSeed <$> get
     path <- testPath <$> get
