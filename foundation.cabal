@@ -101,6 +101,7 @@ library
                      Foundation.Parser
                      Foundation.Random
                      Foundation.Check
+                     Foundation.Check.Main
                      Foundation.UUID
                      Foundation.System.Entropy
                      Foundation.System.Bindings
@@ -123,6 +124,7 @@ library
                      Foundation.Check.Arbitrary
                      Foundation.Check.Property
                      Foundation.Check.Config
+                     Foundation.Check.Types
                      Foundation.Collection.Buildable
                      Foundation.Collection.List
                      Foundation.Collection.Element

@@ -11,6 +11,7 @@ import Foundation.Foreign
 import Foundation.List.DList
 import Foundation.Primitive
 import Foundation.Check
+import Foundation.Check.Main (defaultMain)
 import Foundation.String
 import Foundation.String.Read
 import qualified Prelude
