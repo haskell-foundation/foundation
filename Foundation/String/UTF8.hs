@@ -52,6 +52,7 @@ module Foundation.String.UTF8
     , span
     , break
     , breakElem
+    , dropWhile
     , singleton
     , charMap
     , snoc
@@ -503,6 +504,10 @@ breakElem !el s@(String ba)
 -- the remaining
 span :: (Char -> Bool) -> String -> (String, String)
 span predicate s = break (not . predicate) s
+
+-- | Drop character from the beginning while the predicate is true
+dropWhile :: (Char -> Bool) -> String -> String
+dropWhile predicate = snd . break (not . predicate)
 
 -- | Return whereas the string contains a specific character or not
 elem :: Char -> String -> Bool
