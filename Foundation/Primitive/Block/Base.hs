@@ -53,6 +53,7 @@ instance (PrimType ty, Show ty) => Show (Block ty) where
 instance (PrimType ty, Eq ty) => Eq (Block ty) where
     (==) = equal
 instance (PrimType ty, Ord ty) => Ord (Block ty) where
+    {-# SPECIALIZE instance Ord (Block Word8) #-}
     compare = internalCompare
 
 instance PrimType ty => Monoid (Block ty) where
@@ -92,13 +93,14 @@ empty_ = runST $ primitive $ \s1 ->
 -- use 'index' if unsure.
 unsafeIndex :: forall ty . PrimType ty => Block ty -> Offset ty -> ty
 unsafeIndex (Block ba) n = primBaIndex ba n
+{-# SPECIALIZE unsafeIndex :: Block Word8 -> Offset Word8 -> Word8 #-}
 {-# INLINE unsafeIndex #-}
 
 -- | make a block from a list of elements.
 internalFromList :: PrimType ty => [ty] -> Block ty
 internalFromList l = runST $ do
     ma <- new (Size len)
-    iter 0 l $ \i x -> unsafeWrite ma i x
+    iter azero l $ \i x -> unsafeWrite ma i x
     unsafeFreeze ma
   where len = Data.List.length l
         iter _  []     _ = return ()
@@ -107,43 +109,49 @@ internalFromList l = runST $ do
 -- | transform a block to a list.
 internalToList :: forall ty . PrimType ty => Block ty -> [ty]
 internalToList blk@(Block ba)
-    | len == 0  = []
-    | otherwise = loop 0
+    | len == azero = []
+    | otherwise    = loop azero
   where
     !len = lengthSize blk
     loop !i | i .==# len = []
             | otherwise  = primBaIndex ba i : loop (i+1)
 
--- | Check if two vectors are identical
+-- | Check if two blocks are identical
 equal :: (PrimType ty, Eq ty) => Block ty -> Block ty -> Bool
 equal a b
     | la /= lb  = False
-    | otherwise = loop 0
+    | otherwise = loop azero
   where
-    !la = lengthSize a
-    !lb = lengthSize b
-    loop n | n .==# la = True
-           | otherwise = (unsafeIndex a n == unsafeIndex b n) && loop (n+1)
+    !la = lengthBytes a
+    !lb = lengthBytes b
+    lat = lengthSize a
 
--- | Compare 2 vectors
+    loop !n | n .==# lat = True
+            | otherwise  = (unsafeIndex a n == unsafeIndex b n) && loop (n+o1)
+    o1 = Offset (I# 1#)
+{-# SPECIALIZE equal :: Block Word8 -> Block Word8 -> Bool #-}
+
+-- | Compare 2 blocks
 internalCompare :: (Ord ty, PrimType ty) => Block ty -> Block ty -> Ordering
-internalCompare a b = loop 0
+internalCompare a b = loop azero
   where
     !la = lengthSize a
     !lb = lengthSize b
-    loop n
-        | n .==# la = if la == lb then EQ else LT
-        | n .==# lb = GT
-        | otherwise =
-            case unsafeIndex a n `compare` unsafeIndex b n of
-                EQ -> loop (n+1)
-                r  -> r
+    !end = sizeAsOffset (min la lb)
+    loop !n
+        | n == end  = la `compare` lb
+        | v1 == v2  = loop (n + Offset (I# 1#))
+        | otherwise = v1 `compare` v2
+      where
+        v1 = unsafeIndex a n
+        v2 = unsafeIndex b n
+{-# SPECIALIZE internalCompare :: Block Word8 -> Block Word8 -> Ordering #-}
 
--- | Append 2 arrays together by creating a new bigger array
+-- | Append 2 blocks together by creating a new bigger block
 append :: Block ty -> Block ty -> Block ty
 append a b
-    | la == 0 = b
-    | lb == 0 = a
+    | la == azero = b
+    | lb == azero = a
     | otherwise = runST $ do
         r  <- unsafeNew (la+lb)
         unsafeCopyBytesRO r 0                 a 0 la
