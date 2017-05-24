@@ -201,6 +201,7 @@ library
   include-dirs:      cbits
   c-sources:         cbits/foundation_random.c
                      cbits/foundation_network.c
+                     cbits/foundation_mem.c
 
   if flag(experimental)
     exposed-modules: Foundation.Network.HostName
