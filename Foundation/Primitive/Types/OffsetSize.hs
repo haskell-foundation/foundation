@@ -69,6 +69,7 @@ instance Subtractive (Offset ty) where
 
 (+.) :: Offset ty -> Int -> Offset ty
 (+.) (Offset a) b = Offset (a + b)
+{-# INLINE (+.) #-}
 
 -- . is offset (as a pointer from a beginning), and # is the size (amount of data)
 (.==#) :: Offset ty -> Size ty -> Bool
