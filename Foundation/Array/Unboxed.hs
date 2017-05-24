@@ -213,6 +213,21 @@ unsafeDewrap _ g (UVecAddr start _ fptr) = withUnsafeFinalPtr fptr $ \ptr -> g p
 unsafeDewrap f _ (UVecBA start _ _ ba)   = f ba start
 {-# INLINE unsafeDewrap #-}
 
+unsafeDewrap2 :: PrimType ty
+              => (ByteArray# -> Offset ty -> ByteArray# -> Offset ty -> a)
+              -> (Ptr ty -> Offset ty -> Ptr ty -> Offset ty -> ST s a)
+              -> (ByteArray# -> Offset ty -> Ptr ty -> Offset ty -> ST s a)
+              -> (Ptr ty -> Offset ty -> ByteArray# -> Offset ty -> ST s a)
+              -> UArray ty
+              -> UArray ty
+              -> a
+unsafeDewrap2 f _ _ _ (UVecBA start1 _ _ ba1)   (UVecBA start2 _ _ ba2)   = f ba1 start1 ba2 start2
+unsafeDewrap2 _ f _ _ (UVecAddr start1 _ fptr1) (UVecAddr start2 _ fptr2) = withUnsafeFinalPtr fptr1 $ \ptr1 ->
+                                                                                  withFinalPtr fptr2 $ \ptr2 -> f ptr1 start1 ptr2 start2
+unsafeDewrap2 _ _ f _ (UVecBA start1 _ _ ba1)   (UVecAddr start2 _ fptr2) = withUnsafeFinalPtr fptr2 $ \ptr2 -> f ba1 start1 ptr2 start2
+unsafeDewrap2 _ _ _ f (UVecAddr start1 _ fptr1) (UVecBA start2 _ _ ba2)   = withUnsafeFinalPtr fptr1 $ \ptr1 -> f ptr1 start1 ba2 start2
+{-# INLINE [2] unsafeDewrap2 #-}
+
 foreignMem :: PrimType ty
            => FinalPtr ty -- ^ the start pointer with a finalizer
            -> Int         -- ^ the number of elements (in elements, not bytes)
