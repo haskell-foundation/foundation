@@ -149,6 +149,7 @@ instance (PrimType ty, Show ty) => Show (UArray ty) where
 instance (PrimType ty, Eq ty) => Eq (UArray ty) where
     (==) = equal
 instance (PrimType ty, Ord ty) => Ord (UArray ty) where
+    {-# SPECIALIZE instance Ord (UArray Word8) #-}
     compare = vCompare
 
 instance PrimType ty => Monoid (UArray ty) where
@@ -413,7 +414,7 @@ replicate sz ty = create (Size (integralCast sz)) (const ty)
 vFromList :: PrimType ty => [ty] -> UArray ty
 vFromList l = runST $ do
     ma <- new (Size len)
-    iter 0 l $ \i x -> unsafeWrite ma i x
+    iter azero l $ \i x -> unsafeWrite ma i x
     unsafeFreeze ma
   where len = Data.List.length l
         iter _  []     _ = return ()
@@ -441,12 +442,32 @@ vToList a
 equal :: (PrimType ty, Eq ty) => UArray ty -> UArray ty -> Bool
 equal a b
     | la /= lb  = False
-    | otherwise = loop 0
+    | otherwise = unsafeDewrap2 goBaBa goPtrPtr goBaPtr goPtrBa a b
   where
     !la = lengthSize a
     !lb = lengthSize b
-    loop n | n .==# la = True
-           | otherwise = (unsafeIndex a n == unsafeIndex b n) && loop (n+1)
+    goBaBa ba1 start1 ba2 start2 = loop start1 start2
+      where
+        !end = start1 `offsetPlusE` la
+        loop !i !o | i == end  = True
+                   | otherwise = primBaIndex ba1 i == primBaIndex ba2 o && loop (i+o1) (o+o1)
+    goPtrPtr (Ptr addr1) start1 (Ptr addr2) start2 = pureST (loop start1 start2)
+      where
+        !end = start1 `offsetPlusE` la
+        loop !i !o | i == end  = True
+                   | otherwise = primAddrIndex addr1 i == primAddrIndex addr2 o && loop (i+o1) (o+o1)
+    goBaPtr ba1 start1 (Ptr addr2) start2 = pureST (loop start1 start2)
+      where
+        !end = start1 `offsetPlusE` la
+        loop !i !o | i == end  = True
+                   | otherwise = primBaIndex ba1 i == primAddrIndex addr2 o && loop (i+o1) (o+o1)
+    goPtrBa (Ptr addr1) start1 ba2 start2 = pureST (loop start1 start2)
+      where
+        !end = start1 `offsetPlusE` la
+        loop !i !o | i == end  = True
+                   | otherwise = primAddrIndex addr1 i == primBaIndex ba2 o && loop (i+o1) (o+o1)
+
+    o1 = Offset (I# 1#)
 
 {-
 sizeEqual :: PrimType ty => UArray ty -> UArray ty -> Bool
@@ -455,17 +476,44 @@ sizeEqual a b = length a == length b -- TODO optimise with direct comparaison of
 
 -- | Compare 2 vectors
 vCompare :: (Ord ty, PrimType ty) => UArray ty -> UArray ty -> Ordering
-vCompare a b = loop 0
+vCompare a b = unsafeDewrap2 goBaBa goPtrPtr goBaPtr goPtrBa a b
   where
     !la = lengthSize a
     !lb = lengthSize b
-    loop n
-        | n .==# la = if la == lb then EQ else LT
-        | n .==# lb = GT
-        | otherwise =
-            case unsafeIndex a n `compare` unsafeIndex b n of
-                EQ -> loop (n+1)
-                r  -> r
+    o1 = Offset (I# 1#)
+    goBaBa ba1 start1 ba2 start2 = loop start1 start2
+      where
+        !end = start1 `offsetPlusE` min la lb
+        loop !i !o | i == end   = la `compare` lb
+                   | v1 == v2   = loop (i + o1) (o + o1)
+                   | otherwise  = v1 `compare` v2
+          where v1 = primBaIndex ba1 i
+                v2 = primBaIndex ba2 o
+    goPtrPtr (Ptr addr1) start1 (Ptr addr2) start2 = pureST (loop start1 start2)
+      where
+        !end = start1 `offsetPlusE` min la lb
+        loop !i !o | i == end   = la `compare` lb
+                   | v1 == v2   = loop (i + o1) (o + o1)
+                   | otherwise  = v1 `compare` v2
+          where v1 = primAddrIndex addr1 i
+                v2 = primAddrIndex addr2 o
+    goBaPtr ba1 start1 (Ptr addr2) start2 = pureST (loop start1 start2)
+      where
+        !end  = start1 `offsetPlusE` min la lb
+        loop !i !o | i == end   = la `compare` lb
+                   | v1 == v2   = loop (i + o1) (o + o1)
+                   | otherwise  = v1 `compare` v2
+          where v1 = primBaIndex ba1 i
+                v2 = primAddrIndex addr2 o
+    goPtrBa (Ptr addr1) start1 ba2 start2 = pureST (loop start1 start2)
+      where
+        !end  = start1 `offsetPlusE` min la lb
+        loop !i !o | i == end   = la `compare` lb
+                   | v1 == v2   = loop (i + o1) (o + o1)
+                   | otherwise  = v1 `compare` v2
+          where v1 = primAddrIndex addr1 i
+                v2 = primBaIndex ba2 o
+{-# SPECIALIZE [3] vCompare :: UArray Word8 -> UArray Word8 -> Ordering #-}
 
 -- | Append 2 arrays together by creating a new bigger array
 append :: PrimType ty => UArray ty -> UArray ty -> UArray ty
