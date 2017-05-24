@@ -53,7 +53,7 @@ type Offset8 = Offset Word8
 -- considering that GHC/Haskell are mostly using this for offset.
 -- Trying to bring some sanity by a lightweight wrapping.
 newtype Offset ty = Offset Int
-    deriving (Show,Eq,Ord,Enum)
+    deriving (Show,Eq,Ord,Enum,Additive)
 
 instance Integral (Offset ty) where
     fromInteger n
@@ -63,11 +63,6 @@ instance IsIntegral (Offset ty) where
     toInteger (Offset i) = toInteger i
 instance IsNatural (Offset ty) where
     toNatural (Offset i) = toNatural (intToWord i)
-
-instance Additive (Offset ty) where
-    azero = Offset 0
-    (+) (Offset a) (Offset b) = Offset (a+b)
-
 instance Subtractive (Offset ty) where
     type Difference (Offset ty) = Size ty
     (Offset a) - (Offset b) = Size (a-b)
