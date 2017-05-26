@@ -4,8 +4,8 @@ module Test.Foundation.Random
     ( testRandom
     ) where
 
-import Imports
 import Foundation
+import Foundation.Check
 import Foundation.Primitive
 import Foundation.Array
 import Foundation.Collection
@@ -16,37 +16,28 @@ import qualified Prelude
 import qualified Data.List
 import GHC.ST
 
-testRandom :: TestTree
-testRandom = testGroup "random"
-    [ testProperty "entropy" entropyCheck
-    , testProperty "rngv1" rngv1Check
+testRandom :: Test
+testRandom = Group "random"
+    [ CheckPlan "entropy" entropyCheck
+    , CheckPlan "rngv1" rngv1Check
     ]
+
+entropyCheck, rngv1Check :: Check ()
+entropyCheck = pick "get-entropy" (getEntropy 1024) >>= testDataAppearRandom
+rngv1Check = pick "get-rng" getRng >>= testDataAppearRandom
+  where getRng = do rng <- randomNew :: IO RNG
+                    pure $ mconcat $ fst $ withRandomGenerator rng $ mapM getRandomBytes [1,2,4,8,32,80,250,2139]
+
+-- property to check that the data appears random enough
+--
+-- if this test fails it doesn't necessarily means it's not normal.
+testDataAppearRandom :: UArray Word8 -> Check ()
+testDataAppearRandom dat = do
+    validate "entropy"     $ (\x -> x > 6.5 && x <= 8)    (res_entropy v)
+    validate "mean"        $ (\x -> x >= 112 && x <= 144) (res_mean v)
+    validate "compression" $ (\x -> x >= 0 && x <= 5.0)   (res_compressionPercent v)
   where
-    entropyCheck = monadicIO $ do
-        v <- randomTest <$> run (getEntropy 1024)
-        --run (putStrLn . fromList $ show v)
-
-        unless (res_entropy v > 6.5 && res_entropy v <= 8) (failInfo v)
-        unless (res_mean v >= 112 && res_mean v <= 144) (failInfo v)
-        unless (res_compressionPercent v >= 0 && res_compressionPercent v <= 5.0) (failInfo v)
-
-    rngv1Check = monadicIO $ do
-        rng         <- run (randomNew :: IO RNG)
-        --nbQueries  <- pick arbitrary
-        let (l, _) = withRandomGenerator rng $ do
-                mapM getRandomBytes [1,2,4,8,32,80,250,2139]
-            v = randomTest (mconcat l)
-        unless (res_entropy v > 6.5 && res_entropy v <= 8) (failInfo v)
-        unless (res_mean v >= 112 && res_mean v <= 144) (failInfo v)
-        unless (res_compressionPercent v >= 0 && res_compressionPercent v <= 5.0) (failInfo v)
-        return ()
-
-    failInfo v = do
-        fail $ toList
-             ("randomness assert failed: entropy=" <> show (res_entropy v)
-                                      <> " chi^2=" <> show (res_chi_square v)
-                                       <> " mean=" <> show (res_mean v)
-                               <> " compression%=" <> show (res_compressionPercent v))
+    v = randomTest dat
 
 -------- generic random testing
 

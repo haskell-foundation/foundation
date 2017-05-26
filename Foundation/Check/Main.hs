@@ -15,17 +15,18 @@ module Foundation.Check.Main
     ( defaultMain
     ) where
 
-import qualified Prelude (fromIntegral)
 import           Foundation.Primitive.Imports
-import           Foundation.Class.Bifunctor (bimap)
+import           Foundation.Primitive.IntegralConv
 import           Foundation.System.Info (os, OS(..))
 import           Foundation.Collection
 import           Foundation.Numerical
 import           Foundation.IO.Terminal
+import           Foundation.Check (iterateProperty)
 import           Foundation.Check.Gen
 import           Foundation.Check.Property
 import           Foundation.Check.Config
 import           Foundation.Check.Types
+import           Foundation.Check.Print
 import           Foundation.List.DList
 import           Foundation.Random
 import           Foundation.Monad
@@ -36,27 +37,14 @@ import           Data.Maybe (catMaybes)
 import           System.Exit
 import           System.Environment (getArgs)
 
--- | Result of a property run
-data PropertyResult =
-      PropertySuccess
-    | PropertyFailed  String
-    deriving (Show,Eq)
-
-data TestResult =
-      PropertyResult String Word64      PropertyResult
-    | GroupResult    String HasFailures [TestResult]
-    deriving (Show)
-
-type HasFailures = Word64
-
 nbFail :: TestResult -> HasFailures
 nbFail (PropertyResult _ _ (PropertyFailed _)) = 1
 nbFail (PropertyResult _ _ PropertySuccess)    = 0
-nbFail (GroupResult    _ t _)                  = t
+nbFail (GroupResult    _ t _ _)                = t
 
 nbTests :: TestResult -> Word64
 nbTests (PropertyResult _ t _) = t
-nbTests (GroupResult _ _ l) = foldl' (+) 0 $ fmap nbTests l
+nbTests (GroupResult _ _ t _)  = t
 
 data TestState = TestState
     { config      :: !Config
@@ -94,6 +82,9 @@ filterTestMatching cfg testRoot
             Group s l    ->
                 let filtered = catMaybes $ fmap (testFilter (s:acc)) l
                  in if null filtered then Nothing else Just (Group s filtered)
+            CheckPlan s _
+                | match acc s -> Just x
+                | otherwise   -> Nothing
             Unit s _
                 | match acc s -> Just x
                 | otherwise   -> Nothing
@@ -126,7 +117,7 @@ defaultMain allTestRoot = do
     case filterTestMatching cfg allTestRoot of
         Nothing -> putStrLn "no tests to run" >> exitSuccess
         Just t  -> do
-            (_, cfg') <- runStateT (runCheck $ test t) testState
+            (_, cfg') <- runStateT (runCheckMain $ test t) testState
             summary cfg'
 
   where
@@ -148,16 +139,17 @@ defaultMain allTestRoot = do
       where
         testCases acc xs pre x =
             case x of
-                Group s l    -> tToList (fmap (\z -> (z, pre)) xs <> acc) (s:pre) l
-                Unit s _     -> (s : pre) : tToList acc pre xs
-                Property s _ -> (s : pre) : tToList acc pre xs
+                Group s l     -> tToList (fmap (\z -> (z, pre)) xs <> acc) (s:pre) l
+                CheckPlan s _ -> (s : pre) : tToList acc pre xs
+                Unit s _      -> (s : pre) : tToList acc pre xs
+                Property s _  -> (s : pre) : tToList acc pre xs
 
         tToList []           _   []              = []
         tToList ((a,pre):as) _   []              = testCases as [] pre a
         tToList acc          pre (x:xs)          = testCases acc xs pre x
 
 -- | internal check monad for facilitating the tests traversal
-newtype CheckMain a = CheckMain { runCheck :: StateT TestState IO a }
+newtype CheckMain a = CheckMain { runCheckMain :: StateT TestState IO a }
   deriving (Functor, Applicative, Monad, MonadIO)
 
 instance MonadState CheckMain where
@@ -187,6 +179,9 @@ failed = withState $ \s -> ((), s { testFailed = testFailed s + 1 })
 test :: Test -> CheckMain TestResult
 test (Group s l) = pushGroup s l
 test (Unit _ _) = undefined
+test (CheckPlan name plan) = do
+    r <- testCheckPlan name plan
+    return r
 test (Property name prop) = do
     r'@(PropertyResult _ nb r) <- testProperty name (property prop)
     case r of
@@ -251,11 +246,33 @@ pushGroup name list = do
         (True, _)              -> return ()
         (False, n) | n > 0     -> displayPropertyFailed name n ""
                    | otherwise -> displayPropertySucceed name tot
-    return $ GroupResult name totFail results
+    return $ GroupResult name totFail tot results
   where
     sum = foldl' (+) 0
     push = snoc
     pop = maybe mempty fst . unsnoc
+
+testCheckPlan :: String -> Check () -> CheckMain TestResult
+testCheckPlan name actions = do
+    seed <- getSeed <$> get
+    path <- testPath <$> get
+    params <- getGenParams . config <$> get
+    let rngIt = genRng seed (name : toList path)
+
+    let planState = PlanState { planRng         = rngIt
+                              , planValidations = 0
+                              , planParams      = params
+                              , planFailures    = []
+                              }
+    st <- liftIO (snd <$> runStateT (runCheck actions) planState)
+    let fails = planFailures st
+    if null fails
+        then return (GroupResult name 0 (planValidations st) [])
+        else do
+            displayCurrent name
+            forM_ fails $ \f ->
+                liftIO $ putStrLn $ show f
+            return (GroupResult name (integralUpsize (integralCast $ length fails :: Word) :: Word64) (planValidations st) fails)
 
 testProperty :: String -> Property -> CheckMain TestResult
 testProperty name prop = do
@@ -263,84 +280,11 @@ testProperty name prop = do
     path <- testPath <$> get
     let rngIt = genRng seed (name : toList path)
 
+    params <- getGenParams . config <$> get
     maxTests <- numTests . config <$> get
 
-    (res, nb) <- iterProp 1 maxTests rngIt
+    (res,nb) <- liftIO $ iterateProperty maxTests params rngIt prop
+    case res of
+        PropertyFailed {} -> failed
+        PropertySuccess   -> passed
     return (PropertyResult name nb res)
-  where
-    iterProp !n !limit !rngIt
-      | n == limit = passed >> return (PropertySuccess, n)
-      | otherwise  = do
-          params <- getGenParams . config <$> get
-          r <- liftIO $ toResult n params
-          case r of
-              (PropertyFailed e, _)               -> failed >> return (PropertyFailed e, n)
-              (PropertySuccess, cont) | cont      -> iterProp (n+1) limit rngIt
-                                      | otherwise -> passed >> return (PropertySuccess, n)
-        where
-          toResult :: Word64 -> GenParams -> IO (PropertyResult, Bool)
-          toResult it params =
-                    (propertyToResult <$> evaluate (runGen (unProp prop) (rngIt it) params))
-            `catch` (\(e :: SomeException) -> return (PropertyFailed (show e), False))
-
-    propertyToResult p =
-        let args   = propertyGetArgs p
-            checks = getChecks p
-         in if checkHasFailed checks
-                then printError args checks
-                else (PropertySuccess, length args > 0)
-
-    printError args checks = (PropertyFailed (mconcat $ loop 1 args), False)
-      where
-        loop :: Word -> [String] -> [String]
-        loop _ []      = printChecks checks
-        loop !i (a:as) = "parameter " <> show i <> " : " <> a <> "\n" : loop (i+1) as
-    printChecks (PropertyBinaryOp True _ _ _)     = []
-    printChecks (PropertyBinaryOp False n a b) =
-        [ "Property `a " <> n <> " b' failed where:\n"
-        , "    a = " <> a <> "\n"
-        , "        " <> bl1 <> "\n"
-        , "    b = " <> b <> "\n"
-        , "        " <> bl2 <> "\n"
-        ]
-      where
-        (bl1, bl2) = diffBlame a b
-    printChecks (PropertyNamed True _)            = []
-    printChecks (PropertyNamed False e)           = ["Property " <> e <> " failed"]
-    printChecks (PropertyBoolean True)            = []
-    printChecks (PropertyBoolean False)           = ["Property failed"]
-    printChecks (PropertyFail _ e)                = ["Property failed: " <> e]
-    printChecks (PropertyAnd True _ _)            = []
-    printChecks (PropertyAnd False a1 a2) =
-            [ "Property `cond1 && cond2' failed where:\n"
-            , "   cond1 = " <> h1 <> "\n"
-
-            ]
-            <> ((<>) "           " <$>  hs1)
-            <>
-            [ "   cond2 = " <> h2 <> "\n"
-            ]
-            <> ((<>) "           " <$> hs2)
-      where
-        (h1, hs1) = f a1
-        (h2, hs2) = f a2
-        f a = case printChecks a of
-                      [] -> ("Succeed", [])
-                      (x:xs) -> (x, xs)
-
-    propertyGetArgs (PropertyArg a p) = a : propertyGetArgs p
-    propertyGetArgs (PropertyEOA _) = []
-
-    getChecks (PropertyArg _ p) = getChecks p
-    getChecks (PropertyEOA c  ) = c
-
-diffBlame :: String -> String -> (String, String)
-diffBlame a b = bimap fromList fromList $ go ([], []) (toList a) (toList b)
-  where
-    go (acc1, acc2) [] [] = (acc1, acc2)
-    go (acc1, acc2) l1 [] = (acc1 <> blaming (length l1), acc2)
-    go (acc1, acc2) [] l2 = (acc1                       , acc2 <> blaming (length l2))
-    go (acc1, acc2) (x:xs) (y:ys)
-        | x == y    = go (acc1 <> " ", acc2 <> " ") xs ys
-        | otherwise = go (acc1 <> "^", acc2 <> "^") xs ys
-    blaming n = replicate (Prelude.fromIntegral n) '^'

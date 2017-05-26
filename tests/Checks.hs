@@ -17,6 +17,7 @@ import Foundation.String.Read
 import qualified Prelude
 import Data.Ratio
 
+import Test.Foundation.Random
 import Test.Checks.Property.Collection
 
 applyFstToSnd :: (String, String -> b) -> b
@@ -171,4 +172,5 @@ main = defaultMain $ Group "foundation"
       [ matrixToGroup "Unboxed" $ primTypesMatrixArbitrary $ \prx arb ->
             \s -> collectionProperties ("Unboxed " <> s) (functorProxy (Proxy :: Proxy ChunkedUArray) prx) arb
       ]
+    , testRandom
     ]

@@ -6,6 +6,7 @@ module Foundation.Check.Gen
     ( Gen
     , runGen
     , GenParams(..)
+    , GenRng
     , genRng
     , genWithRng
     , genWithParams

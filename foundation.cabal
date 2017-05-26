@@ -121,6 +121,7 @@ library
                      Foundation.Hashing.Hasher
                      Foundation.Hashing.Hashable
                      Foundation.Check.Gen
+                     Foundation.Check.Print
                      Foundation.Check.Arbitrary
                      Foundation.Check.Property
                      Foundation.Check.Config
@@ -270,7 +271,6 @@ test-suite test-foundation
                      Test.Foundation.Array
                      Test.Foundation.String
                      Test.Foundation.Storable
-                     Test.Foundation.Random
                      Test.Foundation.Misc
                      Imports
   default-extensions: NoImplicitPrelude
@@ -294,7 +294,8 @@ test-suite check-foundation
   type:              exitcode-stdio-1.0
   hs-source-dirs:    tests
   main-is:           Checks.hs
-  other-modules:      Test.Checks.Property.Collection
+  other-modules:     Test.Checks.Property.Collection
+                     Test.Foundation.Random
   default-extensions: NoImplicitPrelude
                       RebindableSyntax
                       OverloadedStrings
