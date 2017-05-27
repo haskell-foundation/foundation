@@ -26,12 +26,10 @@ import           Foundation.Check.Gen
 import           Foundation.Check.Property
 import           Foundation.Check.Config
 import           Foundation.Check.Types
-import           Foundation.Check.Print
 import           Foundation.List.DList
 import           Foundation.Random
 import           Foundation.Monad
 import           Foundation.Monad.State
-import           Control.Exception (evaluate, SomeException)
 import           Control.Monad (when)
 import           Data.Maybe (catMaybes)
 import           System.Exit
