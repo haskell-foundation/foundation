@@ -6,7 +6,8 @@
 -- Portability : portable
 --
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MagicHash #-}
+{-# LANGUAGE MagicHash                  #-}
+{-# LANGUAGE CPP                        #-}
 module Foundation.Primitive.Types.OffsetSize
     ( FileSize(..)
     , Offset(..)
@@ -25,10 +26,13 @@ module Foundation.Primitive.Types.OffsetSize
     , Size(..)
     , Size8
     , sizeOfE
+    , csizeOfOffset
     , csizeOfSize
     , sizeOfCSSize
     , plusPtrSize
     ) where
+
+#include "MachDeps.h"
 
 import GHC.Types
 import GHC.Word
@@ -44,6 +48,10 @@ import Foundation.Numerical.Number
 import Foundation.Numerical.Additive
 import Foundation.Numerical.Subtractive
 import Foundation.Numerical.Multiplicative
+
+#if WORD_SIZE_IN_BITS < 64
+import GHC.IntWord64
+#endif
 
 -- $setup
 -- >>> import Foundation.Array.Unboxed
@@ -162,6 +170,9 @@ sizeOfE (Size sz) (Size ty) = Size (ty * sz)
 
 csizeOfSize :: Size8 -> CSize
 csizeOfSize (Size (I# sz)) = CSize (W64# (int2Word# sz))
+
+csizeOfOffset :: Offset8 -> CSize
+csizeOfOffset (Offset (I# sz)) = CSize (W64# (int2Word# sz))
 
 sizeOfCSSize :: CSsize -> Size8
 sizeOfCSSize (CSsize (-1))               = error "invalid size: CSSize is -1"
