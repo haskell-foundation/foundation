@@ -25,9 +25,11 @@ module Foundation.Primitive.Block.Base
 import           GHC.Prim
 import           GHC.Types
 import           GHC.ST
+import           GHC.IO
 import qualified Data.List
 import           Foundation.Internal.Base
 import           Foundation.Internal.Proxy
+import           Foundation.System.Bindings.Hs (sysHsMemcmpBaBa)
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.NormalForm
@@ -129,7 +131,17 @@ equal a b
     loop !n | n .==# lat = True
             | otherwise  = (unsafeIndex a n == unsafeIndex b n) && loop (n+o1)
     o1 = Offset (I# 1#)
-{-# SPECIALIZE equal :: Block Word8 -> Block Word8 -> Bool #-}
+{-# RULES "equal/Bytes" [3] equal = equalMemcmp #-}
+{-# INLINEABLE [2] equal #-}
+-- {-# SPECIALIZE equal :: Block Word8 -> Block Word8 -> Bool #-}
+
+equalMemcmp :: Block ty -> Block ty -> Bool
+equalMemcmp b1@(Block a) b2@(Block b)
+    | la /= lb  = False
+    | otherwise = unsafeDupablePerformIO (sysHsMemcmpBaBa a 0 b 0 (csizeOfSize $ la)) == 0
+  where
+    la = lengthBytes b1
+    lb = lengthBytes b2
 
 -- | Compare 2 blocks
 internalCompare :: (Ord ty, PrimType ty) => Block ty -> Block ty -> Ordering
@@ -145,7 +157,20 @@ internalCompare a b = loop azero
       where
         v1 = unsafeIndex a n
         v2 = unsafeIndex b n
-{-# SPECIALIZE internalCompare :: Block Word8 -> Block Word8 -> Ordering #-}
+{-# RULES "compare/Bytes" [3] internalCompare = compareMemcmp #-}
+{-# INLINEABLE [2] internalCompare #-}
+-- {-# SPECIALIZE internalCompare :: Block Word8 -> Block Word8 -> Ordering #-}
+
+compareMemcmp :: Block ty -> Block ty -> Ordering
+compareMemcmp b1@(Block a) b2@(Block b) =
+    case unsafeDupablePerformIO (sysHsMemcmpBaBa a 0 b 0 sz) of
+        0  -> la `compare` lb
+        -1 -> LT
+        _  -> GT
+  where
+    la = lengthBytes b1
+    lb = lengthBytes b2
+    sz = csizeOfSize $ min la lb
 
 -- | Append 2 blocks together by creating a new bigger block
 append :: Block ty -> Block ty -> Block ty
