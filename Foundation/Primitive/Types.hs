@@ -23,6 +23,7 @@ module Foundation.Primitive.Types
     , offsetAsSize
     , sizeAsOffset
     , sizeInBytes
+    , offsetInBytes
     , primWordGetByteAndShift
     , primWord64GetByteAndShift
     , primWord64GetHiLo
@@ -490,6 +491,9 @@ sizeRecastBytes (Size w) = Size (w `Prelude.quot` szB)
 sizeInBytes :: forall a . PrimType a => Size a -> Size Word8
 sizeInBytes sz = sizeOfE (primSizeInBytes (Proxy :: Proxy a)) sz
 
+offsetInBytes :: forall a . PrimType a => Offset a -> Offset Word8
+offsetInBytes sz = offsetOfE (primSizeInBytes (Proxy :: Proxy a)) sz
+
 primOffsetRecast :: forall a b . (PrimType a, PrimType b) => Offset a -> Offset b
 primOffsetRecast !ofs =
     let !(Offset bytes) = offsetOfE szA ofs
@@ -505,10 +509,9 @@ primOffsetRecastBytes !(Offset o) = Offset (szA `Prelude.quot` o)
   where !(Size szA) = primSizeInBytes (Proxy :: Proxy b)
 {-# INLINE [1] primOffsetRecastBytes #-}
 
-primOffsetOfE :: PrimType a => Offset a -> Offset8
-primOffsetOfE = getOffset Proxy
-  where getOffset :: PrimType a => Proxy a -> Offset a -> Offset8
-        getOffset proxy = offsetOfE (primSizeInBytes proxy)
+primOffsetOfE :: forall a . PrimType a => Offset a -> Offset Word8
+primOffsetOfE = offsetInBytes
+{-# DEPRECATED primOffsetOfE "use offsetInBytes" #-}
 
 primWordGetByteAndShift :: Word# -> (# Word#, Word# #)
 primWordGetByteAndShift w = (# and# w 0xff##, uncheckedShiftRL# w 8# #)

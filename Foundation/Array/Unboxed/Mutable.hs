@@ -330,10 +330,10 @@ copyToPtr (MUVecMA start sz _ ma) (Ptr p) = primitive $ \s1 ->
     case unsafeFreezeByteArray# ma s1 of
         (# s2, ba #) -> (# compatCopyByteArrayToAddr# ba offset p szBytes s2, () #)
   where
-    !(Offset (I# offset)) = primOffsetOfE start
+    !(Offset (I# offset)) = offsetInBytes start
     !(Size (I# szBytes)) = sizeInBytes sz
 copyToPtr (MUVecAddr start sz fptr) dst =
     unsafePrimFromIO $ withFinalPtr fptr $ \ptr -> copyBytes dst (ptr `plusPtr` os) szBytes
   where
-    !(Offset os)    = primOffsetOfE start
+    !(Offset os)    = offsetInBytes start
     !(Size szBytes) = sizeInBytes sz

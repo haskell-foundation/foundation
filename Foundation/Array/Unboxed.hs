@@ -584,12 +584,12 @@ copyToPtr :: forall ty prim . (PrimType ty, PrimMonad prim)
 copyToPtr (UVecBA start sz _ ba) (Ptr p) = primitive $ \s1 ->
     (# compatCopyByteArrayToAddr# ba offset p szBytes s1, () #)
   where
-    !(Offset (I# offset)) = primOffsetOfE start
+    !(Offset (I# offset)) = offsetInBytes start
     !(Size (I# szBytes)) = sizeInBytes sz
 copyToPtr (UVecAddr start sz fptr) dst =
     unsafePrimFromIO $ withFinalPtr fptr $ \ptr -> copyBytes dst (ptr `plusPtr` os) szBytes
   where
-    !(Offset os)    = primOffsetOfE start
+    !(Offset os)    = offsetInBytes start
     !(Size szBytes) = sizeInBytes sz
 
 data TmpBA = TmpBA ByteArray#
