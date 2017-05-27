@@ -53,6 +53,7 @@ module Foundation.Array.Unboxed
     , unsafeRead
     , unsafeWrite
     -- * Functions
+    , equalMemcmp
     , singleton
     , replicate
     , map
@@ -97,8 +98,10 @@ import           GHC.Types
 import           GHC.Word
 import           GHC.ST
 import           GHC.Ptr
+import           GHC.IO (unsafeDupablePerformIO)
 import           GHC.ForeignPtr (ForeignPtr)
 import           Foreign.Marshal.Utils (copyBytes)
+import           Foreign.C.Types (CInt, CSize)
 import qualified Prelude
 import           Foundation.Internal.Base
 import           Foundation.Internal.Primitive
@@ -113,6 +116,7 @@ import           Foundation.Primitive.IntegralConv
 import           Foundation.Primitive.FinalPtr
 import           Foundation.Primitive.Utils
 import           Foundation.Primitive.Exception
+import           Foundation.System.Bindings.Hs
 import           Foundation.Array.Unboxed.Mutable hiding (sub, copyToPtr)
 import           Foundation.Numerical
 import           Foundation.Boot.Builder
@@ -205,8 +209,7 @@ unsafeIndexer (UVecBA start _ _ ba) f = f (\n -> primBaIndex ba (start + n))
 unsafeIndexer (UVecAddr start _ fptr) f = withFinalPtr fptr $ \(Ptr addr) -> f (\n -> primAddrIndex addr (start + n))
 {-# INLINE unsafeIndexer #-}
 
-unsafeDewrap :: PrimType ty
-             => (ByteArray# -> Offset ty -> a)
+unsafeDewrap :: (ByteArray# -> Offset ty -> a)
              -> (Ptr ty -> Offset ty -> ST s a)
              -> UArray ty
              -> a
@@ -214,8 +217,7 @@ unsafeDewrap _ g (UVecAddr start _ fptr) = withUnsafeFinalPtr fptr $ \ptr -> g p
 unsafeDewrap f _ (UVecBA start _ _ ba)   = f ba start
 {-# INLINE unsafeDewrap #-}
 
-unsafeDewrap2 :: PrimType ty
-              => (ByteArray# -> Offset ty -> ByteArray# -> Offset ty -> a)
+unsafeDewrap2 :: (ByteArray# -> Offset ty -> ByteArray# -> Offset ty -> a)
               -> (Ptr ty -> Offset ty -> Ptr ty -> Offset ty -> ST s a)
               -> (ByteArray# -> Offset ty -> Ptr ty -> Offset ty -> ST s a)
               -> (Ptr ty -> Offset ty -> ByteArray# -> Offset ty -> ST s a)
@@ -334,9 +336,9 @@ unsafeSlide mua s e = doSlide mua s e
   where
     doSlide :: (PrimType ty, PrimMonad prim) => MUArray ty (PrimState prim) -> Offset ty -> Offset ty -> prim ()
     doSlide (MUVecMA mbStart _ _ mba) start end  =
-        primMutableByteArraySlideToStart mba (primOffsetOfE $ mbStart+start) (primOffsetOfE end)
+        primMutableByteArraySlideToStart mba (offsetInBytes $ mbStart+start) (offsetInBytes end)
     doSlide (MUVecAddr mbStart _ fptr) start end = withFinalPtr fptr $ \(Ptr addr) ->
-        primMutableAddrSlideToStart addr (primOffsetOfE $ mbStart+start) (primOffsetOfE end)
+        primMutableAddrSlideToStart addr (offsetInBytes $ mbStart+start) (offsetInBytes end)
 
 -- | Thaw an immutable array.
 --
@@ -468,7 +470,24 @@ equal a b
                    | otherwise = primAddrIndex addr1 i == primBaIndex ba2 o && loop (i+o1) (o+o1)
 
     o1 = Offset (I# 1#)
+{-# RULES "equal/Bytes" [3] equal = equalBytes #-}
+{-# INLINEABLE [2] equal #-}
 
+equalBytes :: UArray Word8 -> UArray Word8 -> Bool
+equalBytes a b
+    | la /= lb  = False
+    | otherwise = memcmp a b (csizeOfSize $ sizeInBytes la) == 0
+  where
+    !la = lengthSize a
+    !lb = lengthSize b
+
+equalMemcmp :: PrimType ty => UArray ty -> UArray ty -> Bool
+equalMemcmp a b
+    | la /= lb  = False
+    | otherwise = memcmp a b (csizeOfSize $ sizeInBytes la) == 0
+  where
+    !la = lengthSize a
+    !lb = lengthSize b
 
 -- | Compare 2 vectors
 vCompare :: (Ord ty, PrimType ty) => UArray ty -> UArray ty -> Ordering
@@ -509,7 +528,35 @@ vCompare a b = unsafeDewrap2 goBaBa goPtrPtr goBaPtr goPtrBa a b
                    | otherwise  = v1 `compare` v2
           where v1 = primAddrIndex addr1 i
                 v2 = primBaIndex ba2 o
-{-# SPECIALIZE [3] vCompare :: UArray Word8 -> UArray Word8 -> Ordering #-}
+-- {-# SPECIALIZE [3] vCompare :: UArray Word8 -> UArray Word8 -> Ordering = vCompareBytes #-}
+{-# RULES "vCompare/Bytes" [3] vCompare = vCompareBytes #-}
+{-# INLINEABLE [2] vCompare #-}
+
+vCompareBytes :: UArray Word8 -> UArray Word8 -> Ordering
+vCompareBytes = vCompareMemcmp
+
+vCompareMemcmp :: (Ord ty, PrimType ty) => UArray ty -> UArray ty -> Ordering
+vCompareMemcmp a b = cintToOrdering $ memcmp a b sz
+  where
+    la = lengthSize a
+    lb = lengthSize b
+    sz = csizeOfSize $ sizeInBytes $ min la lb
+    cintToOrdering :: CInt -> Ordering
+    cintToOrdering 0 = la `compare` lb
+    cintToOrdering r | r < 0     = LT
+                     | otherwise = GT
+{-# SPECIALIZE [3] vCompareMemcmp :: UArray Word8 -> UArray Word8 -> Ordering #-}
+
+memcmp :: PrimType ty => UArray ty -> UArray ty -> CSize -> CInt
+memcmp a b sz = unsafeDewrap2
+    (\s1 o1 s2 o2 -> unsafeDupablePerformIO $ sysHsMemcmpBaBa s1 (offsetToCSize o1) s2 (offsetToCSize o2) sz)
+    (\s1 o1 s2 o2 -> unsafePrimToST $ sysHsMemcmpPtrPtr s1 (offsetToCSize o1) s2 (offsetToCSize o2) sz)
+    (\s1 o1 s2 o2 -> unsafePrimToST $ sysHsMemcmpBaPtr s1 (offsetToCSize o1) s2 (offsetToCSize o2) sz)
+    (\s1 o1 s2 o2 -> unsafePrimToST $ sysHsMemcmpPtrBa s1 (offsetToCSize o1) s2 (offsetToCSize o2) sz)
+    a b
+  where
+    offsetToCSize ofs = csizeOfOffset $ offsetInBytes ofs
+{-# SPECIALIZE [3] memcmp :: UArray Word8 -> UArray Word8 -> CSize -> CInt #-}
 
 -- | Append 2 arrays together by creating a new bigger array
 append :: PrimType ty => UArray ty -> UArray ty -> UArray ty
