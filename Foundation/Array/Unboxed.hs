@@ -470,7 +470,7 @@ equal a b
                    | otherwise = primAddrIndex addr1 i == primBaIndex ba2 o && loop (i+o1) (o+o1)
 
     o1 = Offset (I# 1#)
-{-# RULES "equal/Bytes" [3] equal = equalBytes #-}
+{-# RULES "UArray/Eq/Word8" [3] equal = equalBytes #-}
 {-# INLINEABLE [2] equal #-}
 
 equalBytes :: UArray Word8 -> UArray Word8 -> Bool
@@ -529,7 +529,7 @@ vCompare a b = unsafeDewrap2 goBaBa goPtrPtr goBaPtr goPtrBa a b
           where v1 = primAddrIndex addr1 i
                 v2 = primBaIndex ba2 o
 -- {-# SPECIALIZE [3] vCompare :: UArray Word8 -> UArray Word8 -> Ordering = vCompareBytes #-}
-{-# RULES "vCompare/Bytes" [3] vCompare = vCompareBytes #-}
+{-# RULES "UArray/Ord/Word8" [3] vCompare = vCompareBytes #-}
 {-# INLINEABLE [2] vCompare #-}
 
 vCompareBytes :: UArray Word8 -> UArray Word8 -> Ordering

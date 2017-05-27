@@ -53,9 +53,9 @@ instance NormalForm (Block ty) where
 instance (PrimType ty, Show ty) => Show (Block ty) where
     show v = show (toList v)
 instance (PrimType ty, Eq ty) => Eq (Block ty) where
+    {-# SPECIALIZE instance Eq (Block Word8) #-}
     (==) = equal
 instance (PrimType ty, Ord ty) => Ord (Block ty) where
-    {-# SPECIALIZE instance Ord (Block Word8) #-}
     compare = internalCompare
 
 instance PrimType ty => Monoid (Block ty) where
@@ -131,17 +131,19 @@ equal a b
     loop !n | n .==# lat = True
             | otherwise  = (unsafeIndex a n == unsafeIndex b n) && loop (n+o1)
     o1 = Offset (I# 1#)
-{-# RULES "equal/Bytes" [3] equal = equalMemcmp #-}
+{-# RULES "Block/Eq/Word8" [3]
+   forall (a :: Block Word8) b . equal a b = equalMemcmp a b #-}
 {-# INLINEABLE [2] equal #-}
 -- {-# SPECIALIZE equal :: Block Word8 -> Block Word8 -> Bool #-}
 
-equalMemcmp :: Block ty -> Block ty -> Bool
+equalMemcmp :: PrimMemoryComparable ty => Block ty -> Block ty -> Bool
 equalMemcmp b1@(Block a) b2@(Block b)
     | la /= lb  = False
-    | otherwise = unsafeDupablePerformIO (sysHsMemcmpBaBa a 0 b 0 (csizeOfSize $ la)) == 0
+    | otherwise = unsafeDupablePerformIO (sysHsMemcmpBaBa a 0 b 0 (csizeOfSize la)) == 0
   where
     la = lengthBytes b1
     lb = lengthBytes b2
+{-# SPECIALIZE equalMemcmp :: Block Word8 -> Block Word8 -> Bool #-}
 
 -- | Compare 2 blocks
 internalCompare :: (Ord ty, PrimType ty) => Block ty -> Block ty -> Ordering
@@ -157,20 +159,20 @@ internalCompare a b = loop azero
       where
         v1 = unsafeIndex a n
         v2 = unsafeIndex b n
-{-# RULES "compare/Bytes" [3] internalCompare = compareMemcmp #-}
-{-# INLINEABLE [2] internalCompare #-}
--- {-# SPECIALIZE internalCompare :: Block Word8 -> Block Word8 -> Ordering #-}
+{-# RULES "Block/Ord/Word8" [3] forall (a :: Block Word8) b . internalCompare a b = compareMemcmp a b #-}
+{-# NOINLINE internalCompare #-}
 
-compareMemcmp :: Block ty -> Block ty -> Ordering
+compareMemcmp :: PrimMemoryComparable ty => Block ty -> Block ty -> Ordering
 compareMemcmp b1@(Block a) b2@(Block b) =
     case unsafeDupablePerformIO (sysHsMemcmpBaBa a 0 b 0 sz) of
-        0  -> la `compare` lb
-        -1 -> LT
-        _  -> GT
+        0             -> la `compare` lb
+        n | n > 0     -> GT
+          | otherwise -> LT
   where
     la = lengthBytes b1
     lb = lengthBytes b2
     sz = csizeOfSize $ min la lb
+{-# SPECIALIZE [3] compareMemcmp :: Block Word8 -> Block Word8 -> Ordering #-}
 
 -- | Append 2 blocks together by creating a new bigger block
 append :: Block ty -> Block ty -> Block ty

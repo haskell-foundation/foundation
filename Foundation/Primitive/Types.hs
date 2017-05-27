@@ -11,6 +11,7 @@
 {-# LANGUAGE CPP #-}
 module Foundation.Primitive.Types
     ( PrimType(..)
+    , PrimMemoryComparable
     , primBaIndex
     , primMbaRead
     , primMbaWrite
@@ -473,6 +474,29 @@ instance PrimType a => PrimType (BE a) where
     primAddrWrite addr (Offset a) (BE w) = primAddrWrite addr (Offset a) w
     {-# INLINE primAddrWrite #-}
 
+-- | A constraint class for serializable type that have an unique
+-- memory compare representation
+--
+-- e.g. Float and Double have -0.0 and 0.0 which are Eq individual,
+-- yet have a different memory representation which doesn't allow
+-- for memcmp operation
+class PrimMemoryComparable ty where
+
+instance PrimMemoryComparable Int where
+instance PrimMemoryComparable Word where
+instance PrimMemoryComparable Word8 where
+instance PrimMemoryComparable Word16 where
+instance PrimMemoryComparable Word32 where
+instance PrimMemoryComparable Word64 where
+instance PrimMemoryComparable Int8 where
+instance PrimMemoryComparable Int16 where
+instance PrimMemoryComparable Int32 where
+instance PrimMemoryComparable Int64 where
+instance PrimMemoryComparable Char where
+instance PrimMemoryComparable CChar where
+instance PrimMemoryComparable CUChar where
+instance PrimMemoryComparable a => PrimMemoryComparable (LE a) where
+instance PrimMemoryComparable a => PrimMemoryComparable (BE a) where
 
 -- | Cast a Size linked to type A (Size A) to a Size linked to type B (Size B)
 sizeRecast :: forall a b . (PrimType a, PrimType b) => Size a -> Size b
