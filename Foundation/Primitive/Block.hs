@@ -195,14 +195,14 @@ snoc vec e
 
 sub :: PrimType ty => Block ty -> Offset ty -> Offset ty -> Block ty
 sub blk start end
-    | start >= end = mempty
-    | otherwise    = runST $ do
+    | start >= end' = mempty
+    | otherwise     = runST $ do
         dst <- new newLen
         M.unsafeCopyElementsRO dst 0 blk start newLen
         unsafeFreeze dst
   where
     newLen = end' - start
-    end' = min end (start `offsetPlusE` (end - start))
+    end' = min (sizeAsOffset len) end
     !len = lengthSize blk
 
 uncons :: PrimType ty => Block ty -> Maybe (ty, Block ty)
