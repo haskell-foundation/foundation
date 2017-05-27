@@ -7,7 +7,6 @@ import           Foundation.Internal.Base
 import           Foundation.Internal.Natural
 import qualified Prelude
 import           Foreign.C.Types
-import           System.Posix.Types
 
 -- | Number literals, convertible through the generic Integer type.
 --

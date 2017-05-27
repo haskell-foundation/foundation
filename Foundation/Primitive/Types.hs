@@ -40,7 +40,6 @@ import           Foundation.Internal.Base
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Endianness
 import           Foundation.Primitive.Monad
-import           Foundation.Numerical.Multiplicative
 import qualified Prelude (quot)
 
 #if WORD_SIZE_IN_BITS < 64

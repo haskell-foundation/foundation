@@ -18,7 +18,6 @@ module Foundation.System.Bindings.Linux
 import Foundation.Internal.Base
 import Foreign.C.Types
 import Foundation.System.Bindings.PosixDef
-import Foundation.System.Bindings.Posix
 
 #define __USE_GNU
 

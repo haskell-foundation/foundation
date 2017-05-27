@@ -469,10 +469,6 @@ equal a b
 
     o1 = Offset (I# 1#)
 
-{-
-sizeEqual :: PrimType ty => UArray ty -> UArray ty -> Bool
-sizeEqual a b = length a == length b -- TODO optimise with direct comparaison of bytes or elements when possible
--}
 
 -- | Compare 2 vectors
 vCompare :: (Ord ty, PrimType ty) => UArray ty -> UArray ty -> Ordering
