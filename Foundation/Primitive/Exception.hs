@@ -28,7 +28,7 @@ import           Foundation.Primitive.Monad
 -- * OOB_Index: reading an immutable vector
 -- * OOB_Read: reading a mutable vector
 -- * OOB_Write: write a mutable vector
-data OutOfBoundOperation = OOB_Read | OOB_Write | OOB_MemSet | OOB_Index
+data OutOfBoundOperation = OOB_Read | OOB_Write | OOB_MemSet | OOB_MemCopy | OOB_Index
     deriving (Show,Eq,Typeable)
 
 -- | Exception during an operation accessing the vector out of bound

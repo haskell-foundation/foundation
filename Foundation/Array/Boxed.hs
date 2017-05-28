@@ -54,6 +54,7 @@ module Foundation.Array.Boxed
     , sortBy
     , filter
     , reverse
+    , elem
     , find
     , foldl'
     , foldr
@@ -550,7 +551,16 @@ unsnoc vec
   where
     !len@(Size lenI) = lengthSize vec
 
-find ::  (ty -> Bool) -> Array ty -> Maybe ty
+elem :: Eq ty => ty -> Array ty -> Bool
+elem !ty arr = loop 0
+  where
+    !sz = lengthSize arr
+    loop !i | i .==# sz = False
+            | t == ty   = True
+            | otherwise = loop (i+1)
+      where t = unsafeIndex arr i
+
+find :: (ty -> Bool) -> Array ty -> Maybe ty
 find predicate vec = loop 0
   where
     !len = lengthSize vec

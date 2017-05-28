@@ -18,6 +18,7 @@ module Foundation.Collection.Sequential
 
 import           Foundation.Internal.Base
 import           Foundation.Primitive.IntegralConv
+import           Foundation.Numerical.Subtractive
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Collection.Element
 import           Foundation.Collection.Collection
@@ -167,6 +168,23 @@ class (IsList c, Item c ~ Element c, Monoid c, Collection c) => Sequential c whe
         len1 = length c1
         len2 = length c2
 
+    -- | Takes two collections and returns True iff the first collection is an infix of the second.
+    isInfixOf :: Eq (Element c) => c -> c -> Bool
+    default isInfixOf :: Eq c => c -> c -> Bool
+    isInfixOf c1 c2
+        | len1 > len2  = False
+        | otherwise    = loop 0
+      where
+        endofs = len2 - len1
+        len1 = length c1
+        len2 = length c2
+
+        loop i
+            | i == endofs = c1 == c2Sub
+            | c1 == c2Sub = True
+            | otherwise   = loop (succ i)
+          where c2Sub = take len1 $ drop i $ c2
+
 -- Temporary utility functions
 mconcatCollection :: (Monoid (Item c), Sequential c) => c -> Element c
 mconcatCollection c = mconcat (toList c)
@@ -281,3 +299,6 @@ instance Sequential S.String where
     sortBy = S.sortBy
     singleton = S.singleton
     replicate = S.replicate
+    isSuffixOf = S.isSuffixOf
+    isPrefixOf = S.isPrefixOf
+    isInfixOf  = S.isInfixOf

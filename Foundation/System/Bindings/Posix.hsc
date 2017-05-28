@@ -11,7 +11,7 @@
 -- Functions defined by the POSIX standards
 --
 -----------------------------------------------------------------------------
-
+{-# OPTIONS_HADDOCK hide #-}
 module Foundation.System.Bindings.Posix
    where
 

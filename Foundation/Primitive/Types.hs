@@ -11,6 +11,7 @@
 {-# LANGUAGE CPP #-}
 module Foundation.Primitive.Types
     ( PrimType(..)
+    , PrimMemoryComparable
     , primBaIndex
     , primMbaRead
     , primMbaWrite
@@ -23,6 +24,7 @@ module Foundation.Primitive.Types
     , offsetAsSize
     , sizeAsOffset
     , sizeInBytes
+    , offsetInBytes
     , primWordGetByteAndShift
     , primWord64GetByteAndShift
     , primWord64GetHiLo
@@ -472,33 +474,68 @@ instance PrimType a => PrimType (BE a) where
     primAddrWrite addr (Offset a) (BE w) = primAddrWrite addr (Offset a) w
     {-# INLINE primAddrWrite #-}
 
+-- | A constraint class for serializable type that have an unique
+-- memory compare representation
+--
+-- e.g. Float and Double have -0.0 and 0.0 which are Eq individual,
+-- yet have a different memory representation which doesn't allow
+-- for memcmp operation
+class PrimMemoryComparable ty where
+
+instance PrimMemoryComparable Int where
+instance PrimMemoryComparable Word where
+instance PrimMemoryComparable Word8 where
+instance PrimMemoryComparable Word16 where
+instance PrimMemoryComparable Word32 where
+instance PrimMemoryComparable Word64 where
+instance PrimMemoryComparable Int8 where
+instance PrimMemoryComparable Int16 where
+instance PrimMemoryComparable Int32 where
+instance PrimMemoryComparable Int64 where
+instance PrimMemoryComparable Char where
+instance PrimMemoryComparable CChar where
+instance PrimMemoryComparable CUChar where
+instance PrimMemoryComparable a => PrimMemoryComparable (LE a) where
+instance PrimMemoryComparable a => PrimMemoryComparable (BE a) where
 
 -- | Cast a Size linked to type A (Size A) to a Size linked to type B (Size B)
-sizeRecast :: (PrimType a, PrimType b) => Size a -> Size b
-sizeRecast = doRecast Proxy Proxy
-  where doRecast :: (PrimType a, PrimType b) => Proxy a -> Proxy b -> Size a -> Size b
-        doRecast pa pb sz =
-            let szA          = primSizeInBytes pa
-                (Size szB)   = primSizeInBytes pb
-                (Size bytes) = sizeOfE szA sz
-             in Size (bytes `Prelude.quot` szB)
+sizeRecast :: forall a b . (PrimType a, PrimType b) => Size a -> Size b
+sizeRecast sz = Size (bytes `Prelude.quot` szB)
+  where !szA          = primSizeInBytes (Proxy :: Proxy a)
+        !(Size szB)   = primSizeInBytes (Proxy :: Proxy b)
+        !(Size bytes) = sizeOfE szA sz
+{-# INLINE [1] sizeRecast #-}
+{-# RULES "sizeRecast from Word8" [2] forall a . sizeRecast a = sizeRecastBytes a #-}
+
+sizeRecastBytes :: forall b . PrimType b => Size Word8 -> Size b
+sizeRecastBytes (Size w) = Size (w `Prelude.quot` szB)
+  where !(Size szB) = primSizeInBytes (Proxy :: Proxy b)
+{-# INLINE [1] sizeRecastBytes #-}
 
 sizeInBytes :: forall a . PrimType a => Size a -> Size Word8
 sizeInBytes sz = sizeOfE (primSizeInBytes (Proxy :: Proxy a)) sz
 
-primOffsetRecast :: (PrimType a, PrimType b) => Offset a -> Offset b
-primOffsetRecast = doRecast Proxy Proxy
-  where doRecast :: (PrimType a, PrimType b) => Proxy a -> Proxy b -> Offset a -> Offset b
-        doRecast pa pb ofs =
-            let szA            = primSizeInBytes pa
-                (Size szB)     = primSizeInBytes pb
-                (Offset bytes) = offsetOfE szA ofs
-             in Offset (bytes `Prelude.quot` szB)
+offsetInBytes :: forall a . PrimType a => Offset a -> Offset Word8
+offsetInBytes sz = offsetOfE (primSizeInBytes (Proxy :: Proxy a)) sz
 
-primOffsetOfE :: PrimType a => Offset a -> Offset8
-primOffsetOfE = getOffset Proxy
-  where getOffset :: PrimType a => Proxy a -> Offset a -> Offset8
-        getOffset proxy = offsetOfE (primSizeInBytes proxy)
+primOffsetRecast :: forall a b . (PrimType a, PrimType b) => Offset a -> Offset b
+primOffsetRecast !ofs =
+    let !(Offset bytes) = offsetOfE szA ofs
+     in Offset (bytes `Prelude.quot` szB)
+  where
+    !szA        = primSizeInBytes (Proxy :: Proxy a)
+    !(Size szB) = primSizeInBytes (Proxy :: Proxy b)
+{-# INLINE [1] primOffsetRecast #-}
+{-# RULES "primOffsetRecast W8" [3] forall a . primOffsetRecast a = primOffsetRecastBytes a #-}
+
+primOffsetRecastBytes :: forall b . PrimType b => Offset Word8 -> Offset b
+primOffsetRecastBytes !(Offset o) = Offset (szA `Prelude.quot` o)
+  where !(Size szA) = primSizeInBytes (Proxy :: Proxy b)
+{-# INLINE [1] primOffsetRecastBytes #-}
+
+primOffsetOfE :: forall a . PrimType a => Offset a -> Offset Word8
+primOffsetOfE = offsetInBytes
+{-# DEPRECATED primOffsetOfE "use offsetInBytes" #-}
 
 primWordGetByteAndShift :: Word# -> (# Word#, Word# #)
 primWordGetByteAndShift w = (# and# w 0xff##, uncheckedShiftRL# w 8# #)

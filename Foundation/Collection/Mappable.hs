@@ -65,8 +65,8 @@ traverse_ f col = traverse f col *> pure ()
 -- | Evaluate each action in the collection from left to right, and
 -- ignore the results. For a version that doesn't ignore the results
 -- see 'Foundation.Collection.sequenceA'.
-sequenceA_ :: (Mappable col, Applicative f) => col (f a) -> f ()
-sequenceA_ col = sequenceA col *> pure ()
+--sequenceA_ :: (Mappable col, Applicative f) => col (f a) -> f ()
+--sequenceA_ col = sequenceA col *> pure ()
 
 -- | Map each element of a collection to a monadic action, evaluate
 -- these actions from left to right, and ignore the results. For a

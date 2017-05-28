@@ -36,6 +36,7 @@ module Foundation.Array.Unboxed
     , empty
     , create
     , createFromIO
+    , createFromPtr
     , sub
     , copyToPtr
     , withPtr
@@ -52,6 +53,7 @@ module Foundation.Array.Unboxed
     , unsafeRead
     , unsafeWrite
     -- * Functions
+    , equalMemcmp
     , singleton
     , replicate
     , map
@@ -60,6 +62,7 @@ module Foundation.Array.Unboxed
     , index
     , null
     , take
+    , unsafeTake
     , drop
     , splitAt
     , revDrop
@@ -95,8 +98,10 @@ import           GHC.Types
 import           GHC.Word
 import           GHC.ST
 import           GHC.Ptr
+import           GHC.IO (unsafeDupablePerformIO)
 import           GHC.ForeignPtr (ForeignPtr)
 import           Foreign.Marshal.Utils (copyBytes)
+import           Foreign.C.Types (CInt, CSize)
 import qualified Prelude
 import           Foundation.Internal.Base
 import           Foundation.Internal.Primitive
@@ -111,7 +116,8 @@ import           Foundation.Primitive.IntegralConv
 import           Foundation.Primitive.FinalPtr
 import           Foundation.Primitive.Utils
 import           Foundation.Primitive.Exception
-import           Foundation.Array.Unboxed.Mutable hiding (sub)
+import           Foundation.System.Bindings.Hs
+import           Foundation.Array.Unboxed.Mutable hiding (sub, copyToPtr)
 import           Foundation.Numerical
 import           Foundation.Boot.Builder
 import qualified Data.List
@@ -147,6 +153,7 @@ instance (PrimType ty, Show ty) => Show (UArray ty) where
 instance (PrimType ty, Eq ty) => Eq (UArray ty) where
     (==) = equal
 instance (PrimType ty, Ord ty) => Ord (UArray ty) where
+    {-# SPECIALIZE instance Ord (UArray Word8) #-}
     compare = vCompare
 
 instance PrimType ty => Monoid (UArray ty) where
@@ -202,14 +209,27 @@ unsafeIndexer (UVecBA start _ _ ba) f = f (\n -> primBaIndex ba (start + n))
 unsafeIndexer (UVecAddr start _ fptr) f = withFinalPtr fptr $ \(Ptr addr) -> f (\n -> primAddrIndex addr (start + n))
 {-# INLINE unsafeIndexer #-}
 
-unsafeDewrap :: PrimType ty
-             => (ByteArray# -> Offset ty -> a)
+unsafeDewrap :: (ByteArray# -> Offset ty -> a)
              -> (Ptr ty -> Offset ty -> ST s a)
              -> UArray ty
              -> a
 unsafeDewrap _ g (UVecAddr start _ fptr) = withUnsafeFinalPtr fptr $ \ptr -> g ptr start
 unsafeDewrap f _ (UVecBA start _ _ ba)   = f ba start
 {-# INLINE unsafeDewrap #-}
+
+unsafeDewrap2 :: (ByteArray# -> Offset ty -> ByteArray# -> Offset ty -> a)
+              -> (Ptr ty -> Offset ty -> Ptr ty -> Offset ty -> ST s a)
+              -> (ByteArray# -> Offset ty -> Ptr ty -> Offset ty -> ST s a)
+              -> (Ptr ty -> Offset ty -> ByteArray# -> Offset ty -> ST s a)
+              -> UArray ty
+              -> UArray ty
+              -> a
+unsafeDewrap2 f _ _ _ (UVecBA start1 _ _ ba1)   (UVecBA start2 _ _ ba2)   = f ba1 start1 ba2 start2
+unsafeDewrap2 _ f _ _ (UVecAddr start1 _ fptr1) (UVecAddr start2 _ fptr2) = withUnsafeFinalPtr fptr1 $ \ptr1 ->
+                                                                                  withFinalPtr fptr2 $ \ptr2 -> f ptr1 start1 ptr2 start2
+unsafeDewrap2 _ _ f _ (UVecBA start1 _ _ ba1)   (UVecAddr start2 _ fptr2) = withUnsafeFinalPtr fptr2 $ \ptr2 -> f ba1 start1 ptr2 start2
+unsafeDewrap2 _ _ _ f (UVecAddr start1 _ fptr1) (UVecBA start2 _ _ ba2)   = withUnsafeFinalPtr fptr1 $ \ptr1 -> f ptr1 start1 ba2 start2
+{-# INLINE [2] unsafeDewrap2 #-}
 
 foreignMem :: PrimType ty
            => FinalPtr ty -- ^ the start pointer with a finalizer
@@ -316,9 +336,9 @@ unsafeSlide mua s e = doSlide mua s e
   where
     doSlide :: (PrimType ty, PrimMonad prim) => MUArray ty (PrimState prim) -> Offset ty -> Offset ty -> prim ()
     doSlide (MUVecMA mbStart _ _ mba) start end  =
-        primMutableByteArraySlideToStart mba (primOffsetOfE $ mbStart+start) (primOffsetOfE end)
+        primMutableByteArraySlideToStart mba (offsetInBytes $ mbStart+start) (offsetInBytes end)
     doSlide (MUVecAddr mbStart _ fptr) start end = withFinalPtr fptr $ \(Ptr addr) ->
-        primMutableAddrSlideToStart addr (primOffsetOfE $ mbStart+start) (primOffsetOfE end)
+        primMutableAddrSlideToStart addr (offsetInBytes $ mbStart+start) (offsetInBytes end)
 
 -- | Thaw an immutable array.
 --
@@ -362,6 +382,16 @@ createFromIO size filler
             _ | r < 0     -> error "filler returned negative number"
               | otherwise -> unsafeFreezeShrink mba r
 
+-- | Freeze a chunk of memory pointed, of specific size into a new unboxed array
+createFromPtr :: PrimType ty
+              => Ptr ty
+              -> Size ty
+              -> IO (UArray ty)
+createFromPtr p s = do
+    ma <- new s
+    copyFromPtr p s ma
+    unsafeFreeze ma
+
 -----------------------------------------------------------------------
 -- higher level collection implementation
 -----------------------------------------------------------------------
@@ -386,7 +416,7 @@ replicate sz ty = create (Size (integralCast sz)) (const ty)
 vFromList :: PrimType ty => [ty] -> UArray ty
 vFromList l = runST $ do
     ma <- new (Size len)
-    iter 0 l $ \i x -> unsafeWrite ma i x
+    iter azero l $ \i x -> unsafeWrite ma i x
     unsafeFreeze ma
   where len = Data.List.length l
         iter _  []     _ = return ()
@@ -414,31 +444,119 @@ vToList a
 equal :: (PrimType ty, Eq ty) => UArray ty -> UArray ty -> Bool
 equal a b
     | la /= lb  = False
-    | otherwise = loop 0
+    | otherwise = unsafeDewrap2 goBaBa goPtrPtr goBaPtr goPtrBa a b
   where
     !la = lengthSize a
     !lb = lengthSize b
-    loop n | n .==# la = True
-           | otherwise = (unsafeIndex a n == unsafeIndex b n) && loop (n+1)
+    goBaBa ba1 start1 ba2 start2 = loop start1 start2
+      where
+        !end = start1 `offsetPlusE` la
+        loop !i !o | i == end  = True
+                   | otherwise = primBaIndex ba1 i == primBaIndex ba2 o && loop (i+o1) (o+o1)
+    goPtrPtr (Ptr addr1) start1 (Ptr addr2) start2 = pureST (loop start1 start2)
+      where
+        !end = start1 `offsetPlusE` la
+        loop !i !o | i == end  = True
+                   | otherwise = primAddrIndex addr1 i == primAddrIndex addr2 o && loop (i+o1) (o+o1)
+    goBaPtr ba1 start1 (Ptr addr2) start2 = pureST (loop start1 start2)
+      where
+        !end = start1 `offsetPlusE` la
+        loop !i !o | i == end  = True
+                   | otherwise = primBaIndex ba1 i == primAddrIndex addr2 o && loop (i+o1) (o+o1)
+    goPtrBa (Ptr addr1) start1 ba2 start2 = pureST (loop start1 start2)
+      where
+        !end = start1 `offsetPlusE` la
+        loop !i !o | i == end  = True
+                   | otherwise = primAddrIndex addr1 i == primBaIndex ba2 o && loop (i+o1) (o+o1)
 
-{-
-sizeEqual :: PrimType ty => UArray ty -> UArray ty -> Bool
-sizeEqual a b = length a == length b -- TODO optimise with direct comparaison of bytes or elements when possible
--}
+    o1 = Offset (I# 1#)
+{-# RULES "UArray/Eq/Word8" [3] equal = equalBytes #-}
+{-# INLINEABLE [2] equal #-}
+
+equalBytes :: UArray Word8 -> UArray Word8 -> Bool
+equalBytes a b
+    | la /= lb  = False
+    | otherwise = memcmp a b (csizeOfSize $ sizeInBytes la) == 0
+  where
+    !la = lengthSize a
+    !lb = lengthSize b
+
+equalMemcmp :: PrimType ty => UArray ty -> UArray ty -> Bool
+equalMemcmp a b
+    | la /= lb  = False
+    | otherwise = memcmp a b (csizeOfSize $ sizeInBytes la) == 0
+  where
+    !la = lengthSize a
+    !lb = lengthSize b
 
 -- | Compare 2 vectors
 vCompare :: (Ord ty, PrimType ty) => UArray ty -> UArray ty -> Ordering
-vCompare a b = loop 0
+vCompare a b = unsafeDewrap2 goBaBa goPtrPtr goBaPtr goPtrBa a b
   where
     !la = lengthSize a
     !lb = lengthSize b
-    loop n
-        | n .==# la = if la == lb then EQ else LT
-        | n .==# lb = GT
-        | otherwise =
-            case unsafeIndex a n `compare` unsafeIndex b n of
-                EQ -> loop (n+1)
-                r  -> r
+    o1 = Offset (I# 1#)
+    goBaBa ba1 start1 ba2 start2 = loop start1 start2
+      where
+        !end = start1 `offsetPlusE` min la lb
+        loop !i !o | i == end   = la `compare` lb
+                   | v1 == v2   = loop (i + o1) (o + o1)
+                   | otherwise  = v1 `compare` v2
+          where v1 = primBaIndex ba1 i
+                v2 = primBaIndex ba2 o
+    goPtrPtr (Ptr addr1) start1 (Ptr addr2) start2 = pureST (loop start1 start2)
+      where
+        !end = start1 `offsetPlusE` min la lb
+        loop !i !o | i == end   = la `compare` lb
+                   | v1 == v2   = loop (i + o1) (o + o1)
+                   | otherwise  = v1 `compare` v2
+          where v1 = primAddrIndex addr1 i
+                v2 = primAddrIndex addr2 o
+    goBaPtr ba1 start1 (Ptr addr2) start2 = pureST (loop start1 start2)
+      where
+        !end  = start1 `offsetPlusE` min la lb
+        loop !i !o | i == end   = la `compare` lb
+                   | v1 == v2   = loop (i + o1) (o + o1)
+                   | otherwise  = v1 `compare` v2
+          where v1 = primBaIndex ba1 i
+                v2 = primAddrIndex addr2 o
+    goPtrBa (Ptr addr1) start1 ba2 start2 = pureST (loop start1 start2)
+      where
+        !end  = start1 `offsetPlusE` min la lb
+        loop !i !o | i == end   = la `compare` lb
+                   | v1 == v2   = loop (i + o1) (o + o1)
+                   | otherwise  = v1 `compare` v2
+          where v1 = primAddrIndex addr1 i
+                v2 = primBaIndex ba2 o
+-- {-# SPECIALIZE [3] vCompare :: UArray Word8 -> UArray Word8 -> Ordering = vCompareBytes #-}
+{-# RULES "UArray/Ord/Word8" [3] vCompare = vCompareBytes #-}
+{-# INLINEABLE [2] vCompare #-}
+
+vCompareBytes :: UArray Word8 -> UArray Word8 -> Ordering
+vCompareBytes = vCompareMemcmp
+
+vCompareMemcmp :: (Ord ty, PrimType ty) => UArray ty -> UArray ty -> Ordering
+vCompareMemcmp a b = cintToOrdering $ memcmp a b sz
+  where
+    la = lengthSize a
+    lb = lengthSize b
+    sz = csizeOfSize $ sizeInBytes $ min la lb
+    cintToOrdering :: CInt -> Ordering
+    cintToOrdering 0 = la `compare` lb
+    cintToOrdering r | r < 0     = LT
+                     | otherwise = GT
+{-# SPECIALIZE [3] vCompareMemcmp :: UArray Word8 -> UArray Word8 -> Ordering #-}
+
+memcmp :: PrimType ty => UArray ty -> UArray ty -> CSize -> CInt
+memcmp a b sz = unsafeDewrap2
+    (\s1 o1 s2 o2 -> unsafeDupablePerformIO $ sysHsMemcmpBaBa s1 (offsetToCSize o1) s2 (offsetToCSize o2) sz)
+    (\s1 o1 s2 o2 -> unsafePrimToST $ sysHsMemcmpPtrPtr s1 (offsetToCSize o1) s2 (offsetToCSize o2) sz)
+    (\s1 o1 s2 o2 -> unsafePrimToST $ sysHsMemcmpBaPtr s1 (offsetToCSize o1) s2 (offsetToCSize o2) sz)
+    (\s1 o1 s2 o2 -> unsafePrimToST $ sysHsMemcmpPtrBa s1 (offsetToCSize o1) s2 (offsetToCSize o2) sz)
+    a b
+  where
+    offsetToCSize ofs = csizeOfOffset $ offsetInBytes ofs
+{-# SPECIALIZE [3] memcmp :: UArray Word8 -> UArray Word8 -> CSize -> CInt #-}
 
 -- | Append 2 arrays together by creating a new bigger array
 append :: PrimType ty => UArray ty -> UArray ty -> UArray ty
@@ -513,12 +631,12 @@ copyToPtr :: forall ty prim . (PrimType ty, PrimMonad prim)
 copyToPtr (UVecBA start sz _ ba) (Ptr p) = primitive $ \s1 ->
     (# compatCopyByteArrayToAddr# ba offset p szBytes s1, () #)
   where
-    !(Offset (I# offset)) = primOffsetOfE start
+    !(Offset (I# offset)) = offsetInBytes start
     !(Size (I# szBytes)) = sizeInBytes sz
 copyToPtr (UVecAddr start sz fptr) dst =
     unsafePrimFromIO $ withFinalPtr fptr $ \ptr -> copyBytes dst (ptr `plusPtr` os) szBytes
   where
-    !(Offset os)    = primOffsetOfE start
+    !(Offset os)    = offsetInBytes start
     !(Size szBytes) = sizeInBytes sz
 
 data TmpBA = TmpBA ByteArray#
@@ -569,6 +687,13 @@ recast = recast_ Proxy Proxy
 unsafeRecast :: (PrimType a, PrimType b) => UArray a -> UArray b
 unsafeRecast (UVecBA start len pinStatus b) = UVecBA (primOffsetRecast start) (sizeRecast len) pinStatus b
 unsafeRecast (UVecAddr start len a) = UVecAddr (primOffsetRecast start) (sizeRecast len) (castFinalPtr a)
+{-# INLINE [1] unsafeRecast #-}
+{-# RULES "unsafeRecast from Word8" [2] forall a . unsafeRecast a = unsafeRecastBytes a #-}
+
+unsafeRecastBytes :: PrimType a => UArray Word8 -> UArray a
+unsafeRecastBytes (UVecBA start len pinStatus b) = UVecBA (primOffsetRecast start) (sizeRecast len) pinStatus b
+unsafeRecastBytes (UVecAddr start len a) = UVecAddr (primOffsetRecast start) (sizeRecast len) (castFinalPtr a)
+{-# INLINE [1] unsafeRecastBytes #-}
 
 null :: UArray ty -> Bool
 null (UVecBA _ sz _ _) = sz == Size 0
@@ -585,6 +710,10 @@ take nbElems v
   where
     n    = Size nbElems
     vlen = lengthSize v
+
+unsafeTake :: PrimType ty => Size ty -> UArray ty -> UArray ty
+unsafeTake sz (UVecBA start _ pinst ba) = UVecBA start sz pinst ba
+unsafeTake sz (UVecAddr start _ fptr)   = UVecAddr start sz fptr
 
 drop :: PrimType ty => Int -> UArray ty -> UArray ty
 drop nbElems v
@@ -658,7 +787,6 @@ splitOn xpredicate ivec
     | otherwise = runST $ unsafeIndexer ivec (pureST . go ivec xpredicate)
   where
     !len = lengthSize ivec
-    --go :: PrimType ty => UArray ty -> (ty -> Bool) -> (Offset ty -> ty) -> ST s [UArray ty]
     go v predicate getIdx = loop 0 0
       where
         loop !prevIdx !idx

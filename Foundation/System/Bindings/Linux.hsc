@@ -11,14 +11,13 @@
 -- Functions defined only for linux
 --
 -----------------------------------------------------------------------------
-
+{-# OPTIONS_HADDOCK hide #-}
 module Foundation.System.Bindings.Linux
    where
 
 import Foundation.Internal.Base
 import Foreign.C.Types
 import Foundation.System.Bindings.PosixDef
-import Foundation.System.Bindings.Posix
 
 #define __USE_GNU
 

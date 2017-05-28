@@ -11,6 +11,7 @@ import Foundation.String (String, Encoding(..))
 import Foundation.Collection
 
 -- | Capitalize all 'a' and returns all other character as is
+remap :: Monad m => Conduit String String m ()
 remap = await >>= maybe (return ()) (\s -> yield (capitalizeA s <> "\n") >> remap)
   where
     capitalizeA :: String -> String

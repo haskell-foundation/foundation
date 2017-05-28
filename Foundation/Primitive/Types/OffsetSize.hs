@@ -6,7 +6,8 @@
 -- Portability : portable
 --
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MagicHash #-}
+{-# LANGUAGE MagicHash                  #-}
+{-# LANGUAGE CPP                        #-}
 module Foundation.Primitive.Types.OffsetSize
     ( FileSize(..)
     , Offset(..)
@@ -25,10 +26,21 @@ module Foundation.Primitive.Types.OffsetSize
     , Size(..)
     , Size8
     , sizeOfE
+    , csizeOfOffset
+    , csizeOfSize
+    , sizeOfCSSize
+    , plusPtrSize
     ) where
+
+#include "MachDeps.h"
 
 import GHC.Types
 import GHC.Word
+import GHC.Int
+import GHC.Prim
+import Foreign.C.Types
+import Foreign.Ptr (plusPtr)
+import System.Posix.Types (CSsize (..))
 import Foundation.Internal.Base
 import Foundation.Internal.Proxy
 import Foundation.Numerical.Primitives
@@ -36,6 +48,10 @@ import Foundation.Numerical.Number
 import Foundation.Numerical.Additive
 import Foundation.Numerical.Subtractive
 import Foundation.Numerical.Multiplicative
+
+#if WORD_SIZE_IN_BITS < 64
+import GHC.IntWord64
+#endif
 
 -- $setup
 -- >>> import Foundation.Array.Unboxed
@@ -53,7 +69,7 @@ type Offset8 = Offset Word8
 -- considering that GHC/Haskell are mostly using this for offset.
 -- Trying to bring some sanity by a lightweight wrapping.
 newtype Offset ty = Offset Int
-    deriving (Show,Eq,Ord,Enum)
+    deriving (Show,Eq,Ord,Enum,Additive)
 
 instance Integral (Offset ty) where
     fromInteger n
@@ -63,17 +79,13 @@ instance IsIntegral (Offset ty) where
     toInteger (Offset i) = toInteger i
 instance IsNatural (Offset ty) where
     toNatural (Offset i) = toNatural (intToWord i)
-
-instance Additive (Offset ty) where
-    azero = Offset 0
-    (+) (Offset a) (Offset b) = Offset (a+b)
-
 instance Subtractive (Offset ty) where
     type Difference (Offset ty) = Size ty
     (Offset a) - (Offset b) = Size (a-b)
 
 (+.) :: Offset ty -> Int -> Offset ty
 (+.) (Offset a) b = Offset (a + b)
+{-# INLINE (+.) #-}
 
 -- . is offset (as a pointer from a beginning), and # is the size (amount of data)
 (.==#) :: Offset ty -> Size ty -> Bool
@@ -151,3 +163,32 @@ newtype Size ty = Size Int
 
 sizeOfE :: Size8 -> Size ty -> Size8
 sizeOfE (Size sz) (Size ty) = Size (ty * sz)
+
+-- when #if WORD_SIZE_IN_BITS < 64 the 2 following are wrong
+-- instead of using FromIntegral and being silently wrong
+-- explicit pattern match to sort it out.
+
+csizeOfSize :: Size8 -> CSize
+#if WORD_SIZE_IN_BITS < 64
+csizeOfSize (Size (I# sz)) = CSize (W32# (int2Word# sz))
+#else
+csizeOfSize (Size (I# sz)) = CSize (W64# (int2Word# sz))
+#endif
+
+csizeOfOffset :: Offset8 -> CSize
+#if WORD_SIZE_IN_BITS < 64
+csizeOfOffset (Offset (I# sz)) = CSize (W32# (int2Word# sz))
+#else
+csizeOfOffset (Offset (I# sz)) = CSize (W64# (int2Word# sz))
+#endif
+
+sizeOfCSSize :: CSsize -> Size8
+sizeOfCSSize (CSsize (-1))      = error "invalid size: CSSize is -1"
+#if WORD_SIZE_IN_BITS < 64
+sizeOfCSSize (CSsize (I32# sz)) = Size (I# sz)
+#else
+sizeOfCSSize (CSsize (I64# sz)) = Size (I# sz)
+#endif
+
+plusPtrSize :: Ptr ty -> Size ty -> Ptr ty
+plusPtrSize ptr (Size z) = ptr `plusPtr` z

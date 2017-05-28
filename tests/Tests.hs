@@ -28,7 +28,6 @@ import Test.Foundation.ChunkedUArray
 import Test.Foundation.String
 import Test.Foundation.Parser
 import Test.Foundation.Storable
-import Test.Foundation.Random
 import Test.Foundation.Network.IPv4
 import Test.Foundation.Network.IPv6
 import Test.Foundation.Misc
@@ -317,7 +316,6 @@ tests =
         ]
     , testParsers
     , testForeignStorableRefs
-    , testRandom
     , testConduit
     , testNetworkIPv4
     , testNetworkIPv6

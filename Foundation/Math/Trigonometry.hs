@@ -4,7 +4,6 @@ module Foundation.Math.Trigonometry
     ) where
 
 import           Foundation.Internal.Base
-import           Foundation.Numerical
 import qualified Prelude
 
 -- | Method to support basic trigonometric functions

@@ -52,6 +52,7 @@ module Foundation.String.UTF8
     , span
     , break
     , breakElem
+    , dropWhile
     , singleton
     , charMap
     , snoc
@@ -73,6 +74,9 @@ module Foundation.String.UTF8
     , readFloatingExact
     , upper
     , lower
+    , isPrefixOf
+    , isSuffixOf
+    , isInfixOf
     -- * Legacy utility
     , lines
     , words
@@ -342,7 +346,7 @@ take :: Int -> String -> String
 take n s@(String ba)
     | n <= 0           = mempty
     | n >= C.length ba = s
-    | otherwise        = let (Offset o) = indexN (Offset n) s in String $ Vec.take o ba
+    | otherwise        = let (Offset o) = indexN (Offset n) s in String $ Vec.unsafeTake (Size o) ba
 
 -- | Create a string with the remaining Chars after dropping @n Chars from the beginning
 drop :: Int -> String -> String
@@ -500,6 +504,10 @@ breakElem !el s@(String ba)
 -- the remaining
 span :: (Char -> Bool) -> String -> (String, String)
 span predicate s = break (not . predicate) s
+
+-- | Drop character from the beginning while the predicate is true
+dropWhile :: (Char -> Bool) -> String -> String
+dropWhile predicate = snd . break (not . predicate)
 
 -- | Return whereas the string contains a specific character or not
 elem :: Char -> String -> Bool
@@ -1303,3 +1311,39 @@ upper = charMap toUpper
 --   Does not properly support multicharacter Unicode conversions.
 lower :: String -> String
 lower = charMap toLower
+
+-- | Check whether the first string is a prefix of the second string.
+isPrefixOf :: String -> String -> Bool
+isPrefixOf (String needle) (String haystack)
+    | needleLen > hayLen = False
+    | otherwise          = needle == C.take needleLen haystack
+  where
+    needleLen = C.length needle
+    hayLen    = C.length haystack
+
+-- | Check whether the first string is a suffix of the second string.
+isSuffixOf :: String -> String -> Bool
+isSuffixOf (String needle) (String haystack)
+    | needleLen > hayLen = False
+    | otherwise          = needle == C.revTake needleLen haystack
+  where
+    needleLen = C.length needle
+    hayLen    = C.length haystack
+
+-- | Check whether the first string is contains within the second string.
+-- 
+-- TODO: implemented the naive way and thus terribly inefficient, reimplement properly
+isInfixOf :: String -> String -> Bool
+isInfixOf (String needle) (String haystack)
+    | needleLen > hayLen = False
+    | otherwise          = loop 0
+  where
+    endOfs    = hayLen - needleLen
+    needleLen = C.length needle
+    hayLen    = C.length haystack
+
+    loop i
+        | i == endOfs           = needle == haystackSub
+        | needle == haystackSub = True
+        | otherwise             = loop (i+1)
+      where haystackSub = C.take needleLen $ C.drop i $ haystack

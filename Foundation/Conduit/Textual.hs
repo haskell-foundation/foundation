@@ -1,5 +1,6 @@
 module Foundation.Conduit.Textual
     ( lines
+    , words
     , fromBytes
     , toBytes
     ) where
@@ -11,6 +12,7 @@ import           Foundation.Collection
 import qualified Foundation.String.UTF8 as S
 import           Foundation.Conduit.Internal
 import           Foundation.Monad
+import           Data.Char (isSpace)
 
 -- | Split conduit of string to its lines
 --
@@ -33,6 +35,22 @@ lines = await >>= maybe (finish []) (go [])
                 let nextCurrent = nextBuf : prevs
                  in await >>= maybe (finish nextCurrent) (go nextCurrent)
       where (line, next') = S.breakElem '\n' nextBuf
+
+words :: Monad m => Conduit String String m ()
+words = await >>= maybe (finish []) (go [])
+  where
+    mconcatRev = mconcat . reverse
+
+    finish l = if null l then return () else yield (mconcatRev l)
+
+    go prevs nextBuf =
+        case S.dropWhile isSpace next' of
+            rest' 
+                | null rest' ->
+                    let nextCurrent = nextBuf : prevs
+                     in await >>= maybe (finish nextCurrent) (go nextCurrent)
+                | otherwise  -> yield (mconcatRev (line : prevs)) >> go mempty rest'
+      where (line, next') = S.break isSpace nextBuf
 
 fromBytes :: MonadThrow m => S.Encoding -> Conduit (UArray Word8) String m ()
 fromBytes encoding = loop mempty

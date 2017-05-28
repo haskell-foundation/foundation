@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE CPP #-}
 module Foundation.System.Bindings
     ( module X
