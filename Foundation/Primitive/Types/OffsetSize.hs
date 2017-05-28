@@ -169,10 +169,18 @@ sizeOfE (Size sz) (Size ty) = Size (ty * sz)
 -- explicit pattern match to sort it out.
 
 csizeOfSize :: Size8 -> CSize
+#if WORD_SIZE_IN_BITS < 64
+csizeOfSize (Size (I# sz)) = CSize (W32# (int2Word# sz))
+#else
 csizeOfSize (Size (I# sz)) = CSize (W64# (int2Word# sz))
+#endif
 
 csizeOfOffset :: Offset8 -> CSize
+#if WORD_SIZE_IN_BITS < 64
+csizeOfOffset (Offset (I# sz)) = CSize (W32# (int2Word# sz))
+#else
 csizeOfOffset (Offset (I# sz)) = CSize (W64# (int2Word# sz))
+#endif
 
 sizeOfCSSize :: CSsize -> Size8
 sizeOfCSSize (CSsize (-1))               = error "invalid size: CSSize is -1"
