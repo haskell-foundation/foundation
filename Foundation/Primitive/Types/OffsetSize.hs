@@ -183,8 +183,12 @@ csizeOfOffset (Offset (I# sz)) = CSize (W64# (int2Word# sz))
 #endif
 
 sizeOfCSSize :: CSsize -> Size8
-sizeOfCSSize (CSsize (-1))               = error "invalid size: CSSize is -1"
+sizeOfCSSize (CSsize (-1))      = error "invalid size: CSSize is -1"
+#if WORD_SIZE_IN_BITS < 64
+sizeOfCSSize (CSsize (I32# sz)) = Size (I# sz)
+#else
 sizeOfCSSize (CSsize (I64# sz)) = Size (I# sz)
+#endif
 
 plusPtrSize :: Ptr ty -> Size ty -> Ptr ty
 plusPtrSize ptr (Size z) = ptr `plusPtr` z
