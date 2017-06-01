@@ -32,8 +32,6 @@ import           Foundation.Monad
 import           Foundation.Monad.State
 import           Control.Monad (when)
 import           Data.Maybe (catMaybes)
-import           System.Exit
-import           System.Environment (getArgs)
 
 nbFail :: TestResult -> HasFailures
 nbFail (PropertyResult _ _ (PropertyFailed _)) = 1
@@ -94,7 +92,7 @@ filterTestMatching cfg testRoot
 defaultMain :: Test -> IO ()
 defaultMain allTestRoot = do
     -- parse arguments
-    ecfg <- flip parseArgs defaultConfig . fmap fromList <$> getArgs
+    ecfg <- flip parseArgs defaultConfig <$> getArgs
     cfg  <- case ecfg of
             Left e  -> do
                 putStrLn e
