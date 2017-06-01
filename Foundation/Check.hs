@@ -3,7 +3,7 @@
 -- License     : BSD-style
 -- Maintainer  : Foundation maintainers
 --
--- A implementation of a test framework
+-- An implementation of a test framework
 -- and property expression & testing
 --
 {-# LANGUAGE ScopedTypeVariables #-}
