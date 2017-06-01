@@ -7,6 +7,7 @@
 --
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MagicHash                  #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE CPP                        #-}
 module Foundation.Primitive.Types.OffsetSize
     ( FileSize(..)
@@ -48,6 +49,7 @@ import Foundation.Numerical.Number
 import Foundation.Numerical.Additive
 import Foundation.Numerical.Subtractive
 import Foundation.Numerical.Multiplicative
+import Foundation.Primitive.IntegralConv
 
 #if WORD_SIZE_IN_BITS < 64
 import GHC.IntWord64
@@ -132,6 +134,18 @@ offsetAsSize (Offset a) = Size a
 -- | Size of a data structure in bytes.
 type Size8 = Size Word8
 
+-- | Size of a data structure.
+--
+-- More specifically, it represents the number of elements of type `ty` that fit
+-- into the data structure.
+--
+-- >>> lengthSize (fromList ['a', 'b', 'c', '🌟']) :: Size Char
+-- Size 4
+--
+-- Same caveats as 'Offset' apply here.
+newtype Size ty = Size Int
+    deriving (Show,Eq,Ord,Enum)
+
 instance Integral (Size ty) where
     fromInteger n
         | n < 0     = error "Size: fromInteger: negative"
@@ -149,17 +163,10 @@ instance Subtractive (Size ty) where
     type Difference (Size ty) = Size ty
     (Size a) - (Size b) = Size (a-b)
 
--- | Size of a data structure.
---
--- More specifically, it represents the number of elements of type `ty` that fit
--- into the data structure.
---
--- >>> lengthSize (fromList ['a', 'b', 'c', '🌟']) :: Size Char
--- Size 4
---
--- Same caveats as 'Offset' apply here.
-newtype Size ty = Size Int
-    deriving (Show,Eq,Ord,Enum)
+instance IntegralCast Int (Size ty) where
+    integralCast i = Size i
+instance IntegralCast Word (Size ty) where
+    integralCast (W# w) = Size (I# (word2Int# w))
 
 sizeOfE :: Size8 -> Size ty -> Size8
 sizeOfE (Size sz) (Size ty) = Size (ty * sz)
