@@ -84,6 +84,11 @@ instance IsNatural (Offset ty) where
 instance Subtractive (Offset ty) where
     type Difference (Offset ty) = Size ty
     (Offset a) - (Offset b) = Size (a-b)
+instance IntegralCast Int (Offset ty) where
+    integralCast i = Offset i
+instance IntegralCast Word (Offset ty) where
+    integralCast (W# w) = Offset (I# (word2Int# w))
+
 
 (+.) :: Offset ty -> Int -> Offset ty
 (+.) (Offset a) b = Offset (a + b)
