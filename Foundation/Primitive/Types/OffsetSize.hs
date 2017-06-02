@@ -30,6 +30,7 @@ module Foundation.Primitive.Types.OffsetSize
     , csizeOfOffset
     , csizeOfSize
     , sizeOfCSSize
+    , sizeOfCSize
     , plusPtrSize
     ) where
 
@@ -200,6 +201,13 @@ sizeOfCSSize (CSsize (-1))      = error "invalid size: CSSize is -1"
 sizeOfCSSize (CSsize (I32# sz)) = Size (I# sz)
 #else
 sizeOfCSSize (CSsize (I64# sz)) = Size (I# sz)
+#endif
+
+sizeOfCSize :: CSize -> Size8
+#if WORD_SIZE_IN_BITS < 64
+sizeOfCSize (CSize (W32# sz)) = Size (I# (word2Int# sz))
+#else
+sizeOfCSize (CSize (W64# sz)) = Size (I# (word2Int# sz))
 #endif
 
 plusPtrSize :: Ptr ty -> Size ty -> Ptr ty
