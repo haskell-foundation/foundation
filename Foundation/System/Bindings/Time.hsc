@@ -19,6 +19,12 @@ data CTimeZone
 size_CTimeSpec :: CSize
 size_CTimeSpec = #const sizeof(struct timespec)
 
+ofs_CTimeSpec_Seconds :: Int
+ofs_CTimeSpec_Seconds = (#offset struct timespec, tv_sec)
+
+ofs_CTimeSpec_NanoSeconds :: Int
+ofs_CTimeSpec_NanoSeconds = (#offset struct timespec, tv_nsec)
+
 size_CTimeVal :: CSize
 size_CTimeVal = #const sizeof(struct timeval)
 
