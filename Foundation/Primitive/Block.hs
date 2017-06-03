@@ -113,14 +113,14 @@ replicate sz ty = create (Size (integralCast sz)) (const ty)
 -- and its content is copied to the mutable block
 thaw :: (PrimMonad prim, PrimType ty) => Block ty -> prim (MutableBlock ty (PrimState prim))
 thaw array = do
-    ma <- M.unsafeNew (lengthBytes array)
+    ma <- M.unsafeNew unpinned (lengthBytes array)
     M.unsafeCopyBytesRO ma 0 array 0 (lengthBytes array)
     return ma
 {-# INLINE thaw #-}
 
 freeze :: (PrimType ty, PrimMonad prim) => MutableBlock ty (PrimState prim) -> prim (Block ty)
 freeze ma = do
-    ma' <- unsafeNew len
+    ma' <- unsafeNew unpinned len
     M.unsafeCopyBytes ma' 0 ma 0 len
     --M.copyAt ma' (Offset 0) ma (Offset 0) len
     unsafeFreeze ma'
