@@ -28,7 +28,7 @@ int foundation_time_clock_getres(unsigned int clockid, struct timespec *timespec
 	switch (clockid) {
 	/* clockid = 1 (CLOCK_MONOTONIC), or any other value */
 	case CLOCK_MONOTONIC:
-		if (timebase.denom == 0) mach_timebase_info(timebase);
+		if (timebase.denom == 0) mach_timebase_info(&timebase);
 		timespec->tv_sec = 0;
 		timespec->tv_nsec = timebase.numer / timebase.denom;
 		break;
@@ -74,7 +74,7 @@ int foundation_time_clock_gettime(unsigned int clockid, struct timespec *timespe
 		timespec->tv_nsec = mts.tv_nsec;
 		break;
 	default:
-		-1;
+		return -1;
 	}
 	return 0;
 }
