@@ -18,3 +18,6 @@ sysMacos_O_SHLOCK   = (#const O_SHLOCK)
 sysMacos_O_EXLOCK   = (#const O_EXLOCK)
 sysMacos_O_SYMLINK  = (#const O_SYMLINK)
 sysMacos_O_EVTONLY  = (#const O_EVTONLY)
+
+foreign import unsafe "mach_absolute_time"
+    sysMacos_absolute_time :: IO Word64
