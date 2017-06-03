@@ -31,7 +31,6 @@ module Foundation.Primitive.Types.OffsetSize
     , csizeOfSize
     , sizeOfCSSize
     , sizeOfCSize
-    , plusPtrSize
     ) where
 
 #include "MachDeps.h"
