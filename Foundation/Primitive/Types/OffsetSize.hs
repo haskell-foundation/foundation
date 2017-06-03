@@ -40,7 +40,6 @@ import GHC.Word
 import GHC.Int
 import GHC.Prim
 import Foreign.C.Types
-import Foreign.Ptr (plusPtr)
 import System.Posix.Types (CSsize (..))
 import Foundation.Internal.Base
 import Foundation.Internal.Proxy
