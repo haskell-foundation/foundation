@@ -106,6 +106,7 @@ library
                      Foundation.Timing
                      Foundation.Timing.Main
                      Foundation.Time.Bindings
+                     Foundation.Time.StopWatch
                      Foundation.UUID
                      Foundation.System.Entropy
                      Foundation.System.Bindings
