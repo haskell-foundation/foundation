@@ -172,6 +172,7 @@ library
                      Foundation.Primitive.Exception
                      Foundation.Primitive.Types
                      Foundation.Primitive.Types.OffsetSize
+                     Foundation.Primitive.Types.Ptr
                      Foundation.Primitive.Monad
                      Foundation.Primitive.NormalForm
                      Foundation.Primitive.Utils
