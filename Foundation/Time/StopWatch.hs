@@ -66,7 +66,7 @@ stopPrecise (StopWatchPrecise blk) = do
     c_QueryPerformanceCounter (castPtr p)
     let p64 = castPtr p :: Ptr Word64
     end   <- peek p64
-    start <- peek (p64 `ptrPlus` 8))
+    start <- peek (p64 `ptrPlus` 8)
     freq  <- queryPerformanceFrequency
     return (NanoSeconds (end - start))
 #elif defined(__APPLE__)
