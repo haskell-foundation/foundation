@@ -209,6 +209,3 @@ sizeOfCSize (CSize (W32# sz)) = Size (I# (word2Int# sz))
 #else
 sizeOfCSize (CSize (W64# sz)) = Size (I# (word2Int# sz))
 #endif
-
-plusPtrSize :: Ptr ty -> Size ty -> Ptr ty
-plusPtrSize ptr (Size z) = ptr `plusPtr` z
