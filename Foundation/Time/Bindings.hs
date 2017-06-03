@@ -6,14 +6,11 @@ module Foundation.Time.Bindings
 
 import Foundation.Primitive.Imports
 import Foundation.Primitive.Types.OffsetSize
+import Foundation.Primitive.Types.Ptr
 import Foundation.System.Bindings.Time
 import Foundation.Time.Types
-import qualified Foreign.Marshal.Alloc as A (allocaBytes)
+import Foundation.Foreign.Alloc
 import Foreign.Storable
-import Foreign.Ptr
-
-allocaBytes :: Size Word8 -> (Ptr a -> IO b) -> IO b
-allocaBytes (Size i) f = A.allocaBytes i f
 
 measuringNanoSeconds :: IO a -> IO (a, NanoSeconds)
 measuringNanoSeconds f =
@@ -28,6 +25,6 @@ getMonotonicTime :: IO (Seconds, NanoSeconds)
 getMonotonicTime =
     allocaBytes (sizeOfCSize size_CTimeSpec) $ \tspec -> do
         _err1 <- sysTimeClockGetTime sysTime_CLOCK_MONOTONIC tspec
-        s  <- Seconds     <$> peek (castPtr (tspec `plusPtr` ofs_CTimeSpec_Seconds))
-        ns <- NanoSeconds <$> peek (castPtr (tspec `plusPtr` ofs_CTimeSpec_NanoSeconds))
+        s  <- Seconds     <$> peek (castPtr (tspec `ptrPlus` ofs_CTimeSpec_Seconds))
+        ns <- NanoSeconds <$> peek (castPtr (tspec `ptrPlus` ofs_CTimeSpec_NanoSeconds))
         return (s,ns)
