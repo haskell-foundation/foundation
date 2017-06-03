@@ -64,8 +64,9 @@ stopPrecise (StopWatchPrecise blk) = do
 #if defined(mingw32_HOST_OS)
     p <- mutableGetAddr blk
     c_QueryPerformanceCounter (castPtr p)
-    end   <- peek (castPtr p
-    start <- peek (castPtr (p `ptrPlus` 8))
+    let p64 = castPtr p :: Ptr Word64
+    end   <- peek p64
+    start <- peek (p64 `ptrPlus` 8))
     freq  <- queryPerformanceFrequency
     return (NanoSeconds (end - start))
 #elif defined(__APPLE__)
