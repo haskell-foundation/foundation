@@ -13,14 +13,12 @@ module Foundation.Timing
     , measure
     ) where
 
-import           Foundation.Internal.Proxy
 import           Foundation.Primitive.Imports
 import           Foundation.Primitive.IntegralConv
 import           Foundation.Primitive.Monad
 -- import           Foundation.Array.Unboxed hiding (unsafeFreeze)
 import           Foundation.Array.Unboxed.Mutable (MUArray)
 import           Foundation.Collection
-import           Foundation.Collection.Mutable
 import           Foundation.Time.Types
 import           Foundation.Numerical
 import           Foundation.Time.Bindings
