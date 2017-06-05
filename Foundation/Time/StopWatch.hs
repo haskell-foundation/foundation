@@ -67,7 +67,7 @@ stopPrecise (StopWatchPrecise blk) = do
     let p64 = castPtr p :: Ptr Word64
     end   <- peek p64
     start <- peek (p64 `ptrPlus` 8)
-    freq  <- queryPerformanceFrequency
+    freq  <- integralDownsize <$> queryPerformanceFrequency
     pure (NanoSeconds ((end - start) * freq))
 #elif defined(__APPLE__)
     end <- sysMacos_absolute_time
