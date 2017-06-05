@@ -68,10 +68,16 @@ stopPrecise (StopWatchPrecise blk) = do
     end   <- peek p64
     start <- peek (p64 `ptrPlus` 8)
     freq  <- queryPerformanceFrequency
-    return (NanoSeconds (end - start))
+    pure (NanoSeconds ((end - start) * freq))
 #elif defined(__APPLE__)
     end <- sysMacos_absolute_time
-    return (NanoSeconds (end - start))
+    (numer,denom) <- do
+            mti <- newPinned (sizeOfCSize size_MachTimebaseInfo)
+            p <- mutableGetAddr mti
+            n <- peek (castPtr (mti `ptrPlus` ofs_MachTimebaseInfo_numer))
+            d <- peek (castPtr (mti `ptrPlus` ofs_MachTimebaseInfo_denom))
+            pure (n, d)
+    pure (NanoSeconds (((end - start) * numer) `div` denom))
 #else
     p <- mutableGetAddr blk
     _err1 <- sysTimeClockGetTime sysTime_CLOCK_MONOTONIC (castPtr p)
