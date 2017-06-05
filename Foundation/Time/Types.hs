@@ -14,11 +14,12 @@ module Foundation.Time.Types
 import           Foundation.Internal.Proxy
 import           Foundation.Primitive.Imports
 import           Foundation.Primitive.Types
+import           Foundation.Numerical
 import           Data.Coerce
 
 -- | An amount of nanoseconds
 newtype NanoSeconds = NanoSeconds Word64
-    deriving (Show,Eq,Ord)
+    deriving (Show,Eq,Ord,Additive,Enum,Bounded)
 
 instance PrimType NanoSeconds where
     primSizeInBytes _        = primSizeInBytes (Proxy :: Proxy Word64)
@@ -31,7 +32,7 @@ instance PrimType NanoSeconds where
 
 -- | An amount of nanoseconds
 newtype Seconds = Seconds Word64
-    deriving (Show,Eq,Ord)
+    deriving (Show,Eq,Ord,Additive,Enum,Bounded)
 
 instance PrimType Seconds where
     primSizeInBytes _        = primSizeInBytes (Proxy :: Proxy Word64)
