@@ -105,6 +105,7 @@ library
                      Foundation.Check.Main
                      Foundation.Timing
                      Foundation.Timing.Main
+                     Foundation.Time.Types
                      Foundation.Time.Bindings
                      Foundation.Time.StopWatch
                      Foundation.UUID
@@ -202,7 +203,6 @@ library
                      Foundation.Foreign.MemoryMap
                      Foundation.Foreign.MemoryMap.Types
                      Foundation.Partial
-                     Foundation.Time.Types
                      -- Foundation.Time.Bindings
                      Foundation.System.Entropy.Common
                      Foundation.System.Bindings.Network
