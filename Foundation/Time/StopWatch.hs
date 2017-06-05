@@ -17,6 +17,7 @@ import Foreign.Storable
 #if defined(mingw32_HOST_OS)
 import System.Win32.Time
 import Foundation.Primitive.Monad
+import Foundation.Primitive.IntegralConv
 #elif defined(__APPLE__)
 import Foundation.System.Bindings.Macos
 #else
