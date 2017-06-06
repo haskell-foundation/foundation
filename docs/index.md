@@ -1,7 +1,7 @@
 Introduction
 ============
 
-Foundation is an haskell project to implement a modern & performant standard
+Foundation is a Haskell project to implement a modern & performant standard
 library with various centrally maintained functionalities.
 
 Haskell's base has been designed a while ago and shows its age. For better or
@@ -24,8 +24,7 @@ limitations. The core ideas are:
 * Provide core types (e.g. uuid) by default with all the right instances
   and convertion functions, integrating well with the rest
 * Improve & modernize management using modern services by default, thus we
-  we use all the good services of:
+  use all the good services of:
   * github: for code, issues and discussions
   * cloud services for testing: travis, appveyor
   * documentation services: mkdocs
-
