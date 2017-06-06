@@ -91,7 +91,7 @@ stopPrecise (StopWatchPrecise blk) = do
     let p64 = castPtr p :: Ptr Word64
     end   <- peek p64
     start <- peek (p64 `ptrPlus` 8)
-    pure (NanoSeconds ((end - start) * freq))
+    pure (NanoSeconds ((end - start) * initPrecise))
 #elif defined(darwin_HOST_OS)
     end <- sysMacos_absolute_time
     pure $ NanoSeconds $ case initPrecise of
