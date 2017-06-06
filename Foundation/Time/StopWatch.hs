@@ -1,4 +1,6 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE OverloadedStrings #-}
+
 module Foundation.Time.StopWatch
     ( StopWatchPrecise
     , startPrecise
@@ -17,8 +19,12 @@ import Foreign.Storable
 #if defined(mingw32_HOST_OS)
 import System.Win32.Time
 import Foundation.Primitive.Monad
-#elif defined(__APPLE__)
+import System.IO.Unsafe
+#elif defined(darwin_HOST_OS)
 import Foundation.System.Bindings.Macos
+import Foundation.IO.Terminal
+import Foundation.Primitive.IntegralConv
+import System.IO.Unsafe
 #else
 import Foundation.Primitive.Monad
 #endif
@@ -29,7 +35,7 @@ import Foundation.Primitive.Monad
 -- also on some system it might not be able to record
 -- longer period of time accurately (possibly wrapping)
 newtype StopWatchPrecise =
-#if defined(__APPLE__)
+#if defined(darwin_HOST_OS)
     StopWatchPrecise Word64
 #elif defined(mingw32_HOST_OS)
     -- contain 2 LARGE_INTEGER (int64_t)
@@ -37,6 +43,24 @@ newtype StopWatchPrecise =
 #else
     -- contains 2 timespec (16 bytes)
     StopWatchPrecise (MutableBlock Word8 (PrimState IO))
+#endif
+
+#if defined(mingw32_HOST_OS)
+initPrecise :: Word64
+initPrecise = unsafePerformIO $ integralDownsize <$> queryPerformanceFrequency
+{-# NOINLINE initPrecise #-}
+#elif defined(darwin_HOST_OS)
+initPrecise :: (Word64, Word64)
+initPrecise = unsafePerformIO $ do
+    mti <- newPinned (sizeOfCSize size_MachTimebaseInfo)
+    p   <- mutableGetAddr mti 
+    sysMacos_timebase_info (castPtr p)
+    let p32 = castPtr p :: Ptr Word32
+    !n <- peek (p `ptrPlus` ofs_MachTimebaseInfo_numer)
+    !d <- peek (p `ptrPlus` ofs_MachTimebaseInfo_denom)
+    -- touch mti ..
+    pure (integralUpsize n, integralUpsize d)
+{-# NOINLINE initPrecise #-}
 #endif
 
 -- | Create a new precise stop watch
@@ -49,7 +73,7 @@ startPrecise = do
     p   <- mutableGetAddr blk
     c_QueryPerformanceCounter (castPtr p `ptrPlus` 8)
     pure (StopWatchPrecise blk)
-#elif defined(__APPLE__)
+#elif defined(darwin_HOST_OS)
     StopWatchPrecise <$> sysMacos_absolute_time
 #else
     blk <- newPinned (sizeOfCSize (size_CTimeSpec + size_CTimeSpec))
@@ -67,17 +91,12 @@ stopPrecise (StopWatchPrecise blk) = do
     let p64 = castPtr p :: Ptr Word64
     end   <- peek p64
     start <- peek (p64 `ptrPlus` 8)
-    freq  <- integralDownsize <$> queryPerformanceFrequency
     pure (NanoSeconds ((end - start) * freq))
-#elif defined(__APPLE__)
+#elif defined(darwin_HOST_OS)
     end <- sysMacos_absolute_time
-    (numer,denom) <- do
-            mti <- newPinned (sizeOfCSize size_MachTimebaseInfo)
-            p <- mutableGetAddr mti
-            n <- peek (castPtr (mti `ptrPlus` ofs_MachTimebaseInfo_numer))
-            d <- peek (castPtr (mti `ptrPlus` ofs_MachTimebaseInfo_denom))
-            pure (n, d)
-    pure (NanoSeconds (((end - start) * numer) `div` denom))
+    pure $ NanoSeconds $ case initPrecise of
+        (1,1)         -> end - blk
+        (numer,denom) -> ((end - blk) * numer) `div` denom
 #else
     p <- mutableGetAddr blk
     _err1 <- sysTimeClockGetTime sysTime_CLOCK_MONOTONIC (castPtr p)

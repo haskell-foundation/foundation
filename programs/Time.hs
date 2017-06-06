@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RebindableSyntax #-}
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE CPP #-}
 module Main where
 
 import Control.Monad
@@ -13,9 +14,13 @@ import Foundation.Time.StopWatch
 import Foundation.IO.Terminal
 import Foundation.Bits
 import Data.Monoid
-import Data.Semigroup
+import Data.Semigroup (Max(..), Min(..))
 import Control.Concurrent
 import Control.Exception
+
+#if USE_CRITERION
+import qualified Criterion.Measurement as C
+#endif
 
 data Monotonic = Monotonic
     { maxDiff      :: Max NanoSeconds
@@ -70,14 +75,19 @@ monotonicTest nbVals
 
 stopWatchTest :: IO ()
 stopWatchTest = do
+    criterionInit
+
     let msDelay = 100000 -- in microseconds
-    putStrLn "waiting 100 us"
+    putStrLn "waiting 100 ms"
     ns <- do
             stopWatch <- startPrecise
             threadDelay msDelay
             stopPrecise stopWatch
-    putStrLn $ show (msDelay * 1000)
+    putStrLn $ "expected: " <> show (msDelay * 1000)
     putStrLn $ show ns
+    putStrLn . criterionSec =<< criterionDelay msDelay
+
+    putStrLn "======================================="
 
     putStrLn "waiting 0 us"
 
@@ -85,6 +95,9 @@ stopWatchTest = do
             stopWatch <- startPrecise
             stopPrecise stopWatch
     putStrLn $ show ns2
+    putStrLn . criterionSec =<< criterionNothing
+
+    putStrLn "======================================="
 
     putStrLn "waiting summing number from 0 to 1000"
     ns3 <- do
@@ -92,6 +105,32 @@ stopWatchTest = do
             !_ <- evaluate $ foldl' (\x y -> x + y) 0 [0 :: Int ..1000]
             stopPrecise stopWatch
     putStrLn $ show ns3
+    putStrLn . criterionSec =<< criterionDiff (foldl' (\x y -> x + y) 0) [0 :: Int ..1000]
+  where
+#if USE_CRITERION
+    criterionInit = C.initializeTime
+    criterionNothing = do
+        t1 <- C.getTime
+        t2 <- C.getTime
+        pure (t2 - t1)
+    criterionDelay ms = do
+        t1 <- C.getTime
+        threadDelay ms
+        t2 <- C.getTime
+        pure (t2 - t1)
+    criterionDiff f a = do
+        t1 <- C.getTime
+        !_ <- evaluate (f a)
+        t2 <- C.getTime
+        pure (t2 - t1)
+    criterionSec = fromList . C.secs
+#else
+    criterionInit = pure ()
+    criterionNothing = pure (1/0)
+    criterionDelay _ = pure (1/0)
+    criterionDiff _ _ = pure (1/0)
+    criterionSec = show
+#endif
 
 main :: IO ()
 main = do
