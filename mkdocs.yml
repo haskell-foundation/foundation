@@ -8,6 +8,7 @@ site_dir: _site
 theme: readthedocs
 
 pages:
+- Introduction: index.md
 - Home: home.md
 - Changelog: CHANGELOG.md
 - Core documentation:
