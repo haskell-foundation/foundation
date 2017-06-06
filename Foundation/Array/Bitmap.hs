@@ -134,7 +134,7 @@ instance C.MutableCollection MutableBitmap where
     unsafeThaw = unsafeThaw
     unsafeFreeze = unsafeFreeze
 
-    mutNew n = new (Size n)
+    mutNew = new
     mutUnsafeWrite = unsafeWrite
     mutUnsafeRead = unsafeRead
     mutWrite = write

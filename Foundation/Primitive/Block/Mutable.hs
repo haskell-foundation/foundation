@@ -38,7 +38,9 @@ module Foundation.Primitive.Block.Mutable
     , MutableBlock(..)
     , mutableLengthSize
     , mutableLengthBytes
+    , mutableGetAddr
     , new
+    , newPinned
     , isPinned
     , iterSet
     , read
@@ -86,6 +88,13 @@ isPinned (MutableBlock mba) =
     -- in 8.2, there's a primitive to know if an array in pinned
     I# (sizeofMutableByteArray# mba) > 3000
 
+-- | Get the address of the context of the mutable block.
+--
+-- if the block is not pinned, this is a _dangerous_ operation
+mutableGetAddr :: PrimMonad prim => MutableBlock ty (PrimState prim) -> prim (Ptr ty)
+mutableGetAddr (MutableBlock mba) = primitive $ \s1 ->
+    case unsafeFreezeByteArray# mba s1 of
+        (# s2, ba #) -> (# s2, Ptr (byteArrayContents# ba) #)
 
 -- | Set all mutable block element to a value
 iterSet :: (PrimType ty, PrimMonad prim)

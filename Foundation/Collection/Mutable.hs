@@ -13,7 +13,6 @@ import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types.OffsetSize
 import qualified Foundation.Primitive.Block         as BLK
 import qualified Foundation.Primitive.Block.Mutable as BLK
-import           Foundation.Internal.Base
 
 import qualified Foundation.Array.Unboxed.Mutable as MUV
 import qualified Foundation.Array.Unboxed as UV
@@ -35,7 +34,7 @@ class MutableCollection c where
     thaw   :: PrimMonad prim => MutableFreezed c -> prim (c (PrimState prim))
     freeze :: PrimMonad prim => c (PrimState prim) -> prim (MutableFreezed c)
 
-    mutNew :: PrimMonad prim => Int -> prim (c (PrimState prim))
+    mutNew :: PrimMonad prim => Size (MutableValue c) -> prim (c (PrimState prim))
 
     mutUnsafeWrite :: PrimMonad prim => c (PrimState prim) -> MutableKey c -> MutableValue c -> prim ()
     mutWrite       :: PrimMonad prim => c (PrimState prim) -> MutableKey c -> MutableValue c -> prim ()
@@ -52,7 +51,7 @@ instance UV.PrimType ty => MutableCollection (MUV.MUArray ty) where
     unsafeThaw = UV.unsafeThaw
     unsafeFreeze = UV.unsafeFreeze
 
-    mutNew i = MUV.new (Size i)
+    mutNew = MUV.new
 
     mutUnsafeWrite = MUV.unsafeWrite
     mutUnsafeRead = MUV.unsafeRead
@@ -69,7 +68,7 @@ instance UV.PrimType ty => MutableCollection (BLK.MutableBlock ty) where
     unsafeThaw = BLK.unsafeThaw
     unsafeFreeze = BLK.unsafeFreeze
 
-    mutNew i = BLK.new (Size i)
+    mutNew = BLK.new
 
     mutUnsafeWrite = BLK.unsafeWrite
     mutUnsafeRead = BLK.unsafeRead
@@ -86,7 +85,7 @@ instance MutableCollection (BA.MArray ty) where
     unsafeThaw = BA.unsafeThaw
     unsafeFreeze = BA.unsafeFreeze
 
-    mutNew n = BA.new (Size n)
+    mutNew = BA.new
     mutUnsafeWrite = BA.unsafeWrite
     mutUnsafeRead = BA.unsafeRead
     mutWrite = BA.write

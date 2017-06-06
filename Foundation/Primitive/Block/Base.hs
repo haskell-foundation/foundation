@@ -20,6 +20,7 @@ module Foundation.Primitive.Block.Base
     , lengthBytes
     -- * Other methods
     , new
+    , newPinned
     ) where
 
 import           GHC.Prim
@@ -29,6 +30,7 @@ import           GHC.IO
 import qualified Data.List
 import           Foundation.Internal.Base
 import           Foundation.Internal.Proxy
+import           Foundation.Internal.Primitive
 import           Foundation.System.Bindings.Hs (sysHsMemcmpBaBa)
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
@@ -180,7 +182,7 @@ append a b
     | la == azero = b
     | lb == azero = a
     | otherwise = runST $ do
-        r  <- unsafeNew (la+lb)
+        r  <- unsafeNew unpinned (la+lb)
         unsafeCopyBytesRO r 0                 a 0 la
         unsafeCopyBytesRO r (sizeAsOffset la) b 0 lb
         unsafeFreeze r
@@ -195,7 +197,7 @@ concat l  =
         (_,[])            -> empty
         (_,[x])           -> x
         (totalLen,chunks) -> runST $ do
-            r <- unsafeNew totalLen
+            r <- unsafeNew unpinned totalLen
             doCopy r 0 chunks
             unsafeFreeze r
   where
@@ -239,13 +241,20 @@ unsafeThaw (Block ba) = primitive $ \st -> (# st, MutableBlock (unsafeCoerce# ba
 -- of the underlaying element 'ty' in the block.
 --
 -- use 'new' if unsure
-unsafeNew :: PrimMonad prim => Size Word8 -> prim (MutableBlock ty (PrimState prim))
-unsafeNew (Size (I# bytes)) =
-    primitive $ \s1 -> case newByteArray# bytes s1 of { (# s2, mba #) -> (# s2, MutableBlock mba #) }
+unsafeNew :: PrimMonad prim
+          => PinnedStatus
+          -> Size Word8
+          -> prim (MutableBlock ty (PrimState prim))
+unsafeNew pinStatus (Size (I# bytes))
+    | isPinned pinStatus = primitive $ \s1 -> case newByteArray# bytes s1 of { (# s2, mba #) -> (# s2, MutableBlock mba #) }
+    | otherwise          = primitive $ \s1 -> case newAlignedPinnedByteArray# bytes 8# s1 of { (# s2, mba #) -> (# s2, MutableBlock mba #) }
 
 -- | Create a new mutable block of a specific N size of 'ty' elements
 new :: forall prim ty . (PrimMonad prim, PrimType ty) => Size ty -> prim (MutableBlock ty (PrimState prim))
-new n = unsafeNew (sizeOfE (primSizeInBytes (Proxy :: Proxy ty)) n)
+new n = unsafeNew unpinned (sizeOfE (primSizeInBytes (Proxy :: Proxy ty)) n)
+
+newPinned :: forall prim ty . (PrimMonad prim, PrimType ty) => Size ty -> prim (MutableBlock ty (PrimState prim))
+newPinned n = unsafeNew pinned (sizeOfE (primSizeInBytes (Proxy :: Proxy ty)) n)
 
 -- | Copy a number of elements from an array to another array with offsets
 unsafeCopyElements :: forall prim ty . (PrimMonad prim, PrimType ty)

@@ -15,6 +15,7 @@ import           GHC.Types
 import           GHC.Prim
 import           GHC.Int
 import           GHC.Word
+import           Foreign.C.Types
 
 #if WORD_SIZE_IN_BITS < 64
 import           GHC.IntWord64
@@ -104,6 +105,10 @@ instance Additive Prelude.Float where
 instance Additive Prelude.Double where
     azero = 0.0
     (D# a) + (D# b) = D# (a +## b)
+    scale = scaleNum
+instance Additive CSize where
+    azero = 0
+    (+) = (Prelude.+)
     scale = scaleNum
 
 scaleNum :: (Prelude.Num a, IsNatural n) => n -> a -> a

@@ -7,6 +7,7 @@
 --
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MagicHash                  #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE CPP                        #-}
 module Foundation.Primitive.Types.OffsetSize
     ( FileSize(..)
@@ -29,7 +30,7 @@ module Foundation.Primitive.Types.OffsetSize
     , csizeOfOffset
     , csizeOfSize
     , sizeOfCSSize
-    , plusPtrSize
+    , sizeOfCSize
     ) where
 
 #include "MachDeps.h"
@@ -39,7 +40,6 @@ import GHC.Word
 import GHC.Int
 import GHC.Prim
 import Foreign.C.Types
-import Foreign.Ptr (plusPtr)
 import System.Posix.Types (CSsize (..))
 import Foundation.Internal.Base
 import Foundation.Internal.Proxy
@@ -48,6 +48,7 @@ import Foundation.Numerical.Number
 import Foundation.Numerical.Additive
 import Foundation.Numerical.Subtractive
 import Foundation.Numerical.Multiplicative
+import Foundation.Primitive.IntegralConv
 
 #if WORD_SIZE_IN_BITS < 64
 import GHC.IntWord64
@@ -82,6 +83,11 @@ instance IsNatural (Offset ty) where
 instance Subtractive (Offset ty) where
     type Difference (Offset ty) = Size ty
     (Offset a) - (Offset b) = Size (a-b)
+instance IntegralCast Int (Offset ty) where
+    integralCast i = Offset i
+instance IntegralCast Word (Offset ty) where
+    integralCast (W# w) = Offset (I# (word2Int# w))
+
 
 (+.) :: Offset ty -> Int -> Offset ty
 (+.) (Offset a) b = Offset (a + b)
@@ -132,6 +138,18 @@ offsetAsSize (Offset a) = Size a
 -- | Size of a data structure in bytes.
 type Size8 = Size Word8
 
+-- | Size of a data structure.
+--
+-- More specifically, it represents the number of elements of type `ty` that fit
+-- into the data structure.
+--
+-- >>> lengthSize (fromList ['a', 'b', 'c', '🌟']) :: Size Char
+-- Size 4
+--
+-- Same caveats as 'Offset' apply here.
+newtype Size ty = Size Int
+    deriving (Show,Eq,Ord,Enum)
+
 instance Integral (Size ty) where
     fromInteger n
         | n < 0     = error "Size: fromInteger: negative"
@@ -149,17 +167,10 @@ instance Subtractive (Size ty) where
     type Difference (Size ty) = Size ty
     (Size a) - (Size b) = Size (a-b)
 
--- | Size of a data structure.
---
--- More specifically, it represents the number of elements of type `ty` that fit
--- into the data structure.
---
--- >>> lengthSize (fromList ['a', 'b', 'c', '🌟']) :: Size Char
--- Size 4
---
--- Same caveats as 'Offset' apply here.
-newtype Size ty = Size Int
-    deriving (Show,Eq,Ord,Enum)
+instance IntegralCast Int (Size ty) where
+    integralCast i = Size i
+instance IntegralCast Word (Size ty) where
+    integralCast (W# w) = Size (I# (word2Int# w))
 
 sizeOfE :: Size8 -> Size ty -> Size8
 sizeOfE (Size sz) (Size ty) = Size (ty * sz)
@@ -190,5 +201,9 @@ sizeOfCSSize (CSsize (I32# sz)) = Size (I# sz)
 sizeOfCSSize (CSsize (I64# sz)) = Size (I# sz)
 #endif
 
-plusPtrSize :: Ptr ty -> Size ty -> Ptr ty
-plusPtrSize ptr (Size z) = ptr `plusPtr` z
+sizeOfCSize :: CSize -> Size8
+#if WORD_SIZE_IN_BITS < 64
+sizeOfCSize (CSize (W32# sz)) = Size (I# (word2Int# sz))
+#else
+sizeOfCSize (CSize (W64# sz)) = Size (I# (word2Int# sz))
+#endif
