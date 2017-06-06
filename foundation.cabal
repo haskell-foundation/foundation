@@ -207,6 +207,7 @@ library
                      Foundation.System.Entropy.Common
                      Foundation.System.Bindings.Network
                      Foundation.System.Bindings.Time
+                     Foundation.System.Bindings.Hs
 
   include-dirs:      cbits
   c-sources:         cbits/foundation_random.c
@@ -223,7 +224,6 @@ library
   else
     exposed-modules: Foundation.System.Bindings.Posix
                      Foundation.System.Bindings.PosixDef
-                     Foundation.System.Bindings.Hs
     other-modules:   Foundation.Foreign.MemoryMap.Posix
                      Foundation.System.Entropy.Unix
   if os(linux)

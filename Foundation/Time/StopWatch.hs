@@ -91,7 +91,7 @@ stopPrecise (StopWatchPrecise blk) = do
     let p64 = castPtr p :: Ptr Word64
     end   <- peek p64
     start <- peek (p64 `ptrPlus` 8)
-    pure (NanoSeconds ((end - start) * initPrecise))
+    pure $ NanoSeconds $ ((end - start) * secondInNano `div` initPrecise)
 #elif defined(darwin_HOST_OS)
     end <- sysMacos_absolute_time
     pure $ NanoSeconds $ case initPrecise of
@@ -105,5 +105,8 @@ stopPrecise (StopWatchPrecise blk) = do
     startSec  <- peek (p64 `ptrPlusCSz` size_CTimeSpec)
     endNSec   <- peek (p64 `ptrPlus` ofs_CTimeSpec_NanoSeconds)
     startNSec <- peek (p64 `ptrPlus` (sizeAsOffset (sizeOfCSize size_CTimeSpec) + ofs_CTimeSpec_NanoSeconds))
-    pure $ NanoSeconds $ (endSec * 1000000000 + endNSec) - (startSec * 1000000000 + startNSec)
+    pure $ NanoSeconds $ (endSec * secondInNano + endNSec) - (startSec * secondInNano + startNSec)
 #endif
+
+secondInNano :: Word64
+secondInNano = 1000000000
