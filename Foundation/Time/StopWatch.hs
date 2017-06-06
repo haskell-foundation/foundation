@@ -8,7 +8,6 @@ module Foundation.Time.StopWatch
     ) where
 
 import Foundation.Primitive.Imports
-import Foundation.Primitive.Types.OffsetSize
 import Foundation.Primitive.Types.Ptr
 import Foundation.Time.Types
 import Foundation.Primitive.Block.Mutable
@@ -24,9 +23,11 @@ import System.IO.Unsafe
 import Foundation.System.Bindings.Macos
 import Foundation.Primitive.IntegralConv
 import System.IO.Unsafe
+import Foundation.Primitive.Types.OffsetSize
 #else
 import Foundation.System.Bindings.Time
 import Foundation.Primitive.Monad
+import Foundation.Primitive.Types.OffsetSize
 #endif
 
 -- | A precise stop watch
@@ -71,7 +72,7 @@ startPrecise = do
 #if defined(mingw32_HOST_OS)
     blk <- newPinned 16
     p   <- mutableGetAddr blk
-    c_QueryPerformanceCounter (castPtr p `ptrPlus` 8)
+    _ <- c_QueryPerformanceCounter (castPtr p `ptrPlus` 8)
     pure (StopWatchPrecise blk)
 #elif defined(darwin_HOST_OS)
     StopWatchPrecise <$> sysMacos_absolute_time
@@ -87,7 +88,7 @@ stopPrecise :: StopWatchPrecise -> IO NanoSeconds
 stopPrecise (StopWatchPrecise blk) = do
 #if defined(mingw32_HOST_OS)
     p <- mutableGetAddr blk
-    c_QueryPerformanceCounter (castPtr p)
+    _ <- c_QueryPerformanceCounter (castPtr p)
     let p64 = castPtr p :: Ptr Word64
     end   <- peek p64
     start <- peek (p64 `ptrPlus` 8)
