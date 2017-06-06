@@ -10,7 +10,6 @@ module Foundation.Time.StopWatch
 import Foundation.Primitive.Imports
 import Foundation.Primitive.Types.OffsetSize
 import Foundation.Primitive.Types.Ptr
-import Foundation.System.Bindings.Time
 import Foundation.Time.Types
 import Foundation.Primitive.Block.Mutable
 import Foundation.Numerical
@@ -19,13 +18,14 @@ import Foreign.Storable
 #if defined(mingw32_HOST_OS)
 import System.Win32.Time
 import Foundation.Primitive.Monad
+import Foundation.Primitive.IntegralConv
 import System.IO.Unsafe
 #elif defined(darwin_HOST_OS)
 import Foundation.System.Bindings.Macos
-import Foundation.IO.Terminal
 import Foundation.Primitive.IntegralConv
 import System.IO.Unsafe
 #else
+import Foundation.System.Bindings.Time
 import Foundation.Primitive.Monad
 #endif
 
@@ -56,8 +56,8 @@ initPrecise = unsafePerformIO $ do
     p   <- mutableGetAddr mti 
     sysMacos_timebase_info (castPtr p)
     let p32 = castPtr p :: Ptr Word32
-    !n <- peek (p `ptrPlus` ofs_MachTimebaseInfo_numer)
-    !d <- peek (p `ptrPlus` ofs_MachTimebaseInfo_denom)
+    !n <- peek (p32 `ptrPlus` ofs_MachTimebaseInfo_numer)
+    !d <- peek (p32 `ptrPlus` ofs_MachTimebaseInfo_denom)
     -- touch mti ..
     pure (integralUpsize n, integralUpsize d)
 {-# NOINLINE initPrecise #-}
