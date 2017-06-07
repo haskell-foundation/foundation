@@ -576,27 +576,16 @@ append a b
 
 concat :: PrimType ty => [UArray ty] -> UArray ty
 concat [] = empty
-concat l  =
-    case filterAndSum (Size 0) [] l of
-        (_,[])            -> empty
-        (_,[x])           -> x
-        (totalLen,chunks) -> runST $ do
-            r <- new totalLen
-            doCopy r (Offset 0) chunks
-            unsafeFreeze r
+concat l  = runST $ fromEnd (Size 0) l >>= unsafeFreeze
   where
-    -- TODO would go faster not to reverse but pack from the end instead
-    filterAndSum !totalLen acc []     = (totalLen, Prelude.reverse acc)
-    filterAndSum !totalLen acc (x:xs)
-        | len == Size 0 = filterAndSum totalLen acc xs
-        | otherwise      = filterAndSum (len+totalLen) (x:acc) xs
-      where len = lengthSize x
-
-    doCopy _ _ []     = return ()
-    doCopy r i (x:xs) = do
-        unsafeCopyAtRO r i x (Offset 0) lx
-        doCopy r (i `offsetPlusE` lx) xs
-      where lx = lengthSize x
+    fromEnd !sz [] = new sz
+    fromEnd !sz (x:xs)
+        | null x    = fromEnd sz xs
+        | otherwise = do
+            let len = lengthSize x
+            mua <- fromEnd (sz + len) xs
+            unsafeCopyAtRO mua (sizeAsOffset sz) x (Offset 0) len
+            return mua
 
 -- | update an array by creating a new array with the updates.
 --
