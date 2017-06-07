@@ -5,6 +5,7 @@ Foundation
 [![Coverage Status](https://coveralls.io/repos/github/haskell-foundation/foundation/badge.svg?branch=master)](https://coveralls.io/github/haskell-foundation/foundation?branch=master)
 [![BSD](http://b.repl.ca/v1/license-BSD-blue.png)](http://en.wikipedia.org/wiki/BSD_licenses)
 [![Haskell](http://b.repl.ca/v1/language-haskell-lightgrey.png)](http://haskell.org)
+[![Doc](https://readthedocs.org/projects/haskell-foundation/badge/?version=latest)](http://haskell-foundation.readthedocs.io/en/latest/)
 
 Documentation: [foundation on hackage](http://hackage.haskell.org/package/foundation)
 
