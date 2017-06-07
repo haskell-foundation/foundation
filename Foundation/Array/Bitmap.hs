@@ -43,9 +43,9 @@ import           Foundation.Bits
 import           GHC.ST
 import qualified Data.List
 
-data Bitmap = Bitmap (Size Bool) (UArray Word32)
+data Bitmap = Bitmap (CountOf Bool) (UArray Word32)
 
-data MutableBitmap st = MutableBitmap (Size Bool) (MUArray Word32 st)
+data MutableBitmap st = MutableBitmap (CountOf Bool) (MUArray Word32 st)
 
 bitsPerTy :: Int
 bitsPerTy = 32
@@ -250,28 +250,28 @@ unsafeIndex (Bitmap _ ba) n =
 -- higher level collection implementation
 -----------------------------------------------------------------------
 length :: Bitmap -> Int
-length (Bitmap (Size len) _) = len
+length (Bitmap (CountOf len) _) = len
 
-lengthSize :: Bitmap -> Size Bool
+lengthSize :: Bitmap -> CountOf Bool
 lengthSize (Bitmap sz _) = sz
 
-mutableLengthSize :: MutableBitmap st -> Size Bool
+mutableLengthSize :: MutableBitmap st -> CountOf Bool
 mutableLengthSize (MutableBitmap sz _) = sz
 
 empty :: Bitmap
 empty = Bitmap 0 A.empty
 
-new :: PrimMonad prim => Size Bool -> prim (MutableBitmap (PrimState prim))
-new sz@(Size len) =
+new :: PrimMonad prim => CountOf Bool -> prim (MutableBitmap (PrimState prim))
+new sz@(CountOf len) =
     MutableBitmap sz <$> A.new nbElements
   where
-    nbElements :: Size Word32
-    nbElements = Size ((len `alignRoundUp` bitsPerTy) .>>. shiftPerTy)
+    nbElements :: CountOf Word32
+    nbElements = CountOf ((len `alignRoundUp` bitsPerTy) .>>. shiftPerTy)
 
 -- | make an array from a list of elements.
 vFromList :: [Bool] -> Bitmap
 vFromList allBools = runST $ do
-    mbitmap <- new (Size len)
+    mbitmap <- new (CountOf len)
     loop mbitmap 0 allBools
   where
     loop mb _ []     = unsafeFreeze mb
@@ -342,13 +342,13 @@ null :: Bitmap -> Bool
 null (Bitmap nbBits _) = nbBits == 0
 
 take :: Int -> Bitmap -> Bitmap
-take nbElems bits@(Bitmap (Size nbBits) ba)
+take nbElems bits@(Bitmap (CountOf nbBits) ba)
     | nbElems <= 0      = empty
     | nbElems >= nbBits = bits
-    | otherwise         = Bitmap (Size nbElems) ba -- TODO : although it work right now, take on the underlaying ba too
+    | otherwise         = Bitmap (CountOf nbElems) ba -- TODO : although it work right now, take on the underlaying ba too
 
 drop :: Int -> Bitmap -> Bitmap
-drop nbElems bits@(Bitmap (Size nbBits) _)
+drop nbElems bits@(Bitmap (CountOf nbBits) _)
     | nbElems <= 0      = bits
     | nbElems >= nbBits = empty
     | otherwise         = unoptimised (C.drop nbElems) bits

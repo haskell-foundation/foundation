@@ -84,8 +84,8 @@ testPropertyStorableFixed :: (StorableFixed a, Foreign.Storable.Storable a, Arbi
                           -> Proxy a
                           -> TestTree
 testPropertyStorableFixed name p = testGroup name
-    [ testProperty "size"      $ withProxy p $ \a -> size p === (Size $ Foreign.Storable.sizeOf a)
-    , testProperty "alignment" $ withProxy p $ \a -> alignment p === (Size $ Foreign.Storable.alignment a)
+    [ testProperty "size"      $ withProxy p $ \a -> size p === (CountOf $ Foreign.Storable.sizeOf a)
+    , testProperty "alignment" $ withProxy p $ \a -> alignment p === (CountOf $ Foreign.Storable.alignment a)
     , testProperty "peekOff"   $ testPropertyStorableFixedPeekOff p
     , testProperty "pokeOff"   $ testPropertyStorableFixedPokeOff p
     ]
@@ -126,7 +126,7 @@ instance (StorableFixed a, Arbitrary a) => Arbitrary (SomeWhereInArray a) where
     arbitrary = do
         a  <- arbitrary
         let p = toProxy a
-            (Size minsz) = size p + (alignment p - size p)
+            (CountOf minsz) = size p + (alignment p - size p)
         sz <- choose (minsz, 512)
         o  <- choose (0, sz - minsz)
         return $ SomeWhereInArray a sz o

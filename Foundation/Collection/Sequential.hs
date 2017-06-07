@@ -215,8 +215,8 @@ instance Sequential [a] where
     isSuffixOf = Data.List.isSuffixOf
 
 instance UV.PrimType ty => Sequential (BLK.Block ty) where
-    splitAt n = BLK.splitAt (Size n)
-    revSplitAt n = BLK.revSplitAt (Size n)
+    splitAt n = BLK.splitAt (CountOf n)
+    revSplitAt n = BLK.revSplitAt (CountOf n)
     splitOn = BLK.splitOn
     break = BLK.break
     intersperse = BLK.intersperse

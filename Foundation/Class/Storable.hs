@@ -55,13 +55,13 @@ class Storable a where
 -- in a structure.
 --
 class Storable a => StorableFixed a where
-    size :: proxy a -> Size Word8
-    alignment :: proxy a -> Size Word8
+    size :: proxy a -> CountOf Word8
+    alignment :: proxy a -> CountOf Word8
 
-plusPtr :: StorableFixed a => Ptr a -> Size a -> Ptr a
-plusPtr ptr (Size num) = ptr `Foreign.Ptr.plusPtr` (num * (size ptr `align` alignment ptr))
+plusPtr :: StorableFixed a => Ptr a -> CountOf a -> Ptr a
+plusPtr ptr (CountOf num) = ptr `Foreign.Ptr.plusPtr` (num * (size ptr `align` alignment ptr))
   where
-    align (Size sz) (Size a) = sz + (sz `mod` a)
+    align (CountOf sz) (CountOf a) = sz + (sz `mod` a)
 
 -- | like `peek` but at a given offset.
 peekOff :: StorableFixed a => Ptr a -> Offset a -> IO a
@@ -72,8 +72,8 @@ pokeOff :: StorableFixed a => Ptr a -> Offset a -> a -> IO ()
 pokeOff ptr off = poke (ptr `plusPtr` offsetAsSize off)
 
 peekArray :: (Buildable col, StorableFixed (Element col))
-          => Size (Element col) -> Ptr (Element col) -> IO col
-peekArray (Size s) = build 64 . builder 0
+          => CountOf (Element col) -> Ptr (Element col) -> IO col
+peekArray (CountOf s) = build 64 . builder 0
   where
     builder off ptr
       | off == s = return ()

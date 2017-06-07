@@ -127,7 +127,7 @@ freeze (MutableAsciiString mba) = AsciiString `fmap` C.unsafeFreeze mba
 sToList :: AsciiString -> [CUChar]
 sToList s = loop azero
   where
-    nbBytes :: Size CUChar
+    nbBytes :: CountOf CUChar
     !nbBytes = size s
     !end = azero `offsetPlusE` nbBytes
     loop idx
@@ -203,14 +203,14 @@ span :: (CUChar -> Bool) -> AsciiString -> (AsciiString, AsciiString)
 span predicate = break (not . predicate)
 
 -- | size in bytes
-size :: AsciiString -> Size CUChar
-size = Size . C.length . toBytes
+size :: AsciiString -> CountOf CUChar
+size = CountOf . C.length . toBytes
 
 length :: AsciiString -> Int
-length s = let (Size l) = size s in l
+length s = let (CountOf l) = size s in l
 
 replicate :: Int -> CUChar -> AsciiString
-replicate n c = AsciiString $ Vec.create (Size n) (const c)
+replicate n c = AsciiString $ Vec.create (CountOf n) (const c)
 
 -- | Copy the AsciiString
 copy :: AsciiString -> AsciiString
@@ -218,13 +218,13 @@ copy (AsciiString s) = AsciiString (Vec.copy s)
 
 -- | Allocate a MutableAsciiString of a specific size in bytes.
 new :: PrimMonad prim
-    => Size CUChar -- ^ in number of bytes, not of elements.
+    => CountOf CUChar -- ^ in number of bytes, not of elements.
     -> prim (MutableAsciiString (PrimState prim))
 new n = MutableAsciiString `fmap` MVec.new n
 
 create :: PrimMonad prim => Int -> (MutableAsciiString (PrimState prim) -> prim Int) -> prim AsciiString
 create sz f = do
-    ms     <- new (Size sz)
+    ms     <- new (CountOf sz)
     filled <- f ms
     if filled == sz
         then freeze ms

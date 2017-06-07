@@ -20,7 +20,7 @@ newtype Builder collection mutCollection step state a = Builder
 -- progress packing the elements inside.
 data BuildingState collection mutCollection step state = BuildingState
     { prevChunks     :: [collection]
-    , prevChunksSize :: !(Size step)
+    , prevChunksSize :: !(CountOf step)
     , curChunk       :: mutCollection state
-    , chunkSize      :: !(Size step)
+    , chunkSize      :: !(CountOf step)
     }

@@ -28,15 +28,15 @@ import qualified Foreign.Storable as Foreign
 instance Arbitrary IPv4 where
     arbitrary = genIPv4
 instance Foreign.Storable IPv4 where
-    sizeOf a = let Size b = F.size (Just a) in b
-    alignment a = let Size b = F.alignment (Just a) in b
+    sizeOf a = let CountOf b = F.size (Just a) in b
+    alignment a = let CountOf b = F.alignment (Just a) in b
     peek = F.peek
     poke = F.poke
 instance Arbitrary IPv6 where
     arbitrary = genIPv6
 instance Foreign.Storable IPv6 where
-    sizeOf a = let Size b = F.size (Just a) in b
-    alignment a = let Size b = F.alignment (Just a) in b
+    sizeOf a = let CountOf b = F.size (Just a) in b
+    alignment a = let CountOf b = F.alignment (Just a) in b
     peek = F.peek
     poke = F.poke
 

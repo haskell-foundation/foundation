@@ -22,7 +22,7 @@ mutableByteArraySet mba val = do
     len = mutableLengthSize mba
 
 {-
-mutableByteArraySetBetween :: PrimMonad prim => MUArray Word8 (PrimState prim) -> Word8 -> Offset Word8 -> Size Word8 -> prim ()
+mutableByteArraySetBetween :: PrimMonad prim => MUArray Word8 (PrimState prim) -> Word8 -> Offset Word8 -> CountOf Word8 -> prim ()
 mutableByteArraySetBetween mba val offset size
     | offset < 0                        = primOutOfBound OOB_MemSet offset                      len
     | offset > len || offset+size > len = primOutOfBound OOB_MemSet (offset `OffsetPlusE` size) len

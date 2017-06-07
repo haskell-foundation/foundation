@@ -7,7 +7,7 @@
 -- very similar to an unboxed array but with the key difference:
 --
 -- * It doesn't have slicing capability (no cheap take or drop)
--- * It consume less memory: 1 Offset, 1 Size, 1 Pinning status trimmed
+-- * It consume less memory: 1 Offset, 1 CountOf, 1 Pinning status trimmed
 -- * It's unpackable in any constructor
 -- * It uses unpinned memory by default
 --
@@ -77,7 +77,7 @@ import           Foundation.Numerical
 
 -- | return the number of elements of the array.
 length :: PrimType ty => Block ty -> Int
-length a = let (Size len) = lengthSize a in len
+length a = let (CountOf len) = lengthSize a in len
 {-# INLINE[1] length #-}
 
 -- | Copy all the block content to the memory starting at the destination address
@@ -91,7 +91,7 @@ unsafeCopyToPtr (Block blk) (Ptr p) = primitive $ \s1 ->
 -- | Create a new array of size @n by settings each cells through the
 -- function @f.
 create :: forall ty . PrimType ty
-       => Size ty           -- ^ the size of the block (in element of ty)
+       => CountOf ty           -- ^ the size of the block (in element of ty)
        -> (Offset ty -> ty) -- ^ the function that set the value at the index
        -> Block ty          -- ^ the array created
 create n initializer
@@ -105,7 +105,7 @@ singleton :: PrimType ty => ty -> Block ty
 singleton ty = create 1 (const ty)
 
 replicate :: PrimType ty => Word -> ty -> Block ty
-replicate sz ty = create (Size (integralCast sz)) (const ty)
+replicate sz ty = create (CountOf (integralCast sz)) (const ty)
 
 -- | Thaw a Block into a MutableBlock
 --
@@ -184,7 +184,7 @@ cons e vec
 
 snoc :: PrimType ty => Block ty -> ty -> Block ty
 snoc vec e
-    | len == Size 0 = singleton e
+    | len == CountOf 0 = singleton e
     | otherwise     = runST $ do
         muv <- new (len + 1)
         M.unsafeCopyElementsRO muv 0 vec 0 len
@@ -220,7 +220,7 @@ unsnoc vec
     !lastElem = 0 `offsetPlusE` (nbElems - 1)
     !nbElems = lengthSize vec
 
-splitAt :: PrimType ty => Size ty -> Block ty -> (Block ty, Block ty)
+splitAt :: PrimType ty => CountOf ty -> Block ty -> (Block ty, Block ty)
 splitAt nbElems blk
     | nbElems <= 0 = (mempty, blk)
     | n == vlen    = (blk, mempty)
@@ -235,7 +235,7 @@ splitAt nbElems blk
     n    = min nbElems vlen
     vlen = lengthSize blk
 
-revSplitAt :: PrimType ty => Size ty -> Block ty -> (Block ty, Block ty)
+revSplitAt :: PrimType ty => CountOf ty -> Block ty -> (Block ty, Block ty)
 revSplitAt n blk
     | n <= 0    = (mempty, blk)
     | otherwise = let (x,y) = splitAt (lengthSize blk - n) blk in (y,x)

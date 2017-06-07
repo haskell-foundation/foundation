@@ -67,7 +67,7 @@ instance NormalForm (Ptr a) where toNormalForm !_ = ()
 -----
 -- Basic Foundation primitive types
 instance NormalForm (Offset a) where toNormalForm !_ = ()
-instance NormalForm (Size a) where toNormalForm !_ = ()
+instance NormalForm (CountOf a) where toNormalForm !_ = ()
 
 -----
 -- composed type

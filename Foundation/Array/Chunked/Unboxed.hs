@@ -124,7 +124,7 @@ null (ChunkedUArray array) =
 length :: PrimType ty => ChunkedUArray ty -> Int
 length (ChunkedUArray array) = C.foldl' (\acc l -> acc + C.length l) 0 array
 
-lengthSize :: PrimType ty => ChunkedUArray ty -> Size ty
+lengthSize :: PrimType ty => ChunkedUArray ty -> CountOf ty
 lengthSize (ChunkedUArray array) = C.foldl' (\acc l -> acc + U.lengthSize l) 0 array
 
 -- | Returns `True` if the given element is contained in the `ChunkedUArray`.
@@ -253,18 +253,18 @@ uncons v = second fromList <$> (C.uncons $ toList v)
 
 cons :: PrimType ty => ty -> ChunkedUArray ty -> ChunkedUArray ty
 cons el (ChunkedUArray inner) = ChunkedUArray $ runST $ do
-  let newLen = (Size $ C.length inner + 1)
+  let newLen = (CountOf $ C.length inner + 1)
   newArray   <- A.new newLen
   let single = fromList [el]
   A.unsafeWrite newArray 0 single
-  A.unsafeCopyAtRO newArray (Offset 1) inner (Offset 0) (Size $ C.length inner)
+  A.unsafeCopyAtRO newArray (Offset 1) inner (Offset 0) (CountOf $ C.length inner)
   A.unsafeFreeze newArray
 
 snoc :: PrimType ty => ChunkedUArray ty -> ty -> ChunkedUArray ty
 snoc (ChunkedUArray spine) el = ChunkedUArray $ runST $ do
   newArray  <- A.new (A.lengthSize spine + 1)
   let single = U.singleton el
-  A.unsafeCopyAtRO newArray (Offset 0) spine (Offset 0) (Size $ C.length spine)
+  A.unsafeCopyAtRO newArray (Offset 0) spine (Offset 0) (CountOf $ C.length spine)
   A.unsafeWrite newArray (sizeAsOffset $ A.lengthSize spine) single
   A.unsafeFreeze newArray
 
@@ -309,7 +309,7 @@ unsafeIndex (ChunkedUArray array) idx = go (A.unsafeIndex array 0) 0 idx
 
 {-# INLINE unsafeIndex #-}
 
-removeArraySize :: Offset ty -> Size ty -> Maybe (Offset ty)
-removeArraySize (Offset ty) (Size s)
+removeArraySize :: Offset ty -> CountOf ty -> Maybe (Offset ty)
+removeArraySize (Offset ty) (CountOf s)
     | ty >= s   = Just (Offset (ty - s))
     | otherwise = Nothing

@@ -144,7 +144,7 @@ instance Encoder.Encoding EncoderUTF8 where
 -- On Failure the position along with the failure reason
 validate :: UArray Word8
          -> Offset8
-         -> Size Word8
+         -> CountOf Word8
          -> (Offset8, Maybe ValidationFailure)
 validate ba ofsStart sz = runST (Vec.unsafeIndexer ba go)
   where
@@ -187,14 +187,14 @@ validate ba ofsStart sz = runST (Vec.unsafeIndexer ba go)
                 _ -> error "internal error"
           where
             !h = getIdx pos
-            !nbContsE@(Size nbConts) = Size $ getNbBytes h
+            !nbContsE@(CountOf nbConts) = CountOf $ getNbBytes h
     {-# INLINE go #-}
 
 -- | Similar to 'validate' but works on a 'MutableByteArray'
 mutableValidate :: PrimMonad prim
                 => MutableByteArray (PrimState prim)
                 -> Offset Word8
-                -> Size Word8
+                -> CountOf Word8
                 -> prim (Offset Word8, Maybe ValidationFailure)
 mutableValidate mba ofsStart sz = do
     loop ofsStart
@@ -328,7 +328,7 @@ writeUTF8Char (MutableString mba) i (UTF8_4 x1 x2 x3 x4) = do
     Vec.unsafeWrite mba (i+3) x4
 {-# INLINE writeUTF8Char #-}
 
-unsafeFreezeShrink :: PrimMonad prim => MutableString (PrimState prim) -> Size Word8 -> prim String
+unsafeFreezeShrink :: PrimMonad prim => MutableString (PrimState prim) -> CountOf Word8 -> prim String
 unsafeFreezeShrink (MutableString mba) s = String <$> Vec.unsafeFreezeShrink mba s
 {-# INLINE unsafeFreezeShrink #-}
 
@@ -346,7 +346,7 @@ take :: Int -> String -> String
 take n s@(String ba)
     | n <= 0           = mempty
     | n >= C.length ba = s
-    | otherwise        = let (Offset o) = indexN (Offset n) s in String $ Vec.unsafeTake (Size o) ba
+    | otherwise        = let (Offset o) = indexN (Offset n) s in String $ Vec.unsafeTake (CountOf o) ba
 
 -- | Create a string with the remaining Chars after dropping @n Chars from the beginning
 drop :: Int -> String -> String
@@ -421,7 +421,7 @@ revSplitAt n v = (drop idx v, take idx v)
 --
 splitOn :: (Char -> Bool) -> String -> [String]
 splitOn predicate s
-    | sz == Size 0 = [mempty]
+    | sz == CountOf 0 = [mempty]
     | otherwise    = loop azero azero
   where
     !sz = size s
@@ -570,39 +570,39 @@ unsafeCopyFrom :: String -- ^ Source string
 unsafeCopyFrom src dstBytes f = new dstBytes >>= fill (Offset 0) (Offset 0) (Offset 0) f >>= freeze
   where
     srcLen = length src
-    end = Offset 0 `offsetPlusE` Size srcLen
+    end = Offset 0 `offsetPlusE` CountOf srcLen
     fill srcI srcIdx dstIdx f' dst'
         | srcI == end = return dst'
         | otherwise = do (nextSrcIdx, nextDstIdx) <- f' src srcI srcIdx dst' dstIdx
                          fill (srcI + Offset 1) nextSrcIdx nextDstIdx f' dst'
 
--- | Length of a String using Size
+-- | Length of a String using CountOf
 --
 -- this size is available in o(n)
-lengthSize :: String -> Size Char
+lengthSize :: String -> CountOf Char
 lengthSize (String ba)
-    | C.null ba = Size 0
+    | C.null ba = CountOf 0
     | otherwise = Vec.unsafeDewrap goVec goAddr ba
   where
-    goVec ma start = loop start (Size 0)
+    goVec ma start = loop start (CountOf 0)
       where
         !end = start `offsetPlusE` Vec.lengthSize ba
         loop !idx !i
             | idx >= end = i
-            | otherwise  = loop (idx `offsetPlusE` d) (i + Size 1)
+            | otherwise  = loop (idx `offsetPlusE` d) (i + CountOf 1)
           where d = skipNextHeaderValue (primBaIndex ma idx)
 
-    goAddr (Ptr ptr) start = return $ loop start (Size 0)
+    goAddr (Ptr ptr) start = return $ loop start (CountOf 0)
       where
         !end = start `offsetPlusE` Vec.lengthSize ba
         loop !idx !i
             | idx >= end = i
-            | otherwise  = loop (idx `offsetPlusE` d) (i + Size 1)
+            | otherwise  = loop (idx `offsetPlusE` d) (i + CountOf 1)
           where d = skipNextHeaderValue (primAddrIndex ptr idx)
 
 -- | Length of a string in number of characters
 length :: String -> Int
-length s = let (Size sz) = lengthSize s in sz
+length s = let (CountOf sz) = lengthSize s in sz
 
 -- | Replicate a character @c@ @n@ times to create a string of length @n@
 replicate :: Word -> Char -> String
@@ -641,7 +641,7 @@ singleton c = runST $ do
 -- contained without the bounds, bad things will happen.
 create :: PrimMonad prim => Int -> (MutableString (PrimState prim) -> prim Int) -> prim String
 create sz f = do
-    ms     <- new (Size sz)
+    ms     <- new (CountOf sz)
     filled <- f ms
     if filled == sz
         then freeze ms
@@ -652,7 +652,7 @@ charMap :: (Char -> Char) -> String -> String
 charMap f src
     | srcSz == 0 = mempty
     | otherwise  =
-        let !(elems, nbBytes) = allocateAndFill [] (Offset 0) (Size 0)
+        let !(elems, nbBytes) = allocateAndFill [] (Offset 0) (CountOf 0)
          in runST $ do
                 dest <- new nbBytes
                 copyLoop dest elems (Offset 0 `offsetPlusE` nbBytes)
@@ -673,7 +673,7 @@ charMap f src
                     -- otherwise allocating less would bring the danger of spinning endlessly
                     -- and never succeeding.
                     let !diffBytes = srcEnd - idx
-                        !allocatedBytes = if diffBytes <= Size 4 then Size 4 else diffBytes
+                        !allocatedBytes = if diffBytes <= CountOf 4 then CountOf 4 else diffBytes
                     ms <- new allocatedBytes
                     (dstIdx, srcIdx) <- fill ms allocatedBytes idx
                     s <- freeze ms
@@ -712,7 +712,7 @@ charMap f src
 -- | Append a Char to the end of the String and return this new String
 snoc :: String -> Char -> String
 snoc s@(String ba) c
-    | len == Size 0 = singleton c
+    | len == CountOf 0 = singleton c
     | otherwise     = runST $ do
         ms@(MutableString mba) <- new (len + nbBytes)
         Vec.unsafeCopyAtRO mba (Offset 0) ba (Offset 0) len
@@ -725,7 +725,7 @@ snoc s@(String ba) c
 -- | Prepend a Char to the beginning of the String and return this new String
 cons :: Char -> String -> String
 cons c s@(String ba)
-  | len == Size 0 = singleton c
+  | len == CountOf 0 = singleton c
   | otherwise     = runST $ do
       ms@(MutableString mba) <- new (len + nbBytes)
       idx <- write ms (Offset 0) c
@@ -790,18 +790,18 @@ reverse s@(String ba) = runST $ do
         | didx == Offset 0 = freeze ms
         | otherwise = do
             let !h = Vec.unsafeIndex ba si
-                !nb = Size (getNbBytes h + 1)
+                !nb = CountOf (getNbBytes h + 1)
                 d  = didx `offsetMinusE` nb
             case nb of
-                Size 1 -> Vec.unsafeWrite mba d h
-                Size 2 -> do
+                CountOf 1 -> Vec.unsafeWrite mba d h
+                CountOf 2 -> do
                     Vec.unsafeWrite mba d       h
                     Vec.unsafeWrite mba (d + 1) (Vec.unsafeIndex ba (si + 1))
-                Size 3 -> do
+                CountOf 3 -> do
                     Vec.unsafeWrite mba d       h
                     Vec.unsafeWrite mba (d + 1) (Vec.unsafeIndex ba (si + 1))
                     Vec.unsafeWrite mba (d + 2) (Vec.unsafeIndex ba (si + 2))
-                Size 4 -> do
+                CountOf 4 -> do
                     Vec.unsafeWrite mba d       h
                     Vec.unsafeWrite mba (d + 1) (Vec.unsafeIndex  ba (si + 1))
                     Vec.unsafeWrite mba (d + 2) (Vec.unsafeIndex ba (si + 2))
@@ -881,7 +881,7 @@ fromBytes UTF32      bytes = fromEncoderBytes Encoder.UTF32      bytes
 fromBytes UTF8       bytes
     | C.null bytes = (mempty, Nothing, mempty)
     | otherwise    =
-        case validate bytes (Offset 0) (Size $ C.length bytes) of
+        case validate bytes (Offset 0) (CountOf $ C.length bytes) of
             (_, Nothing)  -> (fromBytesUnsafe bytes, Nothing, mempty)
             (Offset pos, Just vf) ->
                 let (b1, b2) = C.splitAt pos bytes
@@ -903,7 +903,7 @@ fromBytesLenient :: UArray Word8 -> (String, UArray Word8)
 fromBytesLenient bytes
     | C.null bytes = (mempty, mempty)
     | otherwise    =
-        case validate bytes (Offset 0) (Size $ C.length bytes) of
+        case validate bytes (Offset 0) (CountOf $ C.length bytes) of
             (_, Nothing)                   -> (fromBytesUnsafe bytes, mempty)
             (Offset pos, Just MissingByte) ->
                 let (b1,b2) = C.splitAt pos bytes
@@ -932,11 +932,11 @@ fromChunkBytes l = loop l
   where
     loop []         = []
     loop (bytes:[]) =
-        case validate bytes (Offset 0) (Size $ C.length bytes) of
+        case validate bytes (Offset 0) (CountOf $ C.length bytes) of
             (_, Nothing)  -> [fromBytesUnsafe bytes]
             (_, Just err) -> doErr err
     loop (bytes:cs@(c1:c2)) =
-        case validate bytes (Offset 0) (Size $ C.length bytes) of
+        case validate bytes (Offset 0) (CountOf $ C.length bytes) of
             (_, Nothing) -> fromBytesUnsafe bytes : loop cs
             (Offset pos, Just MissingByte) ->
                 let (b1,b2) = C.splitAt pos bytes
@@ -1009,14 +1009,14 @@ builderBuild sizeChunksI sb
     | sizeChunksI <= 3 = builderBuild 64 sb
     | otherwise        = do
         first         <- new sizeChunks
-        ((), (i, st)) <- runState (runBuilder sb) (Offset 0, BuildingState [] (Size 0) first sizeChunks)
+        ((), (i, st)) <- runState (runBuilder sb) (Offset 0, BuildingState [] (CountOf 0) first sizeChunks)
         cur           <- unsafeFreezeShrink (curChunk st) (offsetAsSize i)
         -- Build final array
         let totalSize = prevChunksSize st + offsetAsSize i
         final <- Vec.new totalSize >>= fillFromEnd totalSize (cur : prevChunks st) >>= Vec.unsafeFreeze
         return $ String final
   where
-    sizeChunks = Size sizeChunksI
+    sizeChunks = CountOf sizeChunksI
 
     fillFromEnd _   []            mba = return mba
     fillFromEnd !end (String x:xs) mba = do
@@ -1156,9 +1156,9 @@ readFloatingExact str f
 
         consumeFloat isNegative integral startOfs =
             case decimalDigitsBA integral ba eofs startOfs of
-                (# acc, True, endOfs #) | endOfs > startOfs -> let (Size !diff) = endOfs - startOfs
+                (# acc, True, endOfs #) | endOfs > startOfs -> let (CountOf !diff) = endOfs - startOfs
                                                                 in f isNegative acc (integralCast diff) Nothing
-                (# acc, False, endOfs #) | endOfs > startOfs -> let (Size !diff) = endOfs - startOfs
+                (# acc, False, endOfs #) | endOfs > startOfs -> let (CountOf !diff) = endOfs - startOfs
                                                                 in consumeExponant isNegative acc (integralCast diff) endOfs
                 _                                           -> Nothing
 
@@ -1196,9 +1196,9 @@ readFloatingExact str f
 
         consumeFloat isNegative integral startOfs =
             case decimalDigitsPtr integral ptr eofs startOfs of
-                (# acc, True, endOfs #) | endOfs > startOfs -> let (Size !diff) = endOfs - startOfs
+                (# acc, True, endOfs #) | endOfs > startOfs -> let (CountOf !diff) = endOfs - startOfs
                                                                 in f isNegative acc (integralCast diff) Nothing
-                (# acc, False, endOfs #) | endOfs > startOfs -> let (Size !diff) = endOfs - startOfs
+                (# acc, False, endOfs #) | endOfs > startOfs -> let (CountOf !diff) = endOfs - startOfs
                                                                 in consumeExponant isNegative acc (integralCast diff) endOfs
                 _                                           -> Nothing
 

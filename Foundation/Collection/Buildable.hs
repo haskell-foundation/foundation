@@ -52,7 +52,7 @@ class Buildable col where
     append :: (PrimMonad prim) => Element col -> Builder col (Mutable col) (Step col) prim ()
 
     build :: (PrimMonad prim)
-          => Int -- ^ Size of a chunk
+          => Int -- ^ CountOf of a chunk
           -> Builder col (Mutable col) (Step col) prim ()
           -> prim col
 

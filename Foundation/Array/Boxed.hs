@@ -82,7 +82,7 @@ import qualified Prelude
 
 -- | Array of a
 data Array a = Array {-# UNPACK #-} !(Offset a)
-                     {-# UNPACK #-} !(Size a)
+                     {-# UNPACK #-} !(CountOf a)
                                     (Array# a)
     deriving (Typeable)
 
@@ -104,7 +104,7 @@ instance NormalForm a => NormalForm (Array a) where
 
 -- | Mutable Array of a
 data MArray a st = MArray {-# UNPACK #-} !(Offset a)
-                          {-# UNPACK #-} !(Size a)
+                          {-# UNPACK #-} !(CountOf a)
                                          (MutableArray# st a)
     deriving (Typeable)
 
@@ -131,11 +131,11 @@ instance IsList (Array ty) where
 
 -- | return the numbers of elements in a mutable array
 mutableLength :: MArray ty st -> Int
-mutableLength (MArray _ (Size len) _) = len
+mutableLength (MArray _ (CountOf len) _) = len
 {-# INLINE mutableLength #-}
 
 -- | return the numbers of elements in a mutable array
-mutableLengthSize :: MArray ty st -> Size ty
+mutableLengthSize :: MArray ty st -> CountOf ty
 mutableLengthSize (MArray _ size _) = size
 {-# INLINE mutableLengthSize #-}
 
@@ -239,7 +239,7 @@ copyAt :: PrimMonad prim
        -> Offset ty                  -- ^ offset at destination
        -> MArray ty (PrimState prim) -- ^ source array
        -> Offset ty                  -- ^ offset at source
-       -> Size ty                    -- ^ number of elements to copy
+       -> CountOf ty                    -- ^ number of elements to copy
        -> prim ()
 copyAt dst od src os n = loop od os
   where -- !endIndex = os `offsetPlusE` n
@@ -257,18 +257,18 @@ unsafeCopyAtRO :: PrimMonad prim
                -> Offset ty                  -- ^ offset at destination
                -> Array ty                   -- ^ source array
                -> Offset ty                  -- ^ offset at source
-               -> Size ty                    -- ^ number of elements to copy
+               -> CountOf ty                    -- ^ number of elements to copy
                -> prim ()
 unsafeCopyAtRO (MArray (Offset (I# dstart)) _ da) (Offset (I# dofs))
                (Array  (Offset (I# sstart)) _ sa) (Offset (I# sofs))
-               (Size (I# n)) =
+               (CountOf (I# n)) =
     primitive $ \st ->
         (# copyArray# sa (sstart +# sofs) da (dstart +# dofs) n st, () #)
 
 -- | Allocate a new array with a fill function that has access to the elements of
 --   the source array.
 unsafeCopyFrom :: Array ty -- ^ Source array
-               -> Size ty  -- ^ Length of the destination array
+               -> CountOf ty  -- ^ Length of the destination array
                -> (Array ty -> Offset ty -> MArray ty s -> ST s ())
                -- ^ Function called for each element in the source array
                -> ST s (Array ty) -- ^ Returns the filled new array
@@ -286,14 +286,14 @@ unsafeCopyFrom v' newLen f = new newLen >>= fill (Offset 0) f >>= unsafeFreeze
 --
 -- All mutable arrays are allocated on a 64 bits aligned addresses
 -- and always contains a number of bytes multiples of 64 bits.
-new :: PrimMonad prim => Size ty -> prim (MArray ty (PrimState prim))
-new sz@(Size (I# n)) = primitive $ \s1 ->
+new :: PrimMonad prim => CountOf ty -> prim (MArray ty (PrimState prim))
+new sz@(CountOf (I# n)) = primitive $ \s1 ->
     case newArray# n (error "vector: internal error uninitialized vector") s1 of
         (# s2, ma #) -> (# s2, MArray (Offset 0) sz ma #)
 
 -- | Create a new array of size @n by settings each cells through the
 -- function @f.
-create :: forall ty . Size ty -- ^ the size of the array
+create :: forall ty . CountOf ty -- ^ the size of the array
        -> (Offset ty -> ty)   -- ^ the function that set the value at the index
        -> Array ty            -- ^ the array created
 create n initializer = runST (new n >>= iter initializer)
@@ -336,15 +336,15 @@ empty :: Array a
 empty = runST $ onNewArray 0 (\_ s -> s)
 
 length :: Array a -> Int
-length (Array _ (Size len) _) = len
+length (Array _ (CountOf len) _) = len
 
-lengthSize :: Array a -> Size a
+lengthSize :: Array a -> CountOf a
 lengthSize (Array _ sz _) = sz
 
 vFromList :: [a] -> Array a
 vFromList l = runST (new len >>= loop 0 l)
   where
-    len = Size $ List.length l
+    len = CountOf $ List.length l
     loop _ []     ma = unsafeFreeze ma
     loop i (x:xs) ma = unsafeWrite ma i x >> loop (i+1) xs ma
 
@@ -366,7 +366,7 @@ append a b = runST $ do
 
 concat :: [Array ty] -> Array ty
 concat l = runST $ do
-    r <- new (Size $ Prelude.sum $ fmap length l)
+    r <- new (CountOf $ Prelude.sum $ fmap length l)
     loop r (Offset 0) l
     unsafeFreeze r
   where loop _ _ []     = return ()
@@ -400,7 +400,7 @@ onNewArray len@(I# len#) f = primitive $ \st -> do
     case newArray# len# (error "onArray") st of { (# st2, mv #) ->
     case f mv st2                            of { st3           ->
     case unsafeFreezeArray# mv st3           of { (# st4, a #)  ->
-        (# st4, Array (Offset 0) (Size len) a #) }}}
+        (# st4, Array (Offset 0) (CountOf len) a #) }}}
 
 -----------------------------------------------------------------------
 
@@ -414,7 +414,7 @@ take nbElems a@(Array start len arr)
     | n == len     = a
     | otherwise    = Array start n arr
   where
-    n = min (Size nbElems) len
+    n = min (CountOf nbElems) len
 
 drop ::  Int -> Array ty -> Array ty
 drop nbElems a@(Array start len arr)
@@ -422,7 +422,7 @@ drop nbElems a@(Array start len arr)
     | n == len     = empty
     | otherwise    = Array (start `offsetPlusE` n) (len - n) arr
   where
-    n = min (Size nbElems) len
+    n = min (CountOf nbElems) len
 
 splitAt ::  Int -> Array ty -> (Array ty, Array ty)
 splitAt nbElems a@(Array start len arr)
@@ -431,7 +431,7 @@ splitAt nbElems a@(Array start len arr)
     | otherwise    =
         (Array start n arr, Array (start `offsetPlusE` n) (len - n) arr)
   where
-    n = min (Size nbElems) len
+    n = min (CountOf nbElems) len
 
 revTake :: Int -> Array ty -> Array ty
 revTake nbElems v = drop (length v - nbElems) v
@@ -445,7 +445,7 @@ revSplitAt n v = (drop idx v, take idx v)
 
 splitOn ::  (ty -> Bool) -> Array ty -> [Array ty]
 splitOn predicate vec
-    | len == Size 0 = [mempty]
+    | len == CountOf 0 = [mempty]
     | otherwise     = loop (Offset 0) (Offset 0)
   where
     !len = lengthSize vec
@@ -480,8 +480,8 @@ break predicate v = findBreak 0
 
 intersperse :: ty -> Array ty -> Array ty
 intersperse sep v
-    | len <= Size 1 = v
-    | otherwise     = runST $ unsafeCopyFrom v ((len + len) - Size 1) (go (Offset 0 `offsetPlusE` (len - Size 1)) sep)
+    | len <= CountOf 1 = v
+    | otherwise     = runST $ unsafeCopyFrom v ((len + len) - CountOf 1) (go (Offset 0 `offsetPlusE` (len - CountOf 1)) sep)
   where len = lengthSize v
         -- terminate 1 before the end
 
@@ -513,13 +513,13 @@ singleton e = runST $ do
     unsafeFreeze a
 
 replicate :: Word -> ty -> Array ty
-replicate sz ty = create (Size (integralCast sz)) (const ty)
+replicate sz ty = create (CountOf (integralCast sz)) (const ty)
 
 cons :: ty -> Array ty -> Array ty
 cons e vec
-    | len == Size 0 = singleton e
+    | len == CountOf 0 = singleton e
     | otherwise     = runST $ do
-        mv <- new (len + Size 1)
+        mv <- new (len + CountOf 1)
         unsafeWrite mv 0 e
         unsafeCopyAtRO mv (Offset 1) vec (Offset 0) len
         unsafeFreeze mv
@@ -549,7 +549,7 @@ unsnoc vec
     | len == 0  = Nothing
     | otherwise = Just (take (lenI - 1) vec, unsafeIndex vec (sizeLastOffset len))
   where
-    !len@(Size lenI) = lengthSize vec
+    !len@(CountOf lenI) = lengthSize vec
 
 elem :: Eq ty => ty -> Array ty -> Bool
 elem !ty arr = loop 0
@@ -627,13 +627,13 @@ freezeUntilIndex mvec d = do
     copyAt m (Offset 0) mvec (Offset 0) (offsetAsSize d)
     unsafeFreeze m
 
-unsafeFreezeShrink :: PrimMonad prim => MArray ty (PrimState prim) -> Size ty -> prim (Array ty)
+unsafeFreezeShrink :: PrimMonad prim => MArray ty (PrimState prim) -> CountOf ty -> prim (Array ty)
 unsafeFreezeShrink (MArray start _ ma) n = unsafeFreeze (MArray start n ma)
 
 reverse :: Array ty -> Array ty
 reverse a = create len toEnd
   where
-    len@(Size s) = lengthSize a
+    len@(CountOf s) = lengthSize a
     toEnd (Offset i) = unsafeIndex a (Offset (s - 1 - i))
 
 foldl :: (a -> ty -> a) -> a -> Array ty -> a
@@ -680,13 +680,13 @@ builderBuild sizeChunksI ab
     | sizeChunksI <= 0 = builderBuild 64 ab
     | otherwise        = do
         first         <- new sizeChunks
-        ((), (i, st)) <- runState (runBuilder ab) (Offset 0, BuildingState [] (Size 0) first sizeChunks)
+        ((), (i, st)) <- runState (runBuilder ab) (Offset 0, BuildingState [] (CountOf 0) first sizeChunks)
         cur           <- unsafeFreezeShrink (curChunk st) (offsetAsSize i)
         -- Build final array
         let totalSize = prevChunksSize st + offsetAsSize i
         new totalSize >>= fillFromEnd totalSize (cur : prevChunks st) >>= unsafeFreeze
   where
-    sizeChunks = Size sizeChunksI
+    sizeChunks = CountOf sizeChunksI
 
     fillFromEnd _   []     mua = return mua
     fillFromEnd !end (x:xs) mua = do

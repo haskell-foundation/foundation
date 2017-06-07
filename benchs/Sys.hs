@@ -18,7 +18,7 @@ data NullRandom = NullRandom
 instance RandomGen NullRandom where
     randomNew        = return NullRandom
     randomNewFrom    = error "no randomNewFrom"
-    randomGenerate (Size n) r = (fromList (Prelude.replicate n 0), r)
+    randomGenerate (CountOf n) r = (fromList (Prelude.replicate n 0), r)
 
 benchSys =
     [ bgroup "Random"

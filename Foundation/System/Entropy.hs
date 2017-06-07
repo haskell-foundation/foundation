@@ -27,8 +27,8 @@ import           Foundation.System.Entropy.Unix
 #endif
 
 -- | Get some of the system entropy
-getEntropy :: Size Word8 -> IO (A.UArray Word8)
-getEntropy n@(Size x) = do
+getEntropy :: CountOf Word8 -> IO (A.UArray Word8)
+getEntropy n@(CountOf x) = do
     m <- A.newPinned n
     bracket entropyOpen entropyClose $ \ctx -> A.withMutablePtr m $ loop ctx x
     A.unsafeFreeze m

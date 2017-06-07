@@ -42,7 +42,7 @@ module Foundation.Primitive.Imports
     , Prelude.Integer
     , Foundation.Internal.Natural.Natural
     , Foundation.Primitive.Types.OffsetSize.Offset
-    , Foundation.Primitive.Types.OffsetSize.Size
+    , Foundation.Primitive.Types.OffsetSize.CountOf
     , Prelude.Char
     , Foundation.Primitive.UTF8.Base.String
     , Foundation.Array.Unboxed.UArray

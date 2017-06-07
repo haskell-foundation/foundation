@@ -85,7 +85,7 @@ module Foundation
     , Prelude.Rational
     , Prelude.Float
     , Prelude.Double
-    , Size(..), Offset(..)
+    , CountOf(..), Offset(..)
       -- ** Collection types
     , UArray
     , PrimType
@@ -171,7 +171,7 @@ import qualified Foundation.Partial
 import           Foundation.Tuple
 
 import qualified Foundation.Class.Bifunctor
-import           Foundation.Primitive.Types.OffsetSize (Size(..), Offset(..))
+import           Foundation.Primitive.Types.OffsetSize (CountOf(..), Offset(..))
 import qualified Foundation.Primitive
 import           Foundation.Primitive.Show
 import           Foundation.Internal.NumLiteral
