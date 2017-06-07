@@ -16,7 +16,7 @@ module Foundation.Primitive.Block.Base
     , unsafeWrite
     , unsafeIndex
     -- * Properties
-    , lengthSize
+    , length
     , lengthBytes
     -- * Other methods
     , new
@@ -70,12 +70,12 @@ instance PrimType ty => IsList (Block ty) where
     fromList = internalFromList
     toList = internalToList
 
-lengthSize :: forall ty . PrimType ty => Block ty -> CountOf ty
-lengthSize (Block ba) =
+length :: forall ty . PrimType ty => Block ty -> CountOf ty
+length (Block ba) =
     let !(CountOf (I# szBits)) = primSizeInBytes (Proxy :: Proxy ty)
         !elems              = quotInt# (sizeofByteArray# ba) szBits
      in CountOf (I# elems)
-{-# INLINE[1] lengthSize #-}
+{-# INLINE[1] length #-}
 
 lengthBytes :: Block ty -> CountOf Word8
 lengthBytes (Block ba) = CountOf (I# (sizeofByteArray# ba))
@@ -116,7 +116,7 @@ internalToList blk@(Block ba)
     | len == azero = []
     | otherwise    = loop azero
   where
-    !len = lengthSize blk
+    !len = length blk
     loop !i | i .==# len = []
             | otherwise  = primBaIndex ba i : loop (i+1)
 
@@ -128,7 +128,7 @@ equal a b
   where
     !la = lengthBytes a
     !lb = lengthBytes b
-    lat = lengthSize a
+    lat = length a
 
     loop !n | n .==# lat = True
             | otherwise  = (unsafeIndex a n == unsafeIndex b n) && loop (n+o1)
@@ -151,8 +151,8 @@ equalMemcmp b1@(Block a) b2@(Block b)
 internalCompare :: (Ord ty, PrimType ty) => Block ty -> Block ty -> Ordering
 internalCompare a b = loop azero
   where
-    !la = lengthSize a
-    !lb = lengthSize b
+    !la = length a
+    !lb = length b
     !end = sizeAsOffset (min la lb)
     loop !n
         | n == end  = la `compare` lb

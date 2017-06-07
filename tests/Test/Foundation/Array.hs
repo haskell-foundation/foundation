@@ -52,10 +52,10 @@ testUnboxedForeign proxy genElement =
     [ testProperty "equal" $ withElementsM $ \fptr l ->
         return $ toArrayP proxy l == foreignMem fptr (length l)
     , testProperty "take" $ withElementsM $ \fptr l -> do
-        n <- pick arbitrary
+        n <- CountOf <$> pick arbitrary
         return $ take n (toArrayP proxy l) == take n (foreignMem fptr (length l))
     , testProperty "take" $ withElementsM $ \fptr l -> do
-        n <- pick arbitrary
+        n <- CountOf <$> pick arbitrary
         return $ drop n (toArrayP proxy l) == drop n (foreignMem fptr (length l))
     ]
   where

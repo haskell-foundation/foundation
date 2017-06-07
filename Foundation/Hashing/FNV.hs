@@ -124,7 +124,7 @@ fnv1_32_mixBa baA !initialState = A.unsafeDewrap goVec goAddr ba
     goVec :: ByteArray# -> Offset Word8 -> FNV1_32
     goVec !ma !start = loop start initialState
       where
-        !len = start `offsetPlusE` A.lengthSize ba
+        !len = start `offsetPlusE` A.length ba
         loop !idx !acc
             | idx >= len = acc
             | otherwise  = loop (idx + Offset 1) (hashMix8 (primBaIndex ma idx) acc)
@@ -133,7 +133,7 @@ fnv1_32_mixBa baA !initialState = A.unsafeDewrap goVec goAddr ba
     goAddr :: Ptr Word8 -> Offset Word8 -> ST s FNV1_32
     goAddr !(Ptr ptr) !start = return $ loop start initialState
       where
-        !len = start `offsetPlusE` A.lengthSize ba
+        !len = start `offsetPlusE` A.length ba
         loop !idx !acc
             | idx >= len = acc
             | otherwise  = loop (idx + Offset 1) (hashMix8 (primAddrIndex ptr idx) acc)
@@ -149,7 +149,7 @@ fnv1a_32_mixBa baA !initialState  = A.unsafeDewrap goVec goAddr ba
     goVec :: ByteArray# -> Offset Word8 -> FNV1a_32
     goVec !ma !start = loop start initialState
       where
-        !len = start `offsetPlusE` A.lengthSize ba
+        !len = start `offsetPlusE` A.length ba
         loop !idx !acc
             | idx >= len = acc
             | otherwise  = loop (idx + Offset 1) (hashMix8 (primBaIndex ma idx) acc)
@@ -158,7 +158,7 @@ fnv1a_32_mixBa baA !initialState  = A.unsafeDewrap goVec goAddr ba
     goAddr :: Ptr Word8 -> Offset Word8 -> ST s FNV1a_32
     goAddr !(Ptr ptr) !start = return $ loop start initialState
       where
-        !len = start `offsetPlusE` A.lengthSize ba
+        !len = start `offsetPlusE` A.length ba
         loop !idx !acc
             | idx >= len = acc
             | otherwise  = loop (idx + Offset 1) (hashMix8 (primAddrIndex ptr idx) acc)
@@ -174,7 +174,7 @@ fnv1_64_mixBa baA !initialState = A.unsafeDewrap goVec goAddr ba
     goVec :: ByteArray# -> Offset Word8 -> FNV1_64
     goVec !ma !start = loop start initialState
       where
-        !len = start `offsetPlusE` A.lengthSize ba
+        !len = start `offsetPlusE` A.length ba
         loop !idx !acc
             | idx >= len = acc
             | otherwise  = loop (idx + Offset 1) (hashMix8 (primBaIndex ma idx) acc)
@@ -183,7 +183,7 @@ fnv1_64_mixBa baA !initialState = A.unsafeDewrap goVec goAddr ba
     goAddr :: Ptr Word8 -> Offset Word8 -> ST s FNV1_64
     goAddr !(Ptr ptr) !start = return $ loop start initialState
       where
-        !len = start `offsetPlusE` A.lengthSize ba
+        !len = start `offsetPlusE` A.length ba
         loop !idx !acc
             | idx >= len = acc
             | otherwise  = loop (idx + Offset 1) (hashMix8 (primAddrIndex ptr idx) acc)
@@ -199,7 +199,7 @@ fnv1a_64_mixBa baA !initialState = A.unsafeDewrap goVec goAddr ba
     goVec :: ByteArray# -> Offset Word8 -> FNV1a_64
     goVec !ma !start = loop start initialState
       where
-        !len = start `offsetPlusE` A.lengthSize ba
+        !len = start `offsetPlusE` A.length ba
         loop !idx !acc
             | idx >= len = acc
             | otherwise  = loop (idx + Offset 1) (hashMix8 (primBaIndex ma idx) acc)
@@ -208,7 +208,7 @@ fnv1a_64_mixBa baA !initialState = A.unsafeDewrap goVec goAddr ba
     goAddr :: Ptr Word8 -> Offset Word8 -> ST s FNV1a_64
     goAddr !(Ptr ptr) !start = return $ loop start initialState
       where
-        !len = start `offsetPlusE` A.lengthSize ba
+        !len = start `offsetPlusE` A.length ba
         loop !idx !acc
             | idx >= len = acc
             | otherwise  = loop (idx + Offset 1) (hashMix8 (primAddrIndex ptr idx) acc)

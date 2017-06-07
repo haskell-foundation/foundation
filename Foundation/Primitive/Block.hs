@@ -19,7 +19,6 @@ module Foundation.Primitive.Block
     , MutableBlock(..)
     -- * Properties
     , length
-    , lengthSize
     -- * Lowlevel functions
     , unsafeThaw
     , unsafeFreeze
@@ -68,17 +67,11 @@ import           Foundation.Internal.Primitive
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Exception
-import           Foundation.Primitive.IntegralConv
 import           Foundation.Primitive.Types
 import qualified Foundation.Primitive.Block.Mutable as M
 import           Foundation.Primitive.Block.Mutable (Block(..), MutableBlock(..), new, unsafeThaw, unsafeFreeze)
 import           Foundation.Primitive.Block.Base
 import           Foundation.Numerical
-
--- | return the number of elements of the array.
-length :: PrimType ty => Block ty -> Int
-length a = let (CountOf len) = lengthSize a in len
-{-# INLINE[1] length #-}
 
 -- | Copy all the block content to the memory starting at the destination address
 unsafeCopyToPtr :: forall ty prim . PrimMonad prim
@@ -104,8 +97,8 @@ create n initializer
 singleton :: PrimType ty => ty -> Block ty
 singleton ty = create 1 (const ty)
 
-replicate :: PrimType ty => Word -> ty -> Block ty
-replicate sz ty = create (CountOf (integralCast sz)) (const ty)
+replicate :: PrimType ty => CountOf ty -> ty -> Block ty
+replicate sz ty = create sz (const ty)
 
 -- | Thaw a Block into a MutableBlock
 --
@@ -139,18 +132,18 @@ index array n
     | isOutOfBound n len = outOfBound OOB_Index n len
     | otherwise          = unsafeIndex array n
   where
-    !len = lengthSize array
+    !len = length array
 {-# INLINE index #-}
 
 -- | Map all element 'a' from a block to a new block of 'b'
 map :: (PrimType a, PrimType b) => (a -> b) -> Block a -> Block b
 map f a = create lenB (\i -> f $ unsafeIndex a (offsetCast Proxy i))
-  where !lenB = sizeCast (Proxy :: Proxy (a -> b)) (lengthSize a)
+  where !lenB = sizeCast (Proxy :: Proxy (a -> b)) (length a)
 
 foldl :: PrimType ty => (a -> ty -> a) -> a -> Block ty -> a
 foldl f initialAcc vec = loop 0 initialAcc
   where
-    !len = lengthSize vec
+    !len = length vec
     loop i acc
         | i .==# len = acc
         | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
@@ -158,7 +151,7 @@ foldl f initialAcc vec = loop 0 initialAcc
 foldr :: PrimType ty => (ty -> a -> a) -> a -> Block ty -> a
 foldr f initialAcc vec = loop 0
   where
-    !len = lengthSize vec
+    !len = length vec
     loop i
         | i .==# len = initialAcc
         | otherwise  = unsafeIndex vec i `f` loop (i+1)
@@ -166,7 +159,7 @@ foldr f initialAcc vec = loop 0
 foldl' :: PrimType ty => (a -> ty -> a) -> a -> Block ty -> a
 foldl' f initialAcc vec = loop 0 initialAcc
   where
-    !len = lengthSize vec
+    !len = length vec
     loop i !acc
         | i .==# len = acc
         | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
@@ -180,7 +173,7 @@ cons e vec
         M.unsafeWrite muv 0 e
         unsafeFreeze muv
   where
-    !len = lengthSize vec
+    !len = length vec
 
 snoc :: PrimType ty => Block ty -> ty -> Block ty
 snoc vec e
@@ -188,10 +181,10 @@ snoc vec e
     | otherwise     = runST $ do
         muv <- new (len + 1)
         M.unsafeCopyElementsRO muv 0 vec 0 len
-        M.unsafeWrite muv (0 `offsetPlusE` lengthSize vec) e
+        M.unsafeWrite muv (0 `offsetPlusE` length vec) e
         unsafeFreeze muv
   where
-     !len = lengthSize vec
+     !len = length vec
 
 sub :: PrimType ty => Block ty -> Offset ty -> Offset ty -> Block ty
 sub blk start end
@@ -203,14 +196,14 @@ sub blk start end
   where
     newLen = end' - start
     end' = min (sizeAsOffset len) end
-    !len = lengthSize blk
+    !len = length blk
 
 uncons :: PrimType ty => Block ty -> Maybe (ty, Block ty)
 uncons vec
     | nbElems == 0 = Nothing
     | otherwise    = Just (unsafeIndex vec 0, sub vec 1 (0 `offsetPlusE` nbElems))
   where
-    !nbElems = lengthSize vec
+    !nbElems = length vec
 
 unsnoc :: PrimType ty => Block ty -> Maybe (Block ty, ty)
 unsnoc vec
@@ -218,7 +211,7 @@ unsnoc vec
     | otherwise    = Just (sub vec 0 lastElem, unsafeIndex vec lastElem)
   where
     !lastElem = 0 `offsetPlusE` (nbElems - 1)
-    !nbElems = lengthSize vec
+    !nbElems = length vec
 
 splitAt :: PrimType ty => CountOf ty -> Block ty -> (Block ty, Block ty)
 splitAt nbElems blk
@@ -233,17 +226,17 @@ splitAt nbElems blk
         (,) <$> unsafeFreeze left <*> unsafeFreeze right
   where
     n    = min nbElems vlen
-    vlen = lengthSize blk
+    vlen = length blk
 
 revSplitAt :: PrimType ty => CountOf ty -> Block ty -> (Block ty, Block ty)
 revSplitAt n blk
     | n <= 0    = (mempty, blk)
-    | otherwise = let (x,y) = splitAt (lengthSize blk - n) blk in (y,x)
+    | otherwise = let (x,y) = splitAt (length blk - n) blk in (y,x)
 
 break :: PrimType ty => (ty -> Bool) -> Block ty -> (Block ty, Block ty)
 break predicate blk = findBreak 0
   where
-    !len = lengthSize blk
+    !len = length blk
     findBreak !i
         | i .==# len                    = (blk, mempty)
         | predicate (unsafeIndex blk i) = splitAt (offsetAsSize i) blk
@@ -256,7 +249,7 @@ span p = break (not . p)
 elem :: PrimType ty => ty -> Block ty -> Bool
 elem v blk = loop 0
   where
-    !len = lengthSize blk
+    !len = length blk
     loop i
         | i .==# len             = False
         | unsafeIndex blk i == v = True
@@ -265,7 +258,7 @@ elem v blk = loop 0
 all :: PrimType ty => (ty -> Bool) -> Block ty -> Bool
 all p blk = loop 0
   where
-    !len = lengthSize blk
+    !len = length blk
     loop i
         | i .==# len            = True
         | p (unsafeIndex blk i) = loop (i+1)
@@ -274,7 +267,7 @@ all p blk = loop 0
 any :: PrimType ty => (ty -> Bool) -> Block ty -> Bool
 any p blk = loop 0
   where
-    !len = lengthSize blk
+    !len = length blk
     loop i
         | i .==# len            = False
         | p (unsafeIndex blk i) = True
@@ -285,7 +278,7 @@ splitOn predicate blk
     | len == 0  = [mempty]
     | otherwise = go 0 0
   where
-    !len = lengthSize blk
+    !len = length blk
     go !prevIdx !idx
         | idx .==# len = [sub blk prevIdx idx]
         | otherwise    =
@@ -298,7 +291,7 @@ splitOn predicate blk
 find :: PrimType ty => (ty -> Bool) -> Block ty -> Maybe ty
 find predicate vec = loop 0
   where
-    !len = lengthSize vec
+    !len = length vec
     loop i
         | i .==# len = Nothing
         | otherwise  =
@@ -316,7 +309,7 @@ reverse blk
         go mb
         unsafeFreeze mb
   where
-    !len = lengthSize blk
+    !len = length blk
     !endOfs = 0 `offsetPlusE` len
 
     go :: MutableBlock ty s -> ST s ()
@@ -332,7 +325,7 @@ sortBy xford vec
     | len == 0  = mempty
     | otherwise = runST (thaw vec >>= doSort xford)
   where
-    len = lengthSize vec
+    len = length vec
     doSort :: (PrimType ty, PrimMonad prim) => (ty -> ty -> Ordering) -> MutableBlock ty (PrimState prim) -> prim (Block ty)
     doSort ford ma = qsort 0 (sizeLastOffset len) >> unsafeFreeze ma
       where
@@ -372,7 +365,7 @@ intersperse sep blk
         go mb
         unsafeFreeze mb
   where
-    !len = lengthSize blk
+    !len = length blk
     newSize = len + len - 1
 
     go :: MutableBlock ty s -> ST s ()

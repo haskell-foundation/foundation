@@ -339,75 +339,89 @@ unsafeFreezeShrink (MutableString mba) s = String <$> Vec.unsafeFreezeShrink mba
 null :: String -> Bool
 null (String ba) = C.length ba == 0
 
+-- we don't know in constant time the count of character in string,
+-- however if we estimate bounds of what N characters would
+-- take in space (between N and N*4). If the count is thus bigger than
+-- the number of bytes, then we know for sure that it's going to
+-- be out of bounds
+countCharMoreThanBytes :: CountOf Char -> UArray Word8 -> Bool
+countCharMoreThanBytes (CountOf chars) ba = chars >= bytes
+  where (CountOf bytes) = C.length ba
+
 -- | Create a string composed of a number @n of Chars (Unicode code points).
 --
 -- if the input @s contains less characters than required, then the input string is returned.
-take :: Int -> String -> String
+take :: CountOf Char -> String -> String
 take n s@(String ba)
-    | n <= 0           = mempty
-    | n >= C.length ba = s
-    | otherwise        = let (Offset o) = indexN (Offset n) s in String $ Vec.unsafeTake (CountOf o) ba
+    | n <= 0                      = mempty
+    | countCharMoreThanBytes n ba = s
+    | otherwise                   = String $ Vec.unsafeTake (offsetAsSize $ indexN n s) ba
 
 -- | Create a string with the remaining Chars after dropping @n Chars from the beginning
-drop :: Int -> String -> String
+drop :: CountOf Char -> String -> String
 drop n s@(String ba)
-    | n <= 0           = s
-    | n >= C.length ba = mempty
-    | otherwise        = let (Offset o) = indexN (Offset n) s in String $ Vec.drop o ba
+    | n <= 0                      = s
+    | countCharMoreThanBytes n ba = mempty
+    | otherwise                   = String $ Vec.drop (offsetAsSize $ indexN n s) ba
 
 -- | Split a string at the Offset specified (in Char) returning both
 -- the leading part and the remaining part.
-splitAt :: Int -> String -> (String, String)
-splitAt nI s@(String ba)
-    | nI <= 0           = (mempty, s)
-    | nI >= C.length ba = (s, mempty)
-    | otherwise =
-        let (Offset k) = indexN (Offset nI) s
-            (v1,v2)    = C.splitAt k ba
+splitAt :: CountOf Char -> String -> (String, String)
+splitAt n s@(String ba)
+    | n <= 0                      = (mempty, s)
+    | countCharMoreThanBytes n ba = (s, mempty)
+    | otherwise                   =
+        let (v1,v2) = C.splitAt (offsetAsSize $ indexN n s) ba
          in (String v1, String v2)
 
 -- | Return the offset (in bytes) of the N'th sequence in an UTF8 String
-indexN :: Offset Char -> String -> Offset Word8
+indexN :: CountOf Char -> String -> Offset Word8
 indexN !n (String ba) = Vec.unsafeDewrap goVec goAddr ba
   where
     goVec :: ByteArray# -> Offset Word8 -> Offset Word8
     goVec !ma !start = loop start 0
       where
-        !len = start `offsetPlusE` Vec.lengthSize ba
+        !len = start `offsetPlusE` Vec.length ba
         loop :: Offset Word8 -> Offset Char -> Offset Word8
         loop !idx !i
-            | idx >= len || i >= n = sizeAsOffset (idx - start)
-            | otherwise            = loop (idx `offsetPlusE` d) (i + Offset 1)
+            | idx >= len || i .==# n = sizeAsOffset (idx - start)
+            | otherwise              = loop (idx `offsetPlusE` d) (i + Offset 1)
           where d = skipNextHeaderValue (primBaIndex ma idx)
     {-# INLINE goVec #-}
 
     goAddr :: Ptr Word8 -> Offset Word8 -> ST s (Offset Word8)
     goAddr !(Ptr ptr) !start = return $ loop start (Offset 0)
       where
-        !len = start `offsetPlusE` Vec.lengthSize ba
+        !len = start `offsetPlusE` Vec.length ba
         loop :: Offset Word8 -> Offset Char -> Offset Word8
         loop !idx !i
-            | idx >= len || i >= n = sizeAsOffset (idx - start)
-            | otherwise            = loop (idx `offsetPlusE` d) (i + Offset 1)
+            | idx >= len || i .==# n = sizeAsOffset (idx - start)
+            | otherwise              = loop (idx `offsetPlusE` d) (i + Offset 1)
           where d = skipNextHeaderValue (primAddrIndex ptr idx)
     {-# INLINE goAddr #-}
 {-# INLINE indexN #-}
 
+-- inverse a CountOf that is specified from the end (e.g. take n Chars from the end)
+--
 -- rev{Take,Drop,SplitAt} TODO optimise:
 -- we can process the string from the end using a skipPrev instead of getting the length
+countFromStart :: String -> CountOf Char -> CountOf Char
+countFromStart s sz@(CountOf sz')
+    | sz >= len = CountOf 0
+    | otherwise = CountOf (len' - sz')
+  where len@(CountOf len') = length s
 
 -- | Similar to 'take' but from the end
-revTake :: Int -> String -> String
-revTake nbElems v = drop (length v - nbElems) v
+revTake :: CountOf Char -> String -> String
+revTake n v = drop (countFromStart v n) v
 
 -- | Similar to 'drop' but from the end
-revDrop :: Int -> String -> String
-revDrop nbElems v = take (length v - nbElems) v
+revDrop :: CountOf Char -> String -> String
+revDrop n v = take (countFromStart v n) v
 
 -- | Similar to 'splitAt' but from the end
-revSplitAt :: Int -> String -> (String, String)
-revSplitAt n v = (drop idx v, take idx v)
-  where idx = length v - n
+revSplitAt :: CountOf Char -> String -> (String, String)
+revSplitAt n v = (drop idx v, take idx v) where idx = countFromStart v n
 
 -- | Split on the input string using the predicate as separator
 --
@@ -446,8 +460,8 @@ sub (String ba) start end = String $ Vec.sub ba start end
 -- This is unsafe considering that one can split in the middle of a
 -- UTF8 sequence, so use with care.
 splitIndex :: Offset8 -> String -> (String, String)
-splitIndex (Offset idx) (String ba) = (String v1, String v2)
-  where (v1,v2) = C.splitAt idx ba
+splitIndex idx (String ba) = (String v1, String v2)
+  where (v1,v2) = C.splitAt (offsetAsSize idx) ba
 
 -- | Break a string into 2 strings at the location where the predicate return True
 break :: (Char -> Bool) -> String -> (String, String)
@@ -541,7 +555,7 @@ intersperse sep src
     | otherwise   = runST $ unsafeCopyFrom src dstBytes (go sep)
   where
     !srcBytes = size src
-    !srcLen   = lengthSize src
+    !srcLen   = length src
     dstBytes = (srcBytes :: Size8)
              + ((srcLen - 1) `scale` charToBytes (fromEnum sep))
 
@@ -570,7 +584,7 @@ unsafeCopyFrom :: String -- ^ Source string
 unsafeCopyFrom src dstBytes f = new dstBytes >>= fill (Offset 0) (Offset 0) (Offset 0) f >>= freeze
   where
     srcLen = length src
-    end = Offset 0 `offsetPlusE` CountOf srcLen
+    end = Offset 0 `offsetPlusE` srcLen
     fill srcI srcIdx dstIdx f' dst'
         | srcI == end = return dst'
         | otherwise = do (nextSrcIdx, nextDstIdx) <- f' src srcI srcIdx dst' dstIdx
@@ -579,14 +593,14 @@ unsafeCopyFrom src dstBytes f = new dstBytes >>= fill (Offset 0) (Offset 0) (Off
 -- | Length of a String using CountOf
 --
 -- this size is available in o(n)
-lengthSize :: String -> CountOf Char
-lengthSize (String ba)
+length :: String -> CountOf Char
+length (String ba)
     | C.null ba = CountOf 0
     | otherwise = Vec.unsafeDewrap goVec goAddr ba
   where
     goVec ma start = loop start (CountOf 0)
       where
-        !end = start `offsetPlusE` Vec.lengthSize ba
+        !end = start `offsetPlusE` Vec.length ba
         loop !idx !i
             | idx >= end = i
             | otherwise  = loop (idx `offsetPlusE` d) (i + CountOf 1)
@@ -594,22 +608,17 @@ lengthSize (String ba)
 
     goAddr (Ptr ptr) start = return $ loop start (CountOf 0)
       where
-        !end = start `offsetPlusE` Vec.lengthSize ba
+        !end = start `offsetPlusE` Vec.length ba
         loop !idx !i
             | idx >= end = i
             | otherwise  = loop (idx `offsetPlusE` d) (i + CountOf 1)
           where d = skipNextHeaderValue (primAddrIndex ptr idx)
 
--- | Length of a string in number of characters
-length :: String -> Int
-length s = let (CountOf sz) = lengthSize s in sz
-
 -- | Replicate a character @c@ @n@ times to create a string of length @n@
-replicate :: Word -> Char -> String
-replicate n c = runST (new nbBytes >>= fill)
+replicate :: CountOf Char -> Char -> String
+replicate (CountOf n) c = runST (new nbBytes >>= fill)
   where
-    --end       = azero `offsetPlusE` nbBytes
-    nbBytes   = scale n sz
+    nbBytes   = scale (integralCast n :: Word) sz
     sz = charToBytes (fromEnum c)
     fill :: PrimMonad prim => MutableString (PrimState prim) -> prim String
     fill ms = loop (Offset 0)
@@ -639,13 +648,15 @@ singleton c = runST $ do
 -- The callback @f@ needs to return the number of bytes filled in the underlaying
 -- bytes buffer. No check is made on the callback return values, and if it's not
 -- contained without the bounds, bad things will happen.
-create :: PrimMonad prim => Int -> (MutableString (PrimState prim) -> prim Int) -> prim String
+create :: PrimMonad prim => CountOf Word8 -> (MutableString (PrimState prim) -> prim (Offset Word8)) -> prim String
 create sz f = do
-    ms     <- new (CountOf sz)
+    ms     <- new sz
     filled <- f ms
-    if filled == sz
+    if filled .==# sz
         then freeze ms
-        else take filled `fmap` freeze ms
+        else do
+            (String ba) <- freeze ms
+            pure $ String $ C.take (offsetAsSize filled) ba
 
 -- | Monomorphically map the character in a string and return the transformed one
 charMap :: (Char -> Char) -> String -> String
@@ -741,7 +752,7 @@ cons c s@(String ba)
 unsnoc :: String -> Maybe (String, Char)
 unsnoc s
     | null s    = Nothing
-    | otherwise = case index s (sizeLastOffset $ lengthSize s) of
+    | otherwise = case index s (sizeLastOffset $ length s) of
         Nothing -> Nothing
         Just c  -> Just (revDrop 1 s, c)
 
@@ -822,7 +833,7 @@ index s n
   where
     !nbBytes = size s
     end = 0 `offsetPlusE` nbBytes
-    ofs = indexN n s
+    ofs = indexN (offsetAsSize n) s
 
 -- | Return the index in unit of Char of the first occurence of the predicate returning True
 --
@@ -881,10 +892,10 @@ fromBytes UTF32      bytes = fromEncoderBytes Encoder.UTF32      bytes
 fromBytes UTF8       bytes
     | C.null bytes = (mempty, Nothing, mempty)
     | otherwise    =
-        case validate bytes (Offset 0) (CountOf $ C.length bytes) of
+        case validate bytes (Offset 0) (C.length bytes) of
             (_, Nothing)  -> (fromBytesUnsafe bytes, Nothing, mempty)
-            (Offset pos, Just vf) ->
-                let (b1, b2) = C.splitAt pos bytes
+            (pos, Just vf) ->
+                let (b1, b2) = C.splitAt (offsetAsSize pos) bytes
                  in (fromBytesUnsafe b1, toErr vf, b2)
   where
     toErr MissingByte         = Nothing
@@ -903,18 +914,18 @@ fromBytesLenient :: UArray Word8 -> (String, UArray Word8)
 fromBytesLenient bytes
     | C.null bytes = (mempty, mempty)
     | otherwise    =
-        case validate bytes (Offset 0) (CountOf $ C.length bytes) of
+        case validate bytes (Offset 0) (C.length bytes) of
             (_, Nothing)                   -> (fromBytesUnsafe bytes, mempty)
-            (Offset pos, Just MissingByte) ->
-                let (b1,b2) = C.splitAt pos bytes
+            (pos, Just MissingByte) ->
+                let (b1,b2) = C.splitAt (offsetAsSize pos) bytes
                  in (fromBytesUnsafe b1, b2)
-            (Offset pos, Just InvalidHeader) ->
-                let (b1,b2) = C.splitAt pos bytes
+            (pos, Just InvalidHeader) ->
+                let (b1,b2) = C.splitAt (offsetAsSize pos) bytes
                     (_,b3)  = C.splitAt 1 b2
                     (s3, r) = fromBytesLenient b3
                  in (mconcat [fromBytesUnsafe b1,replacement, s3], r)
-            (Offset pos, Just InvalidContinuation) ->
-                let (b1,b2) = C.splitAt pos bytes
+            (pos, Just InvalidContinuation) ->
+                let (b1,b2) = C.splitAt (offsetAsSize pos) bytes
                     (_,b3)  = C.splitAt 1 b2
                     (s3, r) = fromBytesLenient b3
                  in (mconcat [fromBytesUnsafe b1,replacement, s3], r)
@@ -932,14 +943,14 @@ fromChunkBytes l = loop l
   where
     loop []         = []
     loop (bytes:[]) =
-        case validate bytes (Offset 0) (CountOf $ C.length bytes) of
+        case validate bytes (Offset 0) (C.length bytes) of
             (_, Nothing)  -> [fromBytesUnsafe bytes]
             (_, Just err) -> doErr err
     loop (bytes:cs@(c1:c2)) =
-        case validate bytes (Offset 0) (CountOf $ C.length bytes) of
+        case validate bytes (Offset 0) (C.length bytes) of
             (_, Nothing) -> fromBytesUnsafe bytes : loop cs
-            (Offset pos, Just MissingByte) ->
-                let (b1,b2) = C.splitAt pos bytes
+            (pos, Just MissingByte) ->
+                let (b1,b2) = C.splitAt (offsetAsSize pos) bytes
                  in fromBytesUnsafe b1 : loop ((b2 `mappend` c1) : c2)
             (_, Just err) -> doErr err
     doErr err = error ("fromChunkBytes: " <> show err)
@@ -1020,7 +1031,7 @@ builderBuild sizeChunksI sb
 
     fillFromEnd _   []            mba = return mba
     fillFromEnd !end (String x:xs) mba = do
-        let sz = Vec.lengthSize x
+        let sz = Vec.length x
         Vec.unsafeCopyAtRO mba (sizeAsOffset (end - sz)) x (Offset 0) sz
         fillFromEnd (end - sz) xs mba
 
@@ -1331,7 +1342,7 @@ isSuffixOf (String needle) (String haystack)
     hayLen    = C.length haystack
 
 -- | Check whether the first string is contains within the second string.
--- 
+--
 -- TODO: implemented the naive way and thus terribly inefficient, reimplement properly
 isInfixOf :: String -> String -> Bool
 isInfixOf (String needle) (String haystack)

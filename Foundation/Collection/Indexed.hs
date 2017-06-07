@@ -36,11 +36,11 @@ instance IndexedCollection [a] where
 
 instance UV.PrimType ty => IndexedCollection (BLK.Block ty) where
     (!) l n
-        | A.isOutOfBound n (BLK.lengthSize l) = Nothing
+        | A.isOutOfBound n (BLK.length l) = Nothing
         | otherwise                           = Just $ BLK.index l n
     findIndex predicate c = loop 0
       where
-        !len = BLK.lengthSize c
+        !len = BLK.length c
         loop i
             | i .==# len                      = Nothing
             | predicate (BLK.unsafeIndex c i) = Just i
@@ -48,11 +48,11 @@ instance UV.PrimType ty => IndexedCollection (BLK.Block ty) where
 
 instance UV.PrimType ty => IndexedCollection (UV.UArray ty) where
     (!) l n
-        | A.isOutOfBound n (UV.lengthSize l) = Nothing
+        | A.isOutOfBound n (UV.length l) = Nothing
         | otherwise                          = Just $ UV.index l n
     findIndex predicate c = loop 0
       where
-        !len = UV.lengthSize c
+        !len = UV.length c
         loop i
             | i .==# len                     = Nothing
             | predicate (UV.unsafeIndex c i) = Just i
@@ -60,11 +60,11 @@ instance UV.PrimType ty => IndexedCollection (UV.UArray ty) where
 
 instance IndexedCollection (BA.Array ty) where
     (!) l n
-        | A.isOutOfBound n (BA.lengthSize l) = Nothing
+        | A.isOutOfBound n (BA.length l) = Nothing
         | otherwise                          = Just $ BA.index l n
     findIndex predicate c = loop 0
       where
-        !len = BA.lengthSize c
+        !len = BA.length c
         loop i
             | i .==# len = Nothing
             | otherwise  =

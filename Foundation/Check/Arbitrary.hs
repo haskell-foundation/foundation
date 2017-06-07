@@ -13,6 +13,7 @@ import           Foundation.Primitive.Imports
 import           Foundation.Primitive
 import           Foundation.Primitive.IntegralConv (wordToChar)
 import           Foundation.Primitive.Floating
+import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Check.Gen
 import           Foundation.Random
 import           Foundation.Bits
@@ -52,6 +53,8 @@ instance Arbitrary Int8 where
     arbitrary = arbitraryPrimtype
 instance Arbitrary Char where
     arbitrary = arbitraryChar
+instance Arbitrary (CountOf ty) where
+    arbitrary = CountOf <$> arbitrary
 
 instance Arbitrary Bool where
     arbitrary = flip testBit 0 <$> (arbitraryPrimtype :: Gen Word)

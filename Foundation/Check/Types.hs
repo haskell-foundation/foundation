@@ -43,12 +43,12 @@ data TestResult =
     deriving (Show)
 
 -- | number of tests and failures
-type HasTests    = Word64
-type HasFailures = Word64
+type HasTests    = CountOf TestResult
+type HasFailures = CountOf TestResult
 
 data PlanState = PlanState
     { planRng         :: Word64 -> GenRng
-    , planValidations :: Word64
+    , planValidations :: CountOf TestResult
     , planParams      :: GenParams
     , planFailures    :: [TestResult]
     }

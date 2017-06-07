@@ -127,13 +127,10 @@ freeze (MutableAsciiString mba) = AsciiString `fmap` C.unsafeFreeze mba
 sToList :: AsciiString -> [CUChar]
 sToList s = loop azero
   where
-    nbBytes :: CountOf CUChar
-    !nbBytes = size s
-    !end = azero `offsetPlusE` nbBytes
+    !len = length s
     loop idx
-        | idx == end = []
-        | otherwise  =
-            let (# c , idx' #) = next s idx in c : loop idx'
+        | idx .==# len = []
+        | otherwise    = let (# c , idx' #) = next s idx in c : loop idx'
 
 sFromList :: [CUChar] -> AsciiString
 sFromList = AsciiString . fromList
@@ -146,29 +143,29 @@ null  = Vec.null . toBytes
 -- | Create a string composed of a number @n of Chars (Unicode code points).
 --
 -- if the input @s contains less characters than required, then
-take :: Int -> AsciiString -> AsciiString
+take :: CountOf CUChar -> AsciiString -> AsciiString
 take n s = fst $ splitAt n s -- TODO specialize
 {-# INLINE take #-}
 
 -- | Create a string with the remaining Chars after dropping @n Chars from the beginning
-drop :: Int -> AsciiString -> AsciiString
+drop :: CountOf CUChar -> AsciiString -> AsciiString
 drop n = AsciiString . Vec.drop n . toBytes
 {-# INLINE drop #-}
 
-splitAt :: Int -> AsciiString -> (AsciiString, AsciiString)
+splitAt :: CountOf CUChar -> AsciiString -> (AsciiString, AsciiString)
 splitAt n = bimap AsciiString AsciiString . Vec.splitAt n . toBytes
 {-# INLINE splitAt #-}
 
 -- rev{Take,Drop,SplitAt} TODO optimise:
 -- we can process the string from the end using a skipPrev instead of getting the length
 
-revTake :: Int -> AsciiString -> AsciiString
+revTake :: CountOf CUChar -> AsciiString -> AsciiString
 revTake nbElems v = drop (length v - nbElems) v
 
-revDrop :: Int -> AsciiString -> AsciiString
+revDrop :: CountOf CUChar -> AsciiString -> AsciiString
 revDrop nbElems v = take (length v - nbElems) v
 
-revSplitAt :: Int -> AsciiString -> (AsciiString, AsciiString)
+revSplitAt :: CountOf CUChar -> AsciiString -> (AsciiString, AsciiString)
 revSplitAt n v = (drop idx v, take idx v)
   where idx = length v - n
 
@@ -202,15 +199,11 @@ intersperse sep = AsciiString . Vec.intersperse sep . toBytes
 span :: (CUChar -> Bool) -> AsciiString -> (AsciiString, AsciiString)
 span predicate = break (not . predicate)
 
--- | size in bytes
-size :: AsciiString -> CountOf CUChar
-size = CountOf . C.length . toBytes
+length :: AsciiString -> CountOf CUChar
+length (AsciiString ba) = C.length ba
 
-length :: AsciiString -> Int
-length s = let (CountOf l) = size s in l
-
-replicate :: Int -> CUChar -> AsciiString
-replicate n c = AsciiString $ Vec.create (CountOf n) (const c)
+replicate :: CountOf CUChar -> CUChar -> AsciiString
+replicate n c = AsciiString $ Vec.create n (const c)
 
 -- | Copy the AsciiString
 copy :: AsciiString -> AsciiString
@@ -222,13 +215,13 @@ new :: PrimMonad prim
     -> prim (MutableAsciiString (PrimState prim))
 new n = MutableAsciiString `fmap` MVec.new n
 
-create :: PrimMonad prim => Int -> (MutableAsciiString (PrimState prim) -> prim Int) -> prim AsciiString
+create :: PrimMonad prim => CountOf CUChar -> (MutableAsciiString (PrimState prim) -> prim (Offset CUChar)) -> prim AsciiString
 create sz f = do
-    ms     <- new (CountOf sz)
+    ms     <- new sz
     filled <- f ms
-    if filled == sz
+    if filled .==# sz
         then freeze ms
-        else C.take filled `fmap` freeze ms
+        else C.take (offsetAsSize filled) `fmap` freeze ms
 
 cucharMap :: (CUChar -> CUChar) -> AsciiString -> AsciiString
 cucharMap f = AsciiString . Vec.map f . toBytes

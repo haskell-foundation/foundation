@@ -94,10 +94,10 @@ convertFromTo inputEncodingTy outputEncodingTy bytes
     | Vec.null bytes = return mempty
     | otherwise      = Vec.unsafeIndexer bytes $ \t -> Vec.builderBuild 64 (loop azero t)
   where
-    lastUnit = Offset $ Vec.length bytes
+    lastUnit = Vec.length bytes
 
     loop off getter
-      | off >= lastUnit = return ()
+      | off .==# lastUnit = return ()
       | otherwise = case encodingNext inputEncodingTy getter off of
           Left err -> throw err
           Right (c, noff) -> encodingWrite outputEncodingTy c >> loop noff getter

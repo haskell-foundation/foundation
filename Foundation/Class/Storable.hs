@@ -105,7 +105,7 @@ pokeArrayEndedBy :: (Sequential col, StorableFixed (Element col))
                  => Element col -> Ptr (Element col) -> col -> IO ()
 pokeArrayEndedBy term ptr col = do
     pokeArray ptr col
-    pokeOff ptr (Offset $ length col) term
+    pokeOff ptr (sizeAsOffset $ length col) term
 
 instance Storable CChar where
     peek (Ptr addr) = primAddrRead addr (Offset 0)

@@ -16,9 +16,7 @@ module Foundation.Array.Boxed
     , MArray
     , empty
     , length
-    , lengthSize
     , mutableLength
-    , mutableLengthSize
     , copy
     , unsafeCopyAtRO
     , thaw
@@ -73,12 +71,10 @@ import           Foundation.Internal.MonadTrans
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Types
 import           Foundation.Primitive.NormalForm
-import           Foundation.Primitive.IntegralConv
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Exception
 import           Foundation.Boot.Builder
 import qualified Foundation.Boot.List as List
-import qualified Prelude
 
 -- | Array of a
 data Array a = Array {-# UNPACK #-} !(Offset a)
@@ -97,7 +93,7 @@ arrayType = mkNoRepType "Foundation.Array"
 instance NormalForm a => NormalForm (Array a) where
     toNormalForm arr = loop 0
       where
-        !sz = lengthSize arr
+        !sz = length arr
         loop !i
             | i .==# sz = ()
             | otherwise = unsafeIndex arr i `seq` loop (i+1)
@@ -146,7 +142,7 @@ index :: Array ty -> Offset ty -> ty
 index array n
     | isOutOfBound n len = outOfBound OOB_Index n len
     | otherwise          = unsafeIndex array n
-  where len = lengthSize array
+  where len = length array
 {-# INLINE index #-}
 
 -- | Return the element at a specific index from an array without bounds checking.
@@ -216,8 +212,8 @@ unsafeThaw (Array ofs sz a) = primitive $ \st -> (# st, MArray ofs sz (unsafeCoe
 -- and every values is copied, before returning the mutable array.
 thaw :: PrimMonad prim => Array ty -> prim (MArray ty (PrimState prim))
 thaw array = do
-    m <- new (lengthSize array)
-    unsafeCopyAtRO m (Offset 0) array (Offset 0) (lengthSize array)
+    m <- new (length array)
+    unsafeCopyAtRO m (Offset 0) array (Offset 0) (length array)
     return m
 {-# INLINE thaw #-}
 
@@ -273,7 +269,7 @@ unsafeCopyFrom :: Array ty -- ^ Source array
                -- ^ Function called for each element in the source array
                -> ST s (Array ty) -- ^ Returns the filled new array
 unsafeCopyFrom v' newLen f = new newLen >>= fill (Offset 0) f >>= unsafeFreeze
-  where len = lengthSize v'
+  where len = length v'
         endIdx = Offset 0 `offsetPlusE` len
         fill i f' r'
             | i == endIdx = return r'
@@ -311,9 +307,9 @@ create n initializer = runST (new n >>= iter initializer)
 -- higher level collection implementation
 -----------------------------------------------------------------------
 equal :: Eq a => Array a -> Array a -> Bool
-equal a b = (len == lengthSize b) && eachEqual 0
+equal a b = (len == length b) && eachEqual 0
   where
-    len = lengthSize a
+    len = length a
     eachEqual !i
         | i .==# len                         = True
         | unsafeIndex a i /= unsafeIndex b i = False
@@ -322,8 +318,8 @@ equal a b = (len == lengthSize b) && eachEqual 0
 vCompare :: Ord a => Array a -> Array a -> Ordering
 vCompare a b = loop 0
   where
-    !la = lengthSize a
-    !lb = lengthSize b
+    !la = length a
+    !lb = length b
     loop n
         | n .==# la = if la == lb then EQ else LT
         | n .==# lb = GT
@@ -335,11 +331,8 @@ vCompare a b = loop 0
 empty :: Array a
 empty = runST $ onNewArray 0 (\_ s -> s)
 
-length :: Array a -> Int
-length (Array _ (CountOf len) _) = len
-
-lengthSize :: Array a -> CountOf a
-lengthSize (Array _ sz _) = sz
+length :: Array a -> CountOf a
+length (Array _ sz _) = sz
 
 vFromList :: [a] -> Array a
 vFromList l = runST (new len >>= loop 0 l)
@@ -352,7 +345,7 @@ vToList :: Array a -> [a]
 vToList v
     | len == 0  = []
     | otherwise = fmap (unsafeIndex v) [0..sizeLastOffset len]
-  where !len = lengthSize v
+  where !len = length v
 
 -- | Append 2 arrays together by creating a new bigger array
 append :: Array ty -> Array ty -> Array ty
@@ -361,19 +354,19 @@ append a b = runST $ do
     unsafeCopyAtRO r (Offset 0) a (Offset 0) la
     unsafeCopyAtRO r (sizeAsOffset la) b (Offset 0) lb
     unsafeFreeze r
-  where la = lengthSize a
-        lb = lengthSize b
+  where la = length a
+        lb = length b
 
 concat :: [Array ty] -> Array ty
 concat l = runST $ do
-    r <- new (CountOf $ Prelude.sum $ fmap length l)
+    r <- new (mconcat $ fmap length l)
     loop r (Offset 0) l
     unsafeFreeze r
   where loop _ _ []     = return ()
         loop r i (x:xs) = do
             unsafeCopyAtRO r i x (Offset 0) lx
             loop r (i `offsetPlusE` lx) xs
-          where lx = lengthSize x
+          where lx = length x
 
 {-
 modify :: PrimMonad m
@@ -408,47 +401,53 @@ onNewArray len@(I# len#) f = primitive $ \st -> do
 null :: Array ty -> Bool
 null = (==) 0 . length
 
-take ::  Int -> Array ty -> Array ty
+take :: CountOf ty -> Array ty -> Array ty
 take nbElems a@(Array start len arr)
     | nbElems <= 0 = empty
     | n == len     = a
     | otherwise    = Array start n arr
   where
-    n = min (CountOf nbElems) len
+    n = min nbElems len
 
-drop ::  Int -> Array ty -> Array ty
+drop :: CountOf ty -> Array ty -> Array ty
 drop nbElems a@(Array start len arr)
     | nbElems <= 0 = a
     | n == len     = empty
     | otherwise    = Array (start `offsetPlusE` n) (len - n) arr
   where
-    n = min (CountOf nbElems) len
+    n = min nbElems len
 
-splitAt ::  Int -> Array ty -> (Array ty, Array ty)
+splitAt :: CountOf ty -> Array ty -> (Array ty, Array ty)
 splitAt nbElems a@(Array start len arr)
     | nbElems <= 0 = (empty, a)
     | n == len     = (a, empty)
     | otherwise    =
         (Array start n arr, Array (start `offsetPlusE` n) (len - n) arr)
   where
-    n = min (CountOf nbElems) len
+    n = min nbElems len
 
-revTake :: Int -> Array ty -> Array ty
-revTake nbElems v = drop (length v - nbElems) v
+-- inverse a CountOf that is specified from the end (e.g. take n elements from the end)
+countFromStart :: Array ty -> CountOf ty -> CountOf ty
+countFromStart v sz@(CountOf sz')
+    | sz >= len = CountOf 0
+    | otherwise = CountOf (len' - sz')
+  where len@(CountOf len') = length v
 
-revDrop :: Int -> Array ty -> Array ty
-revDrop nbElems v = take (length v - nbElems) v
+revTake :: CountOf ty -> Array ty -> Array ty
+revTake n v = drop (countFromStart v n) v
 
-revSplitAt :: Int -> Array ty -> (Array ty, Array ty)
-revSplitAt n v = (drop idx v, take idx v)
-  where idx = length v - n
+revDrop :: CountOf ty -> Array ty -> Array ty
+revDrop n v = take (countFromStart v n) v
+
+revSplitAt :: CountOf ty -> Array ty -> (Array ty, Array ty)
+revSplitAt n v = (drop idx v, take idx v) where idx = countFromStart v n
 
 splitOn ::  (ty -> Bool) -> Array ty -> [Array ty]
 splitOn predicate vec
     | len == CountOf 0 = [mempty]
     | otherwise     = loop (Offset 0) (Offset 0)
   where
-    !len = lengthSize vec
+    !len = length vec
     !endIdx = Offset 0 `offsetPlusE` len
     loop prevIdx idx
         | idx == endIdx = [sub vec prevIdx idx]
@@ -470,19 +469,19 @@ sub (Array start len a) startIdx expectedEndIdx
 break ::  (ty -> Bool) -> Array ty -> (Array ty, Array ty)
 break predicate v = findBreak 0
   where
-    !len = lengthSize v
-    findBreak i@(Offset i')
+    !len = length v
+    findBreak i
         | i .==# len  = (v, empty)
         | otherwise   =
             if predicate (unsafeIndex v i)
-                then splitAt i' v
+                then splitAt (offsetAsSize i) v
                 else findBreak (i+1)
 
 intersperse :: ty -> Array ty -> Array ty
 intersperse sep v
     | len <= CountOf 1 = v
     | otherwise     = runST $ unsafeCopyFrom v ((len + len) - CountOf 1) (go (Offset 0 `offsetPlusE` (len - CountOf 1)) sep)
-  where len = lengthSize v
+  where len = length v
         -- terminate 1 before the end
 
         go :: Offset ty -> ty -> Array ty -> Offset ty -> MArray ty s -> ST s ()
@@ -499,7 +498,7 @@ span ::  (ty -> Bool) -> Array ty -> (Array ty, Array ty)
 span p = break (not . p)
 
 map :: (a -> b) -> Array a -> Array b
-map f a = create (sizeCast Proxy $ lengthSize a) (\i -> f $ unsafeIndex a (offsetCast Proxy i))
+map f a = create (sizeCast Proxy $ length a) (\i -> f $ unsafeIndex a (offsetCast Proxy i))
 
 {-
 mapIndex :: (Int -> a -> b) -> Array a -> Array b
@@ -512,8 +511,8 @@ singleton e = runST $ do
     unsafeWrite a 0 e
     unsafeFreeze a
 
-replicate :: Word -> ty -> Array ty
-replicate sz ty = create (CountOf (integralCast sz)) (const ty)
+replicate :: CountOf ty -> ty -> Array ty
+replicate sz ty = create sz (const ty)
 
 cons :: ty -> Array ty -> Array ty
 cons e vec
@@ -524,7 +523,7 @@ cons e vec
         unsafeCopyAtRO mv (Offset 1) vec (Offset 0) len
         unsafeFreeze mv
   where
-    !len = lengthSize vec
+    !len = length vec
 
 snoc ::  Array ty -> ty -> Array ty
 snoc vec e
@@ -535,7 +534,7 @@ snoc vec e
         unsafeWrite mv (sizeAsOffset len) e
         unsafeFreeze mv
   where
-    !len = lengthSize vec
+    !len = length vec
 
 uncons :: Array ty -> Maybe (ty, Array ty)
 uncons vec
@@ -547,14 +546,14 @@ uncons vec
 unsnoc :: Array ty -> Maybe (Array ty, ty)
 unsnoc vec
     | len == 0  = Nothing
-    | otherwise = Just (take (lenI - 1) vec, unsafeIndex vec (sizeLastOffset len))
+    | otherwise = Just (take (len - 1) vec, unsafeIndex vec (sizeLastOffset len))
   where
-    !len@(CountOf lenI) = lengthSize vec
+    !len = length vec
 
 elem :: Eq ty => ty -> Array ty -> Bool
 elem !ty arr = loop 0
   where
-    !sz = lengthSize arr
+    !sz = length arr
     loop !i | i .==# sz = False
             | t == ty   = True
             | otherwise = loop (i+1)
@@ -563,7 +562,7 @@ elem !ty arr = loop 0
 find :: (ty -> Bool) -> Array ty -> Maybe ty
 find predicate vec = loop 0
   where
-    !len = lengthSize vec
+    !len = length vec
     loop i
         | i .==# len = Nothing
         | otherwise  =
@@ -575,7 +574,7 @@ sortBy xford vec
     | len == 0  = empty
     | otherwise = runST (thaw vec >>= doSort xford)
   where
-    len = lengthSize vec
+    len = length vec
     doSort :: PrimMonad prim => (ty -> ty -> Ordering) -> MArray ty (PrimState prim) -> prim (Array ty)
     doSort ford ma = qsort 0 (sizeLastOffset len) >> unsafeFreeze ma
       where
@@ -610,7 +609,7 @@ sortBy xford vec
 filter :: forall ty . (ty -> Bool) -> Array ty -> Array ty
 filter predicate vec = runST (new len >>= copyFilterFreeze predicate (unsafeIndex vec))
   where
-    !len = lengthSize vec
+    !len = length vec
     copyFilterFreeze :: PrimMonad prim => (ty -> Bool) -> (Offset ty -> ty) -> MArray ty (PrimState prim) -> prim (Array ty)
     copyFilterFreeze predi getVec mvec = loop (Offset 0) (Offset 0) >>= freezeUntilIndex mvec
       where
@@ -633,13 +632,13 @@ unsafeFreezeShrink (MArray start _ ma) n = unsafeFreeze (MArray start n ma)
 reverse :: Array ty -> Array ty
 reverse a = create len toEnd
   where
-    len@(CountOf s) = lengthSize a
+    len@(CountOf s) = length a
     toEnd (Offset i) = unsafeIndex a (Offset (s - 1 - i))
 
 foldl :: (a -> ty -> a) -> a -> Array ty -> a
 foldl f initialAcc vec = loop 0 initialAcc
   where
-    len = lengthSize vec
+    len = length vec
     loop !i acc
         | i .==# len = acc
         | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
@@ -647,7 +646,7 @@ foldl f initialAcc vec = loop 0 initialAcc
 foldr :: (ty -> a -> a) -> a -> Array ty -> a
 foldr f initialAcc vec = loop 0
   where
-    len = lengthSize vec
+    len = length vec
     loop !i
         | i .==# len = initialAcc
         | otherwise  = unsafeIndex vec i `f` loop (i+1)
@@ -655,7 +654,7 @@ foldr f initialAcc vec = loop 0
 foldl' :: (a -> ty -> a) -> a -> Array ty -> a
 foldl' f initialAcc vec = loop 0 initialAcc
   where
-    len = lengthSize vec
+    len = length vec
     loop !i !acc
         | i .==# len = acc
         | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
@@ -690,6 +689,6 @@ builderBuild sizeChunksI ab
 
     fillFromEnd _   []     mua = return mua
     fillFromEnd !end (x:xs) mua = do
-        let sz = lengthSize x
+        let sz = length x
         unsafeCopyAtRO mua (sizeAsOffset (end - sz)) x (Offset 0) sz
         fillFromEnd (end - sz) xs mua

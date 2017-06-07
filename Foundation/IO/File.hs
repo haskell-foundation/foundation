@@ -83,7 +83,7 @@ hGetSome h size
     | otherwise = V.createFromIO (CountOf size) $ \p -> (CountOf <$> S.hGetBufSome h p size)
 
 hPut :: Handle -> (UArray Word8) -> IO ()
-hPut h arr = withPtr arr $ \ptr -> S.hPutBuf h ptr (length arr)
+hPut h arr = withPtr arr $ \ptr -> S.hPutBuf h ptr (let (CountOf sz) = length arr in sz)
 
 invalidBufferSize :: [Char] -> Handle -> Int -> IO a
 invalidBufferSize functionName handle size =

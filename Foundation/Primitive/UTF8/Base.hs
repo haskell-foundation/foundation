@@ -77,7 +77,7 @@ stringType = mkNoRepType "Foundation.String"
 --
 -- this size is available in o(1)
 size :: String -> CountOf Word8
-size (String ba) = Vec.lengthSize ba
+size (String ba) = Vec.length ba
 
 -- | Convert a String to a list of characters
 --

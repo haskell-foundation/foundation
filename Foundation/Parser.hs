@@ -49,6 +49,7 @@ module Foundation.Parser
 import           Control.Applicative (Alternative, empty, (<|>), many, some, optional)
 import           Control.Monad       (MonadPlus, mzero, mplus)
 import           Foundation.Internal.Base
+import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Collection hiding (take)
 import           Foundation.String
 import           Foundation.Numerical
@@ -258,7 +259,7 @@ string !expected = Parser $ \actual err ok ->
                    else err actual (Expected expected (fromBytesUnsafe eMatch))
 
 -- | Take @n elements from the current position in the stream
-take :: Sequential input => Int -> Parser input input
+take :: Sequential input => CountOf (Element input) -> Parser input input
 take n = Parser $ \buf err ok ->
     if length buf >= n
         then let (b1,b2) = splitAt n buf in ok b2 b1
@@ -289,11 +290,11 @@ takeAll = Parser $ \buf err ok ->
     returnBuffer = Parser $ \buf _ ok -> ok mempty buf
 
 -- | Skip @n elements from the current position in the stream
-skip :: Sequential input => Int -> Parser input ()
+skip :: Sequential input => CountOf (Element input) -> Parser input ()
 skip n = Parser $ \buf err ok ->
     if length buf >= n
         then ok (drop n buf) ()
-        else runParser (getMore >> skip (n - length buf)) mempty err ok
+        else runParser (getMore >> skip (n `sizeSub` length buf)) mempty err ok
 
 -- | Skip `Element input` while the @predicate hold from the current position
 -- in the stream

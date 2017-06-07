@@ -21,6 +21,7 @@ module Foundation.Primitive.Types.OffsetSize
     , sizeCast
     , sizeLastOffset
     , sizeAsOffset
+    , sizeSub
     , offsetAsSize
     , (+.)
     , (.==#)
@@ -49,6 +50,7 @@ import Foundation.Numerical.Additive
 import Foundation.Numerical.Subtractive
 import Foundation.Numerical.Multiplicative
 import Foundation.Primitive.IntegralConv
+import Data.List (foldl')
 
 #if WORD_SIZE_IN_BITS < 64
 import GHC.IntWord64
@@ -120,6 +122,17 @@ sizeCast :: Proxy (a -> b) -> CountOf a -> CountOf b
 sizeCast _ (CountOf sz) = CountOf sz
 {-# INLINE sizeCast #-}
 
+-- | subtract 2 CountOf values of the same type.
+--
+-- m need to be greater than n, otherwise negative count error ensue
+-- use the safer (-) version if unsure.
+sizeSub :: CountOf a -> CountOf a -> CountOf a
+sizeSub (CountOf m) (CountOf n)
+    | m > n     = CountOf diff
+    | otherwise = error "sizeSub negative size"
+  where
+    diff = m - n
+
 -- TODO add a callstack, or a construction to prevent size == 0 error
 sizeLastOffset :: CountOf a -> Offset a
 sizeLastOffset (CountOf s)
@@ -143,7 +156,7 @@ type Size8 = CountOf Word8
 -- More specifically, it represents the number of elements of type `ty` that fit
 -- into the data structure.
 --
--- >>> lengthSize (fromList ['a', 'b', 'c', '🌟']) :: CountOf Char
+-- >>> length (fromList ['a', 'b', 'c', '🌟']) :: CountOf Char
 -- CountOf 4
 --
 -- Same caveats as 'Offset' apply here.
@@ -166,6 +179,11 @@ instance Additive (CountOf ty) where
 instance Subtractive (CountOf ty) where
     type Difference (CountOf ty) = CountOf ty
     (CountOf a) - (CountOf b) = CountOf (a-b)
+
+instance Monoid (CountOf ty) where
+    mempty = azero
+    mappend = (+)
+    mconcat = foldl' (+) 0
 
 instance IntegralCast Int (CountOf ty) where
     integralCast i = CountOf i

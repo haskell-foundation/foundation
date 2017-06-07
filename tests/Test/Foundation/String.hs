@@ -76,7 +76,7 @@ chunks (RandomList randomInts) = loop (randomInts <> [1..])
         | otherwise =
             case rx of
                 r:rs ->
-                    let (c1,c2) = splitAt r c
+                    let (c1,c2) = splitAt (CountOf r) c
                      in c1 : loop rs c2
                 [] ->
                     loop randomInts c

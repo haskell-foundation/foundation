@@ -17,7 +17,6 @@ module Foundation.Collection.Sequential
     ) where
 
 import           Foundation.Internal.Base
-import           Foundation.Primitive.IntegralConv
 import           Foundation.Numerical.Subtractive
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Collection.Element
@@ -43,27 +42,27 @@ class (IsList c, Item c ~ Element c, Monoid c, Collection c) => Sequential c whe
               #-}
 
     -- | Take the first @n elements of a collection
-    take :: Int -> c -> c
+    take :: CountOf (Element c) -> c -> c
     take n = fst . splitAt n
 
     -- | Take the last @n elements of a collection
-    revTake :: Int -> c -> c
+    revTake :: CountOf (Element c) -> c -> c
     revTake n = fst . revSplitAt n
 
     -- | Drop the first @n elements of a collection
-    drop :: Int -> c -> c
+    drop :: CountOf (Element c) -> c -> c
     drop n = snd . splitAt n
 
     -- | Drop the last @n elements of a collection
-    revDrop :: Int -> c -> c
+    revDrop :: CountOf (Element c) -> c -> c
     revDrop n = snd . revSplitAt n
 
     -- | Split the collection at the @n'th elements
-    splitAt :: Int -> c -> (c,c)
+    splitAt :: CountOf (Element c) -> c -> (c,c)
     splitAt n c = (take n c, drop n c)
 
     -- | Split the collection at the @n'th elements from the end
-    revSplitAt :: Int -> c -> (c,c)
+    revSplitAt :: CountOf (Element c) -> c -> (c,c)
     revSplitAt n c = (revTake n c, revDrop n c)
 
     -- | Split on a specific elements returning a list of colletion
@@ -144,7 +143,7 @@ class (IsList c, Item c ~ Element c, Monoid c, Collection c) => Sequential c whe
     init nel = maybe (error "init") fst $ unsnoc (getNonEmpty nel)
 
     -- | Create a collection where the element in parameter is repeated N time
-    replicate :: Word -> Element c -> c
+    replicate :: CountOf (Element c) -> Element c -> c
 
     -- | Takes two collections and returns True iff the first collection is a prefix of the second.
     isPrefixOf :: Eq (Element c) => c -> c -> Bool
@@ -190,12 +189,12 @@ mconcatCollection :: (Monoid (Item c), Sequential c) => c -> Element c
 mconcatCollection c = mconcat (toList c)
 
 instance Sequential [a] where
-    take = Data.List.take
-    drop = Data.List.drop
-    revTake = ListExtra.revTake
-    revDrop = ListExtra.revDrop
-    splitAt = Data.List.splitAt
-    revSplitAt = ListExtra.revSplitAt
+    take (CountOf n) = Data.List.take n
+    drop (CountOf n) = Data.List.drop n
+    revTake (CountOf n) = ListExtra.revTake n
+    revDrop (CountOf n) = ListExtra.revDrop n
+    splitAt (CountOf n) = Data.List.splitAt n
+    revSplitAt (CountOf n) = ListExtra.revSplitAt n
     splitOn = ListExtra.wordsWhen
     break = Data.List.break
     intersperse = Data.List.intersperse
@@ -210,13 +209,13 @@ instance Sequential [a] where
     find = Data.List.find
     sortBy = Data.List.sortBy
     singleton = (:[])
-    replicate i = Data.List.replicate (wordToInt i)
+    replicate (CountOf i) = Data.List.replicate i
     isPrefixOf = Data.List.isPrefixOf
     isSuffixOf = Data.List.isSuffixOf
 
 instance UV.PrimType ty => Sequential (BLK.Block ty) where
-    splitAt n = BLK.splitAt (CountOf n)
-    revSplitAt n = BLK.revSplitAt (CountOf n)
+    splitAt n = BLK.splitAt n
+    revSplitAt n = BLK.revSplitAt n
     splitOn = BLK.splitOn
     break = BLK.break
     intersperse = BLK.intersperse

@@ -14,7 +14,6 @@ module Foundation.Check.Print
 import           Foundation.Check.Property
 import           Foundation.Check.Types
 import           Foundation.Primitive.Imports
-import           Foundation.Primitive.IntegralConv
 import           Foundation.Collection
 import           Foundation.Class.Bifunctor (bimap)
 import           Foundation.Numerical
@@ -80,4 +79,4 @@ diffBlame a b = bimap fromList fromList $ go ([], []) (toList a) (toList b)
     go (acc1, acc2) (x:xs) (y:ys)
         | x == y    = go (acc1 <> " ", acc2 <> " ") xs ys
         | otherwise = go (acc1 <> "^", acc2 <> "^") xs ys
-    blaming n = replicate (integralCast n) '^'
+    blaming n = replicate n '^'
