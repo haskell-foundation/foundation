@@ -83,11 +83,11 @@ benchsString = bgroup "String"
         fmap (\(n, dat) -> bgroup n $ diffTextString (elem '.') (Text.any (== '.')) dat)
             allDat
     benchTake = bgroup "Take" $ mconcat $ fmap (\p ->
-        fmap (\(n, dat) -> bgroup n $ diffTextString (take p) (Text.take p) dat)
+        fmap (\(n, dat) -> bgroup n $ diffTextString (take (CountOf p)) (Text.take p) dat)
                 $ allDatSuffix (show p)
             ) [ 10, 100, 800 ]
     benchSplitAt = bgroup "SplitAt" $ mconcat $ fmap (\p ->
-        fmap (\(n, dat) -> bgroup n $ diffTextString (fst . splitAt p) (fst . Text.splitAt p) dat)
+        fmap (\(n, dat) -> bgroup n $ diffTextString (fst . splitAt (CountOf p)) (fst . Text.splitAt p) dat)
                 $ allDatSuffix (show p)
             ) [ 10, 100, 800 ]
 
@@ -170,7 +170,7 @@ benchsByteArray = bgroup "ByteArray"
         fmap (\(n, dat) -> bgroup n $ diffByteString length ByteString.length dat) allDat
 
     benchTake = bgroup "Take" $ mconcat $ fmap (\p ->
-        fmap (\(n, dat) -> bgroup n $ diffByteString (take p) (ByteString.take p) dat)
+        fmap (\(n, dat) -> bgroup n $ diffByteString (take (CountOf p)) (ByteString.take p) dat)
             $ allDatSuffix (show p)
         ) [ 0, 10, 100 ]
 
