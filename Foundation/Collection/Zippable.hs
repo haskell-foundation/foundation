@@ -191,7 +191,7 @@ class Zippable col => BoxedZippable col where
   -- | Like 'unzip', but works on a collection of 7-element tuples.
   unzip7 :: ( Sequential a, Sequential b, Sequential c, Sequential d, Sequential e, Sequential f, Sequential g
             , Element col ~ (Element a, Element b, Element c, Element d, Element e, Element f, Element g) )
-        => col -> (a, b, c, d, e, f, g)
+         => col -> (a, b, c, d, e, f, g)
   unzip7 = go . toList
     where go [] = (mempty, mempty, mempty, mempty, mempty, mempty, mempty)
           go ((a, b, c, d, e, f, g):xs) =
@@ -273,11 +273,12 @@ uncons7 xs = let (as, bs, cs, ds, es, fs, gs) = xs
                    return ( (a', b', c', d', e', f', g')
                           , (as', bs', cs', ds', es', fs', gs') )
 
-uncurry2 :: (Fstable p, Sndable p) => (ProductFirst p -> ProductSecond p -> d) -> p -> d
+uncurry2 :: (Fstable p, Sndable p)
+         => (ProductFirst p -> ProductSecond p -> d) -> p -> d
 uncurry2 fn p = fn (fst p) (snd p)
 
-uncurry3 :: (Fstable p, Sndable p, Thdable p) =>
-              (ProductFirst p -> ProductSecond p -> ProductThird p -> d) -> p -> d
+uncurry3 :: (Fstable p, Sndable p, Thdable p)
+         => (ProductFirst p -> ProductSecond p -> ProductThird p -> d) -> p -> d
 uncurry3 fn p = fn (fst p) (snd p) (thd p)
 
 uncurry4 :: (a -> b -> c -> d -> g) -> (a, b, c, d) -> g
