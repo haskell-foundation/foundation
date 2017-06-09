@@ -222,7 +222,7 @@ tests =
     [ testArrayRefs
     , testChunkedUArrayRefs
     , Bits.tests
-    , testCollection "Bitmap"  (Proxy :: Proxy (Bitmap))  arbitrary
+    , testCollection "Bitmap"  (Proxy :: Proxy Bitmap)  arbitrary
     , testStringRefs
     , testGroup "VFS"
         [ testGroup "FilePath" $ testCaseFilePath <> (testPath (arbitrary :: Gen FilePath))
