@@ -51,7 +51,7 @@ module Foundation.Parser
     , many
     , some
     , optional
-    , Count(..), Condition(..), repeat
+    , repeat, Condition(..), And(..)
     ) where
 
 import           Control.Applicative (Alternative, empty, (<|>), many, some, optional)
@@ -429,75 +429,28 @@ string :: String -> Parser String ()
 string = elements
 {-# INLINE string #-}
 
-data Count = Never | Once | Twice | Other Int
-  deriving (Show)
-instance Enum Count where
-    toEnum 0 = Never
-    toEnum 1 = Once
-    toEnum 2 = Twice
-    toEnum n
-        | n > 2 = Other n
-        | otherwise = Never
-    fromEnum Never = 0
-    fromEnum Once = 1
-    fromEnum Twice = 2
-    fromEnum (Other n) = n
-    succ Never = Once
-    succ Once = Twice
-    succ Twice = Other 3
-    succ (Other n)
-        | n == 0 = Once
-        | n == 1 = Twice
-        | otherwise = Other (succ n)
-    pred Never = Never
-    pred Once = Never
-    pred Twice = Once
-    pred (Other n)
-        | n == 2 = Once
-        | n == 3 = Twice
-        | otherwise = Other (pred n)
+-- | repeat rules
+--
 
-data Condition = Exactly Count
-               | Between Count Count
-  deriving (Show)
+data Condition = Between !And | Exactly !Word
+  deriving (Show, Eq, Typeable)
+data And = And !Word !Word
+  deriving (Eq, Typeable)
+instance Show And where
+    show (And a b) = show a <> " and " <> show b
 
-shouldStop :: Condition -> Bool
-shouldStop (Exactly   Never) = True
-shouldStop (Between _ Never) = True
-shouldStop _                 = False
+repeat :: ParserSource input
+       => Condition -> Parser input a -> Parser input [a]
+repeat (Exactly n) = repeatE n
+repeat (Between a) = repeatA a
 
-canStop :: Condition -> Bool
-canStop (Exactly Never)   = True
-canStop (Between Never _) = True
-canStop _                 = False
+repeatE :: (ParserSource input)
+        => Word -> Parser input a -> Parser input [a]
+repeatE 0 _ = return []
+repeatE n p = (:) <$> p <*> repeatE (n-1) p
 
-decrement :: Condition -> Condition
-decrement (Exactly n)   = Exactly (pred n)
-decrement (Between a b) = Between (pred a) (pred b)
-
--- | repeat the given Parser a given amount of time
---
--- If you know you want it to exactly perform a given amount of time:
---
--- ```
--- repeat (Exactly Twice) (element 'a')
--- ```
---
--- If you know your parser must performs from 0 to 8 times:
---
--- ```
--- repeat (Between Never (Other 8))
--- ```
---
--- *This interface is still WIP* but went handy when writting the IPv4/IPv6
--- parsers.
---
-repeat :: ParserSource input => Condition -> Parser input a -> Parser input [a]
-repeat c p
-    | shouldStop c = return []
-    | otherwise = do
-        ma <- optional p
-        case ma of
-            Nothing | canStop c -> return []
-                    | otherwise -> fail $ "Not enough..." <> show c
-            Just a -> (:) a <$> repeat (decrement c) p
+repeatA :: (ParserSource input)
+        => And -> Parser input a -> Parser input [a]
+repeatA (And 0 0) _ = return []
+repeatA (And 0 n) p = ((:) <$> p <*> repeatA (And 0     (n-1)) p) <|> return []
+repeatA (And l u) p =  (:) <$> p <*> repeatA (And (l-1) (u-1)) p

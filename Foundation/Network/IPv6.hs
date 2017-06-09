@@ -7,9 +7,7 @@
 --
 -- IPv6 data type
 --
-{-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Foundation.Network.IPv6
     ( IPv6
@@ -37,7 +35,7 @@ import Foundation.Internal.Proxy
 import Foundation.Primitive
 import Foundation.Primitive.Types.OffsetSize
 import Foundation.Numerical
-import Foundation.Collection (Sequential, Element, length, intercalate, replicate, null)
+import Foundation.Collection (Element, length, intercalate, replicate, null)
 import Foundation.Parser
 import Foundation.String (String)
 import Foundation.Bits
@@ -187,6 +185,7 @@ ipv6ParserPreferred = do
     i8 <- takeAWord16
     return $ fromTuple (i1,i2,i3,i4,i5,i6,i7,i8)
 
+
 -- | IPv6 address with embedded IPv4 address
 --
 -- when dealing with a mixed environment of IPv4 and IPv6 nodes is
@@ -203,13 +202,11 @@ ipv6ParserPreferred = do
 ipv6ParserIpv4Embedded :: (ParserSource input, Element input ~ Char, Element (Chunk input) ~ Char)
                        => Parser input IPv6
 ipv6ParserIpv4Embedded = do
-    bs1 <- repeat (Between Never (toEnum 6)) $
-              takeAWord16 <* skipColon
+    bs1 <- repeat (Between $ 0 `And` 6 ) $ takeAWord16 <* skipColon
     _ <- optional skipColon
     _ <- optional skipColon
     let (CountOf lenBs1) = length bs1
-    bs2 <- repeat (Between Never (toEnum $ 6 - lenBs1)) $
-              takeAWord16 <* skipColon
+    bs2 <- repeat (Between $ 0 `And` (fromIntegral $ 6 - lenBs1)) $ takeAWord16 <* skipColon
     _ <- optional skipColon
     [i1,i2,i3,i4,i5,i6] <- format 6 bs1 bs2
     m1 <- takeAWord8 <* skipDot
@@ -235,11 +232,10 @@ ipv6ParserIpv4Embedded = do
 ipv6ParserCompressed :: (ParserSource input, Element input ~ Char, Element (Chunk input) ~ Char)
                      => Parser input IPv6
 ipv6ParserCompressed = do
-    bs1 <- repeat (Between Never (toEnum 8)) $
-              takeAWord16 <* skipColon
+    bs1 <- repeat (Between $ 0 `And` 8) $ takeAWord16 <* skipColon
     when (null bs1) skipColon
     let (CountOf bs1Len) = length bs1
-    bs2 <- repeat (Between Never (toEnum $ 8 - bs1Len)) $
+    bs2 <- repeat (Between $ 0 `And` fromIntegral (8 - bs1Len)) $
               skipColon *> takeAWord16
     [i1,i2,i3,i4,i5,i6,i7,i8] <- format 8 bs1 bs2
     return $ fromTuple (i1,i2,i3,i4,i5,i6,i7,i8)
@@ -259,12 +255,11 @@ skipDot :: (ParserSource input, Element input ~ Char, Element (Chunk input) ~ Ch
 skipDot = element '.'
 takeAWord8 :: (ParserSource input, Element input ~ Char, Element (Chunk input) ~ Char)
            => Parser input Word16
-takeAWord8 = do
-    read <$> repeat (Between Once (toEnum 3)) (satisfy_ isDigit)
+takeAWord8 = read <$> repeat (Between $ 1 `And` 4) (satisfy_ isDigit)
 takeAWord16 :: (ParserSource input, Element input ~ Char, Element (Chunk input) ~ Char)
             => Parser input Word16
 takeAWord16 = do
-    l <- repeat (Between Once (toEnum 4)) (satisfy_ isHexDigit)
+    l <- repeat (Between $ 1 `And` 4) (satisfy_ isHexDigit)
     let lhs = readHex l
      in case lhs of
           [(w, [])] -> return w
