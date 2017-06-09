@@ -126,14 +126,14 @@ instance Thdable (Tuple4 a b c d) where
 -- `uncurry2' and `uncurry3' are parametrised over arbitrary prdct types with projections
 -- `fst', `snd' and `thd', while all higher alternatives are specialized to tuples.
 uncurry2 :: (Fstable p, Sndable p)
-         => (ProductFirst p -> ProductSecond p -> d) -> p -> d
+         => (ProductFirst p -> ProductSecond p -> c) -> p -> c
 uncurry2 fn p = fn (fst p) (snd p)
 
 uncurry3 :: (Fstable p, Sndable p, Thdable p)
          => (ProductFirst p -> ProductSecond p -> ProductThird p -> d) -> p -> d
 uncurry3 fn p = fn (fst p) (snd p) (thd p)
 
-uncurry4 :: (a -> b -> c -> d -> g) -> (a, b, c, d) -> g
+uncurry4 :: (a -> b -> c -> d -> e) -> (a, b, c, d) -> e
 uncurry4 fn (a, b, c, d) = fn a b c d
 
 uncurry5 :: (a -> b -> c -> d -> e -> f) -> (a, b, c, d, e) -> f
