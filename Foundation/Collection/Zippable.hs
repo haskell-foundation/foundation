@@ -21,8 +21,9 @@ import qualified Foundation.Array.Boxed as BA
 import qualified Foundation.String.UTF8 as S
 import           Foundation.Collection.Element
 import           Foundation.Collection.Sequential
-import           Foundation.Internal.Base
-import qualified Prelude
+import           Foundation.Internal.Base hiding (fst, snd)
+import           Foundation.Tuple
+--import qualified Prelude
 import           GHC.ST
 
 class Sequential col => Zippable col where
@@ -272,11 +273,12 @@ uncons7 xs = let (as, bs, cs, ds, es, fs, gs) = xs
                    return ( (a', b', c', d', e', f', g')
                           , (as', bs', cs', ds', es', fs', gs') )
 
-uncurry2 :: (a -> b -> c) -> (a, b) -> c
-uncurry2 = Prelude.uncurry
+uncurry2 :: (Fstable p, Sndable p) => (ProductFirst p -> ProductSecond p -> d) -> p -> d
+uncurry2 fn p = fn (fst p) (snd p)
 
-uncurry3 :: (a -> b -> c -> d) -> (a, b, c) -> d
-uncurry3 fn (a, b, c) = fn a b c
+uncurry3 :: (Fstable p, Sndable p, Thdable p) =>
+              (ProductFirst p -> ProductSecond p -> ProductThird p -> d) -> p -> d
+uncurry3 fn p = fn (fst p) (snd p) (thd p)
 
 uncurry4 :: (a -> b -> c -> d -> g) -> (a, b, c, d) -> g
 uncurry4 fn (a, b, c, d) = fn a b c d
