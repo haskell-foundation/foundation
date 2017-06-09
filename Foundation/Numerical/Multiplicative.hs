@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 module Foundation.Numerical.Multiplicative
     ( Multiplicative(..)

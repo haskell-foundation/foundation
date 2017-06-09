@@ -7,7 +7,6 @@
 --
 -- UTF8 lookup tables for fast continuation & nb bytes per header queries
 {-# LANGUAGE MagicHash #-}
-{-# LANGUAGE UnboxedTuples #-}
 module Foundation.Primitive.UTF8.Table
     ( isContinuation
     , getNbBytes

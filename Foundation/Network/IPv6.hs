@@ -7,9 +7,7 @@
 --
 -- IPv6 data type
 --
-{-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Foundation.Network.IPv6
     ( IPv6

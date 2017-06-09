@@ -12,7 +12,6 @@
 --
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
-{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE Rank2Types #-}
 module Foundation.Array.Unboxed

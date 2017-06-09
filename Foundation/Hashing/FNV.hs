@@ -8,9 +8,7 @@
 -- Fowler Noll Vo Hash (1 and 1a / 32 / 64 bits versions)
 -- <http://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function>
 --
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MagicHash                  #-}
-{-# LANGUAGE UnboxedTuples              #-}
 {-# LANGUAGE BangPatterns               #-}
 module Foundation.Hashing.FNV
     (

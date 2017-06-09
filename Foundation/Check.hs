@@ -10,8 +10,6 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Foundation.Check
     ( Gen
     , Arbitrary(..)

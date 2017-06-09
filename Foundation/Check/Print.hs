@@ -2,7 +2,6 @@
 {-# LANGUAGE Rank2Types                 #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE FlexibleContexts           #-}
 module Foundation.Check.Print

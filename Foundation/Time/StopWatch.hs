@@ -1,5 +1,4 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE OverloadedStrings #-}
 
 module Foundation.Time.StopWatch
     ( StopWatchPrecise
@@ -54,7 +53,7 @@ initPrecise = unsafePerformIO $ integralDownsize <$> queryPerformanceFrequency
 initPrecise :: (Word64, Word64)
 initPrecise = unsafePerformIO $ do
     mti <- newPinned (sizeOfCSize size_MachTimebaseInfo)
-    p   <- mutableGetAddr mti 
+    p   <- mutableGetAddr mti
     sysMacos_timebase_info (castPtr p)
     let p32 = castPtr p :: Ptr Word32
     !n <- peek (p32 `ptrPlus` ofs_MachTimebaseInfo_numer)

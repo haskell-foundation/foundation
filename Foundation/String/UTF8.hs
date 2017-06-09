@@ -14,7 +14,6 @@
 -- The String data must contain UTF8 valid data.
 --
 {-# LANGUAGE BangPatterns               #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MagicHash                  #-}
 {-# LANGUAGE NoImplicitPrelude          #-}
 {-# LANGUAGE TypeFamilies               #-}

@@ -8,7 +8,6 @@
 --
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
