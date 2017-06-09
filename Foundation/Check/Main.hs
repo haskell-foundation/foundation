@@ -177,8 +177,7 @@ test :: Test -> CheckMain TestResult
 test (Group s l) = pushGroup s l
 test (Unit _ _) = undefined
 test (CheckPlan name plan) = do
-    r <- testCheckPlan name plan
-    return r
+    testCheckPlan name plan
 test (Property name prop) = do
     r'@(PropertyResult _ nb r) <- testProperty name (property prop)
     case r of
