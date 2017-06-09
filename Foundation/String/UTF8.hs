@@ -20,6 +20,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UnboxedTuples              #-}
 {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE CPP                        #-}
 module Foundation.String.UTF8
     ( String(..)
@@ -64,6 +65,7 @@ module Foundation.String.UTF8
     , sortBy
     , filter
     , reverse
+    , replace
     , builderAppend
     , builderBuild
     , readInteger
@@ -819,6 +821,71 @@ reverse s@(String ba) = runST $ do
                     Vec.unsafeWrite mba (d + 3) (Vec.unsafeIndex ba (si + 3))
                 _  -> return () -- impossible
             loop ms (si `offsetPlusE` nb) d
+
+-- | Replace all the occurrencies of `needle` with `replacement` in
+-- the `haystack` string.
+-- Inefficient as it performs 2 full scans of the input string to
+-- determine the length of the final one.
+replace :: String -> String -> String -> String
+replace needle@(String ned) replacement@(String rp) haystack@(String hy) = runST $ do
+    let (!occs, insertionPoints) = occurrencies
+    let !newLen                  = haystackLen - (multBy needleLen occs) + (multBy replacementLen occs)
+    ms <- new newLen
+    loop ms (Offset 0) (Offset 0) insertionPoints
+  where
+    -- Finds how many times we need to perform the replacement, and where are
+    -- the insertion points.
+    occurrencies :: (Int, [Offset8])
+    occurrencies = go (Offset 0) (0, [])
+      where
+        go :: Offset8 -> (Int, [Offset8]) -> (Int, [Offset8])
+        go currentOffset (!occs, ipoints)
+          | currentOffset >= (sizeAsOffset $ sizeSub haystackLen needleLen) = (occs, ipoints)
+          | otherwise =
+            let matcher = Vec.unsafeTake (offsetAsSize $ currentOffset `offsetPlusE` needleLen) hy
+            in case matcher == ned of
+                 True  -> go (currentOffset `offsetPlusE` needleLen) (occs + 1, currentOffset : ipoints)
+                 False -> go (currentOffset + Offset 1) (occs, ipoints)
+
+    multBy :: Size8 -> Int -> Size8
+    multBy (CountOf x) y = CountOf (x * y)
+
+    needleLen :: Size8
+    !needleLen = size needle
+
+    replacementLen :: Size8
+    !replacementLen = size replacement
+
+    !haystackLen = size haystack
+
+    -- Go through each insertion point and copy things over.
+    -- We keep around the last insertion point to have a base
+    -- to compare things with.
+    loop :: PrimMonad prim
+         => MutableString (PrimState prim)
+         -> Offset8
+         -> Offset8
+         -> [Offset8]
+         -> prim String
+    loop ms _ _ [] = freeze ms
+    loop ms@(MutableString mba) currentOffset previousInsertionPoint (x:xs) = do
+      {-
+               => MArray ty (PrimState prim) -- ^ destination array
+               -> Offset ty                  -- ^ offset at destination
+               -> Array ty                   -- ^ source array
+               -> Offset ty                  -- ^ offset at source
+               -> CountOf ty                    -- ^ number of elements to copy
+      -}
+        -- General idea: Fill `mba` with stuff from `haystack` FROM
+        -- the prev insertion point and UP UNTIL the next insertion point.
+        -- Then fill `mba` with `replacement`.
+        -- 1. Copy from the old string.
+        let !unchangedDataLen = (x - previousInsertionPoint)
+        Vec.unsafeCopyAtRO mba currentOffset hy previousInsertionPoint unchangedDataLen
+        let !newOffset = currentOffset `offsetPlusE` unchangedDataLen
+        -- 2. Copy the replacement.
+        Vec.unsafeCopyAtRO mba newOffset rp x replacementLen
+        loop ms (newOffset `offsetPlusE` replacementLen) x xs
 
 -- | Return the nth character in a String
 --
