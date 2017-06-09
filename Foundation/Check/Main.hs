@@ -71,7 +71,7 @@ filterTestMatching cfg testRoot
       where currentTestName = fqTestName (s:acc)
     or [] = False
     or (x:xs)
-        | x == True = True
+        | x         = True
         | otherwise = or xs
 
     testFilter acc x =
