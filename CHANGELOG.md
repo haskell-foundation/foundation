@@ -1,3 +1,13 @@
+## 0.0.10
+
+* Cleanup collection APIs that take a lone Int (length, take, drop, splitAt, ..) to take a CountOf
+* Rename Size to CountOf
+* Add basic time functions
+* Add os dependent timing capability
+* Add simple pattern matching for test names with checks.
+* add '--list-tests' for checks
+* Optimise Eq and Ord for blocks and uarray
+
 ## 0.0.9
 
 * Introduce Block & MutableBlock which represent a chunk of memory without slices
