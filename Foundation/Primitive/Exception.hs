@@ -39,16 +39,16 @@ data OutOfBound = OutOfBound OutOfBoundOperation Int Int
 
 instance Exception OutOfBound
 
-outOfBound :: OutOfBoundOperation -> Offset ty -> Size ty -> a
-outOfBound oobop (Offset ofs) (Size sz) = throw (OutOfBound oobop ofs sz)
+outOfBound :: OutOfBoundOperation -> Offset ty -> CountOf ty -> a
+outOfBound oobop (Offset ofs) (CountOf sz) = throw (OutOfBound oobop ofs sz)
 {-# INLINE outOfBound #-}
 
-primOutOfBound :: PrimMonad prim => OutOfBoundOperation -> Offset ty -> Size ty -> prim a
-primOutOfBound oobop (Offset ofs) (Size sz) = primThrow (OutOfBound oobop ofs sz)
+primOutOfBound :: PrimMonad prim => OutOfBoundOperation -> Offset ty -> CountOf ty -> prim a
+primOutOfBound oobop (Offset ofs) (CountOf sz) = primThrow (OutOfBound oobop ofs sz)
 {-# INLINE primOutOfBound #-}
 
-isOutOfBound :: Offset ty -> Size ty -> Bool
-isOutOfBound (Offset ty) (Size sz) = ty < 0 || ty >= sz
+isOutOfBound :: Offset ty -> CountOf ty -> Bool
+isOutOfBound (Offset ty) (CountOf sz) = ty < 0 || ty >= sz
 {-# INLINE isOutOfBound #-}
 
 newtype RecastSourceSize      = RecastSourceSize Int

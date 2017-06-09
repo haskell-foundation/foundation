@@ -46,7 +46,7 @@ fileMapRead :: FilePath -> IO (V.UArray Word8)
 fileMapRead fp = do
     fileMapping <- I.fileMapRead fp
     fptr <- I.fileMappingToFinalPtr fileMapping
-    return $ V.foreignMem fptr (getSize fileMapping)
+    return $ V.foreignMem fptr (CountOf $ getSize fileMapping)
 
 -- | Map in memory the whole content of a file,
 
@@ -57,4 +57,4 @@ fileMapReadWith :: FilePath -> (V.UArray Word8 -> IO a) -> IO a
 fileMapReadWith fp f = do
     bracket (I.fileMapRead fp) I.fileMappingUnmap $ \fm -> do
         fptr <- toFinalPtr (I.fileMappingPtr fm) (\_ -> return ())
-        f (V.foreignMem fptr (getSize fm))
+        f (V.foreignMem fptr (CountOf $ getSize fm))

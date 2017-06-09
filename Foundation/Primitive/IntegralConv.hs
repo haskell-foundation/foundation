@@ -162,6 +162,19 @@ instance IntegralDownsize Int Int32 where
     integralDownsize      (I# i) = I32# (narrow32Int# i)
     integralDownsizeCheck = integralDownsizeBounded integralDownsize
 
+instance IntegralDownsize Int64 Int8 where
+    integralDownsize      i = integralDownsize (int64ToInt i)
+    integralDownsizeCheck = integralDownsizeBounded integralDownsize
+instance IntegralDownsize Int64 Int16 where
+    integralDownsize      i = integralDownsize (int64ToInt i)
+    integralDownsizeCheck = integralDownsizeBounded integralDownsize
+instance IntegralDownsize Int64 Int32 where
+    integralDownsize      i = integralDownsize (int64ToInt i)
+    integralDownsizeCheck = integralDownsizeBounded integralDownsize
+instance IntegralDownsize Int64 Int where
+    integralDownsize      i = int64ToInt i
+    integralDownsizeCheck = integralDownsizeBounded integralDownsize
+
 instance IntegralDownsize Word64 Word8 where
     integralDownsize      (W64# i) = W8# (narrow8Word# (word64ToWord# i))
     integralDownsizeCheck = integralDownsizeBounded integralDownsize
@@ -255,6 +268,13 @@ intToInt64 :: Int -> Int64
 intToInt64 (I# i) = I64# i
 #else
 intToInt64 (I# i) = I64# (intToInt64# i)
+#endif
+
+int64ToInt :: Int64 -> Int
+#if WORD_SIZE_IN_BITS == 64
+int64ToInt (I64# i) = I# i
+#else
+int64ToInt (I64# i) = I# (int64ToInt# i)
 #endif
 
 wordToWord64 :: Word -> Word64

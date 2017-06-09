@@ -104,24 +104,24 @@ asUTF8Char !c
 
 -- given the encoding of UTF8 Char, get the number of bytes of this sequence
 numBytes :: UTF8Char -> Size8
-numBytes UTF8_1{} = Size 1
-numBytes UTF8_2{} = Size 2
-numBytes UTF8_3{} = Size 3
-numBytes UTF8_4{} = Size 4
+numBytes UTF8_1{} = CountOf 1
+numBytes UTF8_2{} = CountOf 2
+numBytes UTF8_3{} = CountOf 3
+numBytes UTF8_4{} = CountOf 4
 
 -- given the leading byte of a utf8 sequence, get the number of bytes of this sequence
-skipNextHeaderValue :: Word8 -> Size Word8
+skipNextHeaderValue :: Word8 -> CountOf Word8
 skipNextHeaderValue !x
-    | x < 0xC0  = Size 1 -- 0b11000000
-    | x < 0xE0  = Size 2 -- 0b11100000
-    | x < 0xF0  = Size 3 -- 0b11110000
-    | otherwise = Size 4
+    | x < 0xC0  = CountOf 1 -- 0b11000000
+    | x < 0xE0  = CountOf 2 -- 0b11100000
+    | x < 0xF0  = CountOf 3 -- 0b11110000
+    | otherwise = CountOf 4
 {-# INLINE skipNextHeaderValue #-}
 
 charToBytes :: Int -> Size8
 charToBytes c
-    | c < 0x80     = Size 1
-    | c < 0x800    = Size 2
-    | c < 0x10000  = Size 3
-    | c < 0x110000 = Size 4
+    | c < 0x80     = CountOf 1
+    | c < 0x800    = CountOf 2
+    | c < 0x10000  = CountOf 3
+    | c < 0x110000 = CountOf 4
     | otherwise    = error ("invalid code point: " `mappend` show c)

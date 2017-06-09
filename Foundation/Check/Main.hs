@@ -17,6 +17,7 @@ module Foundation.Check.Main
 
 import           Foundation.Primitive.Imports
 import           Foundation.Primitive.IntegralConv
+import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.System.Info (os, OS(..))
 import           Foundation.Collection
 import           Foundation.Numerical
@@ -38,14 +39,14 @@ nbFail (PropertyResult _ _ (PropertyFailed _)) = 1
 nbFail (PropertyResult _ _ PropertySuccess)    = 0
 nbFail (GroupResult    _ t _ _)                = t
 
-nbTests :: TestResult -> Word64
+nbTests :: TestResult -> CountOf TestResult
 nbTests (PropertyResult _ t _) = t
 nbTests (GroupResult _ _ t _)  = t
 
 data TestState = TestState
     { config      :: !Config
     , getSeed     :: !Seed
-    , indent      :: !Word
+    , indent      :: !(CountOf Char)
     , testPassed  :: !Word
     , testFailed  :: !Word
     , testPath    :: !(DList String)
@@ -190,8 +191,8 @@ displayCurrent name = do
     i <- indent <$> get
     liftIO $ putStrLn $ replicate i ' ' <> name
 
-displayPropertySucceed :: String -> Word64 -> CheckMain ()
-displayPropertySucceed name nb = do
+displayPropertySucceed :: String -> CountOf TestResult -> CheckMain ()
+displayPropertySucceed name (CountOf nb) = do
     i <- indent <$> get
     liftIO $ putStrLn $ mconcat
         [ replicate i ' '
@@ -215,8 +216,8 @@ failureString = case os of
     _           -> "[ ERROR ]"
 {-# NOINLINE failureString #-}
 
-displayPropertyFailed :: String -> Word64 -> String -> CheckMain ()
-displayPropertyFailed name nb w = do
+displayPropertyFailed :: String -> CountOf TestResult -> String -> CheckMain ()
+displayPropertyFailed name (CountOf nb) w = do
     seed <- getSeed <$> get
     i <- indent <$> get
     liftIO $ do
@@ -268,7 +269,7 @@ testCheckPlan name actions = do
             displayCurrent name
             forM_ fails $ \f ->
                 liftIO $ putStrLn $ show f
-            return (GroupResult name (integralUpsize (integralCast $ length fails :: Word) :: Word64) (planValidations st) fails)
+            return (GroupResult name (length fails) (planValidations st) fails)
 
 testProperty :: String -> Property -> CheckMain TestResult
 testProperty name prop = do
@@ -279,7 +280,7 @@ testProperty name prop = do
     params <- getGenParams . config <$> get
     maxTests <- numTests . config <$> get
 
-    (res,nb) <- liftIO $ iterateProperty maxTests params rngIt prop
+    (res,nb) <- liftIO $ iterateProperty (CountOf $ integralDownsize (integralCast maxTests :: Int64)) params rngIt prop
     case res of
         PropertyFailed {} -> failed
         PropertySuccess   -> passed

@@ -9,7 +9,7 @@
 module Foundation.Internal.PrimTypes
     ( FileSize#
     , Offset#
-    , Size#
+    , CountOf#
     ) where
 
 import GHC.Prim
@@ -22,7 +22,7 @@ type FileSize# = Word64#
 -- for code documentation purpose only, just a simple type alias on Int#
 type Offset# = Int#
 
--- | Size in bytes type alias
+-- | CountOf in bytes type alias
 --
 -- for code documentation purpose only, just a simple type alias on Int#
-type Size# = Int#
+type CountOf# = Int#

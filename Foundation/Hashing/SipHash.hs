@@ -22,6 +22,7 @@ import           Data.Bits
 import           Foundation.Internal.Base
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Types
+import           Foundation.Primitive.IntegralConv
 import           Foundation.Hashing.Hasher
 import qualified Foundation.Array.Unboxed as A
 import           Foundation.Array
@@ -67,7 +68,7 @@ instance Hasher Sip1_3 where
     hashMix64 w (Sip1_3 st)     = Sip1_3 $ mix64 1 w st
     hashMixBytes ba (Sip1_3 st) = Sip1_3 $ mixBa 1 ba st
 
-data Sip = Sip !InternalState !SipIncremental !Word64
+data Sip = Sip !InternalState !SipIncremental !(CountOf Word8)
 
 data InternalState = InternalState {-# UNPACK #-} !Word64
                                    {-# UNPACK #-} !Word64
@@ -163,7 +164,7 @@ mix64 !c !w !(Sip ist incremental len) =
     {-# INLINE consume #-}
 
 finish :: Int -> Int -> Sip -> SipHash
-finish !c !d (Sip ist incremental len) = finalize d $
+finish !c !d (Sip ist incremental (CountOf len)) = finalize d $
     case incremental of
         SipIncremental0     -> process c ist lenMask
         SipIncremental1 acc -> process c ist (lenMask .|. acc)
@@ -174,14 +175,15 @@ finish !c !d (Sip ist incremental len) = finalize d $
         SipIncremental6 acc -> process c ist (lenMask .|. acc)
         SipIncremental7 acc -> process c ist (lenMask .|. acc)
   where
-    lenMask = (len .&. 0xff) .<<. 56
+    lenMask = (wlen .&. 0xff) .<<. 56
+    wlen = integralCast (integralUpsize len :: Int64) :: Word64
 
 -- | same as 'hash', except also specifies the number of sipround iterations for compression (C) and digest (D).
 mixBa :: PrimType a => Int -> UArray a -> Sip -> Sip
 mixBa !c !array (Sip initSt initIncr currentLen) =
     A.unsafeDewrap goVec goAddr array8
   where
-    totalLen = Prelude.fromIntegral $ A.length array8
+    totalLen = A.length array8
     array8 = A.unsafeRecast array
 
     goVec :: ByteArray# -> Offset Word8 -> Sip

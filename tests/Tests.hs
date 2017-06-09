@@ -155,10 +155,11 @@ testZippable :: ( Eq (Element col), Show (Item col), Show (Item a), Show (Item b
              => Proxy a -> Proxy b -> Proxy col -> Gen (Element a) -> Gen (Element b) -> Gen (Element col) -> [TestTree]
 testZippable proxyA proxyB proxyCol genElementA genElementB genElementCol =
     [ testProperty "zipWith" $ withList2AndE $ \(as, bs, c) ->
-        toListP proxyCol (zipWith (const (const c)) (fromListP proxyA as) (fromListP proxyB bs)
-            ) === Prelude.replicate (Prelude.min (length as) (length bs)) c
+        toListP proxyCol (zipWith (\_ _ -> c) (fromListP proxyA as) (fromListP proxyB bs)
+            ) === replicate (CountOf (Prelude.min (unCountOf $ length as) (unCountOf $ length bs))) c
     ]
   where
+    unCountOf (CountOf c) = c
     withList2AndE = forAll ( (,,) <$> generateListOfElement genElementA <*> generateListOfElement genElementB
                                   <*> genElementCol )
 

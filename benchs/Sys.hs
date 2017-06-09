@@ -18,7 +18,7 @@ data NullRandom = NullRandom
 instance RandomGen NullRandom where
     randomNew        = return NullRandom
     randomNewFrom    = error "no randomNewFrom"
-    randomGenerate (Size n) r = (fromList (Prelude.replicate n 0), r)
+    randomGenerate (CountOf n) r = (fromList (Prelude.replicate n 0), r)
 
 benchSys =
     [ bgroup "Random"
@@ -29,9 +29,9 @@ benchSys =
     , bgroup "RNGv1"
         [ bench "Entropy-1"     $ benchRandom 1 randomNew (Proxy :: Proxy RNGv1)
         , bench "Entropy-1024"  $ benchRandom 1024 randomNew (Proxy :: Proxy RNGv1)
-        , bench "Entropy-1M"    $ benchRandom (Size (1024 * 1024)) randomNew (Proxy :: Proxy RNGv1)
+        , bench "Entropy-1M"    $ benchRandom (CountOf (1024 * 1024)) randomNew (Proxy :: Proxy RNGv1)
         ]
     ]
 
-benchRandom :: RandomGen rng => Size Word8 -> MonadRandomState NullRandom rng -> Proxy rng -> Benchmarkable
+benchRandom :: RandomGen rng => CountOf Word8 -> MonadRandomState NullRandom rng -> Proxy rng -> Benchmarkable
 benchRandom n rNew _ = whnf (fst . randomGenerate n) (fst $ withRandomGenerator NullRandom rNew)

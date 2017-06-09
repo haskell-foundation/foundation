@@ -29,6 +29,7 @@ module Foundation.Collection.Collection
     ) where
 
 import           Foundation.Internal.Base
+import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Collection.Element
 import qualified Data.List
 import qualified Foundation.Primitive.Block as BLK
@@ -73,8 +74,10 @@ class (IsList c, Item c ~ Element c) => Collection c where
     {-# MINIMAL null, length, (elem | notElem), minimum, maximum, all, any #-}
     -- | Check if a collection is empty
     null :: c -> Bool
+
     -- | Length of a collection (number of Element c)
-    length :: c -> Int
+    length :: c -> CountOf (Element c)
+
     -- | Check if a collection contains a specific element
     --
     -- This is the inverse of `notElem`.
@@ -99,7 +102,7 @@ class (IsList c, Item c ~ Element c) => Collection c where
 
 instance Collection [a] where
     null = Data.List.null
-    length = Data.List.length
+    length = CountOf . Data.List.length
 
     elem = Data.List.elem
     notElem = Data.List.notElem

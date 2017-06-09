@@ -12,6 +12,7 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ViewPatterns #-}
 module Foundation.Array.Chunked.Unboxed
     ( ChunkedUArray
     ) where
@@ -85,11 +86,11 @@ instance PrimType ty => C.Sequential (ChunkedUArray ty) where
 
 instance PrimType ty => C.IndexedCollection (ChunkedUArray ty) where
     (!) l n
-        | isOutOfBound n (lengthSize l) = Nothing
+        | isOutOfBound n (length l) = Nothing
         | otherwise                     = Just $ index l n
     findIndex predicate c = loop 0
       where
-        !len = lengthSize c
+        !len = length c
         loop i
             | i .==# len = Nothing
             | otherwise  =
@@ -114,25 +115,22 @@ null :: PrimType ty => ChunkedUArray ty -> Bool
 null (ChunkedUArray array) =
     C.null array || allNulls 0
   where
-    !len = A.lengthSize array
+    !len = A.length array
     allNulls !idx
       | idx .==# len = True
       | otherwise    = C.null (array `A.unsafeIndex` idx) && allNulls (idx + 1)
 
 -- | Returns the length of this `ChunkedUArray`, by summing each inner length.
 -- Complexity: O(n) where `n` is the number of chunks, as U.length u is O(1).
-length :: PrimType ty => ChunkedUArray ty -> Int
-length (ChunkedUArray array) = C.foldl' (\acc l -> acc + C.length l) 0 array
-
-lengthSize :: PrimType ty => ChunkedUArray ty -> Size ty
-lengthSize (ChunkedUArray array) = C.foldl' (\acc l -> acc + U.lengthSize l) 0 array
+length :: PrimType ty => ChunkedUArray ty -> CountOf ty
+length (ChunkedUArray array) = C.foldl' (\acc l -> acc + U.length l) 0 array
 
 -- | Returns `True` if the given element is contained in the `ChunkedUArray`.
 -- Complexity: O(n) where `n` is the number of chunks, as U.length u is O(1).
 elem :: PrimType ty => ty -> ChunkedUArray ty -> Bool
 elem el (ChunkedUArray array) = loop 0
   where
-    !len = A.lengthSize array
+    !len = A.length array
     loop i
         | i .==# len = False
         | otherwise  =
@@ -156,71 +154,73 @@ equal :: PrimType ty => ChunkedUArray ty -> ChunkedUArray ty -> Bool
 equal ca1 ca2 =
     len1 == len2 && go 0
   where
-    len1 = lengthSize ca1
-    len2 = lengthSize ca2
+    len1 = length ca1
+    len2 = length ca2
 
     go !x
       | x .==# len1 = True
       | otherwise   = (ca1 `unsafeIndex` x == ca2 `unsafeIndex` x) && go (x + 1)
 
+-- given an offset express in element of ty, return the offset in array in the spine,
+-- plus the relative offset in element on this array
 findPos :: PrimType ty => Offset ty -> ChunkedUArray ty -> Maybe (Offset (UArray ty), Offset ty)
 findPos absOfs (ChunkedUArray array)
     | A.null array = Nothing
     | otherwise    = loop absOfs 0
   where
-    !len = A.lengthSize array
+    !len = A.length array
     loop relOfs outerI
         | outerI .==# len = Nothing -- haven't found what to do
         | relOfs == 0     = Just (outerI, 0)
         | otherwise       =
             let !innera   = A.unsafeIndex array outerI
-                !innerLen = U.lengthSize innera
+                !innerLen = U.length innera
              in case removeArraySize relOfs innerLen of
                         Nothing      -> Just (outerI, relOfs)
                         Just relOfs' -> loop relOfs' (outerI + 1)
 
 splitChunk :: Offset (UArray ty) -> ChunkedUArray ty -> (ChunkedUArray ty, ChunkedUArray ty)
-splitChunk (Offset ofs) (ChunkedUArray c) = (ChunkedUArray *** ChunkedUArray) $ A.splitAt ofs c
+splitChunk ofs (ChunkedUArray c) = (ChunkedUArray *** ChunkedUArray) $ A.splitAt (offsetAsSize ofs) c
 
-take :: PrimType ty => Int -> ChunkedUArray ty -> ChunkedUArray ty
+take :: PrimType ty => CountOf ty -> ChunkedUArray ty -> ChunkedUArray ty
 take n c@(ChunkedUArray spine)
     | n <= 0    = empty
     | otherwise =
-        case findPos (Offset n) c of
-            Nothing              -> c
-            Just (Offset ofs, 0) -> ChunkedUArray (A.take ofs spine)
-            Just (ofs@(Offset ofs'), (Offset r)) ->
+        case findPos (sizeAsOffset n) c of
+            Nothing       -> c
+            Just (ofs, 0) -> ChunkedUArray (A.take (offsetAsSize ofs) spine)
+            Just (ofs, r) ->
                 let uarr = A.unsafeIndex spine ofs
-                 in ChunkedUArray (A.take ofs' spine `A.snoc` U.take r uarr)
+                 in ChunkedUArray (A.take (offsetAsSize ofs) spine `A.snoc` U.take (offsetAsSize r) uarr)
 
-drop :: PrimType ty => Int -> ChunkedUArray ty -> ChunkedUArray ty
+drop :: PrimType ty => CountOf ty -> ChunkedUArray ty -> ChunkedUArray ty
 drop n c@(ChunkedUArray spine)
     | n <= 0    = c
     | otherwise =
-        case findPos (Offset n) c of
-            Nothing              -> empty
-            Just (Offset ofs, 0) -> ChunkedUArray (A.drop ofs spine)
-            Just (ofs@(Offset ofs'), (Offset r)) ->
+        case findPos (sizeAsOffset n) c of
+            Nothing       -> empty
+            Just (ofs, 0) -> ChunkedUArray (A.drop (offsetAsSize ofs) spine)
+            Just (ofs, r) ->
                 let uarr = A.unsafeIndex spine ofs
-                 in ChunkedUArray (U.drop r uarr `A.cons` A.drop (ofs'+1) spine)
+                 in ChunkedUArray (U.drop (offsetAsSize r) uarr `A.cons` A.drop (offsetAsSize ofs+1) spine)
 
-splitAt :: PrimType ty => Int -> ChunkedUArray ty -> (ChunkedUArray ty, ChunkedUArray ty)
+splitAt :: PrimType ty => CountOf ty -> ChunkedUArray ty -> (ChunkedUArray ty, ChunkedUArray ty)
 splitAt n c@(ChunkedUArray spine)
     | n <= 0    = (empty, c)
     | otherwise =
-        case findPos (Offset n) c of
+        case findPos (sizeAsOffset n) c of
             Nothing       -> (c, empty)
             Just (ofs, 0) -> splitChunk ofs c
-            Just (ofs@(Offset ofs'), (Offset r)) ->
+            Just (ofs, offsetAsSize -> r) ->
                 let uarr = A.unsafeIndex spine ofs
-                 in ( ChunkedUArray (A.take ofs' spine `A.snoc` U.take r uarr)
-                    , ChunkedUArray (U.drop r uarr `A.cons` A.drop (ofs'+1) spine)
+                 in ( ChunkedUArray (A.take (offsetAsSize ofs) spine `A.snoc` U.take r uarr)
+                    , ChunkedUArray (U.drop r uarr `A.cons` A.drop (offsetAsSize ofs+1) spine)
                     )
 
-revTake :: PrimType ty => Int -> ChunkedUArray ty -> ChunkedUArray ty
+revTake :: PrimType ty => CountOf ty -> ChunkedUArray ty -> ChunkedUArray ty
 revTake n c = drop (length c - n) c
 
-revDrop :: PrimType ty => Int -> ChunkedUArray ty -> ChunkedUArray ty
+revDrop :: PrimType ty => CountOf ty -> ChunkedUArray ty -> ChunkedUArray ty
 revDrop n c = take (length c - n) c
 
 -- TODO: Improve implementation.
@@ -253,26 +253,26 @@ uncons v = second fromList <$> (C.uncons $ toList v)
 
 cons :: PrimType ty => ty -> ChunkedUArray ty -> ChunkedUArray ty
 cons el (ChunkedUArray inner) = ChunkedUArray $ runST $ do
-  let newLen = (Size $ C.length inner + 1)
+  let newLen = C.length inner + 1
   newArray   <- A.new newLen
   let single = fromList [el]
   A.unsafeWrite newArray 0 single
-  A.unsafeCopyAtRO newArray (Offset 1) inner (Offset 0) (Size $ C.length inner)
+  A.unsafeCopyAtRO newArray (Offset 1) inner (Offset 0) (C.length inner)
   A.unsafeFreeze newArray
 
 snoc :: PrimType ty => ChunkedUArray ty -> ty -> ChunkedUArray ty
 snoc (ChunkedUArray spine) el = ChunkedUArray $ runST $ do
-  newArray  <- A.new (A.lengthSize spine + 1)
+  newArray  <- A.new (A.length spine + 1)
   let single = U.singleton el
-  A.unsafeCopyAtRO newArray (Offset 0) spine (Offset 0) (Size $ C.length spine)
-  A.unsafeWrite newArray (sizeAsOffset $ A.lengthSize spine) single
+  A.unsafeCopyAtRO newArray (Offset 0) spine (Offset 0) (C.length spine)
+  A.unsafeWrite newArray (sizeAsOffset $ A.length spine) single
   A.unsafeFreeze newArray
 
 -- TODO optimise
 find :: PrimType ty => (ty -> Bool) -> ChunkedUArray ty -> Maybe ty
 find fn v = loop 0
   where
-    len = lengthSize v
+    len = length v
     loop !idx
       | idx .==# len = Nothing
       | otherwise    =
@@ -289,7 +289,7 @@ index :: PrimType ty => ChunkedUArray ty -> Offset ty -> ty
 index array n
     | isOutOfBound n len = outOfBound OOB_Index n len
     | otherwise          = unsafeIndex array n
-  where len = lengthSize array
+  where len = length array
 {-# INLINE index #-}
 
 unsafeIndex :: PrimType ty => ChunkedUArray ty -> Offset ty -> ty
@@ -303,13 +303,13 @@ unsafeIndex (ChunkedUArray array) idx = go (A.unsafeIndex array 0) 0 idx
       -- Skip empty chunks.
       | C.null u  = go (A.unsafeIndex array (globalIndex + 1)) (globalIndex + 1) i
       | otherwise =
-          case removeArraySize i (U.lengthSize u) of
+          case removeArraySize i (U.length u) of
               Just i' -> go (A.unsafeIndex array (globalIndex + 1)) (globalIndex + 1) i'
               Nothing -> U.unsafeIndex u i
 
 {-# INLINE unsafeIndex #-}
 
-removeArraySize :: Offset ty -> Size ty -> Maybe (Offset ty)
-removeArraySize (Offset ty) (Size s)
+removeArraySize :: Offset ty -> CountOf ty -> Maybe (Offset ty)
+removeArraySize (Offset ty) (CountOf s)
     | ty >= s   = Just (Offset (ty - s))
     | otherwise = Nothing

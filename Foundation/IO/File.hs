@@ -59,7 +59,7 @@ closeFile = S.hClose
 hGet :: Handle -> Int -> IO (UArray Word8)
 hGet h size
     | size < 0   = invalidBufferSize "hGet" h size
-    | otherwise  = V.createFromIO (Size size) $ \p -> (Size <$> S.hGetBuf h p size)
+    | otherwise  = V.createFromIO (CountOf size) $ \p -> (CountOf <$> S.hGetBuf h p size)
 
 -- | hGetNonBlocking is similar to 'hGet', except that it will never block
 -- waiting for data to become available, instead it returns only whatever data
@@ -70,7 +70,7 @@ hGet h size
 hGetNonBlocking :: Handle -> Int -> IO (UArray Word8)
 hGetNonBlocking h size
     | size < 0  = invalidBufferSize "hGetNonBlocking" h size
-    | otherwise = V.createFromIO (Size size) $ \p -> (Size <$> S.hGetBufNonBlocking h p size)
+    | otherwise = V.createFromIO (CountOf size) $ \p -> (CountOf <$> S.hGetBufNonBlocking h p size)
 
 -- | Like 'hGet', except that a shorter array may be returned
 -- if there are not enough bytes immediately available to satisfy the
@@ -80,10 +80,10 @@ hGetNonBlocking h size
 hGetSome :: Handle -> Int -> IO (UArray Word8)
 hGetSome h size
     | size < 0  = invalidBufferSize "hGetSome" h size
-    | otherwise = V.createFromIO (Size size) $ \p -> (Size <$> S.hGetBufSome h p size)
+    | otherwise = V.createFromIO (CountOf size) $ \p -> (CountOf <$> S.hGetBufSome h p size)
 
 hPut :: Handle -> (UArray Word8) -> IO ()
-hPut h arr = withPtr arr $ \ptr -> S.hPutBuf h ptr (length arr)
+hPut h arr = withPtr arr $ \ptr -> S.hPutBuf h ptr (let (CountOf sz) = length arr in sz)
 
 invalidBufferSize :: [Char] -> Handle -> Int -> IO a
 invalidBufferSize functionName handle size =
@@ -106,7 +106,7 @@ readFile fp = withFile fp S.ReadMode $ \h -> do
     -- TODO filesize is an integer (whyyy ?!), and transforming to Int using
     -- fromIntegral is probably the wrong thing to do here..
     sz <- S.hFileSize h
-    mv <- V.newPinned (Size $ fromInteger sz)
+    mv <- V.newPinned (CountOf $ fromInteger sz)
     V.withMutablePtr mv $ loop h (fromInteger sz)
     unsafeFreeze mv
   where
@@ -126,7 +126,7 @@ foldTextFile :: (String -> a -> IO a) -- ^ Fold callback function
              -> FilePath              -- ^ File to read
              -> IO a
 foldTextFile chunkf ini fp = do
-    buf <- V.newPinned (Size blockSize)
+    buf <- V.newPinned (CountOf blockSize)
     V.withMutablePtr buf $ \ptr ->
         withFile fp S.ReadMode $ doFold buf ptr
   where
@@ -136,9 +136,9 @@ foldTextFile chunkf ini fp = do
             r <- S.hGetBuf handle ptr blockSize
             if r > 0 && r <= blockSize
                 then do
-                    (pos, validateRet) <- S.mutableValidate mv 0 (Size r)
+                    (pos, validateRet) <- S.mutableValidate mv 0 (CountOf r)
                     s <- case validateRet of
-                        Nothing -> S.fromBytesUnsafe `fmap` V.freezeShrink mv (Size r)
+                        Nothing -> S.fromBytesUnsafe `fmap` V.freezeShrink mv (CountOf r)
                         Just S.MissingByte -> do
                             sRet <- S.fromBytesUnsafe `fmap` V.freezeShrink mv (pos - 0)
                             V.unsafeSlide mv pos (Offset r)

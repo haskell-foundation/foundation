@@ -7,7 +7,7 @@
 -- very similar to an unboxed array but with the key difference:
 --
 -- * It doesn't have slicing capability (no cheap take or drop)
--- * It consume less memory: 1 Offset, 1 Size, 1 Pinning status trimmed
+-- * It consume less memory: 1 Offset, 1 CountOf, 1 Pinning status trimmed
 -- * It's unpackable in any constructor
 -- * It uses unpinned memory by default
 --
@@ -70,15 +70,15 @@ import           Foundation.Primitive.Block.Base
 -- | Return the length of a Mutable Block
 --
 -- note: we don't allow resizing yet, so this can remain a pure function
-mutableLengthSize :: forall ty st . PrimType ty => MutableBlock ty st -> Size ty
+mutableLengthSize :: forall ty st . PrimType ty => MutableBlock ty st -> CountOf ty
 mutableLengthSize (MutableBlock mba) =
-    let !(Size (I# szBits)) = primSizeInBytes (Proxy :: Proxy ty)
+    let !(CountOf (I# szBits)) = primSizeInBytes (Proxy :: Proxy ty)
         !elems              = quotInt# (sizeofMutableByteArray# mba) szBits
-     in Size (I# elems)
+     in CountOf (I# elems)
 {-# INLINE[1] mutableLengthSize #-}
 
-mutableLengthBytes :: MutableBlock ty st -> Size Word8
-mutableLengthBytes (MutableBlock mba) = Size (I# (sizeofMutableByteArray# mba))
+mutableLengthBytes :: MutableBlock ty st -> CountOf Word8
+mutableLengthBytes (MutableBlock mba) = CountOf (I# (sizeofMutableByteArray# mba))
 {-# INLINE[1] mutableLengthBytes #-}
 
 -- | Return if a Mutable Block is pinned or not

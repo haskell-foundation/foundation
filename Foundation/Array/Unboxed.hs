@@ -26,7 +26,6 @@ module Foundation.Array.Unboxed
     , recast
     , unsafeRecast
     , length
-    , lengthSize
     , freeze
     , unsafeFreeze
     , thaw
@@ -112,7 +111,6 @@ import qualified Foundation.Primitive.Base16 as Base16
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
 import           Foundation.Primitive.NormalForm
-import           Foundation.Primitive.IntegralConv
 import           Foundation.Primitive.FinalPtr
 import           Foundation.Primitive.Utils
 import           Foundation.Primitive.Exception
@@ -129,11 +127,11 @@ import qualified Data.List
 -- to foreign interface
 data UArray ty =
       UVecBA {-# UNPACK #-} !(Offset ty)
-             {-# UNPACK #-} !(Size ty)
+             {-# UNPACK #-} !(CountOf ty)
              {-# UNPACK #-} !PinnedStatus {- unpinned / pinned flag -}
                             ByteArray#
     | UVecAddr {-# UNPACK #-} !(Offset ty)
-               {-# UNPACK #-} !(Size ty)
+               {-# UNPACK #-} !(CountOf ty)
                               !(FinalPtr ty)
     deriving (Typeable)
 
@@ -179,8 +177,8 @@ copy array = runST (thaw array >>= unsafeFreeze)
 -- and every values is copied, before returning the mutable array.
 thaw :: (PrimMonad prim, PrimType ty) => UArray ty -> prim (MUArray ty (PrimState prim))
 thaw array = do
-    ma <- new (lengthSize array)
-    unsafeCopyAtRO ma azero array (Offset 0) (lengthSize array)
+    ma <- new (length array)
+    unsafeCopyAtRO ma azero array (Offset 0) (length array)
     return ma
 {-# INLINE thaw #-}
 
@@ -192,7 +190,7 @@ index array n
     | isOutOfBound n len = outOfBound OOB_Index n len
     | otherwise          = unsafeIndex array n
   where
-    !len = lengthSize array
+    !len = length array
 {-# INLINE index #-}
 
 -- | Return the element at a specific index from an array without bounds checking.
@@ -233,24 +231,19 @@ unsafeDewrap2 _ _ _ f (UVecAddr start1 _ fptr1) (UVecBA start2 _ _ ba2)   = with
 
 foreignMem :: PrimType ty
            => FinalPtr ty -- ^ the start pointer with a finalizer
-           -> Int         -- ^ the number of elements (in elements, not bytes)
+           -> CountOf ty  -- ^ the number of elements (in elements, not bytes)
            -> UArray ty
-foreignMem fptr nb = UVecAddr (Offset 0) (Size nb) fptr
+foreignMem fptr nb = UVecAddr (Offset 0) nb fptr
 
 fromForeignPtr :: PrimType ty
                => (ForeignPtr ty, Int, Int) -- ForeignPtr, an offset in prim elements, a size in prim elements
                -> UArray ty
-fromForeignPtr (fptr, ofs, len)   = UVecAddr (Offset ofs) (Size len) (toFinalPtrForeign fptr)
+fromForeignPtr (fptr, ofs, len)   = UVecAddr (Offset ofs) (CountOf len) (toFinalPtrForeign fptr)
 
--- | return the number of elements of the array.
-length :: PrimType ty => UArray ty -> Int
-length a = let (Size len) = lengthSize a in len
+length :: UArray ty -> CountOf ty
+length (UVecAddr _ len _) = len
+length (UVecBA _ len _ _) = len
 {-# INLINE[1] length #-}
-
-lengthSize :: PrimType ty => UArray ty -> Size ty
-lengthSize (UVecAddr _ len _) = len
-lengthSize (UVecBA _ len _ _) = len
-{-# INLINE[1] lengthSize #-}
 
 -- TODO Optimise with copyByteArray#
 -- | Copy @n@ sequential elements from the specified offset in a source array
@@ -263,7 +256,7 @@ unsafeCopyAtRO :: (PrimMonad prim, PrimType ty)
                -> Offset ty                   -- ^ offset at destination
                -> UArray ty                   -- ^ source array
                -> Offset ty                   -- ^ offset at source
-               -> Size ty                     -- ^ number of elements to copy
+               -> CountOf ty                     -- ^ number of elements to copy
                -> prim ()
 unsafeCopyAtRO (MUVecMA dstStart _ _ dstMba) ed uvec@(UVecBA srcStart _ _ srcBa) es n =
     primitive $ \st -> (# copyByteArray# srcBa os dstMba od nBytes st, () #)
@@ -271,7 +264,7 @@ unsafeCopyAtRO (MUVecMA dstStart _ _ dstMba) ed uvec@(UVecBA srcStart _ _ srcBa)
     sz = primSizeInBytes (vectorProxyTy uvec)
     !(Offset (I# os))   = offsetOfE sz (srcStart+es)
     !(Offset (I# od))   = offsetOfE sz (dstStart+ed)
-    !(Size (I# nBytes)) = sizeOfE sz n
+    !(CountOf (I# nBytes)) = sizeOfE sz n
 unsafeCopyAtRO (MUVecMA dstStart _ _ dstMba) ed uvec@(UVecAddr srcStart _ srcFptr) es n =
     withFinalPtr srcFptr $ \srcPtr ->
         let !(Ptr srcAddr) = srcPtr `plusPtr` os
@@ -280,7 +273,7 @@ unsafeCopyAtRO (MUVecMA dstStart _ _ dstMba) ed uvec@(UVecAddr srcStart _ srcFpt
     sz  = primSizeInBytes (vectorProxyTy uvec)
     !(Offset os)        = offsetOfE sz (srcStart+es)
     !(Offset (I# od))   = offsetOfE sz (dstStart+ed)
-    !(Size (I# nBytes)) = sizeOfE sz n
+    !(CountOf (I# nBytes)) = sizeOfE sz n
 unsafeCopyAtRO dst od src os n = loop od os
   where
     !endIndex = os `offsetPlusE` n
@@ -292,12 +285,12 @@ unsafeCopyAtRO dst od src os n = loop od os
 --   the source array.
 unsafeCopyFrom :: (PrimType a, PrimType b)
                => UArray a -- ^ Source array
-               -> Size b -- ^ Length of the destination array
+               -> CountOf b -- ^ Length of the destination array
                -> (UArray a -> Offset a -> MUArray b s -> ST s ())
                -- ^ Function called for each element in the source array
                -> ST s (UArray b) -- ^ Returns the filled new array
 unsafeCopyFrom v' newLen f = new newLen >>= fill 0 >>= unsafeFreeze
-  where len = lengthSize v'
+  where len = length v'
         fill i r'
             | i .==# len = return r'
             | otherwise  = do f v' i r'
@@ -313,7 +306,7 @@ unsafeFreeze (MUVecMA start len pinnedState mba) = primitive $ \s1 ->
 unsafeFreeze (MUVecAddr start len fptr) = return $ UVecAddr start len fptr
 {-# INLINE unsafeFreeze #-}
 
-unsafeFreezeShrink :: (PrimType ty, PrimMonad prim) => MUArray ty (PrimState prim) -> Size ty -> prim (UArray ty)
+unsafeFreezeShrink :: (PrimType ty, PrimMonad prim) => MUArray ty (PrimState prim) -> CountOf ty -> prim (UArray ty)
 unsafeFreezeShrink (MUVecMA start _ pinnedState mba) n = unsafeFreeze (MUVecMA start n pinnedState mba)
 unsafeFreezeShrink (MUVecAddr start _ fptr) n = unsafeFreeze (MUVecAddr start n fptr)
 {-# INLINE unsafeFreezeShrink #-}
@@ -323,9 +316,9 @@ freeze ma = do
     ma' <- new len
     copyAt ma' (Offset 0) ma (Offset 0) len
     unsafeFreeze ma'
-  where len = Size $ mutableLength ma
+  where len = CountOf $ mutableLength ma
 
-freezeShrink :: (PrimType ty, PrimMonad prim) => MUArray ty (PrimState prim) -> Size ty -> prim (UArray ty)
+freezeShrink :: (PrimType ty, PrimMonad prim) => MUArray ty (PrimState prim) -> CountOf ty -> prim (UArray ty)
 freezeShrink ma n = do
     ma' <- new n
     copyAt ma' (Offset 0) ma (Offset 0) n
@@ -351,7 +344,7 @@ unsafeThaw (UVecAddr start len fptr) = return $ MUVecAddr start len fptr
 -- | Create a new array of size @n by settings each cells through the
 -- function @f.
 create :: forall ty . PrimType ty
-       => Size ty           -- ^ the size of the array
+       => CountOf ty           -- ^ the size of the array
        -> (Offset ty -> ty) -- ^ the function that set the value at the index
        -> UArray ty         -- ^ the array created
 create n initializer
@@ -369,8 +362,8 @@ create n initializer
 
 -- | Create a pinned array that is filled by a 'filler' function (typically an IO call like hGetBuf)
 createFromIO :: PrimType ty
-             => Size ty                  -- ^ the size of the array
-             -> (Ptr ty -> IO (Size ty)) -- ^ filling function that
+             => CountOf ty                  -- ^ the size of the array
+             -> (Ptr ty -> IO (CountOf ty)) -- ^ filling function that
              -> IO (UArray ty)
 createFromIO size filler
     | size == 0 = return empty
@@ -385,7 +378,7 @@ createFromIO size filler
 -- | Freeze a chunk of memory pointed, of specific size into a new unboxed array
 createFromPtr :: PrimType ty
               => Ptr ty
-              -> Size ty
+              -> CountOf ty
               -> IO (UArray ty)
 createFromPtr p s = do
     ma <- new s
@@ -409,13 +402,13 @@ empty = UVecBA 0 0 unpinned ba where !(BA0 ba) = empty_
 singleton :: PrimType ty => ty -> UArray ty
 singleton ty = create 1 (const ty)
 
-replicate :: PrimType ty => Word -> ty -> UArray ty
-replicate sz ty = create (Size (integralCast sz)) (const ty)
+replicate :: PrimType ty => CountOf ty -> ty -> UArray ty
+replicate sz ty = create sz (const ty)
 
 -- | make an array from a list of elements.
 vFromList :: PrimType ty => [ty] -> UArray ty
 vFromList l = runST $ do
-    ma <- new (Size len)
+    ma <- new (CountOf len)
     iter azero l $ \i x -> unsafeWrite ma i x
     unsafeFreeze ma
   where len = Data.List.length l
@@ -428,7 +421,7 @@ vToList a
     | len == 0  = []
     | otherwise = unsafeDewrap goBa goPtr a
   where
-    !len = lengthSize a
+    !len = length a
     goBa ba start = loop start
       where
         !end = start `offsetPlusE` len
@@ -446,8 +439,8 @@ equal a b
     | la /= lb  = False
     | otherwise = unsafeDewrap2 goBaBa goPtrPtr goBaPtr goPtrBa a b
   where
-    !la = lengthSize a
-    !lb = lengthSize b
+    !la = length a
+    !lb = length b
     goBaBa ba1 start1 ba2 start2 = loop start1 start2
       where
         !end = start1 `offsetPlusE` la
@@ -478,23 +471,23 @@ equalBytes a b
     | la /= lb  = False
     | otherwise = memcmp a b (csizeOfSize $ sizeInBytes la) == 0
   where
-    !la = lengthSize a
-    !lb = lengthSize b
+    !la = length a
+    !lb = length b
 
 equalMemcmp :: PrimType ty => UArray ty -> UArray ty -> Bool
 equalMemcmp a b
     | la /= lb  = False
     | otherwise = memcmp a b (csizeOfSize $ sizeInBytes la) == 0
   where
-    !la = lengthSize a
-    !lb = lengthSize b
+    !la = length a
+    !lb = length b
 
 -- | Compare 2 vectors
 vCompare :: (Ord ty, PrimType ty) => UArray ty -> UArray ty -> Ordering
 vCompare a b = unsafeDewrap2 goBaBa goPtrPtr goBaPtr goPtrBa a b
   where
-    !la = lengthSize a
-    !lb = lengthSize b
+    !la = length a
+    !lb = length b
     o1 = Offset (I# 1#)
     goBaBa ba1 start1 ba2 start2 = loop start1 start2
       where
@@ -538,8 +531,8 @@ vCompareBytes = vCompareMemcmp
 vCompareMemcmp :: (Ord ty, PrimType ty) => UArray ty -> UArray ty -> Ordering
 vCompareMemcmp a b = cintToOrdering $ memcmp a b sz
   where
-    la = lengthSize a
-    lb = lengthSize b
+    la = length a
+    lb = length b
     sz = csizeOfSize $ sizeInBytes $ min la lb
     cintToOrdering :: CInt -> Ordering
     cintToOrdering 0 = la `compare` lb
@@ -571,13 +564,13 @@ append a b
         copyAt r (sizeAsOffset la) mb (Offset 0) lb
         unsafeFreeze r
   where
-    !la = lengthSize a
-    !lb = lengthSize b
+    !la = length a
+    !lb = length b
 
 concat :: PrimType ty => [UArray ty] -> UArray ty
 concat [] = empty
 concat l  =
-    case filterAndSum (Size 0) [] l of
+    case filterAndSum (CountOf 0) [] l of
         (_,[])            -> empty
         (_,[x])           -> x
         (totalLen,chunks) -> runST $ do
@@ -588,15 +581,15 @@ concat l  =
     -- TODO would go faster not to reverse but pack from the end instead
     filterAndSum !totalLen acc []     = (totalLen, Prelude.reverse acc)
     filterAndSum !totalLen acc (x:xs)
-        | len == Size 0 = filterAndSum totalLen acc xs
+        | len == CountOf 0 = filterAndSum totalLen acc xs
         | otherwise      = filterAndSum (len+totalLen) (x:acc) xs
-      where len = lengthSize x
+      where len = length x
 
     doCopy _ _ []     = return ()
     doCopy r i (x:xs) = do
         unsafeCopyAtRO r i x (Offset 0) lx
         doCopy r (i `offsetPlusE` lx) xs
-      where lx = lengthSize x
+      where lx = length x
 
 -- | update an array by creating a new array with the updates.
 --
@@ -632,12 +625,12 @@ copyToPtr (UVecBA start sz _ ba) (Ptr p) = primitive $ \s1 ->
     (# compatCopyByteArrayToAddr# ba offset p szBytes s1, () #)
   where
     !(Offset (I# offset)) = offsetInBytes start
-    !(Size (I# szBytes)) = sizeInBytes sz
+    !(CountOf (I# szBytes)) = sizeInBytes sz
 copyToPtr (UVecAddr start sz fptr) dst =
     unsafePrimFromIO $ withFinalPtr fptr $ \ptr -> copyBytes dst (ptr `plusPtr` os) szBytes
   where
     !(Offset os)    = offsetInBytes start
-    !(Size szBytes) = sizeInBytes sz
+    !(CountOf szBytes) = sizeInBytes sz
 
 data TmpBA = TmpBA ByteArray#
 
@@ -667,22 +660,22 @@ withPtr vec@(UVecBA start _ pstatus a) f
     !(Offset os) = offsetOfE sz start
 {-# INLINE withPtr #-}
 
-recast :: (PrimType a, PrimType b) => UArray a -> UArray b
-recast = recast_ Proxy Proxy
+-- | Recast an array of type a to an array of b
+--
+-- a and b need to have the same size otherwise this
+-- raise an async exception
+recast :: forall a b . (PrimType a, PrimType b) => UArray a -> UArray b
+recast array
+    | aTypeSize == bTypeSize = unsafeRecast array
+    | missing   == 0         = unsafeRecast array
+    | otherwise = throw $ InvalidRecast
+                      (RecastSourceSize      alen)
+                      (RecastDestinationSize $ alen + missing)
   where
-    recast_ :: (PrimType a, PrimType b)
-            => Proxy a -> Proxy b -> UArray a -> UArray b
-    recast_ pa pb array
-        | aTypeSize == bTypeSize = unsafeRecast array
-        | missing   == 0         = unsafeRecast array
-        | otherwise = throw $ InvalidRecast
-                          (RecastSourceSize      alen)
-                          (RecastDestinationSize $ alen + missing)
-      where
-        aTypeSize@(Size as) = primSizeInBytes pa
-        bTypeSize@(Size bs) = primSizeInBytes pb
-        alen = length array * as
-        missing = alen `mod` bs
+    aTypeSize = primSizeInBytes (Proxy :: Proxy a)
+    bTypeSize@(CountOf bs) = primSizeInBytes (Proxy :: Proxy b)
+    (CountOf alen) = sizeInBytes (length array)
+    missing = alen `mod` bs
 
 unsafeRecast :: (PrimType a, PrimType b) => UArray a -> UArray b
 unsafeRecast (UVecBA start len pinStatus b) = UVecBA (primOffsetRecast start) (sizeRecast len) pinStatus b
@@ -696,49 +689,51 @@ unsafeRecastBytes (UVecAddr start len a) = UVecAddr (primOffsetRecast start) (si
 {-# INLINE [1] unsafeRecastBytes #-}
 
 null :: UArray ty -> Bool
-null (UVecBA _ sz _ _) = sz == Size 0
-null (UVecAddr _ l _)  = l == Size 0
+null (UVecBA _ sz _ _) = sz == CountOf 0
+null (UVecAddr _ l _)  = l == CountOf 0
 
-take :: PrimType ty => Int -> UArray ty -> UArray ty
-take nbElems v
-    | nbElems <= 0 = empty
-    | n >= vlen    = v
-    | otherwise    =
+-- | Take a count of elements from the array and create an array with just those elements
+take :: PrimType ty => CountOf ty -> UArray ty -> UArray ty
+take n v
+    | n <= 0    = empty
+    | n >= vlen = v
+    | otherwise =
         case v of
             UVecBA start _ pinst ba -> UVecBA start n pinst ba
             UVecAddr start _ fptr   -> UVecAddr start n fptr
   where
-    n    = Size nbElems
-    vlen = lengthSize v
+    vlen = length v
 
-unsafeTake :: PrimType ty => Size ty -> UArray ty -> UArray ty
+unsafeTake :: PrimType ty => CountOf ty -> UArray ty -> UArray ty
 unsafeTake sz (UVecBA start _ pinst ba) = UVecBA start sz pinst ba
 unsafeTake sz (UVecAddr start _ fptr)   = UVecAddr start sz fptr
 
-drop :: PrimType ty => Int -> UArray ty -> UArray ty
-drop nbElems v
-    | nbElems <= 0 = v
-    | n >= vlen    = empty
-    | otherwise    =
+-- | Drop a count of elements from the array and return the new array minus those dropped elements
+drop :: PrimType ty => CountOf ty -> UArray ty -> UArray ty
+drop n v
+    | n <= 0    = v
+    | n >= vlen = empty
+    | otherwise =
         case v of
             UVecBA start len pinst ba -> UVecBA (start `offsetPlusE` n) (len - n) pinst ba
             UVecAddr start len fptr   -> UVecAddr (start `offsetPlusE` n) (len - n) fptr
   where
-    n    = Size nbElems
-    vlen = lengthSize v
+    vlen = length v
 
-splitAt :: PrimType ty => Int -> UArray ty -> (UArray ty, UArray ty)
+-- | Split an array into two, with a count of at most N elements in the first one
+-- and the remaining in the other.
+splitAt :: PrimType ty => CountOf ty -> UArray ty -> (UArray ty, UArray ty)
 splitAt nbElems v
-    | nbElems <= 0   = (empty, v)
-    | n == Size vlen = (v, empty)
-    | otherwise      =
+    | nbElems <= 0 = (empty, v)
+    | n == vlen    = (v, empty)
+    | otherwise    =
         case v of
             UVecBA start len pinst ba -> ( UVecBA start                   n         pinst ba
                                          , UVecBA (start `offsetPlusE` n) (len - n) pinst ba)
             UVecAddr start len fptr    -> ( UVecAddr start                   n         fptr
                                           , UVecAddr (start `offsetPlusE` n) (len - n) fptr)
   where
-    n    = Size $ min nbElems vlen
+    n    = min nbElems vlen
     vlen = length v
 
 splitElem :: PrimType ty => ty -> UArray ty -> (# UArray ty, UArray ty #)
@@ -771,22 +766,33 @@ splitElem !ty r@(UVecAddr start len fptr)
 {-# SPECIALIZE [3] splitElem :: Word8 -> UArray Word8 -> (# UArray Word8, UArray Word8 #) #-}
 {-# SPECIALIZE [3] splitElem :: Word32 -> UArray Word32 -> (# UArray Word32, UArray Word32 #) #-}
 
-revTake :: PrimType ty => Int -> UArray ty -> UArray ty
-revTake nbElems v = drop (length v - nbElems) v
+-- inverse a CountOf that is specified from the end (e.g. take n elements from the end)
+countFromStart :: UArray ty -> CountOf ty -> CountOf ty
+countFromStart v sz@(CountOf sz')
+    | sz >= len = CountOf 0
+    | otherwise = CountOf (len' - sz')
+  where len@(CountOf len') = length v
 
-revDrop :: PrimType ty => Int -> UArray ty -> UArray ty
-revDrop nbElems v = take (length v - nbElems) v
+-- | Take the N elements from the end of the array
+revTake :: PrimType ty => CountOf ty -> UArray ty -> UArray ty
+revTake n v = drop (countFromStart v n) v
 
-revSplitAt :: PrimType ty => Int -> UArray ty -> (UArray ty, UArray ty)
-revSplitAt n v = (drop idx v, take idx v)
-  where idx = length v - n
+-- | Drop the N elements from the end of the array
+revDrop :: PrimType ty => CountOf ty -> UArray ty -> UArray ty
+revDrop n v = take (countFromStart v n) v
+
+-- | Split an array at the N element from the end, and return
+-- the last N elements in the first part of the tuple, and whatever first
+-- elements remaining in the second
+revSplitAt :: PrimType ty => CountOf ty -> UArray ty -> (UArray ty, UArray ty)
+revSplitAt n v = (drop sz v, take sz v) where sz = countFromStart v n
 
 splitOn :: PrimType ty => (ty -> Bool) -> UArray ty -> [UArray ty]
 splitOn xpredicate ivec
     | len == 0  = [mempty]
     | otherwise = runST $ unsafeIndexer ivec (pureST . go ivec xpredicate)
   where
-    !len = lengthSize ivec
+    !len = length ivec
     go v predicate getIdx = loop 0 0
       where
         loop !prevIdx !idx
@@ -812,23 +818,23 @@ sub vec startIdx expectedEndIdx
   where
     newLen = endIdx - startIdx
     endIdx = min expectedEndIdx (0 `offsetPlusE` len)
-    len = lengthSize vec
+    len = length vec
 
-findIndex :: PrimType ty => ty -> UArray ty -> Maybe Int
+findIndex :: forall ty . PrimType ty => ty -> UArray ty -> Maybe (Offset ty)
 findIndex tyOuter ba = runST $ unsafeIndexer ba (go tyOuter)
   where
     !len = length ba
 
-    go :: PrimType ty => ty -> (Offset ty -> ty) -> ST s (Maybe Int)
+    go :: PrimType ty => ty -> (Offset ty -> ty) -> ST s (Maybe (Offset ty))
     go ty getIdx = loop (Offset 0)
       where
-        loop ofs@(Offset i)
-            | ofs == Offset len = return Nothing
-            | getIdx ofs == ty  = return $ Just i
-            | otherwise         = loop (ofs + Offset 1)
-{-# SPECIALIZE [3] findIndex :: Word8 -> UArray Word8 -> Maybe Int #-}
+        loop ofs
+            | ofs .==# len     = return Nothing
+            | getIdx ofs == ty = return $ Just ofs
+            | otherwise        = loop (ofs + Offset 1)
+{-# SPECIALIZE [3] findIndex :: Word8 -> UArray Word8 -> Maybe (Offset Word8) #-}
 
-break :: PrimType ty => (ty -> Bool) -> UArray ty -> (UArray ty, UArray ty)
+break :: forall ty . PrimType ty => (ty -> Bool) -> UArray ty -> (UArray ty, UArray ty)
 break xpredicate xv
     | len == 0  = (empty, empty)
     | otherwise = runST $ unsafeIndexer xv (go xv xpredicate)
@@ -837,9 +843,9 @@ break xpredicate xv
     go :: PrimType ty => UArray ty -> (ty -> Bool) -> (Offset ty -> ty) -> ST s (UArray ty, UArray ty)
     go v predicate getIdx = return (findBreak $ Offset 0)
       where
-        findBreak !i@(Offset io)
-            | i == Offset len     = (v, empty)
-            | predicate (getIdx i) = splitAt io v
+        findBreak !i
+            | i .==# len           = (v, empty)
+            | predicate (getIdx i) = splitAt (offsetAsSize i) v
             | otherwise            = findBreak (i + Offset 1)
         {-# INLINE findBreak #-}
     {-# INLINE go #-}
@@ -884,7 +890,7 @@ intersperse sep v
     | len <= 1  = v
     | otherwise = runST $ unsafeCopyFrom v newSize (go sep)
   where
-    len = lengthSize v
+    len = length v
     newSize = (scale (2:: Word) len) - 1
 
     go :: PrimType ty => ty -> UArray ty -> Offset ty -> MUArray ty s -> ST s ()
@@ -902,39 +908,39 @@ span p = break (not . p)
 
 map :: (PrimType a, PrimType b) => (a -> b) -> UArray a -> UArray b
 map f a = create lenB (\i -> f $ unsafeIndex a (offsetCast Proxy i))
-  where !lenB = sizeCast (Proxy :: Proxy (a -> b)) (lengthSize a)
+  where !lenB = sizeCast (Proxy :: Proxy (a -> b)) (length a)
 
 mapIndex :: (PrimType a, PrimType b) => (Offset b -> a -> b) -> UArray a -> UArray b
-mapIndex f a = create (sizeCast Proxy $ lengthSize a) (\i -> f i $ unsafeIndex a (offsetCast Proxy i))
+mapIndex f a = create (sizeCast Proxy $ length a) (\i -> f i $ unsafeIndex a (offsetCast Proxy i))
 
 cons :: PrimType ty => ty -> UArray ty -> UArray ty
 cons e vec
-    | len == Size 0 = singleton e
+    | len == CountOf 0 = singleton e
     | otherwise     = runST $ do
         muv <- new (len + 1)
         unsafeCopyAtRO muv 1 vec 0 len
         unsafeWrite muv 0 e
         unsafeFreeze muv
   where
-    !len = lengthSize vec
+    !len = length vec
 
 snoc :: PrimType ty => UArray ty -> ty -> UArray ty
 snoc vec e
-    | len == Size 0 = singleton e
+    | len == CountOf 0 = singleton e
     | otherwise     = runST $ do
-        muv <- new (len + Size 1)
+        muv <- new (len + CountOf 1)
         unsafeCopyAtRO muv (Offset 0) vec (Offset 0) len
-        unsafeWrite muv (0 `offsetPlusE` lengthSize vec) e
+        unsafeWrite muv (0 `offsetPlusE` length vec) e
         unsafeFreeze muv
   where
-     !len = lengthSize vec
+     !len = length vec
 
 uncons :: PrimType ty => UArray ty -> Maybe (ty, UArray ty)
 uncons vec
     | nbElems == 0 = Nothing
     | otherwise    = Just (unsafeIndex vec 0, sub vec 1 (0 `offsetPlusE` nbElems))
   where
-    !nbElems = lengthSize vec
+    !nbElems = length vec
 
 unsnoc :: PrimType ty => UArray ty -> Maybe (UArray ty, ty)
 unsnoc vec
@@ -942,12 +948,12 @@ unsnoc vec
     | otherwise    = Just (sub vec 0 lastElem, unsafeIndex vec lastElem)
   where
     !lastElem = 0 `offsetPlusE` (nbElems - 1)
-    !nbElems = lengthSize vec
+    !nbElems = length vec
 
 find :: PrimType ty => (ty -> Bool) -> UArray ty -> Maybe ty
 find predicate vec = loop 0
   where
-    !len = lengthSize vec
+    !len = length vec
     loop i
         | i .==# len = Nothing
         | otherwise  =
@@ -959,7 +965,7 @@ sortBy xford vec
     | len == 0  = empty
     | otherwise = runST (thaw vec >>= doSort xford)
   where
-    len = lengthSize vec
+    len = length vec
     doSort :: (PrimType ty, PrimMonad prim) => (ty -> ty -> Ordering) -> MUArray ty (PrimState prim) -> prim (UArray ty)
     doSort ford ma = qsort 0 (sizeLastOffset len) >> unsafeFreeze ma
       where
@@ -996,7 +1002,7 @@ filter predicate vec = vFromList $ Data.List.filter predicate $ vToList vec
 
 reverse :: PrimType ty => UArray ty -> UArray ty
 reverse a
-    | len == Size 0 = empty
+    | len == CountOf 0 = empty
     | otherwise     = runST $ do
         ma <- newNative len $ \mba ->
                 case a of
@@ -1004,7 +1010,7 @@ reverse a
                     (UVecAddr start _ fptr) -> withFinalPtr fptr $ \ptr -> goAddr endOfs mba ptr start
         unsafeFreeze ma
   where
-    !len = lengthSize a
+    !len = length a
     !endOfs = Offset 0 `offsetPlusE` len
 
     goNative :: PrimType ty => Offset ty -> MutableByteArray# s -> ByteArray# -> Offset ty -> ST s ()
@@ -1025,7 +1031,7 @@ reverse a
 foldl :: PrimType ty => (a -> ty -> a) -> a -> UArray ty -> a
 foldl f initialAcc vec = loop 0 initialAcc
   where
-    len = lengthSize vec
+    len = length vec
     loop i acc
         | i .==# len = acc
         | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
@@ -1033,7 +1039,7 @@ foldl f initialAcc vec = loop 0 initialAcc
 foldr :: PrimType ty => (ty -> a -> a) -> a -> UArray ty -> a
 foldr f initialAcc vec = loop 0
   where
-    !len = lengthSize vec
+    !len = length vec
     loop i
         | i .==# len = initialAcc
         | otherwise  = unsafeIndex vec i `f` loop (i+1)
@@ -1041,7 +1047,7 @@ foldr f initialAcc vec = loop 0
 foldl' :: PrimType ty => (a -> ty -> a) -> a -> UArray ty -> a
 foldl' f initialAcc vec = loop 0 initialAcc
   where
-    !len = lengthSize vec
+    !len = length vec
     loop i !acc
         | i .==# len = acc
         | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
@@ -1066,30 +1072,30 @@ builderBuild sizeChunksI ab
     | sizeChunksI <= 0 = builderBuild 64 ab
     | otherwise        = do
         first         <- new sizeChunks
-        ((), (i, st)) <- runState (runBuilder ab) (Offset 0, BuildingState [] (Size 0) first sizeChunks)
+        ((), (i, st)) <- runState (runBuilder ab) (Offset 0, BuildingState [] (CountOf 0) first sizeChunks)
         cur           <- unsafeFreezeShrink (curChunk st) (offsetAsSize i)
         -- Build final array
         let totalSize = prevChunksSize st + offsetAsSize i
         new totalSize >>= fillFromEnd totalSize (cur : prevChunks st) >>= unsafeFreeze
   where
-      sizeChunks = Size sizeChunksI
+      sizeChunks = CountOf sizeChunksI
 
       fillFromEnd _   []     mua = return mua
       fillFromEnd !end (x:xs) mua = do
-          let sz = lengthSize x
+          let sz = length x
           unsafeCopyAtRO mua (sizeAsOffset (end - sz)) x (Offset 0) sz
           fillFromEnd (end - sz) xs mua
 
 toHexadecimal :: PrimType ty => UArray ty -> UArray Word8
 toHexadecimal ba
-    | len == Size 0 = empty
+    | len == CountOf 0 = empty
     | otherwise     = runST $ do
         ma <- new (len `scale` 2)
         unsafeIndexer b8 (go ma)
         unsafeFreeze ma
   where
     b8 = unsafeRecast ba
-    !len = lengthSize b8
+    !len = length b8
     !endOfs = Offset 0 `offsetPlusE` len
 
     go :: MUArray Word8 s -> (Offset Word8 -> Word8) -> ST s ()

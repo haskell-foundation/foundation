@@ -58,11 +58,11 @@ import           Foreign.Marshal.Utils (copyBytes)
 -- Element in this array can be modified in place.
 data MUArray ty st =
       MUVecMA {-# UNPACK #-} !(Offset ty)
-              {-# UNPACK #-} !(Size ty)
+              {-# UNPACK #-} !(CountOf ty)
               {-# UNPACK #-} !PinnedStatus
                              (MutableByteArray# st)
     | MUVecAddr {-# UNPACK #-} !(Offset ty)
-                {-# UNPACK #-} !(Size ty)
+                {-# UNPACK #-} !(CountOf ty)
                                !(FinalPtr ty)
 
 mutableArrayProxyTy :: MUArray ty st -> Proxy ty
@@ -119,24 +119,24 @@ unsafeWrite (MUVecAddr start _ fptr) i v = withFinalPtr fptr $ \(Ptr addr) -> pr
 -- all the cells are uninitialized and could contains invalid values.
 --
 -- All mutable arrays are allocated on a 64 bits aligned addresses
-newPinned :: (PrimMonad prim, PrimType ty) => Size ty -> prim (MUArray ty (PrimState prim))
+newPinned :: (PrimMonad prim, PrimType ty) => CountOf ty -> prim (MUArray ty (PrimState prim))
 newPinned n = newFake n Proxy
-  where newFake :: (PrimMonad prim, PrimType ty) => Size ty -> Proxy ty -> prim (MUArray ty (PrimState prim))
+  where newFake :: (PrimMonad prim, PrimType ty) => CountOf ty -> Proxy ty -> prim (MUArray ty (PrimState prim))
         newFake sz ty = primitive $ \s1 ->
             case newAlignedPinnedByteArray# bytes 8# s1 of
                 (# s2, mba #) -> (# s2, MUVecMA (Offset 0) sz pinned mba #)
           where
-                !(Size (I# bytes)) = sizeOfE (primSizeInBytes ty) sz
+                !(CountOf (I# bytes)) = sizeOfE (primSizeInBytes ty) sz
         {-# INLINE newFake #-}
 
-newUnpinned :: (PrimMonad prim, PrimType ty) => Size ty -> prim (MUArray ty (PrimState prim))
+newUnpinned :: (PrimMonad prim, PrimType ty) => CountOf ty -> prim (MUArray ty (PrimState prim))
 newUnpinned n = newFake n Proxy
-  where newFake :: (PrimMonad prim, PrimType ty) => Size ty -> Proxy ty -> prim (MUArray ty (PrimState prim))
+  where newFake :: (PrimMonad prim, PrimType ty) => CountOf ty -> Proxy ty -> prim (MUArray ty (PrimState prim))
         newFake sz ty = primitive $ \s1 ->
             case newByteArray# bytes s1 of
                 (# s2, mba #) -> (# s2, MUVecMA (Offset 0) sz unpinned mba #)
           where
-                !(Size (I# bytes)) = sizeOfE (primSizeInBytes ty) sz
+                !(CountOf (I# bytes)) = sizeOfE (primSizeInBytes ty) sz
         {-# INLINE newFake #-}
 
 empty :: PrimMonad prim => prim (MUArray ty (PrimState prim))
@@ -150,7 +150,7 @@ empty = primitive $ \s1 -> case newByteArray# 0# s1 of { (# s2, mba #) -> (# s2,
 --
 -- You can change the threshold value used by setting the environment variable
 -- @HS_FOUNDATION_UARRAY_UNPINNED_MAX@.
-new :: (PrimMonad prim, PrimType ty) => Size ty -> prim (MUArray ty (PrimState prim))
+new :: (PrimMonad prim, PrimType ty) => CountOf ty -> prim (MUArray ty (PrimState prim))
 new sz
     | sizeRecast sz <= maxSizeUnpinned = newUnpinned sz
     | otherwise                        = newPinned sz
@@ -167,7 +167,7 @@ mutableSame (MUVecMA {})     (MUVecAddr {})   = False
 mutableSame (MUVecAddr {})   (MUVecMA {})     = False
 
 
-newNative :: (PrimMonad prim, PrimType ty) => Size ty -> (MutableByteArray# (PrimState prim) -> prim ()) -> prim (MUArray ty (PrimState prim))
+newNative :: (PrimMonad prim, PrimType ty) => CountOf ty -> (MutableByteArray# (PrimState prim) -> prim ()) -> prim (MUArray ty (PrimState prim))
 newNative n f = do
     muvec <- new n
     case muvec of
@@ -178,7 +178,7 @@ mutableForeignMem :: (PrimMonad prim, PrimType ty)
                   => FinalPtr ty -- ^ the start pointer with a finalizer
                   -> Int         -- ^ the number of elements (in elements, not bytes)
                   -> prim (MUArray ty (PrimState prim))
-mutableForeignMem fptr nb = return $ MUVecAddr (Offset 0) (Size nb) fptr
+mutableForeignMem fptr nb = return $ MUVecAddr (Offset 0) (CountOf nb) fptr
 
 -- | Copy a number of elements from an array to another array with offsets
 copyAt :: (PrimMonad prim, PrimType ty)
@@ -186,7 +186,7 @@ copyAt :: (PrimMonad prim, PrimType ty)
        -> Offset ty                  -- ^ offset at destination
        -> MUArray ty (PrimState prim) -- ^ source array
        -> Offset ty                  -- ^ offset at source
-       -> Size ty                    -- ^ number of elements to copy
+       -> CountOf ty                    -- ^ number of elements to copy
        -> prim ()
 copyAt (MUVecMA dstStart _ _ dstMba) ed uvec@(MUVecMA srcStart _ _ srcBa) es n =
     primitive $ \st -> (# copyMutableByteArray# srcBa os dstMba od nBytes st, () #)
@@ -194,7 +194,7 @@ copyAt (MUVecMA dstStart _ _ dstMba) ed uvec@(MUVecMA srcStart _ _ srcBa) es n =
     !sz                 = primSizeInBytes (mutableArrayProxyTy uvec)
     !(Offset (I# os))   = offsetOfE sz (srcStart + es)
     !(Offset (I# od))   = offsetOfE sz (dstStart + ed)
-    !(Size (I# nBytes)) = sizeOfE sz n
+    !(CountOf (I# nBytes)) = sizeOfE sz n
 copyAt (MUVecMA dstStart _ _ dstMba) ed muvec@(MUVecAddr srcStart _ srcFptr) es n =
     withFinalPtr srcFptr $ \srcPtr ->
         let !(Ptr srcAddr) = srcPtr `plusPtr` os
@@ -203,7 +203,7 @@ copyAt (MUVecMA dstStart _ _ dstMba) ed muvec@(MUVecAddr srcStart _ srcFptr) es 
     !sz                 = primSizeInBytes (mutableArrayProxyTy muvec)
     !(Offset os)        = offsetOfE sz (srcStart + es)
     !(Offset (I# od))   = offsetOfE sz (dstStart + ed)
-    !(Size (I# nBytes)) = sizeOfE sz n
+    !(CountOf (I# nBytes)) = sizeOfE sz n
 copyAt dst od src os n = loop od os
   where
     !endIndex = os `offsetPlusE` n
@@ -219,16 +219,16 @@ sub :: (PrimMonad prim, PrimType ty)
 sub (MUVecMA start sz pstatus mba) dropElems' takeElems
     | takeElems <= 0 = empty
     | resultEmpty    = empty
-    | otherwise      = return $ MUVecMA (start `offsetPlusE` dropElems) (min (Size takeElems) (sz - dropElems)) pstatus mba
+    | otherwise      = return $ MUVecMA (start `offsetPlusE` dropElems) (min (CountOf takeElems) (sz - dropElems)) pstatus mba
   where
-    dropElems = max 0 (Size dropElems')
+    dropElems = max 0 (CountOf dropElems')
     resultEmpty = dropElems >= sz
 sub (MUVecAddr start sz addr) dropElems' takeElems
     | takeElems <= 0 = empty
     | resultEmpty    = empty
-    | otherwise      = return $ MUVecAddr (start `offsetPlusE` dropElems) (min (Size takeElems) (sz - dropElems)) addr
+    | otherwise      = return $ MUVecAddr (start `offsetPlusE` dropElems) (min (CountOf takeElems) (sz - dropElems)) addr
   where
-    dropElems = max 0 (Size dropElems')
+    dropElems = max 0 (CountOf dropElems')
     resultEmpty = dropElems >= sz
 
 {-
@@ -237,7 +237,7 @@ copyAddr :: (PrimMonad prim, PrimType ty)
          -> Offset ty                  -- ^ offset at destination
          -> Ptr Word8                   -- ^ source ptr
          -> Offset ty                  -- ^ offset at source
-         -> Size ty                    -- ^ number of elements to copy
+         -> CountOf ty                    -- ^ number of elements to copy
          -> prim ()
 copyAddr (MUVecMA dstStart _ _ dst) dstOfs (Ptr src) srcOfs sz = primitive $ \s ->
     (# compatCopyAddrToByteArray# (plusAddr# src os) dst od sz s, () #)
@@ -249,10 +249,10 @@ copyAddr (MUVecAddr start _ fptr) od src os sz =
 
 -- | return the numbers of elements in a mutable array
 mutableLength :: PrimType ty => MUArray ty st -> Int
-mutableLength (MUVecMA _ (Size end) _ _) = end
-mutableLength (MUVecAddr _ (Size end) _) = end
+mutableLength (MUVecMA _ (CountOf end) _ _) = end
+mutableLength (MUVecAddr _ (CountOf end) _) = end
 
-mutableLengthSize :: PrimType ty => MUArray ty st -> Size ty
+mutableLengthSize :: PrimType ty => MUArray ty st -> CountOf ty
 mutableLengthSize (MUVecMA _ end _ _) = end
 mutableLengthSize (MUVecAddr _ end _) = end
 
@@ -304,13 +304,13 @@ withMutablePtr = withMutablePtrHint False False
 
 -- | Copy from a pointer, @count@ elements, into the mutable array
 copyFromPtr :: forall prim ty . (PrimMonad prim, PrimType ty)
-            => Ptr ty -> Size ty -> MUArray ty (PrimState prim) -> prim ()
+            => Ptr ty -> CountOf ty -> MUArray ty (PrimState prim) -> prim ()
 copyFromPtr (Ptr p) count (MUVecMA ofs arrSz _ mba)
     | count > arrSz = primOutOfBound OOB_MemCopy (sizeAsOffset count) arrSz
     | otherwise     = primitive $ \st -> (# copyAddrToByteArray# p mba od countBytes st, () #)
   where
     !sz                     = primSizeInBytes (Proxy :: Proxy ty)
-    !(Size (I# countBytes)) = sizeOfE sz count
+    !(CountOf (I# countBytes)) = sizeOfE sz count
     !(Offset (I# od))       = offsetOfE sz ofs
 copyFromPtr p count (MUVecAddr ofs arrSz fptr)
     | count > arrSz = primOutOfBound OOB_MemCopy (sizeAsOffset count) arrSz
@@ -318,7 +318,7 @@ copyFromPtr p count (MUVecAddr ofs arrSz fptr)
         unsafePrimFromIO $ copyBytes (dstPtr `plusPtr` os) p bytes
   where
         sz = primSizeInBytes (Proxy :: Proxy ty)
-        !(Size bytes) = sizeOfE sz count
+        !(CountOf bytes) = sizeOfE sz count
         !(Offset os) = offsetOfE sz ofs
 
 -- | Copy all the block content to the memory starting at the destination address
@@ -331,9 +331,9 @@ copyToPtr (MUVecMA start sz _ ma) (Ptr p) = primitive $ \s1 ->
         (# s2, ba #) -> (# compatCopyByteArrayToAddr# ba offset p szBytes s2, () #)
   where
     !(Offset (I# offset)) = offsetInBytes start
-    !(Size (I# szBytes)) = sizeInBytes sz
+    !(CountOf (I# szBytes)) = sizeInBytes sz
 copyToPtr (MUVecAddr start sz fptr) dst =
     unsafePrimFromIO $ withFinalPtr fptr $ \ptr -> copyBytes dst (ptr `plusPtr` os) szBytes
   where
     !(Offset os)    = offsetInBytes start
-    !(Size szBytes) = sizeInBytes sz
+    !(CountOf szBytes) = sizeInBytes sz

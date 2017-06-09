@@ -93,7 +93,7 @@ testSequentialProperties proxy genElement = testGroup "Properties"
         revSplitAt n col == (revTake n col, revDrop n col)
     ]
   where
-    withCollection2 f = forAll ((,) <$> (fromListP proxy <$> generateListOfElement genElement) <*> arbitrary) f
+    withCollection2 f = forAll ((,) <$> (fromListP proxy <$> generateListOfElement genElement) <*> (CountOf <$> arbitrary)) f
 
 testMonoid :: ( Show a, Show e
               , Eq a, Eq e
@@ -254,7 +254,7 @@ testSequentialOps proxy genElement = testGroup "Sequential"
     toListSecond (x,y) = (x, toList y)
     withElements f = forAll (generateListOfElement genElement) f
     with2Elements f = forAll ((,) <$> generateListOfElement genElement <*> generateListOfElement genElement) f
-    withElements2 f = forAll ((,) <$> generateListOfElement genElement <*> arbitrary) f
-    withElements3 f = forAll ((,,) <$> generateListOfElement genElement <*> arbitrary <*> arbitrary) f
+    withElements2 f = forAll ((,) <$> generateListOfElement genElement <*> (CountOf <$> arbitrary)) f
+    withElements3 f = forAll ((,,) <$> generateListOfElement genElement <*> (CountOf <$> arbitrary) <*> (CountOf <$> arbitrary)) f
     withElements2E f = forAll ((,) <$> generateListOfElement genElement <*> genElement) f
     withNonEmptyElements f = forAll (generateNonEmptyListOfElement 80 genElement) f

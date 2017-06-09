@@ -36,8 +36,8 @@ import           Foundation.Primitive.UTF8.Table
 accessBytes :: Offset Word8 -> (Offset Word8 -> Word8) -> ([Word8], Offset Word8)
 accessBytes offset getAtIdx = (loop offset, pastEnd)
   where
-    nbytes :: Size Word8
-    nbytes = Size $ getNbBytes $ getAtIdx offset
+    nbytes :: CountOf Word8
+    nbytes = CountOf $ getNbBytes $ getAtIdx offset
     pastEnd :: Offset Word8
     pastEnd = 1 + (offset `offsetPlusE` nbytes)
     loop :: Offset Word8 -> [Word8]
@@ -46,7 +46,7 @@ accessBytes offset getAtIdx = (loop offset, pastEnd)
         | otherwise      = getAtIdx off : loop (off + 1)
 
 buildByteArray :: Addr# -> ST st (UArray Word8)
-buildByteArray addr = Vec.UVecAddr (Offset 0) (Size 100000) `fmap`
+buildByteArray addr = Vec.UVecAddr (Offset 0) (CountOf 100000) `fmap`
     toFinalPtr (Ptr addr) (\_ -> return ())
 
 -- | assuming the given ByteArray is a valid modified UTF-8 sequence of bytes

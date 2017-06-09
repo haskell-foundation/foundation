@@ -39,6 +39,8 @@ module Foundation.Check
     ) where
 
 import           Foundation.Primitive.Imports
+import           Foundation.Primitive.IntegralConv
+import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Check.Gen
 import           Foundation.Check.Arbitrary
 import           Foundation.Check.Property
@@ -67,7 +69,7 @@ pick _ io = Check $ do
     r <- liftIO $ io
     pure r
 
-iterateProperty :: Word64 ->  GenParams -> (Word64 -> GenRng) -> Property -> IO (PropertyResult, Word64)
+iterateProperty :: CountOf TestResult ->  GenParams -> (Word64 -> GenRng) -> Property -> IO (PropertyResult, CountOf TestResult)
 iterateProperty limit genParams genRngIter prop = iterProp 1
   where
     iterProp !iter
@@ -79,7 +81,10 @@ iterateProperty limit genParams genRngIter prop = iterProp 1
               (PropertySuccess, cont) | cont      -> iterProp (iter+1)
                                       | otherwise -> return (PropertySuccess, iter)
         where
+          iterW64 :: Word64
+          iterW64 = let (CountOf iter') = iter in integralCast (integralUpsize iter' :: Int64)
+
           -- TODO revisit to let through timeout and other exception like ctrl-c or thread killing.
           toResult :: IO (PropertyResult, Bool)
-          toResult = (propertyToResult <$> evaluate (runGen (unProp prop) (genRngIter iter) genParams))
+          toResult = (propertyToResult <$> evaluate (runGen (unProp prop) (genRngIter iterW64) genParams))
             `catch` (\(e :: SomeException) -> return (PropertyFailed (show e), False))

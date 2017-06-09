@@ -54,7 +54,7 @@ divBytes :: PrimType ty => Offset ty -> (Int -> Int)
 divBytes ofs = \x -> x `Prelude.quot` (getSize Proxy ofs)
   where
     getSize :: PrimType ty => Proxy ty -> Offset ty -> Int
-    getSize p _ = let (Size sz) = primSizeInBytes p in sz
+    getSize p _ = let (CountOf sz) = primSizeInBytes p in sz
 
 baLength :: PrimType ty => Offset ty -> ByteArray# -> Int
 baLength ofs ba = divBytes ofs (I# (sizeofByteArray# ba))
@@ -200,13 +200,13 @@ class Eq ty => PrimType ty where
                   -> ty
                   -> prim ()
 
-sizeInt, sizeWord :: Size Word8
+sizeInt, sizeWord :: CountOf Word8
 #if WORD_SIZE_IN_BITS == 64
-sizeInt = Size 8
-sizeWord = Size 8
+sizeInt = CountOf 8
+sizeWord = CountOf 8
 #else
-sizeInt = Size 4
-sizeWord = Size 4
+sizeInt = CountOf 4
+sizeWord = CountOf 4
 #endif
 
 {-# SPECIALIZE [3] primBaUIndex :: ByteArray# -> Offset Word8 -> Word8 #-}
@@ -244,7 +244,7 @@ instance PrimType Word where
     {-# INLINE primAddrWrite #-}
 
 instance PrimType Word8 where
-    primSizeInBytes _ = Size 1
+    primSizeInBytes _ = CountOf 1
     {-# INLINE primSizeInBytes #-}
     primBaUIndex ba (Offset (I# n)) = W8# (indexWord8Array# ba n)
     {-# INLINE primBaUIndex #-}
@@ -260,7 +260,7 @@ instance PrimType Word8 where
     {-# INLINE primAddrWrite #-}
 
 instance PrimType Word16 where
-    primSizeInBytes _ = Size 2
+    primSizeInBytes _ = CountOf 2
     {-# INLINE primSizeInBytes #-}
     primBaUIndex ba (Offset (I# n)) = W16# (indexWord16Array# ba n)
     {-# INLINE primBaUIndex #-}
@@ -275,7 +275,7 @@ instance PrimType Word16 where
     primAddrWrite addr (Offset (I# n)) (W16# w) = primitive $ \s1 -> (# writeWord16OffAddr# addr n w s1, () #)
     {-# INLINE primAddrWrite #-}
 instance PrimType Word32 where
-    primSizeInBytes _ = Size 4
+    primSizeInBytes _ = CountOf 4
     {-# INLINE primSizeInBytes #-}
     primBaUIndex ba (Offset (I# n)) = W32# (indexWord32Array# ba n)
     {-# INLINE primBaUIndex #-}
@@ -290,7 +290,7 @@ instance PrimType Word32 where
     primAddrWrite addr (Offset (I# n)) (W32# w) = primitive $ \s1 -> (# writeWord32OffAddr# addr n w s1, () #)
     {-# INLINE primAddrWrite #-}
 instance PrimType Word64 where
-    primSizeInBytes _ = Size 8
+    primSizeInBytes _ = CountOf 8
     {-# INLINE primSizeInBytes #-}
     primBaUIndex ba (Offset (I# n)) = W64# (indexWord64Array# ba n)
     {-# INLINE primBaUIndex #-}
@@ -305,7 +305,7 @@ instance PrimType Word64 where
     primAddrWrite addr (Offset (I# n)) (W64# w) = primitive $ \s1 -> (# writeWord64OffAddr# addr n w s1, () #)
     {-# INLINE primAddrWrite #-}
 instance PrimType Int8 where
-    primSizeInBytes _ = Size 1
+    primSizeInBytes _ = CountOf 1
     {-# INLINE primSizeInBytes #-}
     primBaUIndex ba (Offset (I# n)) = I8# (indexInt8Array# ba n)
     {-# INLINE primBaUIndex #-}
@@ -320,7 +320,7 @@ instance PrimType Int8 where
     primAddrWrite addr (Offset (I# n)) (I8# w) = primitive $ \s1 -> (# writeInt8OffAddr# addr n w s1, () #)
     {-# INLINE primAddrWrite #-}
 instance PrimType Int16 where
-    primSizeInBytes _ = Size 2
+    primSizeInBytes _ = CountOf 2
     {-# INLINE primSizeInBytes #-}
     primBaUIndex ba (Offset (I# n)) = I16# (indexInt16Array# ba n)
     {-# INLINE primBaUIndex #-}
@@ -335,7 +335,7 @@ instance PrimType Int16 where
     primAddrWrite addr (Offset (I# n)) (I16# w) = primitive $ \s1 -> (# writeInt16OffAddr# addr n w s1, () #)
     {-# INLINE primAddrWrite #-}
 instance PrimType Int32 where
-    primSizeInBytes _ = Size 4
+    primSizeInBytes _ = CountOf 4
     {-# INLINE primSizeInBytes #-}
     primBaUIndex ba (Offset (I# n)) = I32# (indexInt32Array# ba n)
     {-# INLINE primBaUIndex #-}
@@ -350,7 +350,7 @@ instance PrimType Int32 where
     primAddrWrite addr (Offset (I# n)) (I32# w) = primitive $ \s1 -> (# writeInt32OffAddr# addr n w s1, () #)
     {-# INLINE primAddrWrite #-}
 instance PrimType Int64 where
-    primSizeInBytes _ = Size 8
+    primSizeInBytes _ = CountOf 8
     {-# INLINE primSizeInBytes #-}
     primBaUIndex ba (Offset (I# n)) = I64# (indexInt64Array# ba n)
     {-# INLINE primBaUIndex #-}
@@ -366,7 +366,7 @@ instance PrimType Int64 where
     {-# INLINE primAddrWrite #-}
 
 instance PrimType Float where
-    primSizeInBytes _ = Size 4
+    primSizeInBytes _ = CountOf 4
     {-# INLINE primSizeInBytes #-}
     primBaUIndex ba (Offset (I# n)) = F# (indexFloatArray# ba n)
     {-# INLINE primBaUIndex #-}
@@ -381,7 +381,7 @@ instance PrimType Float where
     primAddrWrite addr (Offset (I# n)) (F# w) = primitive $ \s1 -> (# writeFloatOffAddr# addr n w s1, () #)
     {-# INLINE primAddrWrite #-}
 instance PrimType Double where
-    primSizeInBytes _ = Size 8
+    primSizeInBytes _ = CountOf 8
     {-# INLINE primSizeInBytes #-}
     primBaUIndex ba (Offset (I# n)) = D# (indexDoubleArray# ba n)
     {-# INLINE primBaUIndex #-}
@@ -397,7 +397,7 @@ instance PrimType Double where
     {-# INLINE primAddrWrite #-}
 
 instance PrimType Char where
-    primSizeInBytes _ = Size 4
+    primSizeInBytes _ = CountOf 4
     {-# INLINE primSizeInBytes #-}
     primBaUIndex ba (Offset (I# n)) = C# (indexWideCharArray# ba n)
     {-# INLINE primBaUIndex #-}
@@ -413,7 +413,7 @@ instance PrimType Char where
     {-# INLINE primAddrWrite #-}
 
 instance PrimType CChar where
-    primSizeInBytes _ = Size 1
+    primSizeInBytes _ = CountOf 1
     {-# INLINE primSizeInBytes #-}
     primBaUIndex ba (Offset n) = CChar (primBaUIndex ba (Offset n))
     {-# INLINE primBaUIndex #-}
@@ -428,7 +428,7 @@ instance PrimType CChar where
     primAddrWrite addr (Offset n) (CChar int8) = primAddrWrite addr (Offset n) int8
     {-# INLINE primAddrWrite #-}
 instance PrimType CUChar where
-    primSizeInBytes _ = Size 1
+    primSizeInBytes _ = CountOf 1
     {-# INLINE primSizeInBytes #-}
     primBaUIndex ba (Offset n) = CUChar (primBaUIndex ba (Offset n :: Offset Word8))
     {-# INLINE primBaUIndex #-}
@@ -498,21 +498,21 @@ instance PrimMemoryComparable CUChar where
 instance PrimMemoryComparable a => PrimMemoryComparable (LE a) where
 instance PrimMemoryComparable a => PrimMemoryComparable (BE a) where
 
--- | Cast a Size linked to type A (Size A) to a Size linked to type B (Size B)
-sizeRecast :: forall a b . (PrimType a, PrimType b) => Size a -> Size b
-sizeRecast sz = Size (bytes `Prelude.quot` szB)
+-- | Cast a CountOf linked to type A (CountOf A) to a CountOf linked to type B (CountOf B)
+sizeRecast :: forall a b . (PrimType a, PrimType b) => CountOf a -> CountOf b
+sizeRecast sz = CountOf (bytes `Prelude.quot` szB)
   where !szA          = primSizeInBytes (Proxy :: Proxy a)
-        !(Size szB)   = primSizeInBytes (Proxy :: Proxy b)
-        !(Size bytes) = sizeOfE szA sz
+        !(CountOf szB)   = primSizeInBytes (Proxy :: Proxy b)
+        !(CountOf bytes) = sizeOfE szA sz
 {-# INLINE [1] sizeRecast #-}
 {-# RULES "sizeRecast from Word8" [2] forall a . sizeRecast a = sizeRecastBytes a #-}
 
-sizeRecastBytes :: forall b . PrimType b => Size Word8 -> Size b
-sizeRecastBytes (Size w) = Size (w `Prelude.quot` szB)
-  where !(Size szB) = primSizeInBytes (Proxy :: Proxy b)
+sizeRecastBytes :: forall b . PrimType b => CountOf Word8 -> CountOf b
+sizeRecastBytes (CountOf w) = CountOf (w `Prelude.quot` szB)
+  where !(CountOf szB) = primSizeInBytes (Proxy :: Proxy b)
 {-# INLINE [1] sizeRecastBytes #-}
 
-sizeInBytes :: forall a . PrimType a => Size a -> Size Word8
+sizeInBytes :: forall a . PrimType a => CountOf a -> CountOf Word8
 sizeInBytes sz = sizeOfE (primSizeInBytes (Proxy :: Proxy a)) sz
 
 offsetInBytes :: forall a . PrimType a => Offset a -> Offset Word8
@@ -524,13 +524,13 @@ primOffsetRecast !ofs =
      in Offset (bytes `Prelude.quot` szB)
   where
     !szA        = primSizeInBytes (Proxy :: Proxy a)
-    !(Size szB) = primSizeInBytes (Proxy :: Proxy b)
+    !(CountOf szB) = primSizeInBytes (Proxy :: Proxy b)
 {-# INLINE [1] primOffsetRecast #-}
 {-# RULES "primOffsetRecast W8" [3] forall a . primOffsetRecast a = primOffsetRecastBytes a #-}
 
 primOffsetRecastBytes :: forall b . PrimType b => Offset Word8 -> Offset b
 primOffsetRecastBytes !(Offset o) = Offset (szA `Prelude.quot` o)
-  where !(Size szA) = primSizeInBytes (Proxy :: Proxy b)
+  where !(CountOf szA) = primSizeInBytes (Proxy :: Proxy b)
 {-# INLINE [1] primOffsetRecastBytes #-}
 
 primOffsetOfE :: forall a . PrimType a => Offset a -> Offset Word8

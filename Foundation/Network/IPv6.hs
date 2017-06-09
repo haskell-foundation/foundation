@@ -23,7 +23,7 @@ module Foundation.Network.IPv6
     , ipv6ParserIpv4Embedded
     ) where
 
-import Prelude (fromIntegral, replicate, read)
+import Prelude (fromIntegral, read)
 import qualified Text.Printf as Base
 import Data.Char (isHexDigit, isDigit)
 import Numeric (readHex)
@@ -35,8 +35,9 @@ import Foundation.Numerical.Additive (scale)
 import Foundation.Internal.Base
 import Foundation.Internal.Proxy
 import Foundation.Primitive
+import Foundation.Primitive.Types.OffsetSize
 import Foundation.Numerical
-import Foundation.Collection (Sequential, Element, length, intercalate, null)
+import Foundation.Collection (Sequential, Element, length, intercalate, replicate, null)
 import Foundation.Parser
 import Foundation.String (String)
 import Foundation.Bits
@@ -206,7 +207,8 @@ ipv6ParserIpv4Embedded = do
               takeAWord16 <* skipColon
     _ <- optional skipColon
     _ <- optional skipColon
-    bs2 <- repeat (Between Never (toEnum $ 6 - length bs1)) $
+    let (CountOf lenBs1) = length bs1
+    bs2 <- repeat (Between Never (toEnum $ 6 - lenBs1)) $
               takeAWord16 <* skipColon
     _ <- optional skipColon
     [i1,i2,i3,i4,i5,i6] <- format 6 bs1 bs2
@@ -236,16 +238,18 @@ ipv6ParserCompressed = do
     bs1 <- repeat (Between Never (toEnum 8)) $
               takeAWord16 <* skipColon
     when (null bs1) skipColon
-    bs2 <- repeat (Between Never (toEnum $ 8 - length bs1)) $
+    let (CountOf bs1Len) = length bs1
+    bs2 <- repeat (Between Never (toEnum $ 8 - bs1Len)) $
               skipColon *> takeAWord16
     [i1,i2,i3,i4,i5,i6,i7,i8] <- format 8 bs1 bs2
     return $ fromTuple (i1,i2,i3,i4,i5,i6,i7,i8)
 
-format :: (Integral a, Monad m) => Int -> [a] -> [a] -> m [a]
-format sz bs1 bs2 = do
-    let len = sz - length bs1 - length bs2
-    when (len < 1) $ fail "invalid compressed IPv6 addressed"
-    return $ bs1 <> replicate len 0 <> bs2
+format :: (Integral a, Monad m) => CountOf a -> [a] -> [a] -> m [a]
+format sz bs1 bs2
+    | sz <= (length bs1 + length bs2) = fail "invalid compressed IPv6 addressed"
+    | otherwise = do
+        let len = sz `sizeSub` (length bs1 + length bs2)
+        return $ bs1 <> replicate len 0 <> bs2
 
 skipColon :: (Sequential input, Element input ~ Char)
           => Parser input ()

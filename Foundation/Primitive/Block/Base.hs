@@ -16,7 +16,7 @@ module Foundation.Primitive.Block.Base
     , unsafeWrite
     , unsafeIndex
     -- * Properties
-    , lengthSize
+    , length
     , lengthBytes
     -- * Other methods
     , new
@@ -70,15 +70,15 @@ instance PrimType ty => IsList (Block ty) where
     fromList = internalFromList
     toList = internalToList
 
-lengthSize :: forall ty . PrimType ty => Block ty -> Size ty
-lengthSize (Block ba) =
-    let !(Size (I# szBits)) = primSizeInBytes (Proxy :: Proxy ty)
+length :: forall ty . PrimType ty => Block ty -> CountOf ty
+length (Block ba) =
+    let !(CountOf (I# szBits)) = primSizeInBytes (Proxy :: Proxy ty)
         !elems              = quotInt# (sizeofByteArray# ba) szBits
-     in Size (I# elems)
-{-# INLINE[1] lengthSize #-}
+     in CountOf (I# elems)
+{-# INLINE[1] length #-}
 
-lengthBytes :: Block ty -> Size Word8
-lengthBytes (Block ba) = Size (I# (sizeofByteArray# ba))
+lengthBytes :: Block ty -> CountOf Word8
+lengthBytes (Block ba) = CountOf (I# (sizeofByteArray# ba))
 {-# INLINE[1] lengthBytes #-}
 
 -- | Create an empty block of memory
@@ -103,7 +103,7 @@ unsafeIndex (Block ba) n = primBaIndex ba n
 -- | make a block from a list of elements.
 internalFromList :: PrimType ty => [ty] -> Block ty
 internalFromList l = runST $ do
-    ma <- new (Size len)
+    ma <- new (CountOf len)
     iter azero l $ \i x -> unsafeWrite ma i x
     unsafeFreeze ma
   where len = Data.List.length l
@@ -116,7 +116,7 @@ internalToList blk@(Block ba)
     | len == azero = []
     | otherwise    = loop azero
   where
-    !len = lengthSize blk
+    !len = length blk
     loop !i | i .==# len = []
             | otherwise  = primBaIndex ba i : loop (i+1)
 
@@ -128,7 +128,7 @@ equal a b
   where
     !la = lengthBytes a
     !lb = lengthBytes b
-    lat = lengthSize a
+    lat = length a
 
     loop !n | n .==# lat = True
             | otherwise  = (unsafeIndex a n == unsafeIndex b n) && loop (n+o1)
@@ -151,8 +151,8 @@ equalMemcmp b1@(Block a) b2@(Block b)
 internalCompare :: (Ord ty, PrimType ty) => Block ty -> Block ty -> Ordering
 internalCompare a b = loop azero
   where
-    !la = lengthSize a
-    !lb = lengthSize b
+    !la = length a
+    !lb = length b
     !end = sizeAsOffset (min la lb)
     loop !n
         | n == end  = la `compare` lb
@@ -243,17 +243,17 @@ unsafeThaw (Block ba) = primitive $ \st -> (# st, MutableBlock (unsafeCoerce# ba
 -- use 'new' if unsure
 unsafeNew :: PrimMonad prim
           => PinnedStatus
-          -> Size Word8
+          -> CountOf Word8
           -> prim (MutableBlock ty (PrimState prim))
-unsafeNew pinStatus (Size (I# bytes))
+unsafeNew pinStatus (CountOf (I# bytes))
     | isPinned pinStatus = primitive $ \s1 -> case newByteArray# bytes s1 of { (# s2, mba #) -> (# s2, MutableBlock mba #) }
     | otherwise          = primitive $ \s1 -> case newAlignedPinnedByteArray# bytes 8# s1 of { (# s2, mba #) -> (# s2, MutableBlock mba #) }
 
 -- | Create a new mutable block of a specific N size of 'ty' elements
-new :: forall prim ty . (PrimMonad prim, PrimType ty) => Size ty -> prim (MutableBlock ty (PrimState prim))
+new :: forall prim ty . (PrimMonad prim, PrimType ty) => CountOf ty -> prim (MutableBlock ty (PrimState prim))
 new n = unsafeNew unpinned (sizeOfE (primSizeInBytes (Proxy :: Proxy ty)) n)
 
-newPinned :: forall prim ty . (PrimMonad prim, PrimType ty) => Size ty -> prim (MutableBlock ty (PrimState prim))
+newPinned :: forall prim ty . (PrimMonad prim, PrimType ty) => CountOf ty -> prim (MutableBlock ty (PrimState prim))
 newPinned n = unsafeNew pinned (sizeOfE (primSizeInBytes (Proxy :: Proxy ty)) n)
 
 -- | Copy a number of elements from an array to another array with offsets
@@ -262,7 +262,7 @@ unsafeCopyElements :: forall prim ty . (PrimMonad prim, PrimType ty)
                    -> Offset ty                        -- ^ offset at destination
                    -> MutableBlock ty (PrimState prim) -- ^ source mutable block
                    -> Offset ty                        -- ^ offset at source
-                   -> Size ty                          -- ^ number of elements to copy
+                   -> CountOf ty                          -- ^ number of elements to copy
                    -> prim ()
 unsafeCopyElements dstMb destOffset srcMb srcOffset n = -- (MutableBlock dstMba) ed (MutableBlock srcBa) es n =
     unsafeCopyBytes dstMb (offsetOfE sz destOffset)
@@ -276,7 +276,7 @@ unsafeCopyElementsRO :: forall prim ty . (PrimMonad prim, PrimType ty)
                      -> Offset ty                        -- ^ offset at destination
                      -> Block ty                         -- ^ source block
                      -> Offset ty                        -- ^ offset at source
-                     -> Size ty                          -- ^ number of elements to copy
+                     -> CountOf ty                          -- ^ number of elements to copy
                      -> prim ()
 unsafeCopyElementsRO dstMb destOffset srcMb srcOffset n =
     unsafeCopyBytesRO dstMb (offsetOfE sz destOffset)
@@ -291,9 +291,9 @@ unsafeCopyBytes :: forall prim ty . PrimMonad prim
                 -> Offset Word8                     -- ^ offset at destination
                 -> MutableBlock ty (PrimState prim) -- ^ source mutable block
                 -> Offset Word8                     -- ^ offset at source
-                -> Size Word8                       -- ^ number of elements to copy
+                -> CountOf Word8                       -- ^ number of elements to copy
                 -> prim ()
-unsafeCopyBytes (MutableBlock dstMba) (Offset (I# d)) (MutableBlock srcBa) (Offset (I# s)) (Size (I# n)) =
+unsafeCopyBytes (MutableBlock dstMba) (Offset (I# d)) (MutableBlock srcBa) (Offset (I# s)) (CountOf (I# n)) =
     primitive $ \st -> (# copyMutableByteArray# srcBa s dstMba d n st, () #)
 {-# INLINE unsafeCopyBytes #-}
 
@@ -303,9 +303,9 @@ unsafeCopyBytesRO :: forall prim ty . PrimMonad prim
                   -> Offset Word8                     -- ^ offset at destination
                   -> Block ty                         -- ^ source block
                   -> Offset Word8                     -- ^ offset at source
-                  -> Size Word8                       -- ^ number of elements to copy
+                  -> CountOf Word8                       -- ^ number of elements to copy
                   -> prim ()
-unsafeCopyBytesRO (MutableBlock dstMba) (Offset (I# d)) (Block srcBa) (Offset (I# s)) (Size (I# n)) =
+unsafeCopyBytesRO (MutableBlock dstMba) (Offset (I# d)) (Block srcBa) (Offset (I# s)) (CountOf (I# n)) =
     primitive $ \st -> (# copyByteArray# srcBa s dstMba d n st, () #)
 {-# INLINE unsafeCopyBytesRO #-}
 

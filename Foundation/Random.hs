@@ -40,7 +40,7 @@ import qualified Prelude
 
 -- | A monad constraint that allows to generate random bytes
 class (Functor m, Applicative m, Monad m) => MonadRandom m where
-    getRandomBytes :: Size Word8 -> m (UArray Word8)
+    getRandomBytes :: CountOf Word8 -> m (UArray Word8)
 
 instance MonadRandom IO where
     getRandomBytes = getEntropy
@@ -57,7 +57,7 @@ class RandomGen gen where
     randomNewFrom :: UArray Word8 -> Maybe gen
 
     -- | Generate N bytes of randomness from a DRG
-    randomGenerate :: Size Word8 -> gen -> (UArray Word8, gen)
+    randomGenerate :: CountOf Word8 -> gen -> (UArray Word8, gen)
 
 -- | A simple Monad class very similar to a State Monad
 -- with the state being a RandomGenerator.
@@ -115,11 +115,11 @@ instance RandomGen RNGv1 where
         | otherwise         = Nothing
     randomGenerate = rngv1Generate
 
-rngv1KeySize :: Size Word8
+rngv1KeySize :: CountOf Word8
 rngv1KeySize = 32
 
-rngv1Generate :: Size Word8 -> RNGv1 -> (UArray Word8, RNGv1)
-rngv1Generate n@(Size x) (RNGv1 key) = runST $ do
+rngv1Generate :: CountOf Word8 -> RNGv1 -> (UArray Word8, RNGv1)
+rngv1Generate n@(CountOf x) (RNGv1 key) = runST $ do
     dst    <- A.newPinned n
     newKey <- A.newPinned rngv1KeySize
     A.withMutablePtr dst        $ \dstP    ->

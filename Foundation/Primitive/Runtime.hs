@@ -26,5 +26,5 @@ import           System.IO.Unsafe          (unsafePerformIO)
 unsafeUArrayUnpinnedMaxSize :: Size8
 unsafeUArrayUnpinnedMaxSize = unsafePerformIO $ do
     maxSize <- (>>= readMaybe) <$> lookupEnv "HS_FOUNDATION_UARRAY_UNPINNED_MAX"
-    return $ maybe (Size 1024) Size maxSize
+    return $ maybe (CountOf 1024) CountOf maxSize
 {-# NOINLINE unsafeUArrayUnpinnedMaxSize #-}

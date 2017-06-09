@@ -34,7 +34,7 @@ class MutableCollection c where
     thaw   :: PrimMonad prim => MutableFreezed c -> prim (c (PrimState prim))
     freeze :: PrimMonad prim => c (PrimState prim) -> prim (MutableFreezed c)
 
-    mutNew :: PrimMonad prim => Size (MutableValue c) -> prim (c (PrimState prim))
+    mutNew :: PrimMonad prim => CountOf (MutableValue c) -> prim (c (PrimState prim))
 
     mutUnsafeWrite :: PrimMonad prim => c (PrimState prim) -> MutableKey c -> MutableValue c -> prim ()
     mutWrite       :: PrimMonad prim => c (PrimState prim) -> MutableKey c -> MutableValue c -> prim ()
