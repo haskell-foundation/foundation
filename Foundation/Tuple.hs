@@ -14,9 +14,21 @@ module Foundation.Tuple
     , Fstable(..)
     , Sndable(..)
     , Thdable(..)
+    , curry2
+    , curry3
+    , curry4
+    , curry5
+    , curry6
+    , curry7
+    , uncurry2
+    , uncurry3
+    , uncurry4
+    , uncurry5
+    , uncurry6
+    , uncurry7
     ) where
 
-import Foundation.Internal.Base
+import Foundation.Internal.Base hiding (fst, snd)
 import Foundation.Class.Bifunctor
 import Foundation.Primitive
 
@@ -109,3 +121,45 @@ instance Thdable (Tuple3 a b c) where
 instance Thdable (Tuple4 a b c d) where
     type ProductThird (Tuple4 a b c d) = c
     thd (Tuple4 _ _ c _) = c
+
+-- | `uncurryN' converts a n-ary function to a function on a n-tuple. Dual of `curry'
+-- `uncurry2' and `uncurry3' are parametrised over arbitrary prdct types with projections
+-- `fst', `snd' and `thd', while all higher alternatives are specialized to tuples.
+uncurry2 :: (Fstable p, Sndable p)
+         => (ProductFirst p -> ProductSecond p -> d) -> p -> d
+uncurry2 fn p = fn (fst p) (snd p)
+
+uncurry3 :: (Fstable p, Sndable p, Thdable p)
+         => (ProductFirst p -> ProductSecond p -> ProductThird p -> d) -> p -> d
+uncurry3 fn p = fn (fst p) (snd p) (thd p)
+
+uncurry4 :: (a -> b -> c -> d -> g) -> (a, b, c, d) -> g
+uncurry4 fn (a, b, c, d) = fn a b c d
+
+uncurry5 :: (a -> b -> c -> d -> e -> f) -> (a, b, c, d, e) -> f
+uncurry5 fn (a, b, c, d, e) = fn a b c d e
+
+uncurry6 :: (a -> b -> c -> d -> e -> f -> g) -> (a, b, c, d, e, f) -> g
+uncurry6 fn (a, b, c, d, e, f) = fn a b c d e f
+
+uncurry7 :: (a -> b -> c -> d -> e -> f -> g -> h) -> (a, b, c, d, e, f, g) -> h
+uncurry7 fn (a, b, c, d, e, f, g) = fn a b c d e f g
+
+-- | `curryN' converts an uncurried function to a n-ary function. Dual of `curry'.
+curry2 :: ((a, b) -> c) -> a -> b -> c
+curry2 fn a b = fn (a, b)
+
+curry3 :: ((a, b, c) -> d) -> a -> b -> c -> d
+curry3 fn a b c = fn (a, b, c)
+
+curry4 :: ((a, b, c, d) -> e) -> a -> b -> c -> d -> e
+curry4 fn a b c d = fn (a, b, c, d)
+
+curry5 :: ((a, b, c, d, e) -> f) -> a -> b -> c -> d -> e -> f
+curry5 fn a b c d e = fn (a, b, c, d, e)
+
+curry6 :: ((a, b, c, d, e, f) -> g) -> a -> b -> c -> d -> e -> f -> g
+curry6 fn a b c d e f = fn (a, b, c, d, e, f)
+
+curry7 :: ((a, b, c, d, e, f, g) -> h) -> a -> b -> c -> d -> e -> f -> g -> h
+curry7 fn a b c d e f g = fn (a, b, c, d, e, f, g)

@@ -272,23 +272,3 @@ uncons7 xs = let (as, bs, cs, ds, es, fs, gs) = xs
                    (g', gs') <- uncons gs
                    return ( (a', b', c', d', e', f', g')
                           , (as', bs', cs', ds', es', fs', gs') )
-
-uncurry2 :: (Fstable p, Sndable p)
-         => (ProductFirst p -> ProductSecond p -> d) -> p -> d
-uncurry2 fn p = fn (fst p) (snd p)
-
-uncurry3 :: (Fstable p, Sndable p, Thdable p)
-         => (ProductFirst p -> ProductSecond p -> ProductThird p -> d) -> p -> d
-uncurry3 fn p = fn (fst p) (snd p) (thd p)
-
-uncurry4 :: (a -> b -> c -> d -> g) -> (a, b, c, d) -> g
-uncurry4 fn (a, b, c, d) = fn a b c d
-
-uncurry5 :: (a -> b -> c -> d -> e -> f) -> (a, b, c, d, e) -> f
-uncurry5 fn (a, b, c, d, e) = fn a b c d e
-
-uncurry6 :: (a -> b -> c -> d -> e -> f -> g) -> (a, b, c, d, e, f) -> g
-uncurry6 fn (a, b, c, d, e, f) = fn a b c d e f
-
-uncurry7 :: (a -> b -> c -> d -> e -> f -> g -> h) -> (a, b, c, d, e, f, g) -> h
-uncurry7 fn (a, b, c, d, e, f, g) = fn a b c d e f g
