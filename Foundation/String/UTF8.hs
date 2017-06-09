@@ -389,7 +389,7 @@ indexN !n (String ba) = Vec.unsafeDewrap goVec goAddr ba
     {-# INLINE goVec #-}
 
     goAddr :: Ptr Word8 -> Offset Word8 -> ST s (Offset Word8)
-    goAddr !(Ptr ptr) !start = return $ loop start (Offset 0)
+    goAddr (Ptr ptr) !start = return $ loop start (Offset 0)
       where
         !len = start `offsetPlusE` Vec.length ba
         loop :: Offset Word8 -> Offset Char -> Offset Word8

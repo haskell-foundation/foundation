@@ -1019,7 +1019,7 @@ reverse a
         loop !i
             | i == end  = return ()
             | otherwise = primMbaWrite ma i (primBaIndex ba (sizeAsOffset (endI - i))) >> loop (i+Offset 1)
-    goAddr !end !ma !(Ptr ba) !srcStart = loop (Offset 0)
+    goAddr !end !ma (Ptr ba) !srcStart = loop (Offset 0)
       where
         !endI = sizeAsOffset ((srcStart + end) - Offset 1)
         loop !i

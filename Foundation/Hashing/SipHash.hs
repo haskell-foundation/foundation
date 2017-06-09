@@ -109,7 +109,7 @@ mix8Prim !c !w !ist !incremental =
         (# ist , constr ((acc .<<. 8) .|. Prelude.fromIntegral w) #)
 
 mix8 :: Int -> Word8 -> Sip -> Sip
-mix8 !c !w !(Sip ist incremental len) =
+mix8 !c !w (Sip ist incremental len) =
     case incremental of
         SipIncremental7 acc -> Sip (process c ist ((acc .<<. 8) .|. Prelude.fromIntegral w))
                                    SipIncremental0 (len+1)
@@ -125,7 +125,7 @@ mix8 !c !w !(Sip ist incremental len) =
         Sip ist (constr $ ((acc .<<. 8) .|. Prelude.fromIntegral w)) (len+1)
 
 mix32 :: Int -> Word32 -> Sip -> Sip
-mix32 !c !w !(Sip ist incremental len) =
+mix32 !c !w (Sip ist incremental len) =
     case incremental of
         SipIncremental0     -> Sip ist (SipIncremental4 $ Prelude.fromIntegral w) (len+4)
         SipIncremental1 acc -> consume acc 32 SipIncremental5
@@ -146,7 +146,7 @@ mix32 !c !w !(Sip ist incremental len) =
     {-# INLINE consumeProcess #-}
 
 mix64 :: Int -> Word64 -> Sip -> Sip
-mix64 !c !w !(Sip ist incremental len) =
+mix64 !c !w (Sip ist incremental len) =
     case incremental of
         SipIncremental0     -> Sip (process c ist w) SipIncremental0 (len+8)
         SipIncremental1 acc -> consume acc 56 8 SipIncremental1
@@ -190,7 +190,7 @@ mixBa !c !array (Sip initSt initIncr currentLen) =
     goVec ba start = loop8 initSt initIncr start totalLen
       where
         loop8 !st !incr            _     0 = Sip st incr (currentLen + totalLen)
-        loop8 !st !SipIncremental0 !ofs !l
+        loop8 !st SipIncremental0 !ofs !l
             | l < 8     = loop1 st SipIncremental0 ofs l
             | otherwise =
                 let v =     to64 56 (primBaIndex ba ofs)
@@ -216,7 +216,7 @@ mixBa !c !array (Sip initSt initIncr currentLen) =
     goAddr (Ptr ptr) start = return $ loop8 initSt initIncr start totalLen
       where
         loop8 !st !incr            _     0 = Sip st incr (currentLen + totalLen)
-        loop8 !st !SipIncremental0 !ofs !l
+        loop8 !st SipIncremental0 !ofs !l
             | l < 8     = loop1 st SipIncremental0 ofs l
             | otherwise =
                 let v =     to64 56 (primAddrIndex ptr ofs)

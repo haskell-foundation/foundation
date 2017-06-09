@@ -61,19 +61,19 @@ newtype FNV1a_32 = FNV1a_32 Word
 newtype FNV1a_64 = FNV1a_64 Word64
 
 fnv1_32_Mix8 :: Word8 -> FNV1_32 -> FNV1_32
-fnv1_32_Mix8 !w !(FNV1_32 acc) = FNV1_32 (0x01000193 * acc `xor32` w)
+fnv1_32_Mix8 !w (FNV1_32 acc) = FNV1_32 (0x01000193 * acc `xor32` w)
 {-# INLINE fnv1_32_Mix8 #-}
 
 fnv1a_32_Mix8 :: Word8 -> FNV1a_32 -> FNV1a_32
-fnv1a_32_Mix8 !w !(FNV1a_32 acc) = FNV1a_32 (0x01000193 * (acc `xor32` w))
+fnv1a_32_Mix8 !w (FNV1a_32 acc) = FNV1a_32 (0x01000193 * (acc `xor32` w))
 {-# INLINE fnv1a_32_Mix8 #-}
 
 fnv1_64_Mix8 :: Word8 -> FNV1_64 -> FNV1_64
-fnv1_64_Mix8 !w !(FNV1_64 acc) = FNV1_64 (0x100000001b3 * acc `xor64` w)
+fnv1_64_Mix8 !w (FNV1_64 acc) = FNV1_64 (0x100000001b3 * acc `xor64` w)
 {-# INLINE fnv1_64_Mix8 #-}
 
 fnv1a_64_Mix8 :: Word8 -> FNV1a_64 -> FNV1a_64
-fnv1a_64_Mix8 !w !(FNV1a_64 acc) = FNV1a_64 (0x100000001b3 * (acc `xor64` w))
+fnv1a_64_Mix8 !w (FNV1a_64 acc) = FNV1a_64 (0x100000001b3 * (acc `xor64` w))
 {-# INLINE fnv1a_64_Mix8 #-}
 
 instance Hasher FNV1_32 where
@@ -129,7 +129,7 @@ fnv1_32_mixBa baA !initialState = A.unsafeDewrap goVec goAddr ba
     {-# INLINE goVec #-}
 
     goAddr :: Ptr Word8 -> Offset Word8 -> ST s FNV1_32
-    goAddr !(Ptr ptr) !start = return $ loop start initialState
+    goAddr (Ptr ptr) !start = return $ loop start initialState
       where
         !len = start `offsetPlusE` A.length ba
         loop !idx !acc
@@ -154,7 +154,7 @@ fnv1a_32_mixBa baA !initialState  = A.unsafeDewrap goVec goAddr ba
     {-# INLINE goVec #-}
 
     goAddr :: Ptr Word8 -> Offset Word8 -> ST s FNV1a_32
-    goAddr !(Ptr ptr) !start = return $ loop start initialState
+    goAddr (Ptr ptr) !start = return $ loop start initialState
       where
         !len = start `offsetPlusE` A.length ba
         loop !idx !acc
@@ -179,7 +179,7 @@ fnv1_64_mixBa baA !initialState = A.unsafeDewrap goVec goAddr ba
     {-# INLINE goVec #-}
 
     goAddr :: Ptr Word8 -> Offset Word8 -> ST s FNV1_64
-    goAddr !(Ptr ptr) !start = return $ loop start initialState
+    goAddr (Ptr ptr) !start = return $ loop start initialState
       where
         !len = start `offsetPlusE` A.length ba
         loop !idx !acc
@@ -204,7 +204,7 @@ fnv1a_64_mixBa baA !initialState = A.unsafeDewrap goVec goAddr ba
     {-# INLINE goVec #-}
 
     goAddr :: Ptr Word8 -> Offset Word8 -> ST s FNV1a_64
-    goAddr !(Ptr ptr) !start = return $ loop start initialState
+    goAddr (Ptr ptr) !start = return $ loop start initialState
       where
         !len = start `offsetPlusE` A.length ba
         loop !idx !acc
