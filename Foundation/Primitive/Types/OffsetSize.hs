@@ -72,7 +72,7 @@ type Offset8 = Offset Word8
 -- considering that GHC/Haskell are mostly using this for offset.
 -- Trying to bring some sanity by a lightweight wrapping.
 newtype Offset ty = Offset Int
-    deriving (Show,Eq,Ord,Enum,Additive)
+    deriving (Show,Eq,Ord,Enum,Additive,Typeable)
 
 instance Integral (Offset ty) where
     fromInteger n
@@ -161,7 +161,7 @@ type Size8 = CountOf Word8
 --
 -- Same caveats as 'Offset' apply here.
 newtype CountOf ty = CountOf Int
-    deriving (Show,Eq,Ord,Enum)
+    deriving (Show,Eq,Ord,Enum,Typeable)
 
 instance Integral (CountOf ty) where
     fromInteger n
