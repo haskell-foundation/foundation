@@ -112,35 +112,29 @@ instance UV.PrimType ty => Collection (BLK.Block ty) where
     null = (==) 0 . BLK.length
     length = BLK.length
     elem = BLK.elem
-    minimum blk = let blk' = getNonEmpty blk
-                 in BLK.foldl' min (BLK.unsafeIndex blk' 0) blk'
-    maximum blk = let blk' = getNonEmpty blk
-                 in BLK.foldl' max (BLK.unsafeIndex blk' 0) blk'
+    minimum = BLK.foldl1' min
+    maximum = BLK.foldl1' max
     all = BLK.all
     any = BLK.any
 
 instance UV.PrimType ty => Collection (UV.UArray ty) where
-    null       = UV.null
-    length     = UV.length
-    elem       = UV.elem
-    minimum uv = let uv' = getNonEmpty uv
-                 in UV.foldl' min (UV.unsafeIndex uv' 0) uv'
-    maximum uv = let uv' = getNonEmpty uv
-                 in UV.foldl' max (UV.unsafeIndex uv' 0) uv'
-    all        = UV.all
-    any        = UV.any
+    null    = UV.null
+    length  = UV.length
+    elem    = UV.elem
+    minimum = UV.foldl1' min
+    maximum = UV.foldl1' max
+    all     = UV.all
+    any     = UV.any
 
 
 instance Collection (BA.Array ty) where
-    null       = BA.null
-    length     = BA.length
-    elem       = BA.elem
-    minimum ba = let ba' = getNonEmpty ba
-                 in BA.foldl' min (BA.unsafeIndex ba' 0) ba'
-    maximum ba = let ba' = getNonEmpty ba
-                 in BA.foldl' max (BA.unsafeIndex ba' 0) ba'
-    all        = BA.all
-    any        = BA.any
+    null    = BA.null
+    length  = BA.length
+    elem    = BA.elem
+    minimum = BA.foldl1' min
+    maximum = BA.foldl1' max
+    all     = BA.all
+    any     = BA.any
 
 
 
