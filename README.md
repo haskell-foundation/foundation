@@ -72,14 +72,9 @@ documentation.
 How to contribute
 =================
 
-Any contributions is welcome, but a short list includes:
+Contribution guide can be found
+[here](http://haskell-foundation.readthedocs.io/en/latest/contributing/).
 
-* Improve the code base
-* Report an issue
-* Fix an issue
-* Improve the documentation
-* Make tutorial on how to use foundation
-* Make your project use foundation instead of base, report the missing coverage (IO, types, etc.), or what functionality is missing to make a succesful transition
 
 Profiling
 ---------
