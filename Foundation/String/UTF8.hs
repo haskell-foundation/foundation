@@ -891,15 +891,12 @@ replace needle replacement@(String rp) haystack@(String hy) = runST $ do
                -> Offset ty                  -- ^ offset at source
                -> CountOf ty                    -- ^ number of elements to copy
       -}
-        -- General idea: Fill `mba` with stuff from `haystack` FROM
-        -- the prev insertion point and UP UNTIL the next insertion point.
-        -- Then fill `mba` with `replacement`.
         -- 1. Copy from the old string.
         let !unchangedDataLen = (x - offsetInOriginalString)
         Vec.unsafeCopyAtRO mba currentOffset hy offsetInOriginalString unchangedDataLen
         let !newOffset = currentOffset `offsetPlusE` unchangedDataLen
         -- 2. Copy the replacement.
-        Vec.unsafeCopyAtRO mba newOffset rp x replacementLen
+        Vec.unsafeCopyAtRO mba newOffset rp (Offset 0) replacementLen
         loop ms (newOffset `offsetPlusE` replacementLen) (offsetInOriginalString `offsetPlusE` needleLen) xs
 
 -- | Return the nth character in a String
