@@ -32,7 +32,6 @@ module Foundation.Primitive.Block
     , replicate
     , index
     , map
-    , foldl
     , foldl'
     , foldr
     , cons
@@ -139,14 +138,6 @@ index array n
 map :: (PrimType a, PrimType b) => (a -> b) -> Block a -> Block b
 map f a = create lenB (\i -> f $ unsafeIndex a (offsetCast Proxy i))
   where !lenB = sizeCast (Proxy :: Proxy (a -> b)) (length a)
-
-foldl :: PrimType ty => (a -> ty -> a) -> a -> Block ty -> a
-foldl f initialAcc vec = loop 0 initialAcc
-  where
-    !len = length vec
-    loop i acc
-        | i .==# len = acc
-        | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
 
 foldr :: PrimType ty => (ty -> a -> a) -> a -> Block ty -> a
 foldr f initialAcc vec = loop 0
