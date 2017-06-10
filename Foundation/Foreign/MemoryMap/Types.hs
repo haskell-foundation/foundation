@@ -29,6 +29,6 @@ data FileMapping = FileMapping
 -- unmap memory when the pointer is garbage.
 fileMappingToFinalPtr :: FileMapping -> IO (FinalPtr Word8)
 fileMappingToFinalPtr (FileMapping ptr _ finalizer) =
-    toFinalPtr ptr (\_ -> finalizer)
+    toFinalPtr ptr (const finalizer)
 
 type FileMapReadF = FilePath -> IO FileMapping
