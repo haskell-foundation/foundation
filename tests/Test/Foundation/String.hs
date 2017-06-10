@@ -69,6 +69,8 @@ testStringCases =
             replace "aa" "bb" "aabb" @?= "bbbb"
         , testCase "replace 'aa' 'bb' 'aaccaadd' == 'bbccbbdd'" $ do
             replace "aa" "bb" "aaccaadd" @?= "bbccbbdd"
+        , testCase "replace 'aa' 'LongLong' 'aaccaadd' == 'LongLongccLongLongdd'" $ do
+            replace "aa" "LongLong" "aaccaadd" @?= "LongLongccLongLongdd"
         , testCase "replace 'aa' 'bb' 'aabbccabbccEEaaaaabb' == 'bbbbccabbccEEbbbbabb'" $ do
             replace "aa" "bb" "aabbccabbccEEaaaaabb" @?= "bbbbccabbccEEbbbbabb"
         , testCase "replace '😀' '😺' '😀 🙂 😉 😌' == '😺 🙂 😉 😌'" $ do
