@@ -123,22 +123,26 @@ instance UV.PrimType ty => Collection (BLK.Block ty) where
     any = BLK.any
 
 instance UV.PrimType ty => Collection (UV.UArray ty) where
-    null = UV.null
-    length = UV.length
-    elem = UV.elem
-    minimum = Data.List.minimum . toList . getNonEmpty
-    maximum = Data.List.maximum . toList . getNonEmpty
-    all p = Data.List.all p . toList
-    any p = Data.List.any p . toList
+    null       = UV.null
+    length     = UV.length
+    elem       = UV.elem
+    minimum uv = let uv' = getNonEmpty uv
+                 in UV.foldl' min (UV.unsafeIndex uv' 0) uv'
+    maximum uv = let uv' = getNonEmpty uv
+                 in UV.foldl' max (UV.unsafeIndex uv' 0) uv'
+    all p      = UV.foldl' (\acc x -> p x && acc) True
+    any p      = UV.foldl' (\acc x -> p x || acc) False
 
 instance Collection (BA.Array ty) where
-    null = BA.null
-    length = BA.length
-    elem = BA.elem
-    minimum = Data.List.minimum . toList . getNonEmpty -- TODO
-    maximum = Data.List.maximum . toList . getNonEmpty -- TODO
-    all p = Data.List.all p . toList
-    any p = Data.List.any p . toList
+    null       = BA.null
+    length     = BA.length
+    elem       = BA.elem
+    minimum ba = let ba' = getNonEmpty ba
+                 in BA.foldl' min (BA.unsafeIndex ba' 0) ba'
+    maximum ba = let ba' = getNonEmpty ba
+                 in BA.foldl' max (BA.unsafeIndex ba' 0) ba'
+    all p      = BA.foldl' (\acc x -> p x && acc) True
+    any p      = BA.foldl' (\acc x -> p x || acc) False
 
 instance Collection S.String where
     null = S.null
