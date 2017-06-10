@@ -17,8 +17,8 @@ pages:
 - Advanced:
   - Runtime option: advanced-runtime.md
 - Porting: porting.md
-#- Project documentation:
-# - Contributors Guide: CONTRIBUTING.md
+- Project documentation:
+  - Contributors Guide: contributing.md
 #  - Maintainer guide: MAINTAINER_GUIDE.md
 
 markdown_extensions:
