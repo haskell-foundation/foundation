@@ -8,12 +8,17 @@
 -- The current implementation is mainly, if not copy/pasted, inspired from
 -- `memory`'s Parser.
 --
--- A very simple bytearray parser related to Parsec and Attoparsec
+-- Foundation Parser makes use of the Foundation's @Collection@ and
+-- @Sequential@ classes to allow you to define generic parsers over any
+-- @Sequential@ of inpu.
 --
--- Simple example:
+-- This way you can easily implements parsers over @LString@, @String@.
 --
--- > > parse ((,,) <$> take 2 <*> element 0x20 <*> (elements "abc" *> anyElement)) "xx abctest"
--- > ParseOK "est" ("xx", 116)
+--
+-- > flip parseOnly "my.email@address.com" $ do
+-- >    EmailAddress
+-- >      <$> (takeWhile ((/=) '@' <*  element '@')
+-- >      <*> takeAll
 --
 
 {-# LANGUAGE Rank2Types #-}
@@ -69,10 +74,15 @@ import           Foundation.String
 -- | common parser error definition
 data ParseError input
     = NotEnough (CountOf (Element input))
+        -- ^ meaning the parser was short of @CountOf@ @Element@ of `input`.
     | NotEnoughParseOnly
+        -- ^ The parser needed more data, only when using @parseOnly@
     | ExpectedElement (Element input) (Element input)
+        -- ^ when using @element@
     | Expected (Chunk input) (Chunk input)
+        -- ^ when using @elements@ or @string@
     | Satisfy (Maybe String)
+        -- ^ the @satisfy@ or @satisfy_@ function failed,
   deriving (Typeable)
 instance Typeable input => Exception (ParseError input)
 
@@ -86,10 +96,15 @@ instance Show (ParseError input) where
 
 -- Results --------------------------------------------------------------------
 
+-- | result of executing the `parser` over the given `input`
 data Result input result
     = ParseFailed (ParseError input)
+        -- ^ the parser failed with the given @ParserError@
     | ParseOk     (Chunk input) result
+        -- ^ the parser complete successfuly with the remaining @Chunk@
     | ParseMore   (Chunk input -> Result input result)
+        -- ^ the parser needs more input, pass an empty @Chunk@ or @mempty@
+        -- to tell the parser you don't have anymore inputs.
 
 instance Show k => Show (Result input k) where
     show (ParseFailed err) = "Parser failed: " <> show err
@@ -127,6 +142,9 @@ type Failure input         result = input -> Offset (Element input) -> NoMore ->
 
 type Success input result' result = input -> Offset (Element input) -> NoMore -> result'          -> Result input result
 
+-- | Foundation's @Parser@ monad.
+--
+-- Its implementation is based on the parser in `memory`.
 newtype Parser input result = Parser
     { runParser :: forall result'
                  . input -> Offset (Element input) -> NoMore
@@ -429,9 +447,6 @@ string :: String -> Parser String ()
 string = elements
 {-# INLINE string #-}
 
--- | repeat rules
---
-
 data Condition = Between !And | Exactly !Word
   deriving (Show, Eq, Typeable)
 data And = And !Word !Word
@@ -439,6 +454,19 @@ data And = And !Word !Word
 instance Show And where
     show (And a b) = show a <> " and " <> show b
 
+-- | repeat the given parser a given amount of time
+--
+-- Unlike @some@ or @many@, this operation will bring more precision on how
+-- many times you wish a parser to be sequenced.
+--
+-- ## Repeat @Exactly@ a number of time
+--
+-- > repeat (Exactly 6) (takeWhile ((/=) ',') <* element ',')
+--
+-- ## Repeat @Between@ lower `@And@` upper times
+--
+-- > repeat (Between $ 1 `And` 10) (takeWhile ((/=) ',') <* element ',')
+--
 repeat :: ParserSource input
        => Condition -> Parser input a -> Parser input [a]
 repeat (Exactly n) = repeatE n
