@@ -12,6 +12,7 @@ module Foundation.Monad.State
 
 import Foundation.Internal.Base (($), (.), const)
 import Foundation.Monad.Base
+import Control.Monad ((>=>))
 
 class Monad m => MonadState m where
     type State m
@@ -42,7 +43,7 @@ instance (Applicative m, Monad m) => Applicative (StateT s m) where
 instance (Functor m, Monad m) => Monad (StateT s m) where
     return a = StateT $ \s -> (,s) `fmap` return a
     {-# INLINE return #-}
-    ma >>= mab = StateT $ \s1 -> runStateT ma s1 >>= \(a, s2) -> runStateT (mab a) s2
+    ma >>= mab = StateT $ runStateT ma >=> (\(a, s2) -> runStateT (mab a) s2)
     {-# INLINE (>>=) #-}
 
 instance MonadTrans (StateT s) where
