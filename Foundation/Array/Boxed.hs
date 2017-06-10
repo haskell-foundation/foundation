@@ -56,7 +56,6 @@ module Foundation.Array.Boxed
     , find
     , foldl'
     , foldr
-    , foldl
     , foldl1'
     , foldr1
     , all
@@ -639,14 +638,6 @@ reverse a = create len toEnd
   where
     len@(CountOf s) = length a
     toEnd (Offset i) = unsafeIndex a (Offset (s - 1 - i))
-
-foldl :: (a -> ty -> a) -> a -> Array ty -> a
-foldl f initialAcc vec = loop 0 initialAcc
-  where
-    len = length vec
-    loop !i acc
-        | i .==# len = acc
-        | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
 
 foldr :: (ty -> a -> a) -> a -> Array ty -> a
 foldr f initialAcc vec = loop 0

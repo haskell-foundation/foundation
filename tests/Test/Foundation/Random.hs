@@ -94,7 +94,7 @@ calculate buckets = RandomTestResult
         accEnt ent pr
             | pr > 0.0  = ent + (pr * xlog (1 Prelude./ pr))
             | otherwise = ent
-        xlog v = Prelude.logBase 10 v * (Prelude.log 10 Prelude./ Prelude.log 2)
+        xlog v = Prelude.logBase 10 v * (Prelude.logBase 2 10)
 
         accMeanChi :: (Word64, Double) -> (Int, Word64) -> (Word64, Double)
         accMeanChi (dataSum, chiSq) (i, ccount) =

@@ -529,7 +529,7 @@ primOffsetRecast !ofs =
 {-# RULES "primOffsetRecast W8" [3] forall a . primOffsetRecast a = primOffsetRecastBytes a #-}
 
 primOffsetRecastBytes :: forall b . PrimType b => Offset Word8 -> Offset b
-primOffsetRecastBytes !(Offset o) = Offset (szA `Prelude.quot` o)
+primOffsetRecastBytes (Offset o) = Offset (szA `Prelude.quot` o)
   where !(CountOf szA) = primSizeInBytes (Proxy :: Proxy b)
 {-# INLINE [1] primOffsetRecastBytes #-}
 

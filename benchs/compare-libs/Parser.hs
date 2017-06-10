@@ -18,7 +18,7 @@ import qualified Prelude
 refBufStr :: [Char]
 refBufStr = "Foundation, the new hope"
 refBufW8 :: [Word8]
-refBufW8 = fmap (B.c2w) refBufStr
+refBufW8 = fmap B.c2w refBufStr
 refBufStrLarge :: [Char]
 refBufStrLarge = F.intercalate " " $ Prelude.replicate 100 refBufStr
 refBufW8Large :: [Word8]

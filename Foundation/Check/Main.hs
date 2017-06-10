@@ -67,11 +67,11 @@ filterTestMatching cfg testRoot
     | null (testNameMatch cfg) = Just testRoot
     | otherwise                = testFilter [] testRoot
   where
-    match acc s = or $ fmap (flip isInfixOf currentTestName) $ testNameMatch cfg
+    match acc s = or (flip isInfixOf currentTestName <$> testNameMatch cfg)
       where currentTestName = fqTestName (s:acc)
     or [] = False
     or (x:xs)
-        | x == True = True
+        | x         = True
         | otherwise = or xs
 
     testFilter acc x =
@@ -177,8 +177,7 @@ test :: Test -> CheckMain TestResult
 test (Group s l) = pushGroup s l
 test (Unit _ _) = undefined
 test (CheckPlan name plan) = do
-    r <- testCheckPlan name plan
-    return r
+    testCheckPlan name plan
 test (Property name prop) = do
     r'@(PropertyResult _ nb r) <- testProperty name (property prop)
     case r of

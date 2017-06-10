@@ -7,9 +7,7 @@
 --
 -- IPv6 data type
 --
-{-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Foundation.Network.IPv6
     ( IPv6
@@ -37,7 +35,7 @@ import Foundation.Internal.Proxy
 import Foundation.Primitive
 import Foundation.Primitive.Types.OffsetSize
 import Foundation.Numerical
-import Foundation.Collection (Sequential, Element, length, intercalate, replicate, null)
+import Foundation.Collection (Element, length, intercalate, replicate, null)
 import Foundation.Parser
 import Foundation.String (String)
 import Foundation.Bits
@@ -111,7 +109,7 @@ showHex :: Word16 -> [Char]
 showHex = Base.printf "%04x"
 
 fromLString :: [Char] -> IPv6
-fromLString = parseOnly ipv6Parser
+fromLString = either throw id . parseOnly ipv6Parser
 
 
 -- | create an IPv6 from the given tuple
@@ -160,7 +158,7 @@ toTuple (IPv6 hi low) =
 -- <|> ipv6ParserCompressed
 -- ```
 --
-ipv6Parser :: (Sequential input, Element input ~ Char)
+ipv6Parser :: (ParserSource input, Element input ~ Char, Element (Chunk input) ~ Char)
            => Parser input IPv6
 ipv6Parser =  ipv6ParserPreferred
           <|> ipv6ParserIpv4Embedded
@@ -174,7 +172,7 @@ ipv6Parser =  ipv6ParserPreferred
 -- * `ABCD:EF01:2345:6789:ABCD:EF01:2345:6789`
 -- * `2001:DB8:0:0:8:800:200C:417A`
 --
-ipv6ParserPreferred :: (Sequential input, Element input ~ Char)
+ipv6ParserPreferred :: (ParserSource input, Element input ~ Char, Element (Chunk input) ~ Char)
                     => Parser input IPv6
 ipv6ParserPreferred = do
     i1 <- takeAWord16 <* skipColon
@@ -186,6 +184,7 @@ ipv6ParserPreferred = do
     i7 <- takeAWord16 <* skipColon
     i8 <- takeAWord16
     return $ fromTuple (i1,i2,i3,i4,i5,i6,i7,i8)
+
 
 -- | IPv6 address with embedded IPv4 address
 --
@@ -200,16 +199,14 @@ ipv6ParserPreferred = do
 -- * `::13.1.68.3`
 -- * `::FFFF:129.144.52.38`
 --
-ipv6ParserIpv4Embedded :: (Sequential input, Element input ~ Char)
+ipv6ParserIpv4Embedded :: (ParserSource input, Element input ~ Char, Element (Chunk input) ~ Char)
                        => Parser input IPv6
 ipv6ParserIpv4Embedded = do
-    bs1 <- repeat (Between Never (toEnum 6)) $
-              takeAWord16 <* skipColon
+    bs1 <- repeat (Between $ 0 `And` 6 ) $ takeAWord16 <* skipColon
     _ <- optional skipColon
     _ <- optional skipColon
     let (CountOf lenBs1) = length bs1
-    bs2 <- repeat (Between Never (toEnum $ 6 - lenBs1)) $
-              takeAWord16 <* skipColon
+    bs2 <- repeat (Between $ 0 `And` (fromIntegral $ 6 - lenBs1)) $ takeAWord16 <* skipColon
     _ <- optional skipColon
     [i1,i2,i3,i4,i5,i6] <- format 6 bs1 bs2
     m1 <- takeAWord8 <* skipDot
@@ -232,14 +229,13 @@ ipv6ParserIpv4Embedded = do
 -- * `::1`
 -- * `::`
 --
-ipv6ParserCompressed :: (Sequential input, Element input ~ Char)
+ipv6ParserCompressed :: (ParserSource input, Element input ~ Char, Element (Chunk input) ~ Char)
                      => Parser input IPv6
 ipv6ParserCompressed = do
-    bs1 <- repeat (Between Never (toEnum 8)) $
-              takeAWord16 <* skipColon
+    bs1 <- repeat (Between $ 0 `And` 8) $ takeAWord16 <* skipColon
     when (null bs1) skipColon
     let (CountOf bs1Len) = length bs1
-    bs2 <- repeat (Between Never (toEnum $ 8 - bs1Len)) $
+    bs2 <- repeat (Between $ 0 `And` fromIntegral (8 - bs1Len)) $
               skipColon *> takeAWord16
     [i1,i2,i3,i4,i5,i6,i7,i8] <- format 8 bs1 bs2
     return $ fromTuple (i1,i2,i3,i4,i5,i6,i7,i8)
@@ -251,20 +247,19 @@ format sz bs1 bs2
         let len = sz `sizeSub` (length bs1 + length bs2)
         return $ bs1 <> replicate len 0 <> bs2
 
-skipColon :: (Sequential input, Element input ~ Char)
+skipColon :: (ParserSource input, Element input ~ Char, Element (Chunk input) ~ Char)
           => Parser input ()
 skipColon = element ':'
-skipDot :: (Sequential input, Element input ~ Char)
+skipDot :: (ParserSource input, Element input ~ Char, Element (Chunk input) ~ Char)
         => Parser input ()
 skipDot = element '.'
-takeAWord8 :: (Sequential input, Element input ~ Char)
+takeAWord8 :: (ParserSource input, Element input ~ Char, Element (Chunk input) ~ Char)
            => Parser input Word16
-takeAWord8 = do
-    read <$> repeat (Between Once (toEnum 3)) (satisfy isDigit)
-takeAWord16 :: (Sequential input, Element input ~ Char)
+takeAWord8 = read <$> repeat (Between $ 1 `And` 4) (satisfy_ isDigit)
+takeAWord16 :: (ParserSource input, Element input ~ Char, Element (Chunk input) ~ Char)
             => Parser input Word16
 takeAWord16 = do
-    l <- repeat (Between Once (toEnum 4)) (satisfy isHexDigit)
+    l <- repeat (Between $ 1 `And` 4) (satisfy_ isHexDigit)
     let lhs = readHex l
      in case lhs of
           [(w, [])] -> return w

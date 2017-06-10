@@ -30,7 +30,6 @@ module Foundation.List.SList
     , cons
     , map
     , elem
-    , foldl
     , append
     , minimum
     , maximum
@@ -123,9 +122,6 @@ drop (SList l) = SList (Prelude.drop n l)
 
 map :: (a -> b) -> SList n a -> SList n b
 map f (SList l) = SList (Prelude.map f l)
-
-foldl :: (b -> a -> b) -> b -> SList n a -> b
-foldl f acc (SList l) = Prelude.foldl f acc l
 
 zip :: SList n a -> SList n b -> SList n (a,b)
 zip (SList l1) (SList l2) = SList (Prelude.zip l1 l2)

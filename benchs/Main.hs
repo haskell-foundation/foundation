@@ -103,7 +103,7 @@ benchsString = bgroup "String"
         fmap (\(n, dat) -> bgroup n $ diffTextString (filter (> 'b')) (Text.filter (> 'b')) dat)
             allDat
 
-    benchRead = bgroup "Read" $
+    benchRead = bgroup "Read"
         [ bgroup "Integer"
             [ bgroup "10000" (diffTextString stringReadInteger textReadInteger (toList $ show 10000))
             , bgroup "1234567891234567890" (diffTextString stringReadInteger textReadInteger (toList $ show 1234567891234567890))

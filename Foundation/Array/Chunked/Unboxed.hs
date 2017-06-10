@@ -8,7 +8,6 @@
 --
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -103,7 +102,7 @@ instance PrimType ty => C.IndexedCollection (ChunkedUArray ty) where
                 if predicate (unsafeIndex c i) then Just i else Nothing
 
 empty :: ChunkedUArray ty
-empty = ChunkedUArray (A.empty)
+empty = ChunkedUArray A.empty
 
 append :: ChunkedUArray ty -> ChunkedUArray ty -> ChunkedUArray ty
 append (ChunkedUArray a1) (ChunkedUArray a2) = ChunkedUArray (mappend a1 a2)

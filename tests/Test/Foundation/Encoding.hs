@@ -24,8 +24,8 @@ testEncodings (x:xs, expected) = testEncoding x expected <> testEncodings (xs, e
 
 testEncoding :: EncodedString -> String -> [TestTree]
 testEncoding (EncodedString encoding ba) expected =
-    [ testCase (show encoding <> " -> UTF8") $ testFromBytes
-    , testCase ("UTF8 -> " <> show encoding) $ testToBytes
+    [ testCase (show encoding <> " -> UTF8") testFromBytes
+    , testCase ("UTF8 -> " <> show encoding) testToBytes
     ]
   where
     testFromBytes :: Assertion

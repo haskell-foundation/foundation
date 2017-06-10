@@ -12,7 +12,6 @@
 --
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
-{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE Rank2Types #-}
 module Foundation.Array.Unboxed
@@ -82,7 +81,6 @@ module Foundation.Array.Unboxed
     , sortBy
     , filter
     , reverse
-    , foldl
     , foldr
     , foldl'
     , foldr1
@@ -134,7 +132,7 @@ data UArray ty =
       UVecBA {-# UNPACK #-} !(Offset ty)
              {-# UNPACK #-} !(CountOf ty)
              {-# UNPACK #-} !PinnedStatus {- unpinned / pinned flag -}
-                            ByteArray#
+                            !ByteArray#
     | UVecAddr {-# UNPACK #-} !(Offset ty)
                {-# UNPACK #-} !(CountOf ty)
                               !(FinalPtr ty)
@@ -150,7 +148,7 @@ arrayType = mkNoRepType "Foundation.UArray"
 
 instance NormalForm (UArray ty) where
     toNormalForm (UVecBA _ _ _ !_) = ()
-    toNormalForm (UVecAddr _ _ _) = ()
+    toNormalForm (UVecAddr {}) = ()
 instance (PrimType ty, Show ty) => Show (UArray ty) where
     show v = show (toList v)
 instance (PrimType ty, Eq ty) => Eq (UArray ty) where
@@ -1025,21 +1023,13 @@ reverse a
         loop !i
             | i == end  = return ()
             | otherwise = primMbaWrite ma i (primBaIndex ba (sizeAsOffset (endI - i))) >> loop (i+Offset 1)
-    goAddr !end !ma !(Ptr ba) !srcStart = loop (Offset 0)
+    goAddr !end !ma (Ptr ba) !srcStart = loop (Offset 0)
       where
         !endI = sizeAsOffset ((srcStart + end) - Offset 1)
         loop !i
             | i == end  = return ()
             | otherwise = primMbaWrite ma i (primAddrIndex ba (sizeAsOffset (endI - i))) >> loop (i+Offset 1)
 {-# SPECIALIZE [3] reverse :: UArray Word8 -> UArray Word8 #-}
-
-foldl :: PrimType ty => (a -> ty -> a) -> a -> UArray ty -> a
-foldl f initialAcc vec = loop 0 initialAcc
-  where
-    len = length vec
-    loop i acc
-        | i .==# len = acc
-        | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
 
 foldr :: PrimType ty => (ty -> a -> a) -> a -> UArray ty -> a
 foldr f initialAcc vec = loop 0

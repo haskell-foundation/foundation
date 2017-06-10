@@ -8,7 +8,9 @@
 -- IPv4 data type
 --
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Foundation.Network.IPv4
     ( IPv4
@@ -58,7 +60,7 @@ toString :: IPv4 -> String
 toString = fromList . toLString
 
 fromLString :: [Char] -> IPv4
-fromLString = parseOnly ipv4Parser
+fromLString = either throw id . parseOnly ipv4Parser
 
 toLString :: IPv4 -> [Char]
 toLString ipv4 =
@@ -91,20 +93,16 @@ toTuple (IPv4 w) =
     w4 = w         .&. 0x000000FF
 
 -- | Parse a IPv4 address
-ipv4Parser :: (Sequential input, Element input ~ Char) => Parser input IPv4
+ipv4Parser :: ( ParserSource input, Element input ~ Char
+              , Sequential (Chunk input), Element input ~ Element (Chunk input)
+              )
+           => Parser input IPv4
 ipv4Parser = do
-    i1 <- takeAWord8
-    element '.'
-    i2 <- takeAWord8
-    element '.'
-    i3 <- takeAWord8
-    element '.'
+    i1 <- takeAWord8 <* element '.'
+    i2 <- takeAWord8 <* element '.'
+    i3 <- takeAWord8 <* element '.'
     i4 <- takeAWord8
     return $ fromTuple (i1, i2, i3, i4)
   where
-    takeAWord8 :: (Sequential input, Element input ~ Char)
-               => Parser input Word8
-    takeAWord8 =
-        read <$> repeat (Between Once (toEnum 3)) (satisfy isAsciiDecimal)
-    isAsciiDecimal :: Char -> Bool
+    takeAWord8 = read . toList <$> takeWhile isAsciiDecimal
     isAsciiDecimal = flip elem ['0'..'9']

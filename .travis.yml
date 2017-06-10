@@ -12,6 +12,9 @@ cache:
 # cabal-install, and BUILD=stack which uses Stack.
 matrix:
   include:
+  - env: BUILD=hlint
+    language: generic
+    compiler: hlint
   - env: BUILD=stack RESOLVER=ghc-8.0
     language: generic
     addons: { apt: { packages: [ libgmp-dev ] } }
@@ -79,6 +82,9 @@ script:
       cabal test
       cabal check
       cabal sdist
+      ;;
+    hlint)
+      curl -sL https://raw.github.com/ndmitchell/hlint/master/misc/travis.sh | sh -s . --cpp-define=__GLASGOW_HASKELL__=800 --cpp-define=x86_64_HOST_ARCH=1 --cpp-define=mingw32_HOST_OS=1
       ;;
   esac
   set +ex

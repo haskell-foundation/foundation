@@ -32,6 +32,7 @@ module Foundation.Array.Bitmap
 import           Foundation.Array.Unboxed (UArray)
 import qualified Foundation.Array.Unboxed as A
 import           Foundation.Array.Unboxed.Mutable (MUArray)
+import           Foundation.Class.Bifunctor (first, second)
 import           Foundation.Primitive.Exception
 import           Foundation.Internal.Base
 import           Foundation.Primitive.Types.OffsetSize
@@ -78,7 +79,6 @@ instance C.InnerFunctor Bitmap where
     imap = map
 
 instance C.Foldable Bitmap where
-    foldl = foldl
     foldr = foldr
     foldl' = foldl'
     foldr' = foldr'
@@ -290,7 +290,7 @@ vFromList allBools = runST $ do
 
     toPacked :: [Bool] -> Word32
     toPacked l =
-        C.foldl (.|.) 0 $ Prelude.zipWith (\b w -> if b then (1 `shiftL` w) else 0) l (C.reverse [0..31])
+        C.foldl' (.|.) 0 $ Prelude.zipWith (\b w -> if b then (1 `shiftL` w) else 0) l (C.reverse [0..31])
 -}
     len        = C.length allBools
 
@@ -389,11 +389,11 @@ snoc l v = unoptimised (flip C.snoc v) l
 
 -- unoptimised
 uncons :: Bitmap -> Maybe (Bool, Bitmap)
-uncons b = fmap (\(v, l) -> (v, fromList l)) $ C.uncons $ toList b
+uncons b = fmap (second fromList) $ C.uncons $ toList b
 
 -- unoptimised
 unsnoc :: Bitmap -> Maybe (Bitmap, Bool)
-unsnoc b = fmap (\(l, v) -> (fromList l, v)) $ C.unsnoc $ toList b
+unsnoc b = fmap (first fromList) $ C.unsnoc $ toList b
 
 intersperse :: Bool -> Bitmap -> Bitmap
 intersperse b = unoptimised (C.intersperse b)
@@ -416,14 +416,6 @@ filter predicate vec = unoptimised (Data.List.filter predicate) vec
 
 reverse :: Bitmap -> Bitmap
 reverse bits = unoptimised C.reverse bits
-
-foldl :: (a -> Bool -> a) -> a -> Bitmap -> a
-foldl f initialAcc vec = loop 0 initialAcc
-  where
-    len = length vec
-    loop i acc
-        | i .==# len = acc
-        | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
 
 foldr :: (Bool -> a -> a) -> a -> Bitmap -> a
 foldr f initialAcc vec = loop 0
