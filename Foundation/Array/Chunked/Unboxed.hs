@@ -55,6 +55,12 @@ instance PrimType ty => IsList (ChunkedUArray ty) where
     fromList = vFromList
     toList = vToList
 
+instance PrimType ty => C.Foldable (ChunkedUArray ty) where
+    foldl = foldl
+    foldl' = foldl'
+    foldr = foldr
+    -- Use the default foldr' instance
+
 instance PrimType ty => C.Collection (ChunkedUArray ty) where
     null = null
     length = length
@@ -138,13 +144,26 @@ elem el (ChunkedUArray array) = loop 0
                 True  -> True
                 False -> loop (i+1)
 
--- | TODO: Improve implementation.
-minimum :: (Ord ty, PrimType ty) => C.NonEmpty (ChunkedUArray ty) -> ty
-minimum = Data.List.minimum . toList . C.getNonEmpty
+-- | Fold a `ChunkedUArray' leftwards lazily. Implemented internally using a double
+-- fold on the nested Array structure. Other folds implemented analogously.
+foldl :: PrimType ty => (a -> ty -> a) -> a -> ChunkedUArray ty -> a
+foldl f initialAcc (ChunkedUArray cua) = A.foldl (U.foldl f) initialAcc cua
 
--- | TODO: Improve implementation.
+foldl' :: PrimType ty => (a -> ty -> a) -> a -> ChunkedUArray ty -> a
+foldl' f initialAcc (ChunkedUArray cua) = A.foldl' (U.foldl' f) initialAcc cua
+
+foldr :: PrimType ty => (ty -> a -> a) -> a -> ChunkedUArray ty -> a
+foldr f initialAcc (ChunkedUArray cua) = A.foldr (flip $ U.foldr f) initialAcc cua
+
+minimum :: (Ord ty, PrimType ty) => C.NonEmpty (ChunkedUArray ty) -> ty
+minimum cua = foldl' min (unsafeIndex cua' 0) cua'
+  where
+    cua' = C.getNonEmpty cua
+
 maximum :: (Ord ty, PrimType ty) => C.NonEmpty (ChunkedUArray ty) -> ty
-maximum = Data.List.maximum . toList . C.getNonEmpty
+maximum cua = foldl' max (unsafeIndex cua' 0) cua'
+  where
+    cua' = C.getNonEmpty cua
 
 -- | Equality between `ChunkedUArray`.
 -- This function is fiddly to write as is not enough to compare for
