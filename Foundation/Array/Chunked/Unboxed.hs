@@ -55,7 +55,6 @@ instance PrimType ty => IsList (ChunkedUArray ty) where
     toList = vToList
 
 instance PrimType ty => C.Foldable (ChunkedUArray ty) where
-    foldl = foldl
     foldl' = foldl'
     foldr = foldr
     -- Use the default foldr' instance
@@ -143,11 +142,8 @@ elem el (ChunkedUArray array) = loop 0
                 True  -> True
                 False -> loop (i+1)
 
--- | Fold a `ChunkedUArray' leftwards lazily. Implemented internally using a double
+-- | Fold a `ChunkedUArray' leftwards strictly. Implemented internally using a double
 -- fold on the nested Array structure. Other folds implemented analogously.
-foldl :: PrimType ty => (a -> ty -> a) -> a -> ChunkedUArray ty -> a
-foldl f initialAcc (ChunkedUArray cua) = A.foldl (U.foldl f) initialAcc cua
-
 foldl' :: PrimType ty => (a -> ty -> a) -> a -> ChunkedUArray ty -> a
 foldl' f initialAcc (ChunkedUArray cua) = A.foldl' (U.foldl' f) initialAcc cua
 
