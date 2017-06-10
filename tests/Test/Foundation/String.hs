@@ -52,6 +52,14 @@ testStringCases =
                 (remainingBa, allErrs, chunkS) = foldl reconstruct (mempty, [], []) $ chunks randomInts wholeBA
              in (catMaybes allErrs === []) .&&. (remainingBa === mempty) .&&. (mconcat (reverse chunkS) === wholeS)
         ]
+    , testGroup "Replace" [
+          testCase "replace 'aa' 'bb' '' == ''" $ do
+            replace "aa" "bb" "" @?= ""
+        , testCase "replace 'aa' 'bb' 'aa' == 'bb'" $ do
+            replace "aa" "bb" "aa" @?= "bb"
+        , testCase "replace 'aa' 'bb' 'aabb' == 'bbbb'" $ do
+            replace "aa" "bb" "aabb" @?= "bbbb"
+                          ]
     , testGroup "Cases"
         [ testGroup "Invalid-UTF8"
             [ testCase "ff" $ expectFromBytesErr ("", Just InvalidHeader, 0) (fromList [0xff])

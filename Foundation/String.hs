@@ -32,6 +32,7 @@ module Foundation.String
     , words
     , upper
     , lower
+    , replace
     ) where
 
 import Foundation.String.UTF8

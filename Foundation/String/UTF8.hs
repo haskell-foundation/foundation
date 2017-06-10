@@ -840,6 +840,7 @@ replace needle@(String ned) replacement@(String rp) haystack@(String hy) = runST
       where
         go :: Offset8 -> (Int, [Offset8]) -> (Int, [Offset8])
         go currentOffset (!occs, ipoints)
+          | haystackLen < needleLen = (occs, ipoints)
           | currentOffset >= (sizeAsOffset $ sizeSub haystackLen needleLen) = (occs, ipoints)
           | otherwise =
             let matcher = Vec.unsafeTake (offsetAsSize $ currentOffset `offsetPlusE` needleLen) hy
@@ -867,7 +868,12 @@ replace needle@(String ned) replacement@(String rp) haystack@(String hy) = runST
          -> Offset8
          -> [Offset8]
          -> prim String
-    loop ms _ _ [] = freeze ms
+    loop ms@(MutableString mba) currentOffset previousInsertionPoint [] = do
+      -- Finalise the string
+      let !insertionLen     = previousInsertionPoint `offsetPlusE` replacementLen
+      let !unchangedDataLen = (sizeAsOffset haystackLen - previousInsertionPoint)
+      Vec.unsafeCopyAtRO mba currentOffset hy insertionLen unchangedDataLen
+      freeze ms
     loop ms@(MutableString mba) currentOffset previousInsertionPoint (x:xs) = do
       {-
                => MArray ty (PrimState prim) -- ^ destination array
