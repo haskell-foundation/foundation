@@ -278,11 +278,11 @@ nextWithIndexer getter off =
 writeWithBuilder :: (PrimMonad st, Monad st)
                  => Char
                  -> Builder (UArray Word8) (MVec.MUArray Word8) Word8 st ()
-writeWithBuilder c =
-    if      bool# (ltWord# x 0x80##   ) then encode1
-    else if bool# (ltWord# x 0x800##  ) then encode2
-    else if bool# (ltWord# x 0x10000##) then encode3
-    else                                     encode4
+writeWithBuilder c
+    | bool# (ltWord# x 0x80##   ) = encode1
+    | bool# (ltWord# x 0x800##  ) = encode2
+    | bool# (ltWord# x 0x10000##) = encode3
+    | otherwise = encode4
   where
     !(I# xi) = fromEnum c
     !x       = int2Word# xi
