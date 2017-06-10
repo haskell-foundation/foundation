@@ -8,125 +8,205 @@
 -- The current implementation is mainly, if not copy/pasted, inspired from
 -- `memory`'s Parser.
 --
--- A very simple bytearray parser related to Parsec and Attoparsec
+-- Foundation Parser makes use of the Foundation's @Collection@ and
+-- @Sequential@ classes to allow you to define generic parsers over any
+-- @Sequential@ of inpu.
 --
--- Simple example:
+-- This way you can easily implements parsers over @LString@, @String@.
 --
--- > > parse ((,,) <$> take 2 <*> element 0x20 <*> (elements "abc" *> anyElement)) "xx abctest"
--- > ParseOK "est" ("xx", 116)
+--
+-- > flip parseOnly "my.email@address.com" $ do
+-- >    EmailAddress
+-- >      <$> (takeWhile ((/=) '@' <*  element '@')
+-- >      <*> takeAll
 --
 
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE FlexibleContexts #-}
 
 module Foundation.Parser
-    ( Parser(..)
-    , Result(..)
-    , ParserError(..)
-    -- * run the Parser
+    ( Parser
     , parse
     , parseFeed
     , parseOnly
-    -- * Parser methods
-    , hasMore
-    , element
-    , satisfy
+    , -- * Result
+      Result(..)
+    , ParseError(..)
+
+    , -- * Parser source
+      ParserSource(..)
+
+    , -- * combinator
+      element
     , anyElement
     , elements
     , string
+
+    , satisfy
+    , satisfy_
     , take
     , takeWhile
     , takeAll
+
     , skip
     , skipWhile
     , skipAll
-    -- * utils
+
+    , (<|>)
+    , many
+    , some
     , optional
-    , many, some, (<|>)
-    , Count(..), Condition(..), repeat
+    , repeat, Condition(..), And(..)
     ) where
 
 import           Control.Applicative (Alternative, empty, (<|>), many, some, optional)
-import           Control.Monad       (MonadPlus, mzero, mplus)
+import           Control.Monad (MonadPlus, mzero, mplus)
+
 import           Foundation.Internal.Base
 import           Foundation.Primitive.Types.OffsetSize
-import           Foundation.Collection hiding (take)
-import           Foundation.String
 import           Foundation.Numerical
+import           Foundation.Collection hiding (take)
+import qualified Foundation.Collection as C
+import           Foundation.String
 
-data ParserError input
-    = Expected
-        { expectedInput :: !input
-            -- ^ the expected input
-        , receivedInput :: !input
-           -- ^ but received this data
-        }
-    | DoesNotSatify
-        -- ^ some bytes didn't satisfy predicate
-    | NotEnough
-        -- ^ not enough data to complete the parser
-    | MonadFail String
-        -- ^ only use in the event of Monad.fail function
-  deriving (Show, Eq, Ord, Typeable)
-instance (Show input, Typeable input) => Exception (ParserError input)
+-- Error handling -------------------------------------------------------------
 
--- | Simple parsing result, that represent respectively:
+-- | common parser error definition
+data ParseError input
+    = NotEnough (CountOf (Element input))
+        -- ^ meaning the parser was short of @CountOf@ @Element@ of `input`.
+    | NotEnoughParseOnly
+        -- ^ The parser needed more data, only when using @parseOnly@
+    | ExpectedElement (Element input) (Element input)
+        -- ^ when using @element@
+    | Expected (Chunk input) (Chunk input)
+        -- ^ when using @elements@ or @string@
+    | Satisfy (Maybe String)
+        -- ^ the @satisfy@ or @satisfy_@ function failed,
+  deriving (Typeable)
+instance Typeable input => Exception (ParseError input)
+
+instance Show (ParseError input) where
+    show (NotEnough (CountOf sz)) = "NotEnough: missing " <> show sz <> " element(s)"
+    show NotEnoughParseOnly    = "NotEnough, parse only"
+    show (ExpectedElement _ _) = "Expected _ but received _"
+    show (Expected _ _)        = "Expected _ but received _"
+    show (Satisfy Nothing)     = "Satisfy"
+    show (Satisfy (Just s))    = "Satisfy: " <> toList s
+
+-- Results --------------------------------------------------------------------
+
+-- | result of executing the `parser` over the given `input`
+data Result input result
+    = ParseFailed (ParseError input)
+        -- ^ the parser failed with the given @ParserError@
+    | ParseOk     (Chunk input) result
+        -- ^ the parser complete successfuly with the remaining @Chunk@
+    | ParseMore   (Chunk input -> Result input result)
+        -- ^ the parser needs more input, pass an empty @Chunk@ or @mempty@
+        -- to tell the parser you don't have anymore inputs.
+
+instance Show k => Show (Result input k) where
+    show (ParseFailed err) = "Parser failed: " <> show err
+    show (ParseOk _ k) = "Parser succeed: " <> show k
+    show (ParseMore _) = "Parser incomplete: need more"
+instance Functor (Result input) where
+    fmap f r = case r of
+        ParseFailed err -> ParseFailed err
+        ParseOk rest a  -> ParseOk rest (f a)
+        ParseMore more -> ParseMore (fmap f . more)
+
+-- Parser Source --------------------------------------------------------------
+
+class (Sequential input, IndexedCollection input) => ParserSource input where
+    type Chunk input
+
+    nullChunk :: input -> Chunk input -> Bool
+
+    appendChunk :: input -> Chunk input -> input
+
+    subChunk :: input -> Offset (Element input) -> CountOf (Element input) -> Chunk input
+
+    spanChunk :: input -> Offset (Element input) -> (Element input -> Bool) -> (Chunk input, Offset (Element input))
+
+endOfParserSource :: ParserSource input => input -> Offset (Element input) -> Bool
+endOfParserSource l off = off .==# length l
+{-# INLINE endOfParserSource #-}
+
+-- Parser ---------------------------------------------------------------------
+
+data NoMore = More | NoMore
+  deriving (Show, Eq)
+
+type Failure input         result = input -> Offset (Element input) -> NoMore -> ParseError input -> Result input result
+
+type Success input result' result = input -> Offset (Element input) -> NoMore -> result'          -> Result input result
+
+-- | Foundation's @Parser@ monad.
 --
--- * failure: with the error message
---
--- * continuation: that need for more input data
---
--- * success: the remaining unparsed data and the parser value
---
-data Result input a =
-      ParseFail (ParserError input)
-    | ParseMore (Maybe input -> Result input a)
-    | ParseOK   input a
-
-instance (Show ba, Show a) => Show (Result ba a) where
-    show (ParseFail err) = "ParseFailure: " <> show err
-    show (ParseMore _)   = "ParseMore _"
-    show (ParseOK b a)   = "ParseOK " <> show a <> " " <> show b
-
--- | The continuation of the current buffer, and the error string
-type Failure input r = input -> ParserError input -> Result input r
-
--- | The continuation of the next buffer value, and the parsed value
-type Success input a r = input -> a -> Result input r
-
--- | Simple parser structure
-newtype Parser input a = Parser
-    { runParser :: forall r . input
-                           -> Failure input r
-                           -> Success input a r
-                           -> Result input r }
+-- Its implementation is based on the parser in `memory`.
+newtype Parser input result = Parser
+    { runParser :: forall result'
+                 . input -> Offset (Element input) -> NoMore
+                -> Failure input        result'
+                -> Success input result result'
+                -> Result input result'
+    }
 
 instance Functor (Parser input) where
-    fmap f p = Parser $ \buf err ok ->
-       runParser p buf err (\b a -> ok b (f a))
-instance Applicative (Parser input) where
-    pure      = return
-    (<*>) d e = d >>= \b -> e >>= \a -> return (b a)
-instance Monad (Parser input) where
-    fail errorMsg = Parser $ \buf err _ -> err buf (MonadFail $ fromList errorMsg)
-    return v      = Parser $ \buf _ ok -> ok buf v
-    m >>= k       = Parser $ \buf err ok ->
-        runParser m buf err (\buf' a -> runParser (k a) buf' err ok)
-instance MonadPlus (Parser input) where
-    mzero = fail "MonadPlus.mzero"
-    mplus f g = Parser $ \buf err ok ->
-        -- rewrite the err callback of @f to call @g
-        runParser f buf (\_ _ -> runParser g buf err ok) ok
-instance Alternative (Parser input) where
-    empty = fail "Alternative.empty"
+    fmap f fa = Parser $ \buf off nm err ok ->
+        runParser fa buf off nm err $ \buf' off' nm' a -> ok buf' off' nm' (f a)
+    {-# INLINE fmap #-}
+
+instance ParserSource input => Applicative (Parser input) where
+    pure a = Parser $ \buf off nm _ ok -> ok buf off nm a
+    {-# INLINE pure #-}
+    fab <*> fa = Parser $ \buf0 off0 nm0 err ok ->
+        runParser  fab buf0 off0 nm0 err $ \buf1 off1 nm1 ab ->
+        runParser_ fa  buf1 off1 nm1 err $ \buf2 off2 nm2 -> ok buf2 off2 nm2 . ab
+    {-# INLINE (<*>) #-}
+
+instance ParserSource input => Monad (Parser input) where
+    return = pure
+    {-# INLINE return #-}
+    m >>= k       = Parser $ \buf off nm err ok ->
+        runParser  m     buf  off  nm  err $ \buf' off' nm' a ->
+        runParser_ (k a) buf' off' nm' err ok
+    {-# INLINE (>>=) #-}
+
+instance ParserSource input => MonadPlus (Parser input) where
+    mzero = error "Foundation.Parser.Internal.MonadPlus.mzero"
+    mplus f g = Parser $ \buf off nm err ok ->
+        runParser f buf off nm (\buf' _ nm' _ -> runParser g buf' off nm' err ok) ok
+    {-# INLINE mplus #-}
+instance ParserSource input => Alternative (Parser input) where
+    empty = error "Foundation.Parser.Internal.Alternative.empty"
     (<|>) = mplus
+    {-# INLINE (<|>) #-}
+
+runParser_ :: ParserSource input
+           => Parser input result
+           -> input
+           -> Offset (Element input)
+           -> NoMore
+           -> Failure input        result'
+           -> Success input result result'
+           -> Result input         result'
+runParser_ parser buf off NoMore err ok = runParser parser buf off NoMore err ok
+runParser_ parser buf off nm     err ok
+    | endOfParserSource buf off = ParseMore $ \chunk ->
+        if nullChunk buf chunk
+            then runParser parser buf off NoMore err ok
+            else runParser parser (appendChunk buf chunk) off nm err ok
+    | otherwise = runParser parser buf                    off nm err ok
+{-# INLINE runParser_ #-}
 
 -- | Run a parser on an @initial input.
 --
 -- If the Parser need more data than available, the @feeder function
 -- is automatically called and fed to the More continuation.
-parseFeed :: (Sequential input, Monad m)
-          => m (Maybe input)
+parseFeed :: (ParserSource input, Monad m)
+          => m (Chunk input)
           -> Parser input a
           -> input
           -> m (Result input a)
@@ -135,250 +215,268 @@ parseFeed feeder p initial = loop $ parse p initial
         loop r             = return r
 
 -- | Run a Parser on a ByteString and return a 'Result'
-parse :: Sequential input
+parse :: ParserSource input
       => Parser input a -> input -> Result input a
-parse p s = runParser p s (\_ msg -> ParseFail msg) ParseOK
+parse p s = runParser p s 0 More failure success
+
+failure :: input -> Offset (Element input) -> NoMore -> ParseError input -> Result input r
+failure _ _ _ = ParseFailed
+{-# INLINE failure #-}
+
+success :: ParserSource input => input -> Offset (Element input) -> NoMore -> r -> Result input r
+success buf off _ = ParseOk rest
+  where
+    !rest = subChunk buf off (length buf - offsetAsSize off)
+{-# INLINE success #-}
 
 -- | parse only the given input
 --
 -- The left-over `Element input` will be ignored, if the parser call for more
 -- data it will be continuously fed with `Nothing` (up to 256 iterations).
 --
-parseOnly :: (Typeable input, Show input, Sequential input, Element input ~ Char)
+parseOnly :: (ParserSource input, Monoid (Chunk input))
           => Parser input a
           -> input
-          -> a
-parseOnly p i = continuously maximumIterations (parse p i)
-  where
-    maximumIterations :: Int
-    maximumIterations = 256
-    continuously _ (ParseOK _ a) = a
-    continuously _ (ParseFail err) = throw err
-    continuously n (ParseMore f)
-        | n == 0 = error "Foundation.Parser.parseOnly: not enough (please report error)"
-        | otherwise = continuously (n - 1) (f Nothing)
+          -> Either (ParseError input) a
+parseOnly p i = case runParser p i 0 NoMore failure success of
+    ParseFailed err  -> Left err
+    ParseOk     _ r  -> Right r
+    ParseMore   _    -> Left NotEnoughParseOnly
 
--- When needing more data, getMore append the next data
--- to the current buffer. if no further data, then
--- the err callback is called.
-getMore :: Sequential input => Parser input ()
-getMore = Parser $ \buf err ok -> ParseMore $ \nextChunk ->
-    case nextChunk of
-        Nothing -> err buf NotEnough
-        Just nc
-            | null nc   -> runParser getMore buf err ok
-            | otherwise -> ok (mappend buf nc) ()
+-- ------------------------------------------------------------------------- --
+--                              String Parser                                --
+-- ------------------------------------------------------------------------- --
 
---
--- Only used by takeAll, which accumulate all the remaining data
--- until ParseMore is fed a Nothing value.
---
--- getAll cannot fail.
-getAll :: Sequential input => Parser input ()
-getAll = Parser $ \buf err ok -> ParseMore $ \nextChunk ->
-    case nextChunk of
-        Nothing -> ok buf ()
-        Just nc -> runParser getAll (mappend buf nc) err ok
+instance ParserSource String where
+    type Chunk String = String
+    nullChunk _ = null
+    {-# INLINE nullChunk #-}
+    appendChunk = mappend
+    {-# INLINE appendChunk #-}
+    subChunk c off sz = C.take sz $ C.drop (offsetAsSize off) c
+    {-# INLINE subChunk #-}
+    spanChunk buf off predicate =
+        let c      = C.drop (offsetAsSize off) buf
+            (t, _) = C.span predicate c
+          in (t, off `offsetPlusE` length t)
+    {-# INLINE spanChunk #-}
 
--- Only used by skipAll, which flush all the remaining data
--- until ParseMore is fed a Nothing value.
---
--- flushAll cannot fail.
-flushAll :: Sequential input => Parser input ()
-flushAll = Parser $ \buf err ok -> ParseMore $ \nextChunk ->
-    case nextChunk of
-        Nothing -> ok buf ()
-        Just _  -> runParser flushAll mempty err ok
+instance ParserSource [a] where
+    type Chunk [a] = [a]
+    nullChunk _ = null
+    {-# INLINE nullChunk #-}
+    appendChunk = mappend
+    {-# INLINE appendChunk #-}
+    subChunk c off sz = C.take sz $ C.drop (offsetAsSize off) c
+    {-# INLINE subChunk #-}
+    spanChunk buf off predicate =
+        let c      = C.drop (offsetAsSize off) buf
+            (t, _) = C.span predicate c
+          in (t, off `offsetPlusE` length t)
+    {-# INLINE spanChunk #-}
 
-hasMore :: Sequential input => Parser input Bool
-hasMore = Parser $ \buf err ok ->
-    if null buf
-        then ParseMore $ \nextChunk ->
-            case nextChunk of
-                Nothing -> ok buf False
-                Just nc -> runParser hasMore nc err ok
-        else ok buf True
+-- ------------------------------------------------------------------------- --
+--                          Helpers                                          --
+-- ------------------------------------------------------------------------- --
 
 -- | Get the next `Element input` from the parser
-anyElement :: Sequential input => Parser input (Element input)
-anyElement = Parser $ \buf err ok ->
-    case uncons buf of
-        Nothing      -> runParser (getMore >> anyElement) buf err ok
-        Just (c1,b2) -> ok b2 c1
+anyElement :: ParserSource input => Parser input (Element input)
+anyElement = Parser $ \buf off nm err ok ->
+    case buf ! off of
+        Nothing -> err buf off        nm $ NotEnough 1
+        Just x  -> ok  buf (succ off) nm x
+{-# INLINE anyElement #-}
 
--- | Parse a specific `Element input` at current position
---
--- if the `Element input` is different than the expected one,
--- this parser will raise a failure.
-element :: (Sequential input, Eq (Element input))
-        => Element input -> Parser input ()
-element w = Parser $ \buf err ok ->
-    case uncons buf of
-        Nothing      -> runParser (getMore >> element w) buf err ok
-        Just (c1,b2) | c1 == w   -> ok b2 ()
-                     | otherwise -> err buf (Expected (singleton w) (singleton c1))
+element :: ( ParserSource input
+           , Eq (Element input)
+           , Element input ~ Element (Chunk input)
+           )
+        => Element input
+        -> Parser input ()
+element expectedElement = Parser $ \buf off nm err ok ->
+    case buf ! off of
+        Nothing -> err buf off nm $ NotEnough 1
+        Just x | expectedElement == x -> ok  buf (succ off) nm ()
+               | otherwise            -> err buf off nm $ ExpectedElement expectedElement x
+{-# INLINE element #-}
 
--- | Parse a sequence of elements from current position
---
--- if the following `Element input` don't match the expected
--- `input` completely, the parser will raise a failure
-elements :: (Show input, Eq input, Sequential input) => input -> Parser input ()
+elements :: ( ParserSource input, Sequential (Chunk input)
+            , Element (Chunk input) ~ Element input
+            , Eq (Chunk input)
+            )
+         => Chunk input -> Parser input ()
 elements = consumeEq
   where
-    -- partially consume as much as possible or raise an error.
-    consumeEq expected = Parser $ \actual err ok ->
-        let eLen = length expected in
-         if length actual >= eLen
-             then    -- enough data for doing a full match
-                let (aMatch,aRem) = splitAt eLen actual
-                 in if aMatch == expected
-                     then ok aRem ()
-                     else err actual (Expected expected aMatch)
-             else    -- not enough data, match as much as we have, and then recurse.
-                let (eMatch, eRem) = splitAt (length actual) expected
-                 in if actual == eMatch
-                     then runParser (getMore >> consumeEq eRem) mempty err ok
-                     else err actual (Expected expected eMatch)
-
-string :: String -> Parser String ()
-string !expected = Parser $ \actual err ok ->
-    let !expBytes = toBytes UTF8 expected
-        !expLen   = length expBytes
-        !actBytes = toBytes UTF8 actual
-        !actLen   = length actBytes
-     in if expLen <= actLen
-          then
-              let (!aMatch, !aRem) = splitAt expLen actBytes
-               in if aMatch == expBytes
-                   then ok (fromBytesUnsafe aRem) ()
-                   else err actual (Expected expected (fromBytesUnsafe aMatch))
-          else
-              let (!eMatch, !eRem) = splitAt actLen expBytes
-               in if actBytes == eMatch
-                   then runParser (getMore >> string (fromBytesUnsafe eRem)) mempty err ok
-                   else err actual (Expected expected (fromBytesUnsafe eMatch))
-
--- | Take @n elements from the current position in the stream
-take :: Sequential input => CountOf (Element input) -> Parser input input
-take n = Parser $ \buf err ok ->
-    if length buf >= n
-        then let (b1,b2) = splitAt n buf in ok b2 b1
-        else runParser (getMore >> take n) buf err ok
+    consumeEq :: ( ParserSource input
+                 , Sequential (Chunk input)
+                 , Element (Chunk input) ~ Element input
+                 , Eq (Chunk input)
+                 )
+              => Chunk input -> Parser input ()
+    consumeEq expected = Parser $ \buf off nm err ok ->
+      if endOfParserSource buf off
+        then
+          err buf off nm $ NotEnough lenE
+        else
+          let !lenI = sizeAsOffset (length buf) - off
+           in if lenI >= lenE
+             then
+              let a = subChunk buf off lenE
+               in if a == expected
+                    then ok buf (off + sizeAsOffset lenE) nm ()
+                    else err buf off nm $ Expected expected a
+             else
+              let a = subChunk buf off lenI
+                  (e', r) = splitAt lenI expected
+               in if a == e'
+                    then runParser_ (consumeEq r) buf (off + sizeAsOffset lenI) nm err ok
+                    else err buf off nm $ Expected e' a
+      where
+        !lenE = length expected
+    {-# NOINLINE consumeEq #-}
+{-# INLINE elements #-}
 
 -- | take one element if satisfy the given predicate
-satisfy :: Sequential input => (Element input -> Bool) -> Parser input (Element input)
-satisfy predicate = Parser $ \buf err ok ->
-    case uncons buf of
-        Nothing      -> runParser (getMore >> satisfy predicate) buf err ok
-        Just (c1,b2) | predicate c1 -> ok b2 c1
-                     | otherwise -> err buf DoesNotSatify
+satisfy :: ParserSource input => Maybe String -> (Element input -> Bool) -> Parser input (Element input)
+satisfy desc predicate = Parser $ \buf off nm err ok ->
+    case buf ! off of
+        Nothing -> err buf off nm $ NotEnough 1
+        Just x | predicate x -> ok  buf (succ off) nm x
+               | otherwise   -> err buf off nm $ Satisfy desc
+{-# INLINE satisfy #-}
 
--- | Take elements while the @predicate hold from the current position in the
--- stream
-takeWhile :: Sequential input => (Element input -> Bool) -> Parser input input
-takeWhile predicate = Parser $ \buf err ok ->
-    let (b1, b2) = span predicate buf
-     in if null b2
-            then runParser (getMore >> takeWhile predicate) buf err ok
-            else ok b2 b1
+-- | take one element if satisfy the given predicate
+satisfy_ :: ParserSource input => (Element input -> Bool) -> Parser input (Element input)
+satisfy_ = satisfy Nothing
+{-# INLINE satisfy_ #-}
+
+take :: ( ParserSource input
+        , Sequential (Chunk input)
+        , Element input ~ Element (Chunk input)
+        )
+     => CountOf (Element (Chunk input))
+     -> Parser input (Chunk input)
+take n = Parser $ \buf off nm err ok ->
+    let lenI = sizeAsOffset (length buf) - off
+     in if endOfParserSource buf off && n > 0
+       then err buf off nm $ NotEnough n
+       else if n <= lenI
+         then let t = subChunk buf off n
+               in ok buf (off + sizeAsOffset n) nm t
+         else let h = subChunk buf off lenI
+               in runParser_ (take $ n - lenI) buf (sizeAsOffset lenI) nm err $
+                    \buf' off' nm' t -> ok buf' off' nm' (h <> t)
+
+takeWhile :: ( ParserSource input, Sequential (Chunk input)
+             )
+          => (Element input -> Bool)
+          -> Parser input (Chunk input)
+takeWhile predicate = Parser $ \buf off nm err ok ->
+    if endOfParserSource buf off
+      then ok buf off nm mempty
+      else let (b1, off') = spanChunk buf off predicate
+            in if endOfParserSource buf off'
+                  then runParser_ (takeWhile predicate) buf off' nm err
+                          $ \buf' off'' nm' b1T -> ok buf' off'' nm' (b1 <> b1T)
+                  else ok buf off' nm b1
 
 -- | Take the remaining elements from the current position in the stream
-takeAll :: Sequential input => Parser input input
-takeAll = Parser $ \buf err ok ->
-    runParser (getAll >> returnBuffer) buf err ok
+takeAll :: (ParserSource input, Sequential (Chunk input)) => Parser input (Chunk input)
+takeAll = getAll >> returnBuffer
   where
-    returnBuffer = Parser $ \buf _ ok -> ok mempty buf
+    returnBuffer :: ParserSource input => Parser input (Chunk input)
+    returnBuffer = Parser $ \buf off nm _ ok ->
+        let !lenI = length buf
+            !off' = sizeAsOffset lenI
+            !sz   = off' - off
+         in ok buf off' nm (subChunk buf off sz)
+    {-# INLINE returnBuffer #-}
 
--- | Skip @n elements from the current position in the stream
-skip :: Sequential input => CountOf (Element input) -> Parser input ()
-skip n = Parser $ \buf err ok ->
-    if length buf >= n
-        then ok (drop n buf) ()
-        else runParser (getMore >> skip (n `sizeSub` length buf)) mempty err ok
+    getAll :: (ParserSource input, Sequential (Chunk input)) => Parser input ()
+    getAll = Parser $ \buf off nm err ok ->
+      case nm of
+        NoMore -> ok buf off nm ()
+        More   -> ParseMore $ \nextChunk ->
+          if nullChunk buf nextChunk
+            then ok buf off NoMore ()
+            else runParser getAll (appendChunk buf nextChunk) off nm err ok
+    {-# NOINLINE getAll #-}
+{-# INLINE takeAll #-}
 
--- | Skip `Element input` while the @predicate hold from the current position
--- in the stream
-skipWhile :: Sequential input => (Element input -> Bool) -> Parser input ()
-skipWhile p = Parser $ \buf err ok ->
-    let (_, b2) = span p buf
-     in if null b2
-            then runParser (getMore >> skipWhile p) mempty err ok
-            else ok b2 ()
+skip :: ParserSource input => CountOf (Element input) -> Parser input ()
+skip n = Parser $ \buf off nm err ok ->
+    let lenI = sizeAsOffset (length buf) - off
+     in if endOfParserSource buf off && n > 0
+       then err buf off nm $ NotEnough n
+       else if n <= lenI
+         then ok buf (off + sizeAsOffset n) nm ()
+         else runParser_ (skip $ n - lenI) buf (sizeAsOffset lenI) nm err ok
 
--- | Skip all the remaining `Element input` from the current position in the
--- stream
-skipAll :: Sequential input => Parser input ()
-skipAll = Parser $ \buf err ok -> runParser flushAll buf err ok
+skipWhile :: ( ParserSource input, Sequential (Chunk input)
+             )
+          => (Element input -> Bool)
+          -> Parser input ()
+skipWhile predicate = Parser $ \buf off nm err ok ->
+    if endOfParserSource buf off
+      then ok buf off nm ()
+      else let (_, off') = spanChunk buf off predicate
+            in if endOfParserSource buf off'
+                  then runParser_ (skipWhile predicate) buf off' nm err ok
+                  else ok buf off' nm ()
 
-data Count = Never | Once | Twice | Other Int
-  deriving (Show)
-instance Enum Count where
-    toEnum 0 = Never
-    toEnum 1 = Once
-    toEnum 2 = Twice
-    toEnum n
-        | n > 2 = Other n
-        | otherwise = Never
-    fromEnum Never = 0
-    fromEnum Once = 1
-    fromEnum Twice = 2
-    fromEnum (Other n) = n
-    succ Never = Once
-    succ Once = Twice
-    succ Twice = Other 3
-    succ (Other n)
-        | n == 0 = Once
-        | n == 1 = Twice
-        | otherwise = Other (succ n)
-    pred Never = Never
-    pred Once = Never
-    pred Twice = Once
-    pred (Other n)
-        | n == 2 = Once
-        | n == 3 = Twice
-        | otherwise = Other (pred n)
-
-data Condition = Exactly Count
-               | Between Count Count
-  deriving (Show)
-
-shouldStop :: Condition -> Bool
-shouldStop (Exactly   Never) = True
-shouldStop (Between _ Never) = True
-shouldStop _                 = False
-
-canStop :: Condition -> Bool
-canStop (Exactly Never)   = True
-canStop (Between Never _) = True
-canStop _                 = False
-
-decrement :: Condition -> Condition
-decrement (Exactly n)   = Exactly (pred n)
-decrement (Between a b) = Between (pred a) (pred b)
-
--- | repeat the given Parser a given amount of time
+-- | consume every chunk of the stream
 --
--- If you know you want it to exactly perform a given amount of time:
+skipAll :: (ParserSource input, Collection (Chunk input)) => Parser input ()
+skipAll = flushAll
+  where
+    flushAll :: (ParserSource input, Collection (Chunk input)) => Parser input ()
+    flushAll = Parser $ \buf off nm err ok ->
+        let !off' = sizeAsOffset $ length buf in
+        case nm of
+            NoMore -> ok buf off' NoMore ()
+            More   -> ParseMore $ \nextChunk ->
+              if null nextChunk
+                then ok buf off' NoMore ()
+                else runParser flushAll buf off nm err ok
+    {-# NOINLINE flushAll #-}
+{-# INLINE skipAll #-}
+
+string :: String -> Parser String ()
+string = elements
+{-# INLINE string #-}
+
+data Condition = Between !And | Exactly !Word
+  deriving (Show, Eq, Typeable)
+data And = And !Word !Word
+  deriving (Eq, Typeable)
+instance Show And where
+    show (And a b) = show a <> " and " <> show b
+
+-- | repeat the given parser a given amount of time
 --
--- ```
--- repeat (Exactly Twice) (element 'a')
--- ```
+-- Unlike @some@ or @many@, this operation will bring more precision on how
+-- many times you wish a parser to be sequenced.
 --
--- If you know your parser must performs from 0 to 8 times:
+-- ## Repeat @Exactly@ a number of time
 --
--- ```
--- repeat (Between Never (Other 8))
--- ```
+-- > repeat (Exactly 6) (takeWhile ((/=) ',') <* element ',')
 --
--- *This interface is still WIP* but went handy when writting the IPv4/IPv6
--- parsers.
+-- ## Repeat @Between@ lower `@And@` upper times
 --
-repeat :: Sequential input => Condition -> Parser input a -> Parser input [a]
-repeat c p
-    | shouldStop c = return []
-    | otherwise = do
-        ma <- optional p
-        case ma of
-            Nothing | canStop c -> return []
-                    | otherwise -> fail $ "Not enough..." <> show c
-            Just a -> (:) a <$> repeat (decrement c) p
+-- > repeat (Between $ 1 `And` 10) (takeWhile ((/=) ',') <* element ',')
+--
+repeat :: ParserSource input
+       => Condition -> Parser input a -> Parser input [a]
+repeat (Exactly n) = repeatE n
+repeat (Between a) = repeatA a
+
+repeatE :: (ParserSource input)
+        => Word -> Parser input a -> Parser input [a]
+repeatE 0 _ = return []
+repeatE n p = (:) <$> p <*> repeatE (n-1) p
+
+repeatA :: (ParserSource input)
+        => And -> Parser input a -> Parser input [a]
+repeatA (And 0 0) _ = return []
+repeatA (And 0 n) p = ((:) <$> p <*> repeatA (And 0     (n-1)) p) <|> return []
+repeatA (And l u) p =  (:) <$> p <*> repeatA (And (l-1) (u-1)) p
