@@ -55,7 +55,12 @@ testStringCases =
              in (catMaybes allErrs === []) .&&. (remainingBa === mempty) .&&. (mconcat (reverse chunkS) === wholeS)
         ]
     , testGroup "replace" [
-          testCase "indices 'aa' 'bb' == (0, [])" $ do
+          testCase "indices '' 'bb' should raise an error" $ do
+            res <- try (evaluate $ indices "" "bb")
+            case res of
+              (Left (_ :: SomeException)) -> return ()
+              Right _ -> fail "Expecting an error to be thrown, but it did not."
+        , testCase "indices 'aa' 'bb' == []" $ do
             indices "aa" "bb" @?= []
         , testCase "indices 'aa' 'aabbccabbccEEaaaaabb' is correct" $ do
             indices "aa" "aabbccabbccEEaaaaabb" @?= [Offset 0,Offset 13,Offset 15]

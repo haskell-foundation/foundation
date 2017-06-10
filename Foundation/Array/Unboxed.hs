@@ -1031,21 +1031,23 @@ reverse a
 
 -- Finds where are the insertion points when we search for a `needle`
 -- within an `haystack`.
+-- Throws an error in case `needle` is empty.
 indices :: PrimType ty => UArray ty -> UArray ty -> [Offset ty]
-indices ned hy =
-  case haystackLen < needleLen of
-    True  -> []
-    False -> go (Offset 0) []
+indices needle hy
+  | needleLen <= 0 = error "Foundation.Array.Unboxed.indices: needle is empty."
+  | otherwise = case haystackLen < needleLen of
+                  True  -> []
+                  False -> go (Offset 0) []
   where
     !haystackLen = length hy
 
-    !needleLen = length ned
+    !needleLen = length needle
 
     go currentOffset ipoints
       | (currentOffset `offsetPlusE` needleLen) > (sizeAsOffset haystackLen) = ipoints
       | otherwise =
         let matcher = take needleLen . drop (offsetAsSize currentOffset) $ hy
-        in case matcher == ned of
+        in case matcher == needle of
              -- TODO: Move away from right-appending as it's gonna be slow.
              True  -> go (currentOffset `offsetPlusE` needleLen) (ipoints <> [currentOffset])
              False -> go (currentOffset + Offset 1) ipoints
