@@ -1055,11 +1055,14 @@ indices ned hy =
 -- the `haystack` string.
 replace :: PrimType ty => UArray ty -> UArray ty -> UArray ty -> UArray ty
 replace (needle :: UArray ty) replacement haystack = runST $ do
-    let insertionPoints = indices needle haystack
-    let !occs           = Prelude.length insertionPoints
-    let !newLen         = haystackLen - (multBy needleLen occs) + (multBy replacementLen occs)
-    ms <- new newLen
-    loop ms (Offset 0) (Offset 0) insertionPoints
+    case null needle of
+      True -> error "Foundation.Array.Unboxed.replace: empty needle"
+      False -> do
+        let insertionPoints = indices needle haystack
+        let !occs           = Prelude.length insertionPoints
+        let !newLen         = haystackLen - (multBy needleLen occs) + (multBy replacementLen occs)
+        ms <- new newLen
+        loop ms (Offset 0) (Offset 0) insertionPoints
   where
 
     multBy (CountOf x) y = CountOf (x * y)

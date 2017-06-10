@@ -10,6 +10,8 @@ module Test.Foundation.String
 import Foundation
 import Foundation.String
 import Foundation.String.ASCII (AsciiString)
+import Control.Exception
+import Data.Either
 
 import Test.Tasty
 import Test.Tasty.QuickCheck
@@ -59,6 +61,9 @@ testStringCases =
             indices "aa" "aabbccabbccEEaaaaabb" @?= [Offset 0,Offset 13,Offset 15]
         , testCase "indices 'aa' 'aaccaadd' is correct" $ do
             indices "aa" "aaccaadd" @?= [Offset 0,Offset 4]
+        , testCase "replace '' 'bb' 'foo' raises an error" $ do
+            (res :: Either SomeException String) <- try (evaluate $ replace "" "bb" "foo")
+            assertBool "Expecting an error to be thrown, but it did not." (isLeft res)
         , testCase "replace 'aa' 'bb' '' == ''" $ do
             replace "aa" "bb" "" @?= ""
         , testCase "replace 'aa' '' 'aabbcc' == 'aabbcc'" $ do
