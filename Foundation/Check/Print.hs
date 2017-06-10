@@ -23,7 +23,7 @@ propertyToResult propertyTestArg =
             checks = getChecks propertyTestArg
          in if checkHasFailed checks
                 then printError args checks
-                else (PropertySuccess, length args > 0)
+                else (PropertySuccess, not (null args))
   where
     printError args checks = (PropertyFailed (mconcat $ loop 1 args), False)
       where
