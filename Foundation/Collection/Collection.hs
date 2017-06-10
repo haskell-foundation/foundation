@@ -26,9 +26,11 @@ module Foundation.Collection.Collection
     , nonEmpty
     , nonEmpty_
     , nonEmptyFmap
+    , and
+    , or
     ) where
 
-import           Foundation.Internal.Base
+import           Foundation.Internal.Base hiding (and)
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Collection.Element
 import           Foundation.Collection.NonEmpty
@@ -155,3 +157,11 @@ instance Collection c => Collection (NonEmpty c) where
     minimum = minimum . getNonEmpty
     all p = all p . getNonEmpty
     any p = any p . getNonEmpty
+
+-- | Return True if all the elements in the collection are True
+and :: (Collection col, Element col ~ Bool) => col -> Bool
+and = all (== True)
+
+-- | Return True if at least one element in the collection is True
+or :: (Collection col, Element col ~ Bool) => col -> Bool
+or = any (== True)

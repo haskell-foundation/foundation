@@ -69,10 +69,6 @@ filterTestMatching cfg testRoot
   where
     match acc s = or (flip isInfixOf currentTestName <$> testNameMatch cfg)
       where currentTestName = fqTestName (s:acc)
-    or [] = False
-    or (x:xs)
-        | x         = True
-        | otherwise = or xs
 
     testFilter acc x =
         case x of
