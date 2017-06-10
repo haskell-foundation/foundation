@@ -21,6 +21,8 @@ module Foundation.Primitive.Block.Base
     -- * Other methods
     , new
     , newPinned
+    , touch
+    , mutableTouch
     ) where
 
 import           GHC.Prim
@@ -324,3 +326,10 @@ unsafeRead (MutableBlock mba) i = primMbaRead mba i
 unsafeWrite :: (PrimMonad prim, PrimType ty) => MutableBlock ty (PrimState prim) -> Offset ty -> ty -> prim ()
 unsafeWrite (MutableBlock mba) i v = primMbaWrite mba i v
 {-# INLINE unsafeWrite #-}
+
+touch :: PrimMonad prim => Block ty -> prim ()
+touch (Block ba) = primitive $ \s -> case touch# ba s of { s2 -> (# s2, () #) }
+
+mutableTouch :: PrimMonad prim => MutableBlock ty (PrimState prim) -> prim ()
+mutableTouch (MutableBlock mba) = primitive $ \s -> case touch# mba s of { s2 -> (# s2, () #) }
+
