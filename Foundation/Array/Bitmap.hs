@@ -87,10 +87,10 @@ instance C.Collection Bitmap where
     null = null
     length = length
     elem e = Data.List.elem e . toList
-    minimum bm = let bm' = getNonEmpty bm
-                 in foldl' min (UV.unsafeIndex bm' 0) bm'
-    maximum bm = let bm' = getNonEmpty bm
-                 in foldl' max (UV.unsafeIndex bm' 0) bm'
+    minimum bm = let bm' = C.getNonEmpty bm
+                 in foldl' min (unsafeIndex bm' 0) bm'
+    maximum bm = let bm' = C.getNonEmpty bm
+                 in foldl' max (unsafeIndex bm' 0) bm'
     all p      = foldl' (\acc x -> p x && acc) True
     any p      = foldl' (\acc x -> p x || acc) False
 
