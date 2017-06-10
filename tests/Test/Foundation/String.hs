@@ -83,8 +83,8 @@ testStringCases =
             replace "aa" "LongLong" "aaccaadd" @?= "LongLongccLongLongdd"
         , testCase "replace 'aa' 'bb' 'aabbccabbccEEaaaaabb' == 'bbbbccabbccEEbbbbabb'" $ do
             replace "aa" "bb" "aabbccabbccEEaaaaabb" @?= "bbbbccabbccEEbbbbabb"
-        , testCase "replace '😀' '😺' '😀 🙂 😉 😌' == '😺 🙂 😉 😌'" $ do
-            replace "😀" "😺" "😀 🙂 😉 😌" @?= "😺 🙂 😉 😌"
+        , testCase "replace 'å' 'ä' 'ååññ' == 'ääññ'" $ do
+            replace "å" "ä" "ååññ" @?= "ääññ"
                           ]
     , testGroup "Cases"
         [ testGroup "Invalid-UTF8"
