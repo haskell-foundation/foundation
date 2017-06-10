@@ -54,11 +54,11 @@ testStringCases =
         ]
     , testGroup "replace" [
           testCase "indices 'aa' 'bb' == (0, [])" $ do
-            indices "aa" "bb" @?= (0,[])
+            indices "aa" "bb" @?= []
         , testCase "indices 'aa' 'aabbccabbccEEaaaaabb' is correct" $ do
-            indices "aa" "aabbccabbccEEaaaaabb" @?= (3,[Offset 0,Offset 13,Offset 15])
+            indices "aa" "aabbccabbccEEaaaaabb" @?= [Offset 0,Offset 13,Offset 15]
         , testCase "indices 'aa' 'aaccaadd' is correct" $ do
-            indices "aa" "aaccaadd" @?= (2,[Offset 0,Offset 4])
+            indices "aa" "aaccaadd" @?= [Offset 0,Offset 4]
         , testCase "replace 'aa' 'bb' '' == ''" $ do
             replace "aa" "bb" "" @?= ""
         , testCase "replace 'aa' '' 'aabbcc' == 'aabbcc'" $ do
