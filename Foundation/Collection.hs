@@ -20,6 +20,8 @@ module Foundation.Collection
     , forM
     , forM_
     , Collection(..)
+    , and
+    , or
     , NonEmpty
     , getNonEmpty
     , nonEmpty
