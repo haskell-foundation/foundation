@@ -1078,7 +1078,7 @@ readNatural str
     | sz == 0  = Nothing
     | otherwise =
         case decimalDigits 0 str 0 of
-            (# acc, True, endOfs #) | endOfs > 0 -> Just $ acc
+            (# acc, True, endOfs #) | endOfs > 0 -> Just acc
             _                                    -> Nothing
   where
     !sz = size str
@@ -1356,4 +1356,4 @@ isInfixOf (String needle) (String haystack)
         | i == endOfs           = needle == haystackSub
         | needle == haystackSub = True
         | otherwise             = loop (i+1)
-      where haystackSub = C.take needleLen $ C.drop i $ haystack
+      where haystackSub = C.take needleLen $ C.drop i haystack

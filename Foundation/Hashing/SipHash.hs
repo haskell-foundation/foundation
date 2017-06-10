@@ -122,7 +122,7 @@ mix8 !c !w (Sip ist incremental len) =
         SipIncremental0     -> Sip ist (SipIncremental1 $ Prelude.fromIntegral w) (len+1)
   where
     doAcc constr acc =
-        Sip ist (constr $ ((acc .<<. 8) .|. Prelude.fromIntegral w)) (len+1)
+        Sip ist (constr ((acc .<<. 8) .|. Prelude.fromIntegral w)) (len+1)
 
 mix32 :: Int -> Word32 -> Sip -> Sip
 mix32 !c !w (Sip ist incremental len) =
