@@ -87,10 +87,13 @@ instance C.Collection Bitmap where
     null = null
     length = length
     elem e = Data.List.elem e . toList
-    minimum = Data.List.minimum . toList . C.getNonEmpty -- TODO can shortcircuit all this massively
-    maximum = Data.List.maximum . toList . C.getNonEmpty -- TODO DITTO
-    all p = Data.List.all p . toList
-    any p = Data.List.any p . toList
+    minimum bm = let bm' = getNonEmpty bm
+                 in foldl' min (UV.unsafeIndex bm' 0) bm'
+    maximum bm = let bm' = getNonEmpty bm
+                 in foldl' max (UV.unsafeIndex bm' 0) bm'
+    all p      = foldl' (\acc x -> p x && acc) True
+    any p      = foldl' (\acc x -> p x || acc) False
+
 instance C.Sequential Bitmap where
     take = take
     drop = drop
