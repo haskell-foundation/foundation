@@ -32,7 +32,7 @@ module Foundation.Array.Bitmap
 import           Foundation.Array.Unboxed (UArray)
 import qualified Foundation.Array.Unboxed as A
 import           Foundation.Array.Unboxed.Mutable (MUArray)
-import           Foundation.Class.Bifunctor (first)
+import           Foundation.Class.Bifunctor (first, second)
 import           Foundation.Primitive.Exception
 import           Foundation.Internal.Base
 import           Foundation.Primitive.Types.OffsetSize
@@ -389,7 +389,7 @@ snoc l v = unoptimised (flip C.snoc v) l
 
 -- unoptimised
 uncons :: Bitmap -> Maybe (Bool, Bitmap)
-uncons b = fmap (\(v, l) -> (v, fromList l)) $ C.uncons $ toList b
+uncons b = fmap (second fromList) $ C.uncons $ toList b
 
 -- unoptimised
 unsnoc :: Bitmap -> Maybe (Bitmap, Bool)
