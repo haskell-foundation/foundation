@@ -146,7 +146,7 @@ module Foundation
 import qualified Prelude
 --import           Prelude (Char, (.), Eq, Bool, IO)
 
-import           Data.Monoid (Monoid (..))
+import           Data.Monoid (Monoid (..), (<>))
 import           Control.Applicative
 import qualified Control.Category
 import qualified Control.Monad
@@ -185,7 +185,6 @@ import qualified Data.Tuple
 import qualified System.Environment
 import qualified Data.List
 
-import           Data.Monoid ((<>))
 
 default (Prelude.Integer, Prelude.Double)
 

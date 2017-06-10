@@ -203,7 +203,7 @@ testSequentialOps proxy genElement = testGroup "Sequential"
     , testProperty "init" $ withNonEmptyElements $ \els -> toList (init $ fromListNonEmptyP proxy els) === init els
     , testProperty "splitOn" $ withElements2E $ \(l, ch) ->
          fmap toList (splitOn (== ch) (fromListP proxy l)) === splitOn (== ch) l
-    , testSplitOn proxy (\_ -> True) mempty
+    , testSplitOn proxy (const True) mempty
     , testProperty "intercalate c (splitOn (c ==) col) == col" $ withElements2E $ \(c, ch) ->
         intercalate [ch] (splitOn (== ch) c) === c
     , testProperty "intercalate c (splitOn (c ==) (col ++ [c]) == (col ++ [c])" $ withElements2E $ \(c, ch) ->

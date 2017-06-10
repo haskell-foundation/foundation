@@ -102,10 +102,10 @@ stopWatchTest = do
     putStrLn "waiting summing number from 0 to 1000"
     ns3 <- do
             stopWatch <- startPrecise
-            !_ <- evaluate $ foldl' (\x y -> x + y) 0 [0 :: Int ..1000]
+            !_ <- evaluate $ foldl' (+) 0 [0 :: Int ..1000]
             stopPrecise stopWatch
     putStrLn $ show ns3
-    putStrLn . criterionSec =<< criterionDiff (foldl' (\x y -> x + y) 0) [0 :: Int ..1000]
+    putStrLn . criterionSec =<< criterionDiff (foldl' (+) 0) [0 :: Int ..1000]
   where
 #if USE_CRITERION
     criterionInit = C.initializeTime

@@ -182,7 +182,7 @@ class (IsList c, Item c ~ Element c, Monoid c, Collection c) => Sequential c whe
             | i == endofs = c1 == c2Sub
             | c1 == c2Sub = True
             | otherwise   = loop (succ i)
-          where c2Sub = take len1 $ drop i $ c2
+          where c2Sub = take len1 $ drop i c2
 
 -- Temporary utility functions
 mconcatCollection :: (Monoid (Item c), Sequential c) => c -> Element c

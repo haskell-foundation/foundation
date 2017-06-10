@@ -10,8 +10,6 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Foundation.Check
     ( Gen
     , Arbitrary(..)
@@ -66,7 +64,7 @@ validate propertyName prop = Check $ do
 pick :: String -> IO a -> Check a
 pick _ io = Check $ do
     -- TODO catch most exception to report failures
-    r <- liftIO $ io
+    r <- liftIO io
     pure r
 
 iterateProperty :: CountOf TestResult ->  GenParams -> (Word64 -> GenRng) -> Property -> IO (PropertyResult, CountOf TestResult)
@@ -75,7 +73,7 @@ iterateProperty limit genParams genRngIter prop = iterProp 1
     iterProp !iter
       | iter == limit = return (PropertySuccess, iter)
       | otherwise  = do
-          r <- liftIO $ toResult
+          r <- liftIO toResult
           case r of
               (PropertyFailed e, _)               -> return (PropertyFailed e, iter)
               (PropertySuccess, cont) | cont      -> iterProp (iter+1)

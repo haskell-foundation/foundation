@@ -140,10 +140,10 @@ main = defaultMain $ Group "foundation"
         ]
     , collectionProperties "DList a" (Proxy :: Proxy (DList Word8)) arbitrary
     , Group "Array"
-      [ matrixToGroup "Block" $ primTypesMatrixArbitrary $ \prx arb ->
-            \s -> collectionProperties ("Block " <> s) (functorProxy (Proxy :: Proxy Block) prx) arb
-      , matrixToGroup "Unboxed" $ primTypesMatrixArbitrary $ \prx arb ->
-            \s -> collectionProperties ("Unboxed " <> s) (functorProxy (Proxy :: Proxy UArray) prx) arb
+      [ matrixToGroup "Block" $ primTypesMatrixArbitrary $ \prx arb s ->
+            collectionProperties ("Block " <> s) (functorProxy (Proxy :: Proxy Block) prx) arb
+      , matrixToGroup "Unboxed" $ primTypesMatrixArbitrary $ \prx arb s ->
+            collectionProperties ("Unboxed " <> s) (functorProxy (Proxy :: Proxy UArray) prx) arb
       , Group "Boxed"
         [ collectionProperties "Array(W8)"  (Proxy :: Proxy (Array Word8))  arbitrary
         , collectionProperties "Array(W16)" (Proxy :: Proxy (Array Word16)) arbitrary
@@ -169,8 +169,8 @@ main = defaultMain $ Group "foundation"
         ]
       ]
     , Group "ChunkedUArray"
-      [ matrixToGroup "Unboxed" $ primTypesMatrixArbitrary $ \prx arb ->
-            \s -> collectionProperties ("Unboxed " <> s) (functorProxy (Proxy :: Proxy ChunkedUArray) prx) arb
+      [ matrixToGroup "Unboxed" $ primTypesMatrixArbitrary $ \prx arb s ->
+            collectionProperties ("Unboxed " <> s) (functorProxy (Proxy :: Proxy ChunkedUArray) prx) arb
       ]
     , testRandom
     ]

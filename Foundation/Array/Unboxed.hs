@@ -12,7 +12,6 @@
 --
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
-{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE Rank2Types #-}
 module Foundation.Array.Unboxed
@@ -144,8 +143,8 @@ arrayType :: DataType
 arrayType = mkNoRepType "Foundation.UArray"
 
 instance NormalForm (UArray ty) where
-    toNormalForm (UVecBA _ _ _ _) = ()
-    toNormalForm (UVecAddr _ _ _) = ()
+    toNormalForm (UVecBA _ _ _ !_) = ()
+    toNormalForm (UVecAddr {}) = ()
 instance (PrimType ty, Show ty) => Show (UArray ty) where
     show v = show (toList v)
 instance (PrimType ty, Eq ty) => Eq (UArray ty) where
@@ -1020,7 +1019,7 @@ reverse a
         loop !i
             | i == end  = return ()
             | otherwise = primMbaWrite ma i (primBaIndex ba (sizeAsOffset (endI - i))) >> loop (i+Offset 1)
-    goAddr !end !ma !(Ptr ba) !srcStart = loop (Offset 0)
+    goAddr !end !ma (Ptr ba) !srcStart = loop (Offset 0)
       where
         !endI = sizeAsOffset ((srcStart + end) - Offset 1)
         loop !i
