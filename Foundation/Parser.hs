@@ -241,7 +241,7 @@ parseOnly :: (ParserSource input, Monoid (Chunk input))
 parseOnly p i = case runParser p i 0 NoMore failure success of
     ParseFailed err  -> Left err
     ParseOk     _ r  -> Right r
-    ParseMore   _    -> undefined
+    ParseMore   _    -> Left NotEnoughParseOnly
 {-
 parseOnly p i = case parseFeed (Just mempty) p i of
     Just (ParseFailed err) -> Left err
