@@ -143,8 +143,8 @@ arrayType :: DataType
 arrayType = mkNoRepType "Foundation.UArray"
 
 instance NormalForm (UArray ty) where
-    toNormalForm (UVecBA _ _ _ _) = ()
-    toNormalForm (UVecAddr _ _ _) = ()
+    toNormalForm (UVecBA _ _ _ !_) = ()
+    toNormalForm (UVecAddr {}) = ()
 instance (PrimType ty, Show ty) => Show (UArray ty) where
     show v = show (toList v)
 instance (PrimType ty, Eq ty) => Eq (UArray ty) where
