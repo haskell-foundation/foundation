@@ -71,6 +71,8 @@ testStringCases =
             replace "aa" "bb" "aaccaadd" @?= "bbccbbdd"
         , testCase "replace 'aa' 'bb' 'aabbccabbccEEaaaaabb' == 'bbbbccabbccEEbbbbabb'" $ do
             replace "aa" "bb" "aabbccabbccEEaaaaabb" @?= "bbbbccabbccEEbbbbabb"
+        , testCase "replace '😀' '😺' '😀 🙂 😉 😌' == '😺 🙂 😉 😌'" $ do
+            replace "😀" "😺" "😀 🙂 😉 😌" @?= "😺 🙂 😉 😌"
                           ]
     , testGroup "Cases"
         [ testGroup "Invalid-UTF8"

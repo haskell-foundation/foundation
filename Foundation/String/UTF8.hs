@@ -884,13 +884,6 @@ replace needle replacement@(String rp) haystack@(String hy) = runST $ do
       Vec.unsafeCopyAtRO mba currentOffset hy offsetInOriginalString unchangedDataLen
       freeze ms
     loop ms@(MutableString mba) currentOffset offsetInOriginalString (x:xs) = do
-      {-
-               => MArray ty (PrimState prim) -- ^ destination array
-               -> Offset ty                  -- ^ offset at destination
-               -> Array ty                   -- ^ source array
-               -> Offset ty                  -- ^ offset at source
-               -> CountOf ty                    -- ^ number of elements to copy
-      -}
         -- 1. Copy from the old string.
         let !unchangedDataLen = (x - offsetInOriginalString)
         Vec.unsafeCopyAtRO mba currentOffset hy offsetInOriginalString unchangedDataLen
