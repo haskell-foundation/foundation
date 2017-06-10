@@ -78,6 +78,7 @@ library
                      Foundation.String
                      Foundation.String.ASCII
                      Foundation.String.Read
+                     Foundation.String.Builder
                      Foundation.IO
                      Foundation.IO.FileMap
                      Foundation.IO.Terminal
