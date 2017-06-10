@@ -117,8 +117,10 @@ instance UV.PrimType ty => Collection (BLK.Block ty) where
     null = (==) 0 . BLK.length
     length = BLK.length
     elem = BLK.elem
-    minimum = Data.List.minimum . toList . getNonEmpty
-    maximum = Data.List.maximum . toList . getNonEmpty
+    minimum blk = let blk' = getNonEmpty blk
+                 in BLK.foldl' min (BLK.unsafeIndex blk' 0) blk'
+    maximum blk = let blk' = getNonEmpty blk
+                 in BLK.foldl' max (BLK.unsafeIndex blk' 0) blk'
     all = BLK.all
     any = BLK.any
 
