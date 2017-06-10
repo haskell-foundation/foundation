@@ -59,7 +59,6 @@ module Foundation.Array.Boxed
     , foldl
     , foldl1'
     , foldr1
-    , foldl1
     , all
     , any
     , builderAppend
@@ -664,10 +663,6 @@ foldl' f initialAcc vec = loop 0 initialAcc
     loop !i !acc
         | i .==# len = acc
         | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
-
-foldl1 :: (ty -> ty -> ty) -> NonEmpty (Array ty) -> ty
-foldl1 f arr = let (initialAcc, rest) = splitAt 1 $ getNonEmpty arr
-               in foldl f (unsafeIndex initialAcc 0) rest
 
 foldl1' :: (ty -> ty -> ty) -> NonEmpty (Array ty) -> ty
 foldl1' f arr = let (initialAcc, rest) = splitAt 1 $ getNonEmpty arr

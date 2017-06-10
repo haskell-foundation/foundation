@@ -47,8 +47,6 @@ class Foldable collection where
 
 -- | Fold1's. Like folds, but they assume to operate on a NonEmpty collection.
 class Foldable f => Fold1able f where
-    -- | Left associative lazy fold.
-    foldl1  :: (Element f -> Element f -> Element f) -> NonEmpty f -> Element f
     -- | Left associative strict fold.
     foldl1' :: (Element f -> Element f -> Element f) -> NonEmpty f -> Element f
     -- | Right associative lazy fold.
@@ -85,19 +83,15 @@ instance UV.PrimType ty => Foldable (BLK.Block ty) where
 -- Fold1able instances
 ----------------------------
 instance Fold1able [a] where
-  foldl1 f  = Data.List.foldl1 f . getNonEmpty
   foldr1 f  = Data.List.foldr1 f . getNonEmpty
   foldl1' f = Data.List.foldl1' f . getNonEmpty
 
 instance UV.PrimType ty => Fold1able (UV.UArray ty) where
-    foldl1 = UV.foldl1
     foldr1 = UV.foldr1
     foldl1' = UV.foldl1'
 instance Fold1able (BA.Array ty) where
-    foldl1  = BA.foldl1
     foldr1  = BA.foldr1
     foldl1' = BA.foldl1'
 instance UV.PrimType ty => Fold1able (BLK.Block ty) where
-    foldl1  = BLK.foldl1
     foldr1  = BLK.foldr1
     foldl1' = BLK.foldl1'

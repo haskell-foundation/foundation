@@ -85,7 +85,6 @@ module Foundation.Array.Unboxed
     , foldl
     , foldr
     , foldl'
-    , foldl1
     , foldr1
     , foldl1'
     , all
@@ -1057,10 +1056,6 @@ foldl' f initialAcc vec = loop 0 initialAcc
     loop i !acc
         | i .==# len = acc
         | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
-
-foldl1 :: PrimType ty => (ty -> ty -> ty) -> NonEmpty (UArray ty) -> ty
-foldl1 f arr = let (initialAcc, rest) = splitAt 1 $ getNonEmpty arr
-               in foldl f (unsafeIndex initialAcc 0) rest
 
 foldl1' :: PrimType ty => (ty -> ty -> ty) -> NonEmpty (UArray ty) -> ty
 foldl1' f arr = let (initialAcc, rest) = splitAt 1 $ getNonEmpty arr

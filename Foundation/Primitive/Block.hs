@@ -35,7 +35,6 @@ module Foundation.Primitive.Block
     , foldl
     , foldl'
     , foldr
-    , foldl1
     , foldl1'
     , foldr1
     , cons
@@ -167,10 +166,6 @@ foldl' f initialAcc vec = loop 0 initialAcc
     loop i !acc
         | i .==# len = acc
         | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
-
-foldl1 :: PrimType ty => (ty -> ty -> ty) -> NonEmpty (Block ty) -> ty
-foldl1 f arr = let (initialAcc, rest) = splitAt 1 $ getNonEmpty arr
-               in foldl f (unsafeIndex initialAcc 0) rest
 
 foldl1' :: PrimType ty => (ty -> ty -> ty) -> NonEmpty (Block ty) -> ty
 foldl1' f arr = let (initialAcc, rest) = splitAt 1 $ getNonEmpty arr
