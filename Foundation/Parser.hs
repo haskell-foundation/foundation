@@ -238,13 +238,10 @@ parseOnly :: (ParserSource input, Monoid (Chunk input))
           => Parser input a
           -> input
           -> Either (ParseError input) a
-parseOnly p i = case parse p i of
+parseOnly p i = case runParser p i 0 NoMore failure success of
     ParseFailed err  -> Left err
     ParseOk     _ r  -> Right r
-    ParseMore   more -> case more mempty of
-        ParseFailed err -> Left err
-        ParseOk     _ r -> Right r
-        ParseMore   _   -> Left NotEnoughParseOnly
+    ParseMore   _    -> undefined
 {-
 parseOnly p i = case parseFeed (Just mempty) p i of
     Just (ParseFailed err) -> Left err
@@ -402,10 +399,13 @@ takeAll = getAll >> returnBuffer
     {-# INLINE returnBuffer #-}
 
     getAll :: (ParserSource input, Sequential (Chunk input)) => Parser input ()
-    getAll = Parser $ \buf off _ err ok -> ParseMore $ \nextChunk ->
-      if nullChunk buf nextChunk
-          then ok buf off NoMore ()
-          else runParser getAll (appendChunk buf nextChunk) off More err ok
+    getAll = Parser $ \buf off nm err ok ->
+      case nm of
+        NoMore -> ok buf off nm ()
+        More   -> ParseMore $ \nextChunk ->
+          if nullChunk buf nextChunk
+            then ok buf off NoMore ()
+            else runParser getAll (appendChunk buf nextChunk) off nm err ok
     {-# NOINLINE getAll #-}
 {-# INLINE takeAll #-}
 
@@ -436,10 +436,14 @@ skipAll :: (ParserSource input, Collection (Chunk input)) => Parser input ()
 skipAll = flushAll
   where
     flushAll :: (ParserSource input, Collection (Chunk input)) => Parser input ()
-    flushAll = Parser $ \buf off nm err ok -> ParseMore $ \nextChunk ->
-      if null nextChunk
-          then ok buf (sizeAsOffset $ length buf) NoMore ()
-          else runParser flushAll buf off nm err ok
+    flushAll = Parser $ \buf off nm err ok ->
+        let !off' = sizeAsOffset $ length buf in
+        case nm of
+            NoMore -> ok buf off' NoMore ()
+            More   -> ParseMore $ \nextChunk ->
+              if null nextChunk
+                then ok buf off' NoMore ()
+                else runParser flushAll buf off nm err ok
     {-# NOINLINE flushAll #-}
 {-# INLINE skipAll #-}
 
