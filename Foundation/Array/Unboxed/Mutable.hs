@@ -161,8 +161,8 @@ new sz
 {-# INLINE new #-}
 
 mutableSame :: MUArray ty st -> MUArray ty st -> Bool
-mutableSame (MUVecMA sa ea _ ma) (MUVecMA sb eb _ mb) = and [ sa == sb, ea == eb, bool# (sameMutableByteArray# ma mb)]
-mutableSame (MUVecAddr s1 e1 f1) (MUVecAddr s2 e2 f2) = and [ s1 == s2, e1 == e2, finalPtrSameMemory f1 f2 ]
+mutableSame (MUVecMA sa ea _ ma) (MUVecMA sb eb _ mb) = (sa == sb) && (ea == eb) && bool# (sameMutableByteArray# ma mb)
+mutableSame (MUVecAddr s1 e1 f1) (MUVecAddr s2 e2 f2) = (s1 == s2) && (e1 == e2) && finalPtrSameMemory f1 f2
 mutableSame MUVecMA {}     MUVecAddr {}   = False
 mutableSame MUVecAddr {}   MUVecMA {}     = False
 
