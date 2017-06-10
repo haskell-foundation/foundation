@@ -10,6 +10,7 @@ module Foundation.Monad.State
     , runStateT
     ) where
 
+import Foundation.Class.Bifunctor (first)
 import Foundation.Internal.Base (($), (.), const)
 import Foundation.Monad.Base
 import Control.Monad ((>=>))
@@ -28,7 +29,7 @@ put s = withState $ const ((), s)
 newtype StateT s m a = StateT { runStateT :: s -> m (a, s) }
 
 instance Functor m => Functor (StateT s m) where
-    fmap f m = StateT $ \s1 -> (\(a, s2) -> (f a, s2)) `fmap` runStateT m s1
+    fmap f m = StateT $ \s1 -> (first f) `fmap` runStateT m s1
     {-# INLINE fmap #-}
 
 instance (Applicative m, Monad m) => Applicative (StateT s m) where
