@@ -129,7 +129,7 @@ data UArray ty =
       UVecBA {-# UNPACK #-} !(Offset ty)
              {-# UNPACK #-} !(CountOf ty)
              {-# UNPACK #-} !PinnedStatus {- unpinned / pinned flag -}
-                            ByteArray#
+                            !ByteArray#
     | UVecAddr {-# UNPACK #-} !(Offset ty)
                {-# UNPACK #-} !(CountOf ty)
                               !(FinalPtr ty)
@@ -144,7 +144,7 @@ arrayType :: DataType
 arrayType = mkNoRepType "Foundation.UArray"
 
 instance NormalForm (UArray ty) where
-    toNormalForm (UVecBA _ _ _ !_) = ()
+    toNormalForm (UVecBA _ _ _ _) = ()
     toNormalForm (UVecAddr _ _ _) = ()
 instance (PrimType ty, Show ty) => Show (UArray ty) where
     show v = show (toList v)
