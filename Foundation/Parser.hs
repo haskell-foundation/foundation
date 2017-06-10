@@ -242,12 +242,6 @@ parseOnly p i = case runParser p i 0 NoMore failure success of
     ParseFailed err  -> Left err
     ParseOk     _ r  -> Right r
     ParseMore   _    -> Left NotEnoughParseOnly
-{-
-parseOnly p i = case parseFeed (Just mempty) p i of
-    Just (ParseFailed err) -> Left err
-    Just (ParseOk     _ r) -> Right r
-    _                      -> Left NotEnoughParseOnly
--}
 
 -- ------------------------------------------------------------------------- --
 --                              String Parser                                --
