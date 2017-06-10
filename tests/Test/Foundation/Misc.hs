@@ -31,6 +31,6 @@ testHexadecimal = testGroup "hexadecimal"
     ]
 
 testUUID = testGroup "UUID"
-    [ testProperty "show" $ show (UUID.nil) === "00000000-0000-0000-0000-000000000000"
+    [ testProperty "show" $ show UUID.nil === "00000000-0000-0000-0000-000000000000"
     , testProperty "show-bin" $ fmap show (UUID.fromBinary (fromList [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16])) === Just "100f0e0d-0c0b-0a09-0807-060504030201"
     ]

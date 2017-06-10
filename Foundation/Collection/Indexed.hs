@@ -5,7 +5,6 @@
 -- Stability   : experimental
 -- Portability : portable
 --
-{-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE FlexibleInstances #-}
 module Foundation.Collection.Indexed
     ( IndexedCollection(..)

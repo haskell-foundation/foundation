@@ -5,7 +5,6 @@
 --
 -- An implementation of a timing framework
 --
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Foundation.Timing
     ( Timing(..)
     , Measure(..)

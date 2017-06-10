@@ -71,9 +71,9 @@ getInteger optionName s =
 
 parseArgs :: [String] -> Config -> Either ParamError Config
 parseArgs []                cfg   = Right cfg
-parseArgs ("--seed":[])    _      = Left "option `--seed' is missing a parameter"
+parseArgs ["--seed"]       _      = Left "option `--seed' is missing a parameter"
 parseArgs ("--seed":x:xs)  cfg    = getInteger "seed" x >>= \i -> parseArgs xs $ cfg { udfSeed = Just $ integralDownsize i }
-parseArgs ("--tests":[])   _      = Left "option `--tests' is missing a parameter"
+parseArgs ["--tests"]      _      = Left "option `--tests' is missing a parameter"
 parseArgs ("--tests":x:xs) cfg    = getInteger "tests" x >>= \i -> parseArgs xs $ cfg { numTests = integralDownsize i }
 parseArgs ("--quiet":xs)   cfg    = parseArgs xs $ cfg { displayOptions = DisplayTerminalErrorOnly }
 parseArgs ("--list-tests":xs) cfg = parseArgs xs $ cfg { listTests = True }

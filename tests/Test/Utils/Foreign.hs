@@ -24,5 +24,5 @@ createPtr l
         let (CountOf szElem) = size (Proxy :: Proxy e)
             nbBytes = szElem * (let (CountOf c) = length l in c)
         ptr <- mallocBytes nbBytes
-        forM_ (zip [0..] l) $ \(o, e) -> pokeOff ptr o e
-        toFinalPtr ptr (\p -> free p)
+        forM_ (zip [0..] l) $ uncurry (pokeOff ptr)
+        toFinalPtr ptr free

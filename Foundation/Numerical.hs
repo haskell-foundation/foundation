@@ -13,7 +13,6 @@
 -- the number of classes.
 --
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 module Foundation.Numerical

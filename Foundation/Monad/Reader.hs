@@ -38,7 +38,7 @@ instance Monad m => Monad (ReaderT r m) where
     {-# INLINE (>>=) #-}
 
 instance MonadTrans (ReaderT r) where
-    lift f = ReaderT $ \_ -> f
+    lift f = ReaderT $ const f
     {-# INLINE lift #-}
 
 instance MonadIO m => MonadIO (ReaderT r m) where

@@ -161,10 +161,10 @@ new sz
 {-# INLINE new #-}
 
 mutableSame :: MUArray ty st -> MUArray ty st -> Bool
-mutableSame (MUVecMA sa ea _ ma) (MUVecMA sb eb _ mb) = and [ sa == sb, ea == eb, bool# (sameMutableByteArray# ma mb)]
-mutableSame (MUVecAddr s1 e1 f1) (MUVecAddr s2 e2 f2) = and [ s1 == s2, e1 == e2, finalPtrSameMemory f1 f2 ]
-mutableSame (MUVecMA {})     (MUVecAddr {})   = False
-mutableSame (MUVecAddr {})   (MUVecMA {})     = False
+mutableSame (MUVecMA sa ea _ ma) (MUVecMA sb eb _ mb) = (sa == sb) && (ea == eb) && bool# (sameMutableByteArray# ma mb)
+mutableSame (MUVecAddr s1 e1 f1) (MUVecAddr s2 e2 f2) = (s1 == s2) && (e1 == e2) && finalPtrSameMemory f1 f2
+mutableSame MUVecMA {}     MUVecAddr {}   = False
+mutableSame MUVecAddr {}   MUVecMA {}     = False
 
 
 newNative :: (PrimMonad prim, PrimType ty) => CountOf ty -> (MutableByteArray# (PrimState prim) -> prim ()) -> prim (MUArray ty (PrimState prim))
@@ -172,7 +172,7 @@ newNative n f = do
     muvec <- new n
     case muvec of
         (MUVecMA _ _ _ mba) -> f mba >> return muvec
-        (MUVecAddr {})      -> error "internal error: unboxed new only supposed to allocate natively"
+        MUVecAddr {}        -> error "internal error: unboxed new only supposed to allocate natively"
 
 mutableForeignMem :: (PrimMonad prim, PrimType ty)
                   => FinalPtr ty -- ^ the start pointer with a finalizer
