@@ -897,7 +897,8 @@ replace needle replacement@(String rp) haystack@(String hy) = runST $ do
         let !newOffset = currentOffset `offsetPlusE` unchangedDataLen
         -- 2. Copy the replacement.
         Vec.unsafeCopyAtRO mba newOffset rp (Offset 0) replacementLen
-        loop ms (newOffset `offsetPlusE` replacementLen) (offsetInOriginalString `offsetPlusE` needleLen) xs
+        let !offsetInOriginalString' = offsetInOriginalString `offsetPlusE` unchangedDataLen `offsetPlusE` needleLen
+        loop ms (newOffset `offsetPlusE` replacementLen) offsetInOriginalString' xs
 
 -- | Return the nth character in a String
 --
