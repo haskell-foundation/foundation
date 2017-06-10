@@ -869,8 +869,8 @@ replace needle replacement@(String rp) haystack@(String hy) = runST $ do
     !haystackLen = size haystack
 
     -- Go through each insertion point and copy things over.
-    -- We keep around the last insertion point to have a base
-    -- to compare things with.
+    -- We keep around the offset to the original string to
+    -- be able to copy bytes which didn't change.
     loop :: PrimMonad prim
          => MutableString (PrimState prim)
          -> Offset8
