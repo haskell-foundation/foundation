@@ -20,7 +20,6 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UnboxedTuples              #-}
 {-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE CPP                        #-}
 module Foundation.String.UTF8
     ( String(..)
