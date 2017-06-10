@@ -82,7 +82,6 @@ module Foundation.Array.Unboxed
     , sortBy
     , filter
     , reverse
-    , foldl
     , foldr
     , foldl'
     , foreignMem
@@ -1027,14 +1026,6 @@ reverse a
             | i == end  = return ()
             | otherwise = primMbaWrite ma i (primAddrIndex ba (sizeAsOffset (endI - i))) >> loop (i+Offset 1)
 {-# SPECIALIZE [3] reverse :: UArray Word8 -> UArray Word8 #-}
-
-foldl :: PrimType ty => (a -> ty -> a) -> a -> UArray ty -> a
-foldl f initialAcc vec = loop 0 initialAcc
-  where
-    len = length vec
-    loop i acc
-        | i .==# len = acc
-        | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
 
 foldr :: PrimType ty => (ty -> a -> a) -> a -> UArray ty -> a
 foldr f initialAcc vec = loop 0

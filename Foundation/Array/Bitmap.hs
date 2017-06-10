@@ -78,7 +78,6 @@ instance C.InnerFunctor Bitmap where
     imap = map
 
 instance C.Foldable Bitmap where
-    foldl = foldl
     foldr = foldr
     foldl' = foldl'
     foldr' = foldr'
@@ -289,7 +288,7 @@ vFromList allBools = runST $ do
 
     toPacked :: [Bool] -> Word32
     toPacked l =
-        C.foldl (.|.) 0 $ Prelude.zipWith (\b w -> if b then (1 `shiftL` w) else 0) l (C.reverse [0..31])
+        C.foldl' (.|.) 0 $ Prelude.zipWith (\b w -> if b then (1 `shiftL` w) else 0) l (C.reverse [0..31])
 -}
     len        = C.length allBools
 
@@ -415,14 +414,6 @@ filter predicate vec = unoptimised (Data.List.filter predicate) vec
 
 reverse :: Bitmap -> Bitmap
 reverse bits = unoptimised C.reverse bits
-
-foldl :: (a -> Bool -> a) -> a -> Bitmap -> a
-foldl f initialAcc vec = loop 0 initialAcc
-  where
-    len = length vec
-    loop i acc
-        | i .==# len = acc
-        | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
 
 foldr :: (Bool -> a -> a) -> a -> Bitmap -> a
 foldr f initialAcc vec = loop 0

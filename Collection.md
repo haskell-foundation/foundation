@@ -89,7 +89,7 @@ Operation supported by different collections:
 | take,drop,break,span | ✔          | ✔          | ✔          |       |         |           |             |
 | splitAt,splitOn      | ✔          | ✔          | ✔          |       |         |           |             |
 | empty, null          | ✔          | ✔          | ✔          | ✔     | ✔       | ✔         | ✔           |
-| foldl, foldr         | ✔          | ✔          | ✔          | ✔     | ✔       | ✔         | ✔           |
+| foldl', foldr        | ✔          | ✔          | ✔          | ✔     | ✔       | ✔         | ✔           |
 | foldlKey, foldrKey   | ✔          | ✔          | ✔          |       | ✔       |           |             |
 | map                  | ✔          | ✔          | ✔          | ✔     | ✔       | ✔         | ✔           |
 | mapWithKey           | ✔          | ✔          | ✔          |       | ✔       |           |             |

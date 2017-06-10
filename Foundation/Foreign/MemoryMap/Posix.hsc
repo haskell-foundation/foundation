@@ -131,7 +131,7 @@ data MemorySyncFlag =
     deriving (Show,Eq)
 
 cvalueOfMemoryProts :: [MemoryProtection] -> CInt
-cvalueOfMemoryProts = foldl (.|.) 0 . fmap toProt
+cvalueOfMemoryProts = foldl' (.|.) 0 . fmap toProt
   where toProt :: MemoryProtection -> CInt
         toProt MemoryProtectionNone    = (#const PROT_NONE)
         toProt MemoryProtectionRead    = (#const PROT_READ)
@@ -139,7 +139,7 @@ cvalueOfMemoryProts = foldl (.|.) 0 . fmap toProt
         toProt MemoryProtectionExecute = (#const PROT_EXEC)
 
 cvalueOfMemorySync :: [MemorySyncFlag] -> CInt
-cvalueOfMemorySync = foldl (.|.) 0 . fmap toSync
+cvalueOfMemorySync = foldl' (.|.) 0 . fmap toSync
   where toSync MemorySyncAsync      = (#const MS_ASYNC)
         toSync MemorySyncSync       = (#const MS_SYNC)
         toSync MemorySyncInvalidate = (#const MS_INVALIDATE)

@@ -109,7 +109,7 @@ arbitraryInteger =
         ]
   where
     integerOfSize :: Bool -> Word -> Gen Integer
-    integerOfSize toSign n = ((if toSign then (\x -> 0 - x) else id) . foldl (\x y -> x + integralUpsize y) 0 . toList)
+    integerOfSize toSign n = ((if toSign then (\x -> 0 - x) else id) . foldl' (\x y -> x + integralUpsize y) 0 . toList)
                          <$> (arbitraryUArrayOf n :: Gen (UArray Word8))
 
 arbitraryNatural :: Gen Natural

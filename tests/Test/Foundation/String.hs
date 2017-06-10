@@ -49,7 +49,7 @@ testStringCases =
                         (s, merr, nextBa) = fromBytes UTF8 ba'
                      in (nextBa, merr : errs, s : acc)
 
-                (remainingBa, allErrs, chunkS) = foldl reconstruct (mempty, [], []) $ chunks randomInts wholeBA
+                (remainingBa, allErrs, chunkS) = foldl' reconstruct (mempty, [], []) $ chunks randomInts wholeBA
              in (catMaybes allErrs === []) .&&. (remainingBa === mempty) .&&. (mconcat (reverse chunkS) === wholeS)
         ]
     , testGroup "Cases"
