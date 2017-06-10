@@ -31,17 +31,12 @@ module Foundation.Collection.Collection
 import           Foundation.Internal.Base
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Collection.Element
+import           Foundation.Collection.NonEmpty
 import qualified Data.List
 import qualified Foundation.Primitive.Block as BLK
 import qualified Foundation.Array.Unboxed as UV
 import qualified Foundation.Array.Boxed as BA
 import qualified Foundation.String.UTF8 as S
-
--- | NonEmpty property for any Collection
---
--- This can only be made, through the 'nonEmpty' smart contructor
-newtype NonEmpty a = NonEmpty { getNonEmpty :: a }
-    deriving (Show,Eq)
 
 -- | Smart constructor to create a NonEmpty collection
 --

@@ -57,6 +57,9 @@ module Foundation.Array.Boxed
     , foldl'
     , foldr
     , foldl
+    , foldl1'
+    , foldr1
+    , foldl1
     , all
     , any
     , builderAppend
@@ -67,6 +70,7 @@ import           GHC.Prim
 import           GHC.Types
 import           GHC.ST
 import           Foundation.Numerical
+import           Foundation.Collection.NonEmpty
 import           Foundation.Internal.Base
 import           Foundation.Internal.Proxy
 import           Foundation.Internal.MonadTrans
@@ -660,6 +664,18 @@ foldl' f initialAcc vec = loop 0 initialAcc
     loop !i !acc
         | i .==# len = acc
         | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
+
+foldl1 :: (ty -> ty -> ty) -> NonEmpty (Array ty) -> ty
+foldl1 f arr = let (initialAcc, rest) = splitAt 1 $ getNonEmpty arr
+               in foldl f (unsafeIndex initialAcc 0) rest
+
+foldl1' :: (ty -> ty -> ty) -> NonEmpty (Array ty) -> ty
+foldl1' f arr = let (initialAcc, rest) = splitAt 1 $ getNonEmpty arr
+               in foldl' f (unsafeIndex initialAcc 0) rest
+
+foldr1 :: (ty -> ty -> ty) -> NonEmpty (Array ty) -> ty
+foldr1 f arr = let (initialAcc, rest) = revSplitAt 1 $ getNonEmpty arr
+               in foldr f (unsafeIndex initialAcc 0) rest
 
 all :: (ty -> Bool) -> Array ty -> Bool
 all p ba = loop 0

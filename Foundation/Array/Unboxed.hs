@@ -85,6 +85,9 @@ module Foundation.Array.Unboxed
     , foldl
     , foldr
     , foldl'
+    , foldl1
+    , foldr1
+    , foldl1'
     , all
     , any
     , foreignMem
@@ -109,6 +112,7 @@ import           Foundation.Internal.Primitive
 import           Foundation.Internal.Proxy
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Internal.MonadTrans
+import           Foundation.Collection.NonEmpty
 import qualified Foundation.Primitive.Base16 as Base16
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
@@ -1053,6 +1057,18 @@ foldl' f initialAcc vec = loop 0 initialAcc
     loop i !acc
         | i .==# len = acc
         | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
+
+foldl1 :: PrimType ty => (ty -> ty -> ty) -> NonEmpty (UArray ty) -> ty
+foldl1 f arr = let (initialAcc, rest) = splitAt 1 $ getNonEmpty arr
+               in foldl f (unsafeIndex initialAcc 0) rest
+
+foldl1' :: PrimType ty => (ty -> ty -> ty) -> NonEmpty (UArray ty) -> ty
+foldl1' f arr = let (initialAcc, rest) = splitAt 1 $ getNonEmpty arr
+               in foldl' f (unsafeIndex initialAcc 0) rest
+
+foldr1 :: PrimType ty => (ty -> ty -> ty) -> NonEmpty (UArray ty) -> ty
+foldr1 f arr = let (initialAcc, rest) = revSplitAt 1 $ getNonEmpty arr
+               in foldr f (unsafeIndex initialAcc 0) rest
 
 all :: PrimType ty => (ty -> Bool) -> UArray ty -> Bool
 all p uv = loop 0

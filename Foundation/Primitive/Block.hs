@@ -35,6 +35,9 @@ module Foundation.Primitive.Block
     , foldl
     , foldl'
     , foldr
+    , foldl1
+    , foldl1'
+    , foldr1
     , cons
     , snoc
     , uncons
@@ -64,6 +67,7 @@ import qualified Data.List
 import           Foundation.Internal.Base
 import           Foundation.Internal.Proxy
 import           Foundation.Internal.Primitive
+import           Foundation.Collection.NonEmpty
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Exception
@@ -163,6 +167,18 @@ foldl' f initialAcc vec = loop 0 initialAcc
     loop i !acc
         | i .==# len = acc
         | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
+
+foldl1 :: PrimType ty => (ty -> ty -> ty) -> NonEmpty (Block ty) -> ty
+foldl1 f arr = let (initialAcc, rest) = splitAt 1 $ getNonEmpty arr
+               in foldl f (unsafeIndex initialAcc 0) rest
+
+foldl1' :: PrimType ty => (ty -> ty -> ty) -> NonEmpty (Block ty) -> ty
+foldl1' f arr = let (initialAcc, rest) = splitAt 1 $ getNonEmpty arr
+               in foldl' f (unsafeIndex initialAcc 0) rest
+
+foldr1 :: PrimType ty => (ty -> ty -> ty) -> NonEmpty (Block ty) -> ty
+foldr1 f arr = let (initialAcc, rest) = revSplitAt 1 $ getNonEmpty arr
+               in foldr f (unsafeIndex initialAcc 0) rest
 
 cons :: PrimType ty => ty -> Block ty -> Block ty
 cons e vec

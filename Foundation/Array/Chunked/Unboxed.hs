@@ -156,12 +156,12 @@ foldr :: PrimType ty => (ty -> a -> a) -> a -> ChunkedUArray ty -> a
 foldr f initialAcc (ChunkedUArray cua) = A.foldr (flip $ U.foldr f) initialAcc cua
 
 minimum :: (Ord ty, PrimType ty) => C.NonEmpty (ChunkedUArray ty) -> ty
-minimum cua = foldl' min (unsafeIndex cua' 0) cua'
+minimum cua = foldl' min (unsafeIndex cua' 0) (drop 1 cua')
   where
     cua' = C.getNonEmpty cua
 
 maximum :: (Ord ty, PrimType ty) => C.NonEmpty (ChunkedUArray ty) -> ty
-maximum cua = foldl' max (unsafeIndex cua' 0) cua'
+maximum cua = foldl' max (unsafeIndex cua' 0) (drop 1 cua')
   where
     cua' = C.getNonEmpty cua
 
