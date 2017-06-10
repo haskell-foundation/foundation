@@ -941,7 +941,7 @@ fromChunkBytes :: [UArray Word8] -> [String]
 fromChunkBytes l = loop l
   where
     loop []         = []
-    loop (bytes:[]) =
+    loop [bytes]    =
         case validate bytes (Offset 0) (C.length bytes) of
             (_, Nothing)  -> [fromBytesUnsafe bytes]
             (_, Just err) -> doErr err
