@@ -57,6 +57,8 @@ module Foundation.Array.Boxed
     , foldl'
     , foldr
     , foldl
+    , all
+    , any
     , builderAppend
     , builderBuild
     ) where
@@ -658,6 +660,24 @@ foldl' f initialAcc vec = loop 0 initialAcc
     loop !i !acc
         | i .==# len = acc
         | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
+
+all :: (ty -> Bool) -> Array ty -> Bool
+all p ba = loop 0
+  where
+    len = length ba
+    loop !i
+      | i .==# len = True
+      | not $ p (unsafeIndex ba i) = False
+      | otherwise = loop (i + 1)
+
+any :: (ty -> Bool) -> Array ty -> Bool
+any p ba = loop 0
+  where
+    len = length ba
+    loop !i
+      | i .==# len = False
+      | p (unsafeIndex ba i) = True
+      | otherwise = loop (i + 1)
 
 builderAppend :: PrimMonad state => ty -> Builder (Array ty) (MArray ty) ty state ()
 builderAppend v = Builder $ State $ \(i, st) ->

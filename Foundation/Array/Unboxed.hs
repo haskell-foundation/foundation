@@ -85,6 +85,8 @@ module Foundation.Array.Unboxed
     , foldl
     , foldr
     , foldl'
+    , all
+    , any
     , foreignMem
     , fromForeignPtr
     , builderAppend
@@ -1051,6 +1053,24 @@ foldl' f initialAcc vec = loop 0 initialAcc
     loop i !acc
         | i .==# len = acc
         | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
+
+all :: PrimType ty => (ty -> Bool) -> UArray ty -> Bool
+all p uv = loop 0
+  where
+    len = length uv
+    loop !i
+      | i .==# len = True
+      | not $ p (unsafeIndex uv i) = False
+      | otherwise = loop (i + 1)
+
+any :: PrimType ty => (ty -> Bool) -> UArray ty -> Bool
+any p uv = loop 0
+  where
+    len = length uv
+    loop !i
+      | i .==# len = False
+      | p (unsafeIndex uv i) = True
+      | otherwise = loop (i + 1)
 
 builderAppend :: (PrimType ty, PrimMonad state) => ty -> Builder (UArray ty) (MUArray ty) ty state ()
 builderAppend v = Builder $ State $ \(i, st) ->

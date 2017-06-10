@@ -132,8 +132,9 @@ instance UV.PrimType ty => Collection (UV.UArray ty) where
                  in UV.foldl' min (UV.unsafeIndex uv' 0) uv'
     maximum uv = let uv' = getNonEmpty uv
                  in UV.foldl' max (UV.unsafeIndex uv' 0) uv'
-    all p      = UV.foldl' (\acc x -> p x && acc) True
-    any p      = UV.foldl' (\acc x -> p x || acc) False
+    all        = UV.all
+    any        = UV.any
+
 
 instance Collection (BA.Array ty) where
     null       = BA.null
@@ -143,8 +144,10 @@ instance Collection (BA.Array ty) where
                  in BA.foldl' min (BA.unsafeIndex ba' 0) ba'
     maximum ba = let ba' = getNonEmpty ba
                  in BA.foldl' max (BA.unsafeIndex ba' 0) ba'
-    all p      = BA.foldl' (\acc x -> p x && acc) True
-    any p      = BA.foldl' (\acc x -> p x || acc) False
+    all        = BA.all
+    any        = BA.any
+
+
 
 instance Collection S.String where
     null = S.null

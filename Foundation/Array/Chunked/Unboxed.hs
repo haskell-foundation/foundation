@@ -67,8 +67,8 @@ instance PrimType ty => C.Collection (ChunkedUArray ty) where
     elem   = elem
     minimum = minimum
     maximum = maximum
-    all p = foldl' (\acc x -> p x && acc) True
-    any p = foldl' (\acc x -> p x || acc) False
+    all p (ChunkedUArray cua) = A.all (U.all p) cua
+    any p (ChunkedUArray cua) = A.any (U.any p) cua
 
 instance PrimType ty => C.Sequential (ChunkedUArray ty) where
     take = take

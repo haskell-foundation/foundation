@@ -91,8 +91,8 @@ instance C.Collection Bitmap where
                  in foldl' min (unsafeIndex bm' 0) bm'
     maximum bm = let bm' = C.getNonEmpty bm
                  in foldl' max (unsafeIndex bm' 0) bm'
-    all p      = foldl' (\acc x -> p x && acc) True
-    any p      = foldl' (\acc x -> p x || acc) False
+    all = all
+    any = any
 
 instance C.Sequential Bitmap where
     take = take
@@ -445,6 +445,24 @@ foldl' f initialAcc vec = loop 0 initialAcc
     loop i !acc
         | i .==# len = acc
         | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
+
+all :: (Bool -> Bool) -> Bitmap -> Bool
+all p bm = loop 0
+  where
+    len = length bm
+    loop !i
+      | i .==# len = True
+      | not $ p (unsafeIndex bm i) = False
+      | otherwise = loop (i + 1)
+
+any :: (Bool -> Bool) -> Bitmap -> Bool
+any p bm = loop 0
+  where
+    len = length bm
+    loop !i
+      | i .==# len = False
+      | p (unsafeIndex bm i) = True
+      | otherwise = loop (i + 1)
 
 unoptimised :: ([Bool] -> [Bool]) -> Bitmap -> Bitmap
 unoptimised f = vFromList . f . vToList
