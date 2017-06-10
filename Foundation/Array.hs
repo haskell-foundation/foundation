@@ -10,7 +10,6 @@
 -- Generally accessible in o(1)
 --
 {-# LANGUAGE MagicHash #-}
-{-# LANGUAGE UnboxedTuples #-}
 module Foundation.Array
     ( Array
     , MArray

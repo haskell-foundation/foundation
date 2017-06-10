@@ -13,12 +13,13 @@ module Foundation.Internal.MonadTrans
     ) where
 
 import Foundation.Internal.Base
+import Control.Monad ((>=>))
 
 -- | Simple State monad
 newtype State s m a = State { runState :: s -> m (a, s) }
 
 instance Monad m => Functor (State s m) where
-    fmap f fa = State $ \st -> runState fa st >>= \(a, s2) -> return (f a, s2)
+    fmap f fa = State $ runState fa >=> (\(a, s2) -> return (f a, s2))
 instance Monad m => Applicative (State s m) where
     pure a = State $ \st -> return (a,st)
     fab <*> fa = State $ \s1 -> do
@@ -35,7 +36,7 @@ instance Monad m => Monad (State r m) where
 newtype Reader r m a = Reader { runReader :: r -> m a }
 
 instance Monad m => Functor (Reader r m) where
-    fmap f fa = Reader $ \r -> runReader fa r >>= \a -> return (f a)
+    fmap f fa = Reader $ runReader fa >=> (\a -> return (f a))
 instance Monad m => Applicative (Reader r m) where
     pure a = Reader $ \_ -> return a
     fab <*> fa = Reader $ \r -> do

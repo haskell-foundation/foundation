@@ -146,7 +146,7 @@ foldTextFile chunkf ini fp = do
                         Just _ ->
                             error ("foldTextFile: invalid UTF8 sequence: byte position: " <> show (absPos + pos))
                     chunkf s acc >>= loop (absPos + Offset r)
-                else error ("foldTextFile: read failed") -- FIXME
+                else error "foldTextFile: read failed" -- FIXME
 {-# DEPRECATED foldTextFile "use conduit instead" #-}
 
 blockSize :: Int

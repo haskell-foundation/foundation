@@ -14,7 +14,6 @@
 -- The String data must contain UTF8 valid data.
 --
 {-# LANGUAGE BangPatterns               #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MagicHash                  #-}
 {-# LANGUAGE NoImplicitPrelude          #-}
 {-# LANGUAGE TypeFamilies               #-}
@@ -281,11 +280,11 @@ nextWithIndexer getter off =
 writeWithBuilder :: (PrimMonad st, Monad st)
                  => Char
                  -> Builder (UArray Word8) (MVec.MUArray Word8) Word8 st ()
-writeWithBuilder c =
-    if      bool# (ltWord# x 0x80##   ) then encode1
-    else if bool# (ltWord# x 0x800##  ) then encode2
-    else if bool# (ltWord# x 0x10000##) then encode3
-    else                                     encode4
+writeWithBuilder c
+    | bool# (ltWord# x 0x80##   ) = encode1
+    | bool# (ltWord# x 0x800##  ) = encode2
+    | bool# (ltWord# x 0x10000##) = encode3
+    | otherwise = encode4
   where
     !(I# xi) = fromEnum c
     !x       = int2Word# xi
@@ -392,7 +391,7 @@ indexN !n (String ba) = Vec.unsafeDewrap goVec goAddr ba
     {-# INLINE goVec #-}
 
     goAddr :: Ptr Word8 -> Offset Word8 -> ST s (Offset Word8)
-    goAddr !(Ptr ptr) !start = return $ loop start (Offset 0)
+    goAddr (Ptr ptr) !start = return $ loop start (Offset 0)
       where
         !len = start `offsetPlusE` Vec.length ba
         loop :: Offset Word8 -> Offset Char -> Offset Word8
@@ -955,7 +954,7 @@ fromChunkBytes :: [UArray Word8] -> [String]
 fromChunkBytes l = loop l
   where
     loop []         = []
-    loop (bytes:[]) =
+    loop [bytes]    =
         case validate bytes (Offset 0) (C.length bytes) of
             (_, Nothing)  -> [fromBytesUnsafe bytes]
             (_, Just err) -> doErr err
@@ -1092,7 +1091,7 @@ readNatural str
     | sz == 0  = Nothing
     | otherwise =
         case decimalDigits 0 str 0 of
-            (# acc, True, endOfs #) | endOfs > 0 -> Just $ acc
+            (# acc, True, endOfs #) | endOfs > 0 -> Just acc
             _                                    -> Nothing
   where
     !sz = size str
@@ -1370,4 +1369,4 @@ isInfixOf (String needle) (String haystack)
         | i == endOfs           = needle == haystackSub
         | needle == haystackSub = True
         | otherwise             = loop (i+1)
-      where haystackSub = C.take needleLen $ C.drop i $ haystack
+      where haystackSub = C.take needleLen $ C.drop i haystack

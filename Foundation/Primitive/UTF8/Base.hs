@@ -167,11 +167,11 @@ expectAscii (String ba) n v = Vec.unsafeIndex ba n == v
 {-# INLINE expectAscii #-}
 
 write :: PrimMonad prim => MutableString (PrimState prim) -> Offset8 -> Char -> prim Offset8
-write (MutableString mba) i c =
-    if      bool# (ltWord# x 0x80##   ) then encode1
-    else if bool# (ltWord# x 0x800##  ) then encode2
-    else if bool# (ltWord# x 0x10000##) then encode3
-    else                                     encode4
+write (MutableString mba) i c
+    | bool# (ltWord# x 0x80##   ) = encode1
+    | bool# (ltWord# x 0x800##  ) = encode2
+    | bool# (ltWord# x 0x10000##) = encode3
+    | otherwise = encode4
   where
     !(I# xi) = fromEnum c
     !x       = int2Word# xi

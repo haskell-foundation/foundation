@@ -1,4 +1,3 @@
-{-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE CPP               #-}
 {-# LANGUAGE MagicHash         #-}
 module Foundation.Numerical.Additive

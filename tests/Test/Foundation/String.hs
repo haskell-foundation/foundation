@@ -32,7 +32,7 @@ testStringRefs = testGroup "String"
            , testGroup "Encoding Sample1" (testEncodings sample1)
            , testGroup "Encoding Sample2" (testEncodings sample2)
            ]
-    , testGroup "ASCII" $
+    , testGroup "ASCII"
         [  testCollection "Sequential" (Proxy :: Proxy AsciiString) genAsciiChar
         ]
     ]
