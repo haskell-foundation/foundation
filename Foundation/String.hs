@@ -33,6 +33,7 @@ module Foundation.String
     , upper
     , lower
     , replace
+    , indices
     ) where
 
 import Foundation.String.UTF8

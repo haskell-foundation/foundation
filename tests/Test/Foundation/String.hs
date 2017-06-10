@@ -52,13 +52,25 @@ testStringCases =
                 (remainingBa, allErrs, chunkS) = foldl reconstruct (mempty, [], []) $ chunks randomInts wholeBA
              in (catMaybes allErrs === []) .&&. (remainingBa === mempty) .&&. (mconcat (reverse chunkS) === wholeS)
         ]
-    , testGroup "Replace" [
-          testCase "replace 'aa' 'bb' '' == ''" $ do
+    , testGroup "replace" [
+          testCase "indices 'aa' 'bb' == (0, [])" $ do
+            indices "aa" "bb" @?= (0,[])
+        , testCase "indices 'aa' 'aabbccabbccEEaaaaabb' is correct" $ do
+            indices "aa" "aabbccabbccEEaaaaabb" @?= (3,[Offset 0,Offset 13,Offset 15])
+        , testCase "indices 'aa' 'aaccaadd' is correct" $ do
+            indices "aa" "aaccaadd" @?= (2,[Offset 0,Offset 4])
+        , testCase "replace 'aa' 'bb' '' == ''" $ do
             replace "aa" "bb" "" @?= ""
+        , testCase "replace 'aa' '' 'aabbcc' == 'aabbcc'" $ do
+            replace "aa" "" "aabbcc" @?= "bbcc"
         , testCase "replace 'aa' 'bb' 'aa' == 'bb'" $ do
             replace "aa" "bb" "aa" @?= "bb"
         , testCase "replace 'aa' 'bb' 'aabb' == 'bbbb'" $ do
             replace "aa" "bb" "aabb" @?= "bbbb"
+        , testCase "replace 'aa' 'bb' 'aaccaadd' == 'bbccbbdd'" $ do
+            replace "aa" "bb" "aaccaadd" @?= "bbccbbdd"
+        , testCase "replace 'aa' 'bb' 'aabbccabbccEEaaaaabb' == 'bbbbccabbccEEbbbbabb'" $ do
+            replace "aa" "bb" "aabbccabbccEEaaaaabb" @?= "bbbbccabbccEEbbbbabb"
                           ]
     , testGroup "Cases"
         [ testGroup "Invalid-UTF8"

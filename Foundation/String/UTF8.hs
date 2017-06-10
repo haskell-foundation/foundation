@@ -49,6 +49,7 @@ module Foundation.String.UTF8
     , splitOn
     , sub
     , elem
+    , indices
     , intersperse
     , span
     , break
@@ -822,31 +823,39 @@ reverse s@(String ba) = runST $ do
                 _  -> return () -- impossible
             loop ms (si `offsetPlusE` nb) d
 
+-- Finds how many times we need to perform the replacement, and where are
+-- the insertion points.
+indices :: String -> String -> (Int, [Offset8])
+indices needle@(String ned) haystack@(String hy) =
+  case haystackLen < needleLen of
+    True  -> (0, [])
+    False -> go (Offset 0) (0, [])
+  where
+    haystackLen :: Size8
+    !haystackLen = size haystack
+
+    needleLen :: Size8
+    !needleLen = size needle
+
+    go :: Offset8 -> (Int, [Offset8]) -> (Int, [Offset8])
+    go currentOffset (!occs, !ipoints)
+      | (currentOffset `offsetPlusE` needleLen) > (sizeAsOffset haystackLen) = (occs, ipoints)
+      | otherwise =
+        let matcher = Vec.take needleLen . Vec.drop (offsetAsSize currentOffset) $ hy
+        in case matcher == ned of
+             -- TODO: Move away from right-appending as it's gonna be slow.
+             True  -> go (currentOffset `offsetPlusE` needleLen) (occs + 1, ipoints <> [currentOffset])
+             False -> go (currentOffset + Offset 1) (occs, ipoints)
+
 -- | Replace all the occurrencies of `needle` with `replacement` in
 -- the `haystack` string.
--- Inefficient as it performs 2 full scans of the input string to
--- determine the length of the final one.
 replace :: String -> String -> String -> String
-replace needle@(String ned) replacement@(String rp) haystack@(String hy) = runST $ do
-    let (!occs, insertionPoints) = occurrencies
+replace needle replacement@(String rp) haystack@(String hy) = runST $ do
+    let (!occs, insertionPoints) = indices needle haystack
     let !newLen                  = haystackLen - (multBy needleLen occs) + (multBy replacementLen occs)
     ms <- new newLen
     loop ms (Offset 0) (Offset 0) insertionPoints
   where
-    -- Finds how many times we need to perform the replacement, and where are
-    -- the insertion points.
-    occurrencies :: (Int, [Offset8])
-    occurrencies = go (Offset 0) (0, [])
-      where
-        go :: Offset8 -> (Int, [Offset8]) -> (Int, [Offset8])
-        go currentOffset (!occs, ipoints)
-          | haystackLen < needleLen = (occs, ipoints)
-          | currentOffset >= (sizeAsOffset $ sizeSub haystackLen needleLen) = (occs, ipoints)
-          | otherwise =
-            let matcher = Vec.unsafeTake (offsetAsSize $ currentOffset `offsetPlusE` needleLen) hy
-            in case matcher == ned of
-                 True  -> go (currentOffset `offsetPlusE` needleLen) (occs + 1, currentOffset : ipoints)
-                 False -> go (currentOffset + Offset 1) (occs, ipoints)
 
     multBy :: Size8 -> Int -> Size8
     multBy (CountOf x) y = CountOf (x * y)
@@ -857,6 +866,7 @@ replace needle@(String ned) replacement@(String rp) haystack@(String hy) = runST
     replacementLen :: Size8
     !replacementLen = size replacement
 
+    haystackLen :: Size8
     !haystackLen = size haystack
 
     -- Go through each insertion point and copy things over.
@@ -868,13 +878,12 @@ replace needle@(String ned) replacement@(String rp) haystack@(String hy) = runST
          -> Offset8
          -> [Offset8]
          -> prim String
-    loop ms@(MutableString mba) currentOffset previousInsertionPoint [] = do
+    loop ms@(MutableString mba) currentOffset offsetInOriginalString [] = do
       -- Finalise the string
-      let !insertionLen     = previousInsertionPoint `offsetPlusE` replacementLen
-      let !unchangedDataLen = (sizeAsOffset haystackLen - previousInsertionPoint)
-      Vec.unsafeCopyAtRO mba currentOffset hy insertionLen unchangedDataLen
+      let !unchangedDataLen = (sizeAsOffset haystackLen - offsetInOriginalString)
+      Vec.unsafeCopyAtRO mba currentOffset hy offsetInOriginalString unchangedDataLen
       freeze ms
-    loop ms@(MutableString mba) currentOffset previousInsertionPoint (x:xs) = do
+    loop ms@(MutableString mba) currentOffset offsetInOriginalString (x:xs) = do
       {-
                => MArray ty (PrimState prim) -- ^ destination array
                -> Offset ty                  -- ^ offset at destination
@@ -886,12 +895,12 @@ replace needle@(String ned) replacement@(String rp) haystack@(String hy) = runST
         -- the prev insertion point and UP UNTIL the next insertion point.
         -- Then fill `mba` with `replacement`.
         -- 1. Copy from the old string.
-        let !unchangedDataLen = (x - previousInsertionPoint)
-        Vec.unsafeCopyAtRO mba currentOffset hy previousInsertionPoint unchangedDataLen
+        let !unchangedDataLen = (x - offsetInOriginalString)
+        Vec.unsafeCopyAtRO mba currentOffset hy offsetInOriginalString unchangedDataLen
         let !newOffset = currentOffset `offsetPlusE` unchangedDataLen
         -- 2. Copy the replacement.
         Vec.unsafeCopyAtRO mba newOffset rp x replacementLen
-        loop ms (newOffset `offsetPlusE` replacementLen) x xs
+        loop ms (newOffset `offsetPlusE` replacementLen) (offsetInOriginalString `offsetPlusE` needleLen) xs
 
 -- | Return the nth character in a String
 --
