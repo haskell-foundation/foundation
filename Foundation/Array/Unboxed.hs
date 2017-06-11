@@ -71,6 +71,7 @@ module Foundation.Array.Unboxed
     , break
     , breakElem
     , elem
+    , indices
     , intersperse
     , span
     , cons
@@ -81,6 +82,7 @@ module Foundation.Array.Unboxed
     , sortBy
     , filter
     , reverse
+    , replace
     , foldr
     , foldl'
     , foldr1
@@ -1030,6 +1032,84 @@ reverse a
             | i == end  = return ()
             | otherwise = primMbaWrite ma i (primAddrIndex ba (sizeAsOffset (endI - i))) >> loop (i+Offset 1)
 {-# SPECIALIZE [3] reverse :: UArray Word8 -> UArray Word8 #-}
+
+-- Finds where are the insertion points when we search for a `needle`
+-- within an `haystack`.
+-- Throws an error in case `needle` is empty.
+indices :: PrimType ty => UArray ty -> UArray ty -> [Offset ty]
+indices needle hy
+  | needleLen <= 0 = error "Foundation.Array.Unboxed.indices: needle is empty."
+  | otherwise = case haystackLen < needleLen of
+                  True  -> []
+                  False -> go (Offset 0) []
+  where
+    !haystackLen = length hy
+
+    !needleLen = length needle
+
+    go currentOffset ipoints
+      | (currentOffset `offsetPlusE` needleLen) > (sizeAsOffset haystackLen) = ipoints
+      | otherwise =
+        let matcher = take needleLen . drop (offsetAsSize currentOffset) $ hy
+        in case matcher == needle of
+             -- TODO: Move away from right-appending as it's gonna be slow.
+             True  -> go (currentOffset `offsetPlusE` needleLen) (ipoints <> [currentOffset])
+             False -> go (currentOffset + Offset 1) ipoints
+
+-- | Replace all the occurrencies of `needle` with `replacement` in
+-- the `haystack` string.
+replace :: PrimType ty => UArray ty -> UArray ty -> UArray ty -> UArray ty
+replace (needle :: UArray ty) replacement haystack = runST $ do
+    case null needle of
+      True -> error "Foundation.Array.Unboxed.replace: empty needle"
+      False -> do
+        let insertionPoints = indices needle haystack
+        let !occs           = Prelude.length insertionPoints
+        let !newLen         = haystackLen - (multBy needleLen occs) + (multBy replacementLen occs)
+        ms <- new newLen
+        loop ms (Offset 0) (Offset 0) insertionPoints
+  where
+
+    multBy (CountOf x) y = CountOf (x * y)
+
+    !needleLen = length needle
+
+    !replacementLen = length replacement
+
+    !haystackLen = length haystack
+
+    -- Go through each insertion point and copy things over.
+    -- We keep around the offset to the original string to
+    -- be able to copy bytes which didn't change.
+    loop :: PrimMonad prim
+         => MUArray ty (PrimState prim)
+         -> Offset ty
+         -> Offset ty
+         -> [Offset ty]
+         -> prim (UArray ty)
+    loop mba currentOffset offsetInOriginalString [] = do
+      -- Finalise the string
+      let !unchangedDataLen = sizeAsOffset haystackLen - offsetInOriginalString
+      unsafeCopyAtRO mba currentOffset haystack offsetInOriginalString unchangedDataLen
+      freeze mba
+    loop mba currentOffset offsetInOriginalString (x:xs) = do
+        -- 1. Copy from the old string.
+        let !unchangedDataLen = (x - offsetInOriginalString)
+        unsafeCopyAtRO mba currentOffset haystack offsetInOriginalString unchangedDataLen
+        let !newOffset = currentOffset `offsetPlusE` unchangedDataLen
+        -- 2. Copy the replacement.
+        unsafeCopyAtRO mba newOffset replacement (Offset 0) replacementLen
+        let !offsetInOriginalString' = offsetInOriginalString `offsetPlusE` unchangedDataLen `offsetPlusE` needleLen
+        loop mba (newOffset `offsetPlusE` replacementLen) offsetInOriginalString' xs
+{-# SPECIALIZE [3] replace :: UArray Word8 -> UArray Word8 -> UArray Word8 -> UArray Word8 #-}
+
+foldl :: PrimType ty => (a -> ty -> a) -> a -> UArray ty -> a
+foldl f initialAcc vec = loop 0 initialAcc
+  where
+    len = length vec
+    loop i acc
+        | i .==# len = acc
+        | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
 
 foldr :: PrimType ty => (ty -> a -> a) -> a -> UArray ty -> a
 foldr f initialAcc vec = loop 0

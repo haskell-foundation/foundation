@@ -47,6 +47,7 @@ module Foundation.String.UTF8
     , splitOn
     , sub
     , elem
+    , indices
     , intersperse
     , span
     , break
@@ -63,6 +64,7 @@ module Foundation.String.UTF8
     , sortBy
     , filter
     , reverse
+    , replace
     , builderAppend
     , builderBuild
     , readInteger
@@ -818,6 +820,17 @@ reverse s@(String ba) = runST $ do
                     Vec.unsafeWrite mba (d + 3) (Vec.unsafeIndex ba (si + 3))
                 _  -> return () -- impossible
             loop ms (si `offsetPlusE` nb) d
+
+-- Finds where are the insertion points when we search for a `needle`
+-- within an `haystack`.
+indices :: String -> String -> [Offset8]
+indices (String ned) (String hy) = Vec.indices ned hy
+
+-- | Replace all the occurrencies of `needle` with `replacement` in
+-- the `haystack` string.
+replace :: String -> String -> String -> String
+replace (String needle) (String replacement) (String haystack) =
+  String $ Vec.replace needle replacement haystack
 
 -- | Return the nth character in a String
 --

@@ -10,6 +10,8 @@ module Test.Foundation.String
 import Foundation
 import Foundation.String
 import Foundation.String.ASCII (AsciiString)
+import Control.Exception
+import Data.Either
 
 import Test.Tasty
 import Test.Tasty.QuickCheck
@@ -52,6 +54,38 @@ testStringCases =
                 (remainingBa, allErrs, chunkS) = foldl' reconstruct (mempty, [], []) $ chunks randomInts wholeBA
              in (catMaybes allErrs === []) .&&. (remainingBa === mempty) .&&. (mconcat (reverse chunkS) === wholeS)
         ]
+    , testGroup "replace" [
+          testCase "indices '' 'bb' should raise an error" $ do
+            res <- try (evaluate $ indices "" "bb")
+            case res of
+              (Left (_ :: SomeException)) -> return ()
+              Right _ -> fail "Expecting an error to be thrown, but it did not."
+        , testCase "indices 'aa' 'bb' == []" $ do
+            indices "aa" "bb" @?= []
+        , testCase "indices 'aa' 'aabbccabbccEEaaaaabb' is correct" $ do
+            indices "aa" "aabbccabbccEEaaaaabb" @?= [Offset 0,Offset 13,Offset 15]
+        , testCase "indices 'aa' 'aaccaadd' is correct" $ do
+            indices "aa" "aaccaadd" @?= [Offset 0,Offset 4]
+        , testCase "replace '' 'bb' 'foo' raises an error" $ do
+            (res :: Either SomeException String) <- try (evaluate $ replace "" "bb" "foo")
+            assertBool "Expecting an error to be thrown, but it did not." (isLeft res)
+        , testCase "replace 'aa' 'bb' '' == ''" $ do
+            replace "aa" "bb" "" @?= ""
+        , testCase "replace 'aa' '' 'aabbcc' == 'aabbcc'" $ do
+            replace "aa" "" "aabbcc" @?= "bbcc"
+        , testCase "replace 'aa' 'bb' 'aa' == 'bb'" $ do
+            replace "aa" "bb" "aa" @?= "bb"
+        , testCase "replace 'aa' 'bb' 'aabb' == 'bbbb'" $ do
+            replace "aa" "bb" "aabb" @?= "bbbb"
+        , testCase "replace 'aa' 'bb' 'aaccaadd' == 'bbccbbdd'" $ do
+            replace "aa" "bb" "aaccaadd" @?= "bbccbbdd"
+        , testCase "replace 'aa' 'LongLong' 'aaccaadd' == 'LongLongccLongLongdd'" $ do
+            replace "aa" "LongLong" "aaccaadd" @?= "LongLongccLongLongdd"
+        , testCase "replace 'aa' 'bb' 'aabbccabbccEEaaaaabb' == 'bbbbccabbccEEbbbbabb'" $ do
+            replace "aa" "bb" "aabbccabbccEEaaaaabb" @?= "bbbbccabbccEEbbbbabb"
+        , testCase "replace 'å' 'ä' 'ååññ' == 'ääññ'" $ do
+            replace "å" "ä" "ååññ" @?= "ääññ"
+                          ]
     , testGroup "Cases"
         [ testGroup "Invalid-UTF8"
             [ testCase "ff" $ expectFromBytesErr ("", Just InvalidHeader, 0) (fromList [0xff])
