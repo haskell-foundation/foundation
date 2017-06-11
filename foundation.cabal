@@ -239,8 +239,9 @@ library
 
   if impl(ghc >= 7.10)
     exposed-modules: Foundation.Tuple.Nth
-                     Foundation.List.SList
+                     Foundation.List.ListN
                      Foundation.Primitive.Nat
+                     Foundation.Primitive.BlockN
 
   default-extensions: NoImplicitPrelude
                       RebindableSyntax
