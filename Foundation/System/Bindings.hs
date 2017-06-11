@@ -1,5 +1,9 @@
 {-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE CPP #-}
+
+-- Temporary workaround for -Werror on Windows
+{-# OPTIONS_GHC -Wno-dodgy-exports #-}
+
 module Foundation.System.Bindings
     ( module X
     ) where
