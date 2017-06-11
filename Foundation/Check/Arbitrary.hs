@@ -12,7 +12,6 @@ module Foundation.Check.Arbitrary
 import           Foundation.Primitive.Imports
 import           Foundation.Primitive
 import           Foundation.Primitive.IntegralConv
-import           Foundation.Primitive.Floating
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Check.Gen
 import           Foundation.Random
@@ -64,13 +63,9 @@ instance Arbitrary String where
         fromList <$> (genMax (genMaxSizeString params) >>= \i -> replicateM (integralCast i) arbitrary)
 
 instance Arbitrary Float where
-    arbitrary = toFloat <$> arbitrary <*> arbitrary <*> arbitrary
-      where toFloat i n Nothing  = integerToFloat i + (naturalToFloat n / 100000)
-            toFloat i n (Just e) = (integerToFloat i + (naturalToFloat n / 1000000)) * integerToFloat e
+    arbitrary = arbitraryF32
 instance Arbitrary Double where
-    arbitrary = toDouble <$> arbitrary <*> arbitrary <*> arbitrary
-      where toDouble i n Nothing  = integerToDouble i + (naturalToDouble n / 100000)
-            toDouble i n (Just e) = (integerToDouble i + (naturalToDouble n / 1000000)) * integerToDouble e
+    arbitrary = arbitraryF64
 
 instance Arbitrary a => Arbitrary (Maybe a) where
     arbitrary = frequency $ nonEmpty_ [ (1, pure Nothing), (4, Just <$> arbitrary) ]
@@ -126,6 +121,12 @@ arbitraryWord64 = genWithRng getRandomWord64
 
 arbitraryInt64 :: Gen Int64
 arbitraryInt64 = integralCast <$> arbitraryWord64
+
+arbitraryF64 :: Gen Double
+arbitraryF64 = genWithRng getRandomF64
+
+arbitraryF32 :: Gen Float
+arbitraryF32 = genWithRng getRandomF32
 
 arbitraryUArrayOf :: (PrimType ty, Arbitrary ty) => Word -> Gen (UArray ty)
 arbitraryUArrayOf size = between (0, size) >>=
