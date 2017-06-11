@@ -9,10 +9,12 @@
 --
 module Foundation.Collection.Foldable
     ( Foldable(..)
+    , Fold1able(..)
     ) where
 
 import           Foundation.Internal.Base
 import           Foundation.Collection.Element
+import           Foundation.Collection.NonEmpty
 import qualified Data.List
 import qualified Foundation.Array.Unboxed as UV
 import qualified Foundation.Primitive.Block as BLK
@@ -42,6 +44,18 @@ class Foldable collection where
     foldr' :: (Element collection -> a -> a) -> a -> collection -> a
     foldr' f z0 xs = foldl' f' id xs z0 where f' k x z = k $! f x z
 
+-- | Fold1's. Like folds, but they assume to operate on a NonEmpty collection.
+class Foldable f => Fold1able f where
+    -- | Left associative strict fold.
+    foldl1' :: (Element f -> Element f -> Element f) -> NonEmpty f -> Element f
+    -- | Right associative lazy fold.
+    foldr1  :: (Element f -> Element f -> Element f) -> NonEmpty f -> Element f
+    -- | Right associative strict fold.
+    --foldr1' :: (Element f -> Element f -> Element f) -> NonEmpty f -> Element f
+    --foldr1' f xs = foldl f' id . getNonEmpty
+    --  where f' k x z = k $! f x z
+
+
 ----------------------------
 -- Foldable instances
 ----------------------------
@@ -59,3 +73,20 @@ instance Foldable (BA.Array ty) where
 instance UV.PrimType ty => Foldable (BLK.Block ty) where
     foldr = BLK.foldr
     foldl' = BLK.foldl'
+
+----------------------------
+-- Fold1able instances
+----------------------------
+instance Fold1able [a] where
+  foldr1 f  = Data.List.foldr1 f . getNonEmpty
+  foldl1' f = Data.List.foldl1' f . getNonEmpty
+
+instance UV.PrimType ty => Fold1able (UV.UArray ty) where
+    foldr1 = UV.foldr1
+    foldl1' = UV.foldl1'
+instance Fold1able (BA.Array ty) where
+    foldr1  = BA.foldr1
+    foldl1' = BA.foldl1'
+instance UV.PrimType ty => Fold1able (BLK.Block ty) where
+    foldr1  = BLK.foldr1
+    foldl1' = BLK.foldl1'

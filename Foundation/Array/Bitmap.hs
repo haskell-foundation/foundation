@@ -87,10 +87,11 @@ instance C.Collection Bitmap where
     null = null
     length = length
     elem e = Data.List.elem e . toList
-    minimum = Data.List.minimum . toList . C.getNonEmpty -- TODO can shortcircuit all this massively
-    maximum = Data.List.maximum . toList . C.getNonEmpty -- TODO DITTO
-    all p = Data.List.all p . toList
-    any p = Data.List.any p . toList
+    maximum = any id . C.getNonEmpty
+    minimum = all id . C.getNonEmpty
+    all = all
+    any = any
+
 instance C.Sequential Bitmap where
     take = take
     drop = drop
@@ -434,6 +435,24 @@ foldl' f initialAcc vec = loop 0 initialAcc
     loop i !acc
         | i .==# len = acc
         | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
+
+all :: (Bool -> Bool) -> Bitmap -> Bool
+all p bm = loop 0
+  where
+    len = length bm
+    loop !i
+      | i .==# len = True
+      | not $ p (unsafeIndex bm i) = False
+      | otherwise = loop (i + 1)
+
+any :: (Bool -> Bool) -> Bitmap -> Bool
+any p bm = loop 0
+  where
+    len = length bm
+    loop !i
+      | i .==# len = False
+      | p (unsafeIndex bm i) = True
+      | otherwise = loop (i + 1)
 
 unoptimised :: ([Bool] -> [Bool]) -> Bitmap -> Bitmap
 unoptimised f = vFromList . f . vToList
