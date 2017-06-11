@@ -31,17 +31,12 @@ module Foundation.Collection.Collection
 import           Foundation.Internal.Base
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Collection.Element
+import           Foundation.Collection.NonEmpty
 import qualified Data.List
 import qualified Foundation.Primitive.Block as BLK
 import qualified Foundation.Array.Unboxed as UV
 import qualified Foundation.Array.Boxed as BA
 import qualified Foundation.String.UTF8 as S
-
--- | NonEmpty property for any Collection
---
--- This can only be made, through the 'nonEmpty' smart contructor
-newtype NonEmpty a = NonEmpty { getNonEmpty :: a }
-    deriving (Show,Eq)
 
 -- | Smart constructor to create a NonEmpty collection
 --
@@ -117,28 +112,31 @@ instance UV.PrimType ty => Collection (BLK.Block ty) where
     null = (==) 0 . BLK.length
     length = BLK.length
     elem = BLK.elem
-    minimum = Data.List.minimum . toList . getNonEmpty
-    maximum = Data.List.maximum . toList . getNonEmpty
+    minimum = BLK.foldl1' min
+    maximum = BLK.foldl1' max
     all = BLK.all
     any = BLK.any
 
 instance UV.PrimType ty => Collection (UV.UArray ty) where
-    null = UV.null
-    length = UV.length
-    elem = UV.elem
-    minimum = Data.List.minimum . toList . getNonEmpty
-    maximum = Data.List.maximum . toList . getNonEmpty
-    all p = Data.List.all p . toList
-    any p = Data.List.any p . toList
+    null    = UV.null
+    length  = UV.length
+    elem    = UV.elem
+    minimum = UV.foldl1' min
+    maximum = UV.foldl1' max
+    all     = UV.all
+    any     = UV.any
+
 
 instance Collection (BA.Array ty) where
-    null = BA.null
-    length = BA.length
-    elem = BA.elem
-    minimum = Data.List.minimum . toList . getNonEmpty -- TODO
-    maximum = Data.List.maximum . toList . getNonEmpty -- TODO
-    all p = Data.List.all p . toList
-    any p = Data.List.any p . toList
+    null    = BA.null
+    length  = BA.length
+    elem    = BA.elem
+    minimum = BA.foldl1' min
+    maximum = BA.foldl1' max
+    all     = BA.all
+    any     = BA.any
+
+
 
 instance Collection S.String where
     null = S.null

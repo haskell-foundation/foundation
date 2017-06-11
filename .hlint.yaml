@@ -80,6 +80,8 @@
 - ignore: {name: Use traverse, within: Foundation.Collection.Mappable}
 - ignore: {name: Use void, within: Foundation.Monad.Exception}
 - ignore: {name: Use when}
+- ignore: {name: Use and, within: Foundation.Array.Bitmap}
+- ignore: {name: Use or, within: Foundation.Array.Bitmap}
 
 
 # Define some custom infix operators

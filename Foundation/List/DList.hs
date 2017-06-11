@@ -51,7 +51,6 @@ type instance Element (DList a) = a
 
 instance Foldable (DList a) where
     foldr f b = foldr f b . toList
-    foldl f b = foldl f b . toList
     foldl' f b = foldl' f b . toList
 
 instance Collection (DList a) where

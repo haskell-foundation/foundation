@@ -79,7 +79,6 @@ instance C.InnerFunctor Bitmap where
     imap = map
 
 instance C.Foldable Bitmap where
-    foldl = foldl
     foldr = foldr
     foldl' = foldl'
     foldr' = foldr'
@@ -88,10 +87,11 @@ instance C.Collection Bitmap where
     null = null
     length = length
     elem e = Data.List.elem e . toList
-    minimum = Data.List.minimum . toList . C.getNonEmpty -- TODO can shortcircuit all this massively
-    maximum = Data.List.maximum . toList . C.getNonEmpty -- TODO DITTO
-    all p = Data.List.all p . toList
-    any p = Data.List.any p . toList
+    maximum = any id . C.getNonEmpty
+    minimum = all id . C.getNonEmpty
+    all = all
+    any = any
+
 instance C.Sequential Bitmap where
     take = take
     drop = drop
@@ -290,7 +290,7 @@ vFromList allBools = runST $ do
 
     toPacked :: [Bool] -> Word32
     toPacked l =
-        C.foldl (.|.) 0 $ Prelude.zipWith (\b w -> if b then (1 `shiftL` w) else 0) l (C.reverse [0..31])
+        C.foldl' (.|.) 0 $ Prelude.zipWith (\b w -> if b then (1 `shiftL` w) else 0) l (C.reverse [0..31])
 -}
     len        = C.length allBools
 
@@ -417,14 +417,6 @@ filter predicate vec = unoptimised (Data.List.filter predicate) vec
 reverse :: Bitmap -> Bitmap
 reverse bits = unoptimised C.reverse bits
 
-foldl :: (a -> Bool -> a) -> a -> Bitmap -> a
-foldl f initialAcc vec = loop 0 initialAcc
-  where
-    len = length vec
-    loop i acc
-        | i .==# len = acc
-        | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
-
 foldr :: (Bool -> a -> a) -> a -> Bitmap -> a
 foldr f initialAcc vec = loop 0
   where
@@ -443,6 +435,24 @@ foldl' f initialAcc vec = loop 0 initialAcc
     loop i !acc
         | i .==# len = acc
         | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
+
+all :: (Bool -> Bool) -> Bitmap -> Bool
+all p bm = loop 0
+  where
+    len = length bm
+    loop !i
+      | i .==# len = True
+      | not $ p (unsafeIndex bm i) = False
+      | otherwise = loop (i + 1)
+
+any :: (Bool -> Bool) -> Bitmap -> Bool
+any p bm = loop 0
+  where
+    len = length bm
+    loop !i
+      | i .==# len = False
+      | p (unsafeIndex bm i) = True
+      | otherwise = loop (i + 1)
 
 unoptimised :: ([Bool] -> [Bool]) -> Bitmap -> Bitmap
 unoptimised f = vFromList . f . vToList

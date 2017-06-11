@@ -32,9 +32,10 @@ module Foundation.Primitive.Block
     , replicate
     , index
     , map
-    , foldl
     , foldl'
     , foldr
+    , foldl1'
+    , foldr1
     , cons
     , snoc
     , uncons
@@ -64,6 +65,7 @@ import qualified Data.List
 import           Foundation.Internal.Base
 import           Foundation.Internal.Proxy
 import           Foundation.Internal.Primitive
+import           Foundation.Collection.NonEmpty
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Exception
@@ -140,14 +142,6 @@ map :: (PrimType a, PrimType b) => (a -> b) -> Block a -> Block b
 map f a = create lenB (\i -> f $ unsafeIndex a (offsetCast Proxy i))
   where !lenB = sizeCast (Proxy :: Proxy (a -> b)) (length a)
 
-foldl :: PrimType ty => (a -> ty -> a) -> a -> Block ty -> a
-foldl f initialAcc vec = loop 0 initialAcc
-  where
-    !len = length vec
-    loop i acc
-        | i .==# len = acc
-        | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
-
 foldr :: PrimType ty => (ty -> a -> a) -> a -> Block ty -> a
 foldr f initialAcc vec = loop 0
   where
@@ -163,6 +157,14 @@ foldl' f initialAcc vec = loop 0 initialAcc
     loop i !acc
         | i .==# len = acc
         | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
+
+foldl1' :: PrimType ty => (ty -> ty -> ty) -> NonEmpty (Block ty) -> ty
+foldl1' f arr = let (initialAcc, rest) = splitAt 1 $ getNonEmpty arr
+               in foldl' f (unsafeIndex initialAcc 0) rest
+
+foldr1 :: PrimType ty => (ty -> ty -> ty) -> NonEmpty (Block ty) -> ty
+foldr1 f arr = let (initialAcc, rest) = revSplitAt 1 $ getNonEmpty arr
+               in foldr f (unsafeIndex initialAcc 0) rest
 
 cons :: PrimType ty => ty -> Block ty -> Block ty
 cons e vec

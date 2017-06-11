@@ -138,6 +138,7 @@ library
                      Foundation.Collection.InnerFunctor
                      Foundation.Collection.Collection
                      Foundation.Collection.Copy
+                     Foundation.Collection.NonEmpty
                      Foundation.Collection.Sequential
                      Foundation.Collection.Keyed
                      Foundation.Collection.Indexed
