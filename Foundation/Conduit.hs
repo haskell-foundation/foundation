@@ -14,6 +14,7 @@ module Foundation.Conduit
     , (.|)
     , sourceFile
     , sourceHandle
+    , sourceList
     , sinkFile
     , sinkHandle
     , sinkList
@@ -56,6 +57,10 @@ sourceHandle h =
         if null arr
             then return ()
             else yield arr >> loop
+
+sourceList :: Monad m => [a] -> Conduit i a m ()
+sourceList [] = return ()
+sourceList (x:xs) = yield x >> sourceList xs
 
 sinkFile :: MonadResource m => FilePath -> Conduit (UArray Word8) i m ()
 sinkFile fp = bracketConduit
