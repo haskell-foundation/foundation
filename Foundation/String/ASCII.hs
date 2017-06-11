@@ -17,6 +17,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UnboxedTuples              #-}
 {-# LANGUAGE FlexibleContexts           #-}
+{-# OPTIONS_GHC -Wno-inline-rule-shadowing #-}
 module Foundation.String.ASCII
     ( AsciiString
     --, Buffer
