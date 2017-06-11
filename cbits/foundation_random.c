@@ -143,3 +143,7 @@ int foundation_rngV1_generate(uint8_t newkey[CHACHA_KEY_SIZE], uint8_t *dst, uin
 	return 0;
 }
 
+int foundation_rngV1_generate_word64(uint8_t newkey[CHACHA_KEY_SIZE], uint64_t *dst_w, uint8_t key[CHACHA_KEY_SIZE])
+{
+	return foundation_rngV1_generate(newkey, (uint8_t*)dst_w, key, sizeof(uint64_t));
+}
