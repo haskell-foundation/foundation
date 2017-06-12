@@ -5,6 +5,7 @@ module Foundation.Conduit
     , await
     , awaitForever
     , yield
+    , yields
     , yieldOr
     , leftover
     , runConduit
@@ -56,6 +57,12 @@ sourceHandle h =
         if null arr
             then return ()
             else yield arr >> loop
+
+-- | Send values downstream.
+yields :: (Monad m, Foldable os, Element os ~ o) => os -> Conduit i o m ()
+-- FIXME: Should be using mapM_ once that is in Foldable, see #334
+yields = foldr ((>>) . yield) (return ())
+
 
 sinkFile :: MonadResource m => FilePath -> Conduit (UArray Word8) i m ()
 sinkFile fp = bracketConduit
