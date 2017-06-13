@@ -784,12 +784,30 @@ find predicate s = loop (Offset 0)
                     False -> loop idx'
 
 -- | Sort the character in a String using a specific sort function
+--
+-- TODO: optimise not going through a list
 sortBy :: (Char -> Char -> Ordering) -> String -> String
 sortBy sortF s = fromList $ Data.List.sortBy sortF $ toList s -- FIXME for tests
 
 -- | Filter characters of a string using the predicate
+--
+-- TODO: optimise by unwrapping the vector
 filter :: (Char -> Bool) -> String -> String
-filter p s = fromList $ Data.List.filter p $ toList s
+filter predicate str = runST $ do
+    dst       <- new sz
+    finalSize <- fill dst
+    freezeShrink finalSize dst
+  where
+    sz = size str
+    fill :: MutableString s -> ST s (CountOf Word8)
+    fill dst = loop (Offset 0) (Offset 0)
+      where
+        loop !d !s
+            | s .==# sz   = pure (offsetAsSize d)
+            | otherwise   =
+                case next str s of
+                    (# c, s' #) | predicate c -> write dst d c >>= \d' -> loop d' s'
+                                | otherwise   -> loop d s'
 
 -- | Reverse a string
 reverse :: String -> String
