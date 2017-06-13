@@ -27,6 +27,38 @@ import           GHC.Prim
 import           GHC.Types
 import           GHC.Word
 
+-- mask an UTF8 continuation byte (stripping the leading 10 and returning 6 valid bits)
+maskContinuation# :: Word# -> Word#
+maskContinuation# v = and# v 0x3f##
+{-# INLINE maskContinuation# #-}
+
+-- mask a UTF8 header for 2 bytes encoding (110xxxxx and 5 valid bits)
+maskHeader2# :: Word# -> Word#
+maskHeader2# h = and# h 0x1f##
+{-# INLINE maskHeader2# #-}
+
+-- mask a UTF8 header for 3 bytes encoding (1110xxxx and 4 valid bits)
+maskHeader3# :: Word# -> Word#
+maskHeader3# h = and# h 0xf##
+{-# INLINE maskHeader3# #-}
+
+-- mask a UTF8 header for 3 bytes encoding (11110xxx and 3 valid bits)
+maskHeader4# :: Word# -> Word#
+maskHeader4# h = and# h 0x7##
+{-# INLINE maskHeader4# #-}
+
+or3# :: Word# -> Word# -> Word# -> Word#
+or3# a b c = or# a (or# b c)
+{-# INLINE or3# #-}
+
+or4# :: Word# -> Word# -> Word# -> Word# -> Word#
+or4# a b c d = or# (or# a b) (or# c d)
+{-# INLINE or4# #-}
+
+toChar# :: Word# -> Char
+toChar# w = C# (chr# (word2Int# w))
+{-# INLINE toChar# #-}
+
 -- same as nextAscii but with a ByteArray#
 nextAsciiBA :: ByteArray# -> Offset8 -> (# Word8, Bool #)
 nextAsciiBA ba n = (# w, not (testBit w 7) #)

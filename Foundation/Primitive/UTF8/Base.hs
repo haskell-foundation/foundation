@@ -121,38 +121,35 @@ sFromList l = runST (new bytes >>= startCopy)
 next :: String -> Offset8 -> (# Char, Offset8 #)
 next (String ba) n =
     case getNbBytes# h of
-        0# -> (# toChar h, n + 1 #)
-        1# -> (# toChar (decode2 (Vec.unsafeIndex ba (n + 1))) , n + 2 #)
-        2# -> (# toChar (decode3 (Vec.unsafeIndex ba (n + 1))
+        0# -> (# toChar# h, n + 1 #)
+        1# -> (# toChar# (decode2 (Vec.unsafeIndex ba (n + 1))) , n + 2 #)
+        2# -> (# toChar# (decode3 (Vec.unsafeIndex ba (n + 1))
                                  (Vec.unsafeIndex ba (n + 2))) , n + 3 #)
-        3# -> (# toChar (decode4 (Vec.unsafeIndex ba (n + 1))
+        3# -> (# toChar# (decode4 (Vec.unsafeIndex ba (n + 1))
                                  (Vec.unsafeIndex ba (n + 2))
                                  (Vec.unsafeIndex ba (n + 3))) , n + 4 #)
         r -> error ("next: internal error: invalid input: offset=" <> show n <> " table=" <> show (I# r) <> " h=" <> show (W# h))
   where
     !(W8# h) = Vec.unsafeIndex ba n
 
-    toChar :: Word# -> Char
-    toChar w = C# (chr# (word2Int# w))
-
     decode2 :: Word8 -> Word#
     decode2 (W8# c1) =
-        or# (uncheckedShiftL# (and# h 0x1f##) 6#)
-            (and# c1 0x3f##)
+        or# (uncheckedShiftL# (maskHeader2# h) 6#)
+            (maskContinuation# c1)
 
     decode3 :: Word8 -> Word8 -> Word#
     decode3 (W8# c1) (W8# c2) =
-        or# (uncheckedShiftL# (and# h 0xf##) 12#)
-            (or# (uncheckedShiftL# (and# c1 0x3f##) 6#)
-                 (and# c2 0x3f##))
+        or3# (uncheckedShiftL# (maskHeader3# h) 12#)
+             (uncheckedShiftL# (maskContinuation# c1) 6#)
+             (maskContinuation# c2)
 
     decode4 :: Word8 -> Word8 -> Word8 -> Word#
     decode4 (W8# c1) (W8# c2) (W8# c3) =
-        or# (uncheckedShiftL# (and# h 0x7##) 18#)
-            (or# (uncheckedShiftL# (and# c1 0x3f##) 12#)
-                (or# (uncheckedShiftL# (and# c2 0x3f##) 6#)
-                    (and# c3 0x3f##))
-            )
+        or4# (uncheckedShiftL# (maskHeader4# h) 18#)
+             (uncheckedShiftL# (maskContinuation# c1) 12#)
+             (uncheckedShiftL# (maskContinuation# c2) 6#)
+             (maskContinuation# c3)
+
 
 -- A variant of 'next' when you want the next character
 -- to be ASCII only. if Bool is False, then it's not ascii,
