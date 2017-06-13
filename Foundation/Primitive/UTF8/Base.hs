@@ -28,6 +28,7 @@ import           Foundation.Bits
 import           Foundation.Primitive.NormalForm
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
+import           Foundation.Primitive.Types
 import           Foundation.Primitive.UTF8.Table
 import           Foundation.Primitive.UTF8.Helper
 import           Foundation.Array.Unboxed           (UArray)
@@ -239,7 +240,6 @@ write (MutableString mba) i c
     !x       = int2Word# xi
 
     encode1 = Vec.unsafeWrite mba i (W8# x) >> return (i + 1)
-
     encode2 = do
         let x1  = or# (uncheckedShiftRL# x 6#) 0xc0##
             x2  = toContinuation x
@@ -280,3 +280,9 @@ new n = MutableString `fmap` MVec.new n
 freeze :: PrimMonad prim => MutableString (PrimState prim) -> prim String
 freeze (MutableString mba) = String `fmap` C.unsafeFreeze mba
 {-# INLINE freeze #-}
+
+freezeShrink :: PrimMonad prim
+             => CountOf Word8
+             -> MutableString (PrimState prim)
+             -> prim String
+freezeShrink n (MutableString mba) = String `fmap` C.unsafeFreezeShrink mba n
