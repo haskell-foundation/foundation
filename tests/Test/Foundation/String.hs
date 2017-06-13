@@ -90,19 +90,13 @@ testStringCases =
                           ]
     , testGroup "Cases"
         [ testGroup "Invalid-UTF8"
-            [ testCase "ff" $ expectFromBytesErr ("", Just InvalidHeader, 0) (fromList [0xff])
-            , testCase "80" $ expectFromBytesErr ("", Just InvalidHeader, 0) (fromList [0x80])
-            , testCase "E2 82 0C" $ expectFromBytesErr ("", Just InvalidContinuation, 0) (fromList [0xE2,0x82,0x0c])
-            , testCase "30 31 E2 82 0C" $ expectFromBytesErr ("01", Just InvalidContinuation, 2) (fromList [0x30,0x31,0xE2,0x82,0x0c])
+            [ testCase "ff" $ expectFromBytesErr UTF8 ("", Just InvalidHeader, 0) (fromList [0xff])
+            , testCase "80" $ expectFromBytesErr UTF8 ("", Just InvalidHeader, 0) (fromList [0x80])
+            , testCase "E2 82 0C" $ expectFromBytesErr UTF8 ("", Just InvalidContinuation, 0) (fromList [0xE2,0x82,0x0c])
+            , testCase "30 31 E2 82 0C" $ expectFromBytesErr UTF8 ("01", Just InvalidContinuation, 2) (fromList [0x30,0x31,0xE2,0x82,0x0c])
             ]
         ]
     ]
-  where
-    expectFromBytesErr (expectedString,expectedErr,positionErr) ba = do
-        let (s', merr, ba') = fromBytes UTF8 ba
-        assertEqual "error" expectedErr merr
-        assertEqual "remaining" (drop positionErr ba) ba'
-        assertEqual "string" expectedString (toList s')
 
 testAsciiStringCases :: [TestTree]
 testAsciiStringCases =
@@ -123,18 +117,18 @@ testAsciiStringCases =
         ]
     , testGroup "Cases"
         [ testGroup "Invalid-ASCII7"
-            [ testCase "ff" $ expectFromBytesErr ("", Just BuildingFailure, 0) (fromList [0xff])
+            [ testCase "ff" $ expectFromBytesErr ASCII7 ("", Just BuildingFailure, 0) (fromList [0xff])
             ]
         ]
     ]
-  where
-    expectFromBytesErr (expectedString,expectedErr,positionErr) ba = do
-        let x = fromBytes ASCII7 ba
-            (s', merr, ba') = x
-        assertEqual "error" expectedErr merr
-        assertEqual "remaining" (drop positionErr ba) ba'
-        assertEqual "string" expectedString (toList s')
 
+expectFromBytesErr :: Encoding -> ([Char], Maybe ValidationFailure, CountOf Word8) -> UArray Word8 -> IO ()
+expectFromBytesErr enc (expectedString,expectedErr,positionErr) ba = do
+    let x = fromBytes enc ba
+        (s', merr, ba') = x
+    assertEqual "error" expectedErr merr
+    assertEqual "remaining" (drop positionErr ba) ba'
+    assertEqual "string" expectedString (toList s')
 
 chunks :: Sequential c => RandomList -> c -> [c]
 chunks (RandomList randomInts) = loop (randomInts <> [1..])
