@@ -150,6 +150,71 @@ next (String ba) n =
              (uncheckedShiftL# (maskContinuation# c2) 6#)
              (maskContinuation# c3)
 
+-- Given a non null offset, give the previous character and the offset of this character
+-- will fail bad if apply at the beginning of string or an empty string.
+prevBA :: ByteArray# -> Offset8 -> (# Char, Offset8 #)
+prevBA ba offset =
+    case primBaIndex ba prevOfs1 of
+        (W8# v1) | isContinuation# v1 -> atLeast2 (maskContinuation# v1)
+                 | otherwise          -> (# toChar# v1, prevOfs1 #)
+  where
+    sz1 = CountOf 1
+    !prevOfs1 = offset `offsetMinusE` sz1
+    prevOfs2 = prevOfs1 `offsetMinusE` sz1
+    prevOfs3 = prevOfs2 `offsetMinusE` sz1
+    prevOfs4 = prevOfs3 `offsetMinusE` sz1
+    atLeast2 !v  =
+        case primBaIndex ba prevOfs2 of
+            (W8# v2) | isContinuation# v2 -> atLeast3 (or# (uncheckedShiftL# (maskContinuation# v2) 6#) v)
+                     | otherwise          -> (# toChar# (or# (uncheckedShiftL# (maskHeader2# v2) 6#) v), prevOfs2 #)
+    atLeast3 !v =
+        case primBaIndex ba prevOfs3 of
+            (W8# v3) | isContinuation# v3 -> atLeast4 (or# (uncheckedShiftL# (maskContinuation# v3) 12#) v)
+                     | otherwise          -> (# toChar# (or# (uncheckedShiftL# (maskHeader3# v3) 12#) v), prevOfs2 #)
+    atLeast4 !v =
+        case primBaIndex ba prevOfs4 of
+            (W8# v4) -> (# toChar# (or# (uncheckedShiftL# (maskHeader4# v4) 18#) v), prevOfs4 #)
+
+-- Given a non null offset, give the previous character and the offset of this character
+-- will fail bad if apply at the beginning of string or an empty string.
+prevAddr :: Addr# -> Offset8 -> (# Char, Offset8 #)
+prevAddr ba offset =
+    case primAddrIndex ba prevOfs1 of
+        (W8# v1) | isContinuation# v1 -> atLeast2 (maskContinuation# v1)
+                 | otherwise          -> (# toChar# v1, prevOfs1 #)
+  where
+    sz1 = CountOf 1
+    !prevOfs1 = offset `offsetMinusE` sz1
+    prevOfs2 = prevOfs1 `offsetMinusE` sz1
+    prevOfs3 = prevOfs2 `offsetMinusE` sz1
+    prevOfs4 = prevOfs3 `offsetMinusE` sz1
+    atLeast2 !v  =
+        case primAddrIndex ba prevOfs2 of
+            (W8# v2) | isContinuation# v2 -> atLeast3 (or# (uncheckedShiftL# (maskContinuation# v2) 6#) v)
+                     | otherwise          -> (# toChar# (or# (uncheckedShiftL# (maskHeader2# v2) 6#) v), prevOfs2 #)
+    atLeast3 !v =
+        case primAddrIndex ba prevOfs3 of
+            (W8# v3) | isContinuation# v3 -> atLeast4 (or# (uncheckedShiftL# (maskContinuation# v3) 12#) v)
+                     | otherwise          -> (# toChar# (or# (uncheckedShiftL# (maskHeader3# v3) 12#) v), prevOfs2 #)
+    atLeast4 !v =
+        case primAddrIndex ba prevOfs4 of
+            (W8# v4) -> (# toChar# (or# (uncheckedShiftL# (maskHeader4# v4) 18#) v), prevOfs4 #)
+
+prevSkipBA :: ByteArray# -> Offset8 -> Offset8
+prevSkipBA ba offset = loop (offset `offsetMinusE` sz1)
+  where
+    sz1 = CountOf 1
+    loop o
+        | isContinuation (primBaIndex ba o) = loop (o `offsetMinusE` sz1)
+        | otherwise                         = o
+
+prevSkipAddr :: Addr# -> Offset8 -> Offset8
+prevSkipAddr addr offset = loop (offset `offsetMinusE` sz1)
+  where
+    sz1 = CountOf 1
+    loop o
+        | isContinuation (primAddrIndex addr o) = loop (o `offsetMinusE` sz1)
+        | otherwise                             = o
 
 -- A variant of 'next' when you want the next character
 -- to be ASCII only. if Bool is False, then it's not ascii,
