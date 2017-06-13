@@ -14,11 +14,11 @@
 
 
 typedef enum {
-	CLOCK_REALTIME,
-	CLOCK_MONOTONIC,
-	CLOCK_PROCESS_CPUTIME_ID,
-	CLOCK_THREAD_CPUTIME_ID
-} clockid_t;
+	FOUNDATION_CLOCK_REALTIME,
+	FOUNDATION_CLOCK_MONOTONIC,
+	FOUNDATION_CLOCK_PROCESS_CPUTIME_ID,
+	FOUNDATION_CLOCK_THREAD_CPUTIME_ID
+} foundation_clockid_t;
 
 
 static mach_timebase_info_data_t timebase = {0,0};
@@ -26,14 +26,14 @@ static mach_timebase_info_data_t timebase = {0,0};
 int foundation_time_clock_getres(unsigned int clockid, struct timespec *timespec)
 {
 	switch (clockid) {
-	/* clockid = 1 (CLOCK_MONOTONIC), or any other value */
-	case CLOCK_MONOTONIC:
+	/* clockid = 1 (FOUNDATION_CLOCK_MONOTONIC), or any other value */
+	case FOUNDATION_CLOCK_MONOTONIC:
 		if (timebase.denom == 0) mach_timebase_info(&timebase);
 		timespec->tv_sec = 0;
 		timespec->tv_nsec = timebase.numer / timebase.denom;
 		break;
-	/* clockid = 0 (CLOCK_REALTIME), or any other value */
-	case CLOCK_REALTIME:
+	/* clockid = 0 (FOUNDATION_CLOCK_REALTIME), or any other value */
+	case FOUNDATION_CLOCK_REALTIME:
 		return -1;
 	}
 	return -1;
@@ -59,14 +59,14 @@ int foundation_time_clock_gettime(unsigned int clockid, struct timespec *timespe
 	case CLOCK_PROCESS_CPUTIME_ID:
 		break;
 #endif
-	case CLOCK_MONOTONIC:
+	case FOUNDATION_CLOCK_MONOTONIC:
 		host_get_clock_service(mach_host_self(), SYSTEM_CLOCK, &cclock);
 		clock_get_time(cclock, &mts);
 		mach_port_deallocate(mach_task_self(), cclock);
 		timespec->tv_sec = mts.tv_sec;
 		timespec->tv_nsec = mts.tv_nsec;
 		break;
-	case CLOCK_REALTIME:
+	case FOUNDATION_CLOCK_REALTIME:
 		host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
 		clock_get_time(cclock, &mts);
 		mach_port_deallocate(mach_task_self(), cclock);
