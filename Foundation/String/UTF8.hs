@@ -763,11 +763,11 @@ unsnoc s
 --
 -- If empty, Nothing is returned
 uncons :: String -> Maybe (Char, String)
-uncons s
+uncons s@(String ba)
     | null s    = Nothing
-    | otherwise = case index s 0 of
-          Nothing -> Nothing
-          Just c  -> Just (c, drop 1 s)
+    | otherwise =
+        let (# c, idx #) = next s azero
+         in Just (c, String $ Vec.drop (offsetAsSize idx) ba)
 
 -- | Look for a predicate in the String and return the matched character, if any.
 find :: (Char -> Bool) -> String -> Maybe Char
