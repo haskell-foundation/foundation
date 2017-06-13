@@ -21,8 +21,9 @@ import qualified Foundation.Array.Boxed as BA
 import qualified Foundation.String.UTF8 as S
 import           Foundation.Collection.Element
 import           Foundation.Collection.Sequential
-import           Foundation.Internal.Base
-import qualified Prelude
+import           Foundation.Internal.Base hiding (fst, snd)
+import           Foundation.Tuple
+--import qualified Prelude
 import           GHC.ST
 
 class Sequential col => Zippable col where
@@ -190,7 +191,7 @@ class Zippable col => BoxedZippable col where
   -- | Like 'unzip', but works on a collection of 7-element tuples.
   unzip7 :: ( Sequential a, Sequential b, Sequential c, Sequential d, Sequential e, Sequential f, Sequential g
             , Element col ~ (Element a, Element b, Element c, Element d, Element e, Element f, Element g) )
-        => col -> (a, b, c, d, e, f, g)
+         => col -> (a, b, c, d, e, f, g)
   unzip7 = go . toList
     where go [] = (mempty, mempty, mempty, mempty, mempty, mempty, mempty)
           go ((a, b, c, d, e, f, g):xs) =
@@ -271,21 +272,3 @@ uncons7 xs = let (as, bs, cs, ds, es, fs, gs) = xs
                    (g', gs') <- uncons gs
                    return ( (a', b', c', d', e', f', g')
                           , (as', bs', cs', ds', es', fs', gs') )
-
-uncurry2 :: (a -> b -> c) -> (a, b) -> c
-uncurry2 = Prelude.uncurry
-
-uncurry3 :: (a -> b -> c -> d) -> (a, b, c) -> d
-uncurry3 fn (a, b, c) = fn a b c
-
-uncurry4 :: (a -> b -> c -> d -> g) -> (a, b, c, d) -> g
-uncurry4 fn (a, b, c, d) = fn a b c d
-
-uncurry5 :: (a -> b -> c -> d -> e -> f) -> (a, b, c, d, e) -> f
-uncurry5 fn (a, b, c, d, e) = fn a b c d e
-
-uncurry6 :: (a -> b -> c -> d -> e -> f -> g) -> (a, b, c, d, e, f) -> g
-uncurry6 fn (a, b, c, d, e, f) = fn a b c d e f
-
-uncurry7 :: (a -> b -> c -> d -> e -> f -> g -> h) -> (a, b, c, d, e, f, g) -> h
-uncurry7 fn (a, b, c, d, e, f, g) = fn a b c d e f g
