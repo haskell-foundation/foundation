@@ -795,8 +795,6 @@ sortBy :: (Char -> Char -> Ordering) -> String -> String
 sortBy sortF s = fromList $ Data.List.sortBy sortF $ toList s -- FIXME for tests
 
 -- | Filter characters of a string using the predicate
---
--- TODO: optimise by unwrapping the vector
 filter :: (Char -> Bool) -> String -> String
 filter predicate (String arr) = runST $ do
     (finalSize, dst) <- newNative sz $ \mba ->

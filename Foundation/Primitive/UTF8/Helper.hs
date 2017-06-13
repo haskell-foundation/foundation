@@ -56,6 +56,28 @@ toChar# :: Word# -> Char
 toChar# w = C# (chr# (word2Int# w))
 {-# INLINE toChar# #-}
 
+toChar1 :: Word8 -> Char
+toChar1 (W8# w) = toChar# w
+
+toChar2 :: Word8 -> Word8 -> Char
+toChar2 (W8# w1) (W8# w2)=
+    toChar# (or# (uncheckedShiftL# (maskHeader2# w1) 6#) (maskContinuation# w2))
+
+toChar3 :: Word8 -> Word8 -> Word8 -> Char
+toChar3 (W8# w1) (W8# w2) (W8# w3) =
+    toChar# (or3# (uncheckedShiftL# (maskHeader2# w1) 12#)
+                  (uncheckedShiftL# (maskContinuation# w2) 6#)
+                  (maskContinuation# w3)
+            )
+
+toChar4 :: Word8 -> Word8 -> Word8 -> Word8 -> Char
+toChar4 (W8# w1) (W8# w2) (W8# w3) (W8# w4) =
+    toChar# (or4# (uncheckedShiftL# (maskHeader2# w1) 18#)
+                  (uncheckedShiftL# (maskContinuation# w2) 12#)
+                  (uncheckedShiftL# (maskContinuation# w3) 6#)
+                  (maskContinuation# w4)
+            )
+
 -- | Different way to encode a Character in UTF8 represented as an ADT
 data UTF8Char =
       UTF8_1 {-# UNPACK #-} !Word8
@@ -113,6 +135,9 @@ skipNextHeaderValue !x
     | x < 0xF0  = CountOf 3 -- 0b11110000
     | otherwise = CountOf 4
 {-# INLINE skipNextHeaderValue #-}
+
+headerIsAscii :: Word8 -> Bool
+headerIsAscii x = x < 0x80
 
 charToBytes :: Int -> Size8
 charToBytes c

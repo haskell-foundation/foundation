@@ -94,6 +94,7 @@ next ba n =
              (uncheckedShiftL# (maskContinuation# c1) 12#)
              (uncheckedShiftL# (maskContinuation# c2) 6#)
              (maskContinuation# c3)
+{-# INLINE next #-}
 
 -- Given a non null offset, give the previous character and the offset of this character
 -- will fail bad if apply at the beginning of string or an empty string.
