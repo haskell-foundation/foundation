@@ -7,6 +7,8 @@ module Test.Foundation.String
     ( testStringRefs
     ) where
 
+import Control.Monad (replicateM)
+
 import Foundation
 import Foundation.String
 import Foundation.String.ASCII (AsciiString)
@@ -104,12 +106,27 @@ testStringCases =
 
 testAsciiStringCases :: [TestTree]
 testAsciiStringCases =
-   [ testGroup "Cases"
+    [ testGroup "Validation-ASCII7"
+        [ testProperty "fromBytes . toBytes == valid" $ \l ->
+             let s = fromList . fromLStringASCII $ l
+             in (fromBytes ASCII7 $ toBytes ASCII7 s) === (s, Nothing, mempty)
+        , testProperty "Streaming" $ \(l, randomInts) ->
+            let wholeS  = fromList . fromLStringASCII $ l
+                wholeBA = toBytes ASCII7 wholeS
+                reconstruct (prevBa, errs, acc) ba =
+                    let ba' = prevBa `mappend` ba
+                        (s, merr, nextBa) = fromBytes ASCII7 ba'
+                     in (nextBa, merr : errs, s : acc)
+
+                (remainingBa, allErrs, chunkS) = foldl reconstruct (mempty, [], []) $ chunks randomInts wholeBA
+             in (catMaybes allErrs === []) .&&. (remainingBa === mempty) .&&. (mconcat (reverse chunkS) === wholeS)
+        ]
+    , testGroup "Cases"
         [ testGroup "Invalid-ASCII7"
-            [ testCase "ff" $ expectFromBytesErr ("", Just BuilderFailed, 0) (fromList [0xff])
+            [ testCase "ff" $ expectFromBytesErr ("", Just BuildingFailure, 0) (fromList [0xff])
             ]
         ]
-   ]
+    ]
   where
     expectFromBytesErr (expectedString,expectedErr,positionErr) ba = do
         let x = fromBytes ASCII7 ba
@@ -117,6 +134,7 @@ testAsciiStringCases =
         assertEqual "error" expectedErr merr
         assertEqual "remaining" (drop positionErr ba) ba'
         assertEqual "string" expectedString (toList s')
+
 
 chunks :: Sequential c => RandomList -> c -> [c]
 chunks (RandomList randomInts) = loop (randomInts <> [1..])
@@ -130,3 +148,11 @@ chunks (RandomList randomInts) = loop (randomInts <> [1..])
                      in c1 : loop rs c2
                 [] ->
                     loop randomInts c
+
+newtype LStringASCII = LStringASCII { fromLStringASCII :: LString }
+    deriving (Show, Eq, Ord)
+
+instance Arbitrary LStringASCII where
+    arbitrary = do
+        n <- choose (0,200)
+        LStringASCII <$> replicateM n (toEnum <$> choose (1, 127))
