@@ -6,6 +6,7 @@
 .stack-work
 exts
 dist
+_site
 report.html
 cabal.config
 .idea
