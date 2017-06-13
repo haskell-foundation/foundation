@@ -62,6 +62,7 @@ module Foundation.Array.Unboxed
     , take
     , unsafeTake
     , drop
+    , unsafeDrop
     , splitAt
     , revDrop
     , revTake
@@ -725,6 +726,10 @@ drop n v
             UVecAddr start len fptr   -> UVecAddr (start `offsetPlusE` n) (len - n) fptr
   where
     vlen = length v
+
+unsafeDrop :: PrimType ty => CountOf ty -> UArray ty -> UArray ty
+unsafeDrop n (UVecBA start sz pinst ba) = UVecBA (start `offsetPlusE` sz) (sz `sizeSub` n) pinst ba
+unsafeDrop n (UVecAddr start sz fptr)   = UVecAddr (start `offsetPlusE` sz) (sz `sizeSub` n) fptr
 
 -- | Split an array into two, with a count of at most N elements in the first one
 -- and the remaining in the other.
