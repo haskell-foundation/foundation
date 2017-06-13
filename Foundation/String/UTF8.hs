@@ -103,6 +103,8 @@ import           Foundation.Boot.Builder
 import           Foundation.Primitive.UTF8.Table
 import           Foundation.Primitive.UTF8.Helper
 import           Foundation.Primitive.UTF8.Base
+import qualified Foundation.Primitive.UTF8.BA as PrimBA
+import qualified Foundation.Primitive.UTF8.Addr as PrimAddr
 import           GHC.Prim
 import           GHC.ST
 import           GHC.Types
@@ -1098,14 +1100,14 @@ readIntegral str
   where
     !sz = size str
     withBa ba ofs =
-        let negativeSign = expectAsciiBA ba ofs 0x2d
+        let negativeSign = PrimBA.expectAscii ba ofs 0x2d
             startOfs     = if negativeSign then succ ofs else ofs
          in case decimalDigitsBA 0 ba endOfs startOfs of
                 (# acc, True, endOfs' #) | endOfs' > startOfs -> Just $! if negativeSign then negate acc else acc
                 _                                             -> Nothing
       where !endOfs = ofs `offsetPlusE` sz
-    withPtr ptr ofs = return $
-        let negativeSign = expectAsciiPtr ptr ofs 0x2d
+    withPtr (Ptr ptr) ofs = return $
+        let negativeSign = PrimAddr.expectAscii ptr ofs 0x2d
             startOfs     = if negativeSign then succ ofs else ofs
          in case decimalDigitsPtr 0 ptr endOfs startOfs of
                 (# acc, True, endOfs' #) | endOfs' > startOfs -> Just $! if negativeSign then negate acc else acc
@@ -1198,7 +1200,7 @@ readFloatingExact str f
     !sz = size str
 
     withBa ba stringStart =
-        let !isNegative = expectAsciiBA ba stringStart 0x2d
+        let !isNegative = PrimBA.expectAscii ba stringStart 0x2d
          in consumeIntegral isNegative (if isNegative then stringStart+1 else stringStart)
       where
         eofs = stringStart `offsetPlusE` sz
@@ -1206,7 +1208,7 @@ readFloatingExact str f
             case decimalDigitsBA 0 ba eofs startOfs of
                 (# acc, True , endOfs #) | endOfs > startOfs -> f isNegative acc 0 Nothing -- end of stream and no '.'
                 (# acc, False, endOfs #) | endOfs > startOfs ->
-                    if expectAsciiBA ba endOfs 0x2e
+                    if PrimBA.expectAscii ba endOfs 0x2e
                         then consumeFloat isNegative acc (endOfs + 1)
                         else consumeExponant isNegative acc 0 endOfs
                 _                                            -> Nothing
@@ -1223,22 +1225,22 @@ readFloatingExact str f
             | startOfs == eofs = f isNegative integral floatingDigits Nothing
             | otherwise        =
                 -- consume 'E' or 'e'
-                case nextAsciiBA ba startOfs of
+                case PrimBA.nextAscii ba startOfs of
                     (# 0x45, True #) -> consumeExponantSign (startOfs+1)
                     (# 0x65, True #) -> consumeExponantSign (startOfs+1)
                     (# _   , _    #) -> Nothing
           where
             consumeExponantSign ofs
                 | ofs == eofs = Nothing
-                | otherwise   = let exponentNegative = expectAsciiBA ba ofs 0x2d
+                | otherwise   = let exponentNegative = PrimBA.expectAscii ba ofs 0x2d
                                  in consumeExponantNumber exponentNegative (if exponentNegative then ofs + 1 else ofs)
 
             consumeExponantNumber exponentNegative ofs =
                 case decimalDigitsBA 0 ba eofs ofs of
                     (# acc, True, endOfs #) | endOfs > ofs -> f isNegative integral floatingDigits (Just $! if exponentNegative then negate acc else acc)
                     _                                      -> Nothing
-    withPtr ptr stringStart = return $
-        let !isNegative = expectAsciiPtr ptr stringStart 0x2d
+    withPtr (Ptr ptr) stringStart = return $
+        let !isNegative = PrimAddr.expectAscii ptr stringStart 0x2d
          in consumeIntegral isNegative (if isNegative then stringStart+1 else stringStart)
       where
         eofs = stringStart `offsetPlusE` sz
@@ -1246,7 +1248,7 @@ readFloatingExact str f
             case decimalDigitsPtr 0 ptr eofs startOfs of
                 (# acc, True , endOfs #) | endOfs > startOfs -> f isNegative acc 0 Nothing -- end of stream and no '.'
                 (# acc, False, endOfs #) | endOfs > startOfs ->
-                    if expectAsciiPtr ptr endOfs 0x2e
+                    if PrimAddr.expectAscii ptr endOfs 0x2e
                         then consumeFloat isNegative acc (endOfs + 1)
                         else consumeExponant isNegative acc 0 endOfs
                 _                                            -> Nothing
@@ -1263,14 +1265,14 @@ readFloatingExact str f
             | startOfs == eofs = f isNegative integral floatingDigits Nothing
             | otherwise        =
                 -- consume 'E' or 'e'
-                case nextAsciiPtr ptr startOfs of
+                case PrimAddr.nextAscii ptr startOfs of
                     (# 0x45, True #) -> consumeExponantSign (startOfs+1)
                     (# 0x65, True #) -> consumeExponantSign (startOfs+1)
                     (# _   , _    #) -> Nothing
           where
             consumeExponantSign ofs
                 | ofs == eofs = Nothing
-                | otherwise   = let exponentNegative = expectAsciiPtr ptr ofs 0x2d
+                | otherwise   = let exponentNegative = PrimAddr.expectAscii ptr ofs 0x2d
                                  in consumeExponantNumber exponentNegative (if exponentNegative then ofs + 1 else ofs)
 
             consumeExponantNumber exponentNegative ofs =
@@ -1331,7 +1333,7 @@ decimalDigitsBA startAcc ba !endOfs !startOfs = loop startAcc startOfs
     loop !acc !ofs
         | ofs == endOfs = (# acc, True, ofs #)
         | otherwise     =
-            case nextAsciiDigitBA ba ofs of
+            case PrimBA.nextAsciiDigit ba ofs of
                 (# d, True #) -> loop (10 * acc + integralUpsize d) (succ ofs)
                 (# _, _ #)    -> (# acc, False, ofs #)
 {-# SPECIALIZE decimalDigitsBA :: Integer -> ByteArray# -> Offset Word8 -> Offset Word8 -> (# Integer, Bool, Offset Word8 #) #-}
@@ -1342,7 +1344,7 @@ decimalDigitsBA startAcc ba !endOfs !startOfs = loop startAcc startOfs
 -- | same as decimalDigitsBA specialized for ptr #
 decimalDigitsPtr :: (IntegralUpsize Word8 acc, Additive acc, Multiplicative acc, Integral acc)
                  => acc
-                 -> Ptr Word8
+                 -> Addr#
                  -> Offset Word8 -- end offset
                  -> Offset Word8 -- start offset
                  -> (# acc, Bool, Offset Word8 #)
@@ -1351,13 +1353,13 @@ decimalDigitsPtr startAcc ptr !endOfs !startOfs = loop startAcc startOfs
     loop !acc !ofs
         | ofs == endOfs = (# acc, True, ofs #)
         | otherwise     =
-            case nextAsciiDigitPtr ptr ofs of
+            case PrimAddr.nextAsciiDigit ptr ofs of
                 (# d, True #) -> loop (10 * acc + integralUpsize d) (succ ofs)
                 (# _, _ #)    -> (# acc, False, ofs #)
-{-# SPECIALIZE decimalDigitsPtr :: Integer -> Ptr Word8 -> Offset Word8 -> Offset Word8 -> (# Integer, Bool, Offset Word8 #) #-}
-{-# SPECIALIZE decimalDigitsPtr :: Natural -> Ptr Word8 -> Offset Word8 -> Offset Word8 -> (# Natural, Bool, Offset Word8 #) #-}
-{-# SPECIALIZE decimalDigitsPtr :: Int -> Ptr Word8 -> Offset Word8 -> Offset Word8 -> (# Int, Bool, Offset Word8 #) #-}
-{-# SPECIALIZE decimalDigitsPtr :: Word -> Ptr Word8 -> Offset Word8 -> Offset Word8 -> (# Word, Bool, Offset Word8 #) #-}
+{-# SPECIALIZE decimalDigitsPtr :: Integer -> Addr# -> Offset Word8 -> Offset Word8 -> (# Integer, Bool, Offset Word8 #) #-}
+{-# SPECIALIZE decimalDigitsPtr :: Natural -> Addr# -> Offset Word8 -> Offset Word8 -> (# Natural, Bool, Offset Word8 #) #-}
+{-# SPECIALIZE decimalDigitsPtr :: Int -> Addr# -> Offset Word8 -> Offset Word8 -> (# Int, Bool, Offset Word8 #) #-}
+{-# SPECIALIZE decimalDigitsPtr :: Word -> Addr# -> Offset Word8 -> Offset Word8 -> (# Word, Bool, Offset Word8 #) #-}
 
 -- | Convert a 'String' to the upper-case equivalent.
 --   Does not properly support multicharacter Unicode conversions.

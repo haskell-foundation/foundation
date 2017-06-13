@@ -19,10 +19,7 @@ module Foundation.Primitive.UTF8.Helper
 
 import           Foundation.Internal.Base
 import           Foundation.Internal.Primitive
-import           Foundation.Bits
 import           Foundation.Primitive.Types.OffsetSize
-import           Foundation.Numerical
-import           Foundation.Primitive.Types
 import           GHC.Prim
 import           GHC.Types
 import           GHC.Word
@@ -58,38 +55,6 @@ or4# a b c d = or# (or# a b) (or# c d)
 toChar# :: Word# -> Char
 toChar# w = C# (chr# (word2Int# w))
 {-# INLINE toChar# #-}
-
--- same as nextAscii but with a ByteArray#
-nextAsciiBA :: ByteArray# -> Offset8 -> (# Word8, Bool #)
-nextAsciiBA ba n = (# w, not (testBit w 7) #)
-  where
-    !w = primBaIndex ba n
-{-# INLINE nextAsciiBA #-}
-
--- same as nextAscii but with a ByteArray#
-nextAsciiPtr :: Ptr Word8 -> Offset8 -> (# Word8, Bool #)
-nextAsciiPtr (Ptr addr) n = (# w, not (testBit w 7) #)
-  where !w = primAddrIndex addr n
-{-# INLINE nextAsciiPtr #-}
-
--- | nextAsciiBa specialized to get a digit between 0 and 9 (included)
-nextAsciiDigitBA :: ByteArray# -> Offset8 -> (# Word8, Bool #)
-nextAsciiDigitBA ba n = (# d, d < 0xa #)
-  where !d = primBaIndex ba n - 0x30
-{-# INLINE nextAsciiDigitBA #-}
-
-nextAsciiDigitPtr :: Ptr Word8 -> Offset8 -> (# Word8, Bool #)
-nextAsciiDigitPtr (Ptr addr) n = (# d, d < 0xa #)
-  where !d = primAddrIndex addr n - 0x30
-{-# INLINE nextAsciiDigitPtr #-}
-
-expectAsciiBA :: ByteArray# -> Offset8 -> Word8 -> Bool
-expectAsciiBA ba n v = primBaIndex ba n == v
-{-# INLINE expectAsciiBA #-}
-
-expectAsciiPtr :: Ptr Word8 -> Offset8 -> Word8 -> Bool
-expectAsciiPtr (Ptr ptr) n v = primAddrIndex ptr n == v
-{-# INLINE expectAsciiPtr #-}
 
 -- | Different way to encode a Character in UTF8 represented as an ADT
 data UTF8Char =

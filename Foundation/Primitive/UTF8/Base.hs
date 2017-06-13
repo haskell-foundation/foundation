@@ -22,15 +22,18 @@ import           GHC.Types
 import           GHC.Word
 import           GHC.Prim
 import           Foundation.Internal.Base
-import           Foundation.Internal.Primitive
 import           Foundation.Numerical
 import           Foundation.Bits
+import           Foundation.Class.Bifunctor
 import           Foundation.Primitive.NormalForm
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
+import           Foundation.Primitive.FinalPtr
 import           Foundation.Primitive.UTF8.Table
 import           Foundation.Primitive.UTF8.Helper
+import qualified Foundation.Primitive.UTF8.BA       as PrimBA
+import qualified Foundation.Primitive.UTF8.Addr     as PrimAddr
 import           Foundation.Array.Unboxed           (UArray)
 import qualified Foundation.Array.Unboxed           as Vec
 import qualified Foundation.Array.Unboxed           as C
@@ -230,52 +233,22 @@ expectAscii (String ba) n v = Vec.unsafeIndex ba n == v
 {-# INLINE expectAscii #-}
 
 write :: PrimMonad prim => MutableString (PrimState prim) -> Offset8 -> Char -> prim Offset8
-write (MutableString mba) i c
-    | bool# (ltWord# x 0x80##   ) = encode1
-    | bool# (ltWord# x 0x800##  ) = encode2
-    | bool# (ltWord# x 0x10000##) = encode3
-    | otherwise = encode4
-  where
-    !(I# xi) = fromEnum c
-    !x       = int2Word# xi
-
-    encode1 = Vec.unsafeWrite mba i (W8# x) >> return (i + 1)
-    encode2 = do
-        let x1  = or# (uncheckedShiftRL# x 6#) 0xc0##
-            x2  = toContinuation x
-        Vec.unsafeWrite mba i     (W8# x1)
-        Vec.unsafeWrite mba (i+1) (W8# x2)
-        return (i + 2)
-
-    encode3 = do
-        let x1  = or# (uncheckedShiftRL# x 12#) 0xe0##
-            x2  = toContinuation (uncheckedShiftRL# x 6#)
-            x3  = toContinuation x
-        Vec.unsafeWrite mba i     (W8# x1)
-        Vec.unsafeWrite mba (i+1) (W8# x2)
-        Vec.unsafeWrite mba (i+2) (W8# x3)
-        return (i + 3)
-
-    encode4 = do
-        let x1  = or# (uncheckedShiftRL# x 18#) 0xf0##
-            x2  = toContinuation (uncheckedShiftRL# x 12#)
-            x3  = toContinuation (uncheckedShiftRL# x 6#)
-            x4  = toContinuation x
-        Vec.unsafeWrite mba i     (W8# x1)
-        Vec.unsafeWrite mba (i+1) (W8# x2)
-        Vec.unsafeWrite mba (i+2) (W8# x3)
-        Vec.unsafeWrite mba (i+3) (W8# x4)
-        return (i + 4)
-
-    toContinuation :: Word# -> Word#
-    toContinuation w = or# (and# w 0x3f##) 0x80##
-{-# INLINE write #-}
+write (MutableString marray) ofs c =
+    case marray of
+        MVec.MUVecMA start _ _ mba  -> PrimBA.write mba (start + ofs) c
+        MVec.MUVecAddr start _ fptr -> withFinalPtr fptr $ \(Ptr ptr) -> PrimAddr.write ptr (start + ofs) c
 
 -- | Allocate a MutableString of a specific size in bytes.
 new :: PrimMonad prim
     => Size8 -- ^ in number of bytes, not of elements.
     -> prim (MutableString (PrimState prim))
 new n = MutableString `fmap` MVec.new n
+
+newNative :: PrimMonad prim
+          => CountOf Word8 -- ^ in number of bytes, not of elements.
+          -> (MutableByteArray# (PrimState prim) -> prim a)
+          -> prim (a, MutableString (PrimState prim))
+newNative n f = second MutableString `fmap` MVec.newNative n f
 
 freeze :: PrimMonad prim => MutableString (PrimState prim) -> prim String
 freeze (MutableString mba) = String `fmap` C.unsafeFreeze mba
