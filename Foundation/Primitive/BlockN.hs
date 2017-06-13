@@ -97,7 +97,7 @@ snoc b = BlockN . B.snoc (unBlock b)
 sub :: forall i j n ty . ((i <=? n) ~ 'True, (j <=? n) ~ 'True, (i <=? j) ~ 'True, PrimType ty, KnownNat i, NatWithinBound Int i, KnownNat j, NatWithinBound Int j) => BlockN n ty -> BlockN (j-i) ty
 sub block = BlockN (B.sub (unBlock block) (toOffset @i) (toOffset @j))
 
-uncons :: forall n ty . (CmpNat 0 n ~ 'LT, PrimType ty, KnownNat n, NatWithinBound Int n) => BlockN n ty -> (ty, BlockN (n+1) ty)
+uncons :: forall n ty . (CmpNat 0 n ~ 'LT, PrimType ty, KnownNat n, NatWithinBound Int n) => BlockN n ty -> (ty, BlockN (n-1) ty)
 uncons b = (index @0 b, BlockN (B.sub (unBlock b) 1 (toOffset @n)))
 
 unsnoc :: forall n ty . (CmpNat 0 n ~ 'LT, KnownNat n, PrimType ty, NatWithinBound Int n) => BlockN n ty -> (BlockN (n-1) ty, ty)
