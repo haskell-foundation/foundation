@@ -17,7 +17,6 @@ module Foundation.Primitive.UTF8.Base
     where
 
 import           GHC.ST (ST, runST)
-import           GHC.Int
 import           GHC.Types
 import           GHC.Word
 import           GHC.Prim
@@ -28,9 +27,7 @@ import           Foundation.Class.Bifunctor
 import           Foundation.Primitive.NormalForm
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
-import           Foundation.Primitive.Types
 import           Foundation.Primitive.FinalPtr
-import           Foundation.Primitive.UTF8.Table
 import           Foundation.Primitive.UTF8.Helper
 import qualified Foundation.Primitive.UTF8.BA       as PrimBA
 import qualified Foundation.Primitive.UTF8.Addr     as PrimAddr
@@ -123,102 +120,15 @@ sFromList l = runST (new bytes >>= startCopy)
 {-# INLINE [0] sFromList #-}
 
 next :: String -> Offset8 -> (# Char, Offset8 #)
-next (String ba) n =
-    case getNbBytes# h of
-        0# -> (# toChar# h, n + 1 #)
-        1# -> (# toChar# (decode2 (Vec.unsafeIndex ba (n + 1))) , n + 2 #)
-        2# -> (# toChar# (decode3 (Vec.unsafeIndex ba (n + 1))
-                                 (Vec.unsafeIndex ba (n + 2))) , n + 3 #)
-        3# -> (# toChar# (decode4 (Vec.unsafeIndex ba (n + 1))
-                                 (Vec.unsafeIndex ba (n + 2))
-                                 (Vec.unsafeIndex ba (n + 3))) , n + 4 #)
-        r -> error ("next: internal error: invalid input: offset=" <> show n <> " table=" <> show (I# r) <> " h=" <> show (W# h))
+next (String array) n =
+    case array of
+        Vec.UVecBA start _ _ ba   -> PrimBA.next ba (start + n)
+        Vec.UVecAddr start _ fptr -> unt2 $ withUnsafeFinalPtr fptr $ \(Ptr ptr) -> pureST $ t2 (PrimAddr.next ptr (start + n))
   where
-    !(W8# h) = Vec.unsafeIndex ba n
-
-    decode2 :: Word8 -> Word#
-    decode2 (W8# c1) =
-        or# (uncheckedShiftL# (maskHeader2# h) 6#)
-            (maskContinuation# c1)
-
-    decode3 :: Word8 -> Word8 -> Word#
-    decode3 (W8# c1) (W8# c2) =
-        or3# (uncheckedShiftL# (maskHeader3# h) 12#)
-             (uncheckedShiftL# (maskContinuation# c1) 6#)
-             (maskContinuation# c2)
-
-    decode4 :: Word8 -> Word8 -> Word8 -> Word#
-    decode4 (W8# c1) (W8# c2) (W8# c3) =
-        or4# (uncheckedShiftL# (maskHeader4# h) 18#)
-             (uncheckedShiftL# (maskContinuation# c1) 12#)
-             (uncheckedShiftL# (maskContinuation# c2) 6#)
-             (maskContinuation# c3)
-
--- Given a non null offset, give the previous character and the offset of this character
--- will fail bad if apply at the beginning of string or an empty string.
-prevBA :: ByteArray# -> Offset8 -> (# Char, Offset8 #)
-prevBA ba offset =
-    case primBaIndex ba prevOfs1 of
-        (W8# v1) | isContinuation# v1 -> atLeast2 (maskContinuation# v1)
-                 | otherwise          -> (# toChar# v1, prevOfs1 #)
-  where
-    sz1 = CountOf 1
-    !prevOfs1 = offset `offsetMinusE` sz1
-    prevOfs2 = prevOfs1 `offsetMinusE` sz1
-    prevOfs3 = prevOfs2 `offsetMinusE` sz1
-    prevOfs4 = prevOfs3 `offsetMinusE` sz1
-    atLeast2 !v  =
-        case primBaIndex ba prevOfs2 of
-            (W8# v2) | isContinuation# v2 -> atLeast3 (or# (uncheckedShiftL# (maskContinuation# v2) 6#) v)
-                     | otherwise          -> (# toChar# (or# (uncheckedShiftL# (maskHeader2# v2) 6#) v), prevOfs2 #)
-    atLeast3 !v =
-        case primBaIndex ba prevOfs3 of
-            (W8# v3) | isContinuation# v3 -> atLeast4 (or# (uncheckedShiftL# (maskContinuation# v3) 12#) v)
-                     | otherwise          -> (# toChar# (or# (uncheckedShiftL# (maskHeader3# v3) 12#) v), prevOfs2 #)
-    atLeast4 !v =
-        case primBaIndex ba prevOfs4 of
-            (W8# v4) -> (# toChar# (or# (uncheckedShiftL# (maskHeader4# v4) 18#) v), prevOfs4 #)
-
--- Given a non null offset, give the previous character and the offset of this character
--- will fail bad if apply at the beginning of string or an empty string.
-prevAddr :: Addr# -> Offset8 -> (# Char, Offset8 #)
-prevAddr ba offset =
-    case primAddrIndex ba prevOfs1 of
-        (W8# v1) | isContinuation# v1 -> atLeast2 (maskContinuation# v1)
-                 | otherwise          -> (# toChar# v1, prevOfs1 #)
-  where
-    sz1 = CountOf 1
-    !prevOfs1 = offset `offsetMinusE` sz1
-    prevOfs2 = prevOfs1 `offsetMinusE` sz1
-    prevOfs3 = prevOfs2 `offsetMinusE` sz1
-    prevOfs4 = prevOfs3 `offsetMinusE` sz1
-    atLeast2 !v  =
-        case primAddrIndex ba prevOfs2 of
-            (W8# v2) | isContinuation# v2 -> atLeast3 (or# (uncheckedShiftL# (maskContinuation# v2) 6#) v)
-                     | otherwise          -> (# toChar# (or# (uncheckedShiftL# (maskHeader2# v2) 6#) v), prevOfs2 #)
-    atLeast3 !v =
-        case primAddrIndex ba prevOfs3 of
-            (W8# v3) | isContinuation# v3 -> atLeast4 (or# (uncheckedShiftL# (maskContinuation# v3) 12#) v)
-                     | otherwise          -> (# toChar# (or# (uncheckedShiftL# (maskHeader3# v3) 12#) v), prevOfs2 #)
-    atLeast4 !v =
-        case primAddrIndex ba prevOfs4 of
-            (W8# v4) -> (# toChar# (or# (uncheckedShiftL# (maskHeader4# v4) 18#) v), prevOfs4 #)
-
-prevSkipBA :: ByteArray# -> Offset8 -> Offset8
-prevSkipBA ba offset = loop (offset `offsetMinusE` sz1)
-  where
-    sz1 = CountOf 1
-    loop o
-        | isContinuation (primBaIndex ba o) = loop (o `offsetMinusE` sz1)
-        | otherwise                         = o
-
-prevSkipAddr :: Addr# -> Offset8 -> Offset8
-prevSkipAddr addr offset = loop (offset `offsetMinusE` sz1)
-  where
-    sz1 = CountOf 1
-    loop o
-        | isContinuation (primAddrIndex addr o) = loop (o `offsetMinusE` sz1)
-        | otherwise                             = o
+    pureST :: a -> ST s a
+    pureST = pure
+    unt2 (a,b) = (# a, b #)
+    t2 (# a, b #) = (a, b)
 
 -- A variant of 'next' when you want the next character
 -- to be ASCII only. if Bool is False, then it's not ascii,

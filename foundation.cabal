@@ -116,6 +116,8 @@ library
                      Foundation.Boot.List
                      Foundation.String.Internal
                      Foundation.String.UTF8
+                     Foundation.String.UTF8.BA
+                     Foundation.String.UTF8.Addr
                      Foundation.String.Encoding.Encoding
                      Foundation.String.Encoding.UTF16
                      Foundation.String.Encoding.UTF32

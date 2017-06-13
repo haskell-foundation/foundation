@@ -97,6 +97,7 @@ import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Numerical
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
+import           Foundation.Primitive.FinalPtr
 import           Foundation.Primitive.IntegralConv
 import           Foundation.Primitive.Floating
 import           Foundation.Boot.Builder
@@ -105,6 +106,8 @@ import           Foundation.Primitive.UTF8.Helper
 import           Foundation.Primitive.UTF8.Base
 import qualified Foundation.Primitive.UTF8.BA as PrimBA
 import qualified Foundation.Primitive.UTF8.Addr as PrimAddr
+import qualified Foundation.String.UTF8.BA as BackendBA
+import qualified Foundation.String.UTF8.Addr as BackendAddr
 import           GHC.Prim
 import           GHC.ST
 import           GHC.Types
@@ -795,21 +798,14 @@ sortBy sortF s = fromList $ Data.List.sortBy sortF $ toList s -- FIXME for tests
 --
 -- TODO: optimise by unwrapping the vector
 filter :: (Char -> Bool) -> String -> String
-filter predicate str = runST $ do
-    dst       <- new sz
-    finalSize <- fill dst
+filter predicate (String arr) = runST $ do
+    (finalSize, dst) <- newNative sz $ \mba ->
+        case arr of
+            C.UVecBA start _ _ ba -> BackendBA.copyFilter predicate sz mba ba start
+            C.UVecAddr start _ fptr -> withFinalPtr fptr $ \(Ptr addr) -> BackendAddr.copyFilter predicate sz mba addr start
     freezeShrink finalSize dst
   where
-    sz = size str
-    fill :: MutableString s -> ST s (CountOf Word8)
-    fill dst = loop (Offset 0) (Offset 0)
-      where
-        loop !d !s
-            | s .==# sz   = pure (offsetAsSize d)
-            | otherwise   =
-                case next str s of
-                    (# c, s' #) | predicate c -> write dst d c >>= \d' -> loop d' s'
-                                | otherwise   -> loop d s'
+    !sz = C.length arr
 
 -- | Reverse a string
 reverse :: String -> String
