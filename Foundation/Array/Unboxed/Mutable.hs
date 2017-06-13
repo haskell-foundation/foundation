@@ -167,11 +167,14 @@ mutableSame MUVecMA {}     MUVecAddr {}   = False
 mutableSame MUVecAddr {}   MUVecMA {}     = False
 
 
-newNative :: (PrimMonad prim, PrimType ty) => CountOf ty -> (MutableByteArray# (PrimState prim) -> prim ()) -> prim (MUArray ty (PrimState prim))
+newNative :: (PrimMonad prim, PrimType ty)
+          => CountOf ty
+          -> (MutableByteArray# (PrimState prim) -> prim a)
+          -> prim (a, MUArray ty (PrimState prim))
 newNative n f = do
     muvec <- new n
     case muvec of
-        (MUVecMA _ _ _ mba) -> f mba >> return muvec
+        (MUVecMA _ _ _ mba) -> f mba >>= \a -> pure (a, muvec)
         MUVecAddr {}        -> error "internal error: unboxed new only supposed to allocate natively"
 
 mutableForeignMem :: (PrimMonad prim, PrimType ty)

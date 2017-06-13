@@ -1015,7 +1015,7 @@ reverse :: PrimType ty => UArray ty -> UArray ty
 reverse a
     | len == CountOf 0 = empty
     | otherwise     = runST $ do
-        ma <- newNative len $ \mba ->
+        ((), ma) <- newNative len $ \mba ->
                 case a of
                     (UVecBA start _ _ ba)   -> goNative endOfs mba ba start
                     (UVecAddr start _ fptr) -> withFinalPtr fptr $ \ptr -> goAddr endOfs mba ptr start
