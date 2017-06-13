@@ -130,7 +130,7 @@ testBuildable :: (Eq a, IsList a, Show (Element a), Element a ~ Item a, Buildabl
               => Proxy a -> Gen (Element a) -> Gen (Small Int) -> [TestTree]
 testBuildable proxy genElement genChunkSize =
     [ testProperty "build s . mapM_ append == id" $ withElementsAndChunkSize $ \(l, Small s) ->
-        runST (build s (Prelude.mapM_ append l)) `asProxyTypeOf` proxy == fromListP proxy l
+        runST (build_ s (Prelude.mapM_ append l)) `asProxyTypeOf` proxy == fromListP proxy l
     ]
   where
     withElementsAndChunkSize = forAll ((,) <$> generateListOfElement genElement <*> genChunkSize)

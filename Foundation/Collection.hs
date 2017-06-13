@@ -31,6 +31,7 @@ module Foundation.Collection
     , KeyedCollection(..)
     , Zippable(..)
     , Buildable(..)
+    , build_
     , Builder(..)
     , BuildingState(..)
     , Copy(..)

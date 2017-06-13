@@ -12,6 +12,7 @@ module Foundation.Collection.Buildable
     , Builder(..)
     , BuildingState(..)
     , builderLift
+    , build_
     ) where
 
 import           Foundation.Array.Unboxed
@@ -49,19 +50,25 @@ class Buildable col where
     -- should be defined as 1 byte for collections of `Char`.
     type Step col
 
-    append :: (PrimMonad prim) => Element col -> Builder col (Mutable col) (Step col) prim ()
+    append :: (PrimMonad prim) => Element col -> Builder col (Mutable col) (Step col) prim err ()
 
     build :: (PrimMonad prim)
           => Int -- ^ CountOf of a chunk
-          -> Builder col (Mutable col) (Step col) prim ()
-          -> prim col
+          -> Builder col (Mutable col) (Step col) prim err ()
+          -> prim (Either err col)
 
 builderLift :: (Buildable c, PrimMonad prim)
             => prim a
-            -> Builder c (Mutable c) (Step c) prim a
-builderLift f = Builder $ State $ \(i, st) -> do
+            -> Builder c (Mutable c) (Step c) prim err a
+builderLift f = Builder $ State $ \(i, st, e) -> do
     ret <- f
-    return (ret, (i, st))
+    return (ret, (i, st, e))
+
+build_ :: (Buildable c, PrimMonad prim)
+       => Int -- ^ CountOf of a chunk
+       -> Builder c (Mutable c) (Step c) prim () ()
+       -> prim c
+build_ sizeChunksI ab = either (\() -> internalError "impossible output") id <$> build sizeChunksI ab
 
 instance PrimType ty => Buildable (UArray ty) where
     type Mutable (UArray ty) = MUArray ty

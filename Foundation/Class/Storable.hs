@@ -40,7 +40,7 @@ import           Foreign.C.Types (CChar, CUChar)
 import Foundation.Internal.Base
 import Foundation.Primitive.Types.OffsetSize
 import Foundation.Collection
-import Foundation.Collection.Buildable (builderLift)
+import Foundation.Collection.Buildable (builderLift, build_)
 import Foundation.Primitive.Types
 import Foundation.Primitive.Endianness
 import Foundation.Numerical
@@ -73,7 +73,7 @@ pokeOff ptr off = poke (ptr `plusPtr` offsetAsSize off)
 
 peekArray :: (Buildable col, StorableFixed (Element col))
           => CountOf (Element col) -> Ptr (Element col) -> IO col
-peekArray (CountOf s) = build 64 . builder 0
+peekArray (CountOf s) p = build_ 64 . builder 0 $ p
   where
     builder off ptr
       | off == s = return ()
@@ -84,7 +84,7 @@ peekArray (CountOf s) = build 64 . builder 0
 
 peekArrayEndedBy :: (Buildable col, StorableFixed (Element col), Eq (Element col), Show (Element col))
                  => Element col -> Ptr (Element col) -> IO col
-peekArrayEndedBy term = build 64 . builder 0
+peekArrayEndedBy term p = build_ 64 . builder 0 $ p
   where
     builder off ptr = do
       v <- builderLift $ peekOff ptr off

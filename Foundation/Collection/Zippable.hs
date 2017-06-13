@@ -77,21 +77,21 @@ class Sequential col => Zippable col where
 instance Zippable [c]
 
 instance UV.PrimType ty => Zippable (UV.UArray ty) where
-  zipWith f as bs = runST $ UV.builderBuild 64 $ go f (toList as) (toList bs)
+  zipWith f as bs = runST $ UV.builderBuild_ 64 $ go f (toList as) (toList bs)
     where
       go _  []       _        = return ()
       go _  _        []       = return ()
       go f' (a':as') (b':bs') = UV.builderAppend (f' a' b') >> go f' as' bs'
 
 instance Zippable (BA.Array ty) where
-  zipWith f as bs = runST $ BA.builderBuild 64 $ go f (toList as) (toList bs)
+  zipWith f as bs = runST $ BA.builderBuild_ 64 $ go f (toList as) (toList bs)
     where
       go _  []       _        = return ()
       go _  _        []       = return ()
       go f' (a':as') (b':bs') = BA.builderAppend (f' a' b') >> go f' as' bs'
 
 instance Zippable S.String where
-  zipWith f as bs = runST $ S.builderBuild 64 $ go f (toList as) (toList bs)
+  zipWith f as bs = runST $ S.builderBuild_ 64 $ go f (toList as) (toList bs)
     where
       go _  []       _        = return ()
       go _  _        []       = return ()

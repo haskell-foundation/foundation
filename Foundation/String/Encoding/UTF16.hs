@@ -77,7 +77,7 @@ next getter off
 
 write :: (PrimMonad st, Monad st)
       => Char
-      -> Builder (UArray Word16) (MUArray Word16) Word16 st ()
+      -> Builder (UArray Word16) (MUArray Word16) Word16 st err ()
 write c
     | c < toEnum 0xd800   = builderAppend $ w16 c
     | c > toEnum 0x10000  = let (w1, w2) = wHigh c in builderAppend w1 >> builderAppend w2

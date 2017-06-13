@@ -22,6 +22,7 @@ import           Foundation.Numerical
 import           Foundation.Array.Unboxed (UArray)
 import           Foundation.Array.Unboxed.Mutable (MUArray)
 import qualified Foundation.Array.Unboxed as Vec
+import           Foundation.Monad.Exception
 
 class Encoding encoding where
     -- | the unit element use for the encoding.
@@ -62,7 +63,7 @@ class Encoding encoding where
                       -- ^ the unicode character to encode
                   -> Builder (UArray (Unit encoding))
                              (MUArray (Unit encoding))
-                             (Unit encoding) st ()
+                             (Unit encoding) st err ()
 
 -- | helper to convert a given Array in a given encoding into an array
 -- with another encoding.
@@ -80,7 +81,6 @@ class Encoding encoding where
 --
 convertFromTo :: ( PrimMonad st, Monad st
                  , Encoding input, PrimType (Unit input)
-                 , Exception (Error input)
                  , Encoding output, PrimType (Unit output)
                  )
               => input
@@ -89,9 +89,9 @@ convertFromTo :: ( PrimMonad st, Monad st
                 -- ^ Output's encoding type
               -> UArray (Unit input)
                 -- ^ the input raw array
-              -> st (UArray (Unit output))
+              -> st (Either (Offset (Unit input), Error input) (UArray (Unit output)))
 convertFromTo inputEncodingTy outputEncodingTy bytes
-    | Vec.null bytes = return mempty
+    | Vec.null bytes = return . return $ mempty
     | otherwise      = Vec.unsafeIndexer bytes $ \t -> Vec.builderBuild 64 (loop azero t)
   where
     lastUnit = Vec.length bytes
@@ -99,5 +99,5 @@ convertFromTo inputEncodingTy outputEncodingTy bytes
     loop off getter
       | off .==# lastUnit = return ()
       | otherwise = case encodingNext inputEncodingTy getter off of
-          Left err -> throw err
+          Left err -> mFail (off, err)
           Right (c, noff) -> encodingWrite outputEncodingTy c >> loop noff getter

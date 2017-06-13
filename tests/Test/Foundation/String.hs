@@ -32,9 +32,9 @@ testStringRefs = testGroup "String"
            , testGroup "Encoding Sample1" (testEncodings sample1)
            , testGroup "Encoding Sample2" (testEncodings sample2)
            ]
-    , testGroup "ASCII"
-        [  testCollection "Sequential" (Proxy :: Proxy AsciiString) genAsciiChar
-        ]
+    , testGroup "ASCII" $
+        [  testCollection "Sequential" (Proxy :: Proxy AsciiString) genAsciiChar ]
+        <> testAsciiStringCases
     ]
 
 testStringCases :: [TestTree]
@@ -98,6 +98,22 @@ testStringCases =
   where
     expectFromBytesErr (expectedString,expectedErr,positionErr) ba = do
         let (s', merr, ba') = fromBytes UTF8 ba
+        assertEqual "error" expectedErr merr
+        assertEqual "remaining" (drop positionErr ba) ba'
+        assertEqual "string" expectedString (toList s')
+
+testAsciiStringCases :: [TestTree]
+testAsciiStringCases =
+   [ testGroup "Cases"
+        [ testGroup "Invalid-ASCII7"
+            [ testCase "ff" $ expectFromBytesErr ("", Just BuilderFailed, 0) (fromList [0xff])
+            ]
+        ]
+   ]
+  where
+    expectFromBytesErr (expectedString,expectedErr,positionErr) ba = do
+        let x = fromBytes ASCII7 ba
+            (s', merr, ba') = x
         assertEqual "error" expectedErr merr
         assertEqual "remaining" (drop positionErr ba) ba'
         assertEqual "string" expectedString (toList s')

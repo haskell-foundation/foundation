@@ -62,6 +62,7 @@ module Foundation.Array.Boxed
     , any
     , builderAppend
     , builderBuild
+    , builderBuild_
     ) where
 
 import           GHC.Prim
@@ -681,8 +682,8 @@ any p ba = loop 0
       | p (unsafeIndex ba i) = True
       | otherwise = loop (i + 1)
 
-builderAppend :: PrimMonad state => ty -> Builder (Array ty) (MArray ty) ty state ()
-builderAppend v = Builder $ State $ \(i, st) ->
+builderAppend :: PrimMonad state => ty -> Builder (Array ty) (MArray ty) ty state err ()
+builderAppend v = Builder $ State $ \(i, st, e) ->
     if i .==# chunkSize st
         then do
             cur      <- unsafeFreeze (curChunk st)
@@ -691,21 +692,25 @@ builderAppend v = Builder $ State $ \(i, st) ->
             return ((), (Offset 1, st { prevChunks     = cur : prevChunks st
                                       , prevChunksSize = chunkSize st + prevChunksSize st
                                       , curChunk       = newChunk
-                                      }))
+                                      }, e))
         else do
             unsafeWrite (curChunk st) i v
-            return ((), (i+1, st))
+            return ((), (i+1, st, e))
 
-builderBuild :: PrimMonad m => Int -> Builder (Array ty) (MArray ty) ty m () -> m (Array ty)
+builderBuild :: PrimMonad m => Int -> Builder (Array ty) (MArray ty) ty m err () -> m (Either err (Array ty))
 builderBuild sizeChunksI ab
     | sizeChunksI <= 0 = builderBuild 64 ab
     | otherwise        = do
         first         <- new sizeChunks
-        ((), (i, st)) <- runState (runBuilder ab) (Offset 0, BuildingState [] (CountOf 0) first sizeChunks)
-        cur           <- unsafeFreezeShrink (curChunk st) (offsetAsSize i)
-        -- Build final array
-        let totalSize = prevChunksSize st + offsetAsSize i
-        new totalSize >>= fillFromEnd totalSize (cur : prevChunks st) >>= unsafeFreeze
+        ((), (i, st, e)) <- runState (runBuilder ab) (Offset 0, BuildingState [] (CountOf 0) first sizeChunks, Nothing)
+        case e of
+          Just err -> return (Left err)
+          Nothing -> do
+            cur <- unsafeFreezeShrink (curChunk st) (offsetAsSize i)
+            -- Build final array
+            let totalSize = prevChunksSize st + offsetAsSize i
+            bytes <- new totalSize >>= fillFromEnd totalSize (cur : prevChunks st) >>= unsafeFreeze
+            return (Right bytes)
   where
     sizeChunks = CountOf sizeChunksI
 
@@ -714,3 +719,6 @@ builderBuild sizeChunksI ab
         let sz = length x
         unsafeCopyAtRO mua (sizeAsOffset (end - sz)) x (Offset 0) sz
         fillFromEnd (end - sz) xs mua
+
+builderBuild_ :: PrimMonad m => Int -> Builder (Array ty) (MArray ty) ty m () () -> m (Array ty)
+builderBuild_ sizeChunksI ab = either (\() -> internalError "impossible output") id <$> builderBuild sizeChunksI ab
