@@ -92,7 +92,7 @@ benchsString = bgroup "String"
             ) [ 10, 100, 800 ]
 
     benchBuildable = bgroup "Buildable" $
-        fmap (\(n, dat) -> bench n $ toString (\es -> runST $ build 128 $ Prelude.mapM_ append es) dat)
+        fmap (\(n, dat) -> bench n $ toString (\es -> runST $ build_ 128 $ Prelude.mapM_ append es) dat)
             allDat
 
     benchReverse = bgroup "Reverse" $
