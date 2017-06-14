@@ -715,11 +715,13 @@ cons c s@(String ba)
 --
 -- If empty, Nothing is returned
 unsnoc :: String -> Maybe (String, Char)
-unsnoc s
-    | null s    = Nothing
-    | otherwise = case index s (sizeLastOffset $ length s) of
-        Nothing -> Nothing
-        Just c  -> Just (revDrop 1 s, c)
+unsnoc s@(String arr)
+    | sz == 0   = Nothing
+    | otherwise =
+        let (# c, idx #) = prev s (sizeAsOffset sz)
+         in Just (String $ Vec.take (offsetAsSize idx) arr, c)
+  where
+    sz = size s
 
 -- | Extract the First character of a string, and the String stripped of the first character.
 --

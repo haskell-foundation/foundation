@@ -99,7 +99,7 @@ prev ba offset =
     atLeast3 !v =
         case primIndex ba prevOfs3 of
             (W8# v3) | isContinuation# v3 -> atLeast4 (or# (uncheckedShiftL# (maskContinuation# v3) 12#) v)
-                     | otherwise          -> (# toChar# (or# (uncheckedShiftL# (maskHeader3# v3) 12#) v), prevOfs2 #)
+                     | otherwise          -> (# toChar# (or# (uncheckedShiftL# (maskHeader3# v3) 12#) v), prevOfs3 #)
     atLeast4 !v =
         case primIndex ba prevOfs4 of
             (W8# v4) -> (# toChar# (or# (uncheckedShiftL# (maskHeader4# v4) 18#) v), prevOfs4 #)

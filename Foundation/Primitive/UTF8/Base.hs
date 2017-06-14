@@ -131,6 +131,18 @@ next (String array) n =
     unt2 (a,b) = (# a, b #)
     t2 x (# a, b #) = (a, b `offsetSub` x)
 
+prev :: String -> Offset8 -> (# Char, Offset8 #)
+prev (String array) n =
+    case array of
+        Vec.UVecBA start _ _ ba   -> let (# c, o #) = PrimBA.prev ba (start + n)
+                                      in (# c, o `offsetSub` start #)
+        Vec.UVecAddr start _ fptr -> unt2 $ withUnsafeFinalPtr fptr $ \(Ptr ptr) -> pureST $ t2 start (PrimAddr.prev ptr (start + n))
+  where
+    pureST :: a -> ST s a
+    pureST = pure
+    unt2 (a,b) = (# a, b #)
+    t2 x (# a, b #) = (a, b `offsetSub` x)
+
 -- A variant of 'next' when you want the next character
 -- to be ASCII only. if Bool is False, then it's not ascii,
 -- otherwise it is and the return Word8 is valid.
