@@ -89,6 +89,7 @@ import qualified Foundation.Array.Unboxed           as Vec
 import qualified Foundation.Array.Unboxed           as C
 import           Foundation.Array.Unboxed.ByteArray (MutableByteArray)
 import qualified Foundation.Array.Unboxed.Mutable   as MVec
+import           Foundation.Class.Bifunctor
 import           Foundation.Internal.Base
 import           Foundation.Internal.Natural
 import           Foundation.Internal.MonadTrans
@@ -147,8 +148,11 @@ validate :: UArray Word8
          -> (Offset8, Maybe ValidationFailure)
 validate array ofsStart sz = C.unsafeDewrap goBa goAddr array
   where
-    goBa ba start = BackendBA.validate end ba (ofsStart + start)
-    goAddr (Ptr addr) start = pure $ BackendAddr.validate end addr (ofsStart + start)
+    unTranslateOffset start = first (\e -> e `offsetSub` start)
+    goBa ba start =
+        unTranslateOffset start $ BackendBA.validate (start+end) ba (start + ofsStart)
+    goAddr (Ptr addr) start =
+        pure $ unTranslateOffset start $ BackendAddr.validate (start+end) addr (ofsStart + start)
     end = ofsStart `offsetPlusE` sz
 
 -- | Similar to 'validate' but works on a 'MutableByteArray'
@@ -1008,8 +1012,8 @@ builderBuild :: PrimMonad m => Int -> Builder String MutableString Word8 m err (
 builderBuild sizeChunksI sb
     | sizeChunksI <= 3 = builderBuild 64 sb
     | otherwise        = do
-        first         <- new sizeChunks
-        ((), (i, st, e)) <- runState (runBuilder sb) (Offset 0, BuildingState [] (CountOf 0) first sizeChunks, Nothing)
+        firstChunk         <- new sizeChunks
+        ((), (i, st, e)) <- runState (runBuilder sb) (Offset 0, BuildingState [] (CountOf 0) firstChunk sizeChunks, Nothing)
         case e of
           Just err -> return (Left err)
           Nothing -> do

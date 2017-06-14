@@ -122,13 +122,14 @@ sFromList l = runST (new bytes >>= startCopy)
 next :: String -> Offset8 -> (# Char, Offset8 #)
 next (String array) n =
     case array of
-        Vec.UVecBA start _ _ ba   -> PrimBA.next ba (start + n)
-        Vec.UVecAddr start _ fptr -> unt2 $ withUnsafeFinalPtr fptr $ \(Ptr ptr) -> pureST $ t2 (PrimAddr.next ptr (start + n))
+        Vec.UVecBA start _ _ ba   -> let (# c, o #) = PrimBA.next ba (start + n)
+                                      in (# c, o `offsetSub` start #)
+        Vec.UVecAddr start _ fptr -> unt2 $ withUnsafeFinalPtr fptr $ \(Ptr ptr) -> pureST $ t2 start (PrimAddr.next ptr (start + n))
   where
     pureST :: a -> ST s a
     pureST = pure
     unt2 (a,b) = (# a, b #)
-    t2 (# a, b #) = (a, b)
+    t2 x (# a, b #) = (a, b `offsetSub` x)
 
 -- A variant of 'next' when you want the next character
 -- to be ASCII only. if Bool is False, then it's not ascii,
