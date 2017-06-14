@@ -1,5 +1,4 @@
 {-# LANGUAGE BangPatterns               #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MagicHash                  #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UnboxedTuples              #-}

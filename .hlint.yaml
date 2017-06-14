@@ -76,6 +76,8 @@
 - ignore: {name: Use print}
 - ignore: {name: Use section}
 - ignore: {name: Use span, within: Foundation.Collection.Sequential}
+- ignore: {name: Use dropWhile, within: Foundation.Collection.Sequential}
+- ignore: {name: Use takeWhile, within: Foundation.Collection.Sequential}
 - ignore: {name: Use String}
 - ignore: {name: Use traverse, within: Foundation.Collection.Mappable}
 - ignore: {name: Use void, within: Foundation.Monad.Exception}

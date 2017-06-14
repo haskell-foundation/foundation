@@ -11,7 +11,6 @@
 {-# LANGUAGE MagicHash                  #-}
 {-# LANGUAGE NoImplicitPrelude          #-}
 {-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE UnboxedTuples              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE CPP                        #-}
 module Foundation.Primitive.UTF8.Helper
