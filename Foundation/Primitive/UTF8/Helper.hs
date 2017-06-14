@@ -24,6 +24,15 @@ import           GHC.Prim
 import           GHC.Types
 import           GHC.Word
 
+-- | Possible failure related to validating bytes of UTF8 sequences.
+data ValidationFailure = InvalidHeader
+                       | InvalidContinuation
+                       | MissingByte
+                       | BuildingFailure
+                       deriving (Show,Eq,Typeable)
+
+instance Exception ValidationFailure
+
 -- mask an UTF8 continuation byte (stripping the leading 10 and returning 6 valid bits)
 maskContinuation# :: Word# -> Word#
 maskContinuation# v = and# v 0x3f##

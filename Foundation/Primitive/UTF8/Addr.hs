@@ -9,7 +9,7 @@ module Foundation.Primitive.UTF8.Addr
     ( Immutable
     , Mutable
     -- * functions
-    ,  nextAscii
+    , nextAscii
     , nextAsciiDigit
     , expectAscii
     , next
@@ -17,9 +17,9 @@ module Foundation.Primitive.UTF8.Addr
     , prevSkip
     , write
     -- temporary
+    , primIndex
     , primRead
     , primWrite
-    , primIndex
     ) where
 
 import           GHC.Int
@@ -67,35 +67,17 @@ expectAscii ba n v = primIndex ba n == v
 
 next :: Immutable -> Offset8 -> (# Char, Offset8 #)
 next ba n =
-    case getNbBytes# h of
-        0# -> (# toChar# h, n + 1 #)
-        1# -> (# toChar# (decode2 (primIndex ba (n + Offset 1))) , n + Offset 2 #)
-        2# -> (# toChar# (decode3 (primIndex ba (n + Offset 1))
-                                  (primIndex ba (n + Offset 2))) , n + Offset 3 #)
-        3# -> (# toChar# (decode4 (primIndex ba (n + Offset 1))
-                                  (primIndex ba (n + Offset 2))
-                                  (primIndex ba (n + Offset 3))) , n + Offset 4 #)
-        r -> error ("next: internal error: invalid input: offset=" <> show n <> " table=" <> show (I# r) <> " h=" <> show (W# h))
+    case getNbBytes h of
+        0 -> (# toChar1 h, n + Offset 1 #)
+        1 -> (# toChar2 h (primIndex ba (n + Offset 1)) , n + Offset 2 #)
+        2 -> (# toChar3 h (primIndex ba (n + Offset 1))
+                          (primIndex ba (n + Offset 2)) , n + Offset 3 #)
+        3 -> (# toChar4 h (primIndex ba (n + Offset 1))
+                          (primIndex ba (n + Offset 2))
+                          (primIndex ba (n + Offset 3)) , n + Offset 4 #)
+        r -> error ("next: internal error: invalid input: offset=" <> show n <> " table=" <> show r <> " h=" <> show h)
   where
-    !(W8# h) = primIndex ba n
-
-    decode2 :: Word8 -> Word#
-    decode2 (W8# c1) =
-        or# (uncheckedShiftL# (maskHeader2# h) 6#)
-            (maskContinuation# c1)
-
-    decode3 :: Word8 -> Word8 -> Word#
-    decode3 (W8# c1) (W8# c2) =
-        or3# (uncheckedShiftL# (maskHeader3# h) 12#)
-             (uncheckedShiftL# (maskContinuation# c1) 6#)
-             (maskContinuation# c2)
-
-    decode4 :: Word8 -> Word8 -> Word8 -> Word#
-    decode4 (W8# c1) (W8# c2) (W8# c3) =
-        or4# (uncheckedShiftL# (maskHeader4# h) 18#)
-             (uncheckedShiftL# (maskContinuation# c1) 12#)
-             (uncheckedShiftL# (maskContinuation# c2) 6#)
-             (maskContinuation# c3)
+    !h = primIndex ba n
 {-# INLINE next #-}
 
 -- Given a non null offset, give the previous character and the offset of this character
@@ -132,7 +114,7 @@ prevSkip ba offset = loop (offset `offsetMinusE` sz1)
         | otherwise                       = o
 
 write :: PrimMonad prim => Mutable prim -> Offset8 -> Char -> prim Offset8
-write mba i c
+write mba !i !c
     | bool# (ltWord# x 0x80##   ) = encode1
     | bool# (ltWord# x 0x800##  ) = encode2
     | bool# (ltWord# x 0x10000##) = encode3
@@ -141,13 +123,13 @@ write mba i c
     !(I# xi) = fromEnum c
     !x       = int2Word# xi
 
-    encode1 = primWrite mba i (W8# x) >> return (i + Offset 1)
+    encode1 = primWrite mba i (W8# x) >> pure (i + Offset 1)
     encode2 = do
         let x1  = or# (uncheckedShiftRL# x 6#) 0xc0##
             x2  = toContinuation x
         primWrite mba i     (W8# x1)
         primWrite mba (i+1) (W8# x2)
-        return (i + Offset 2)
+        pure (i + Offset 2)
 
     encode3 = do
         let x1  = or# (uncheckedShiftRL# x 12#) 0xe0##
@@ -156,7 +138,7 @@ write mba i c
         primWrite mba i            (W8# x1)
         primWrite mba (i+Offset 1) (W8# x2)
         primWrite mba (i+Offset 2) (W8# x3)
-        return (i + Offset 3)
+        pure (i + Offset 3)
 
     encode4 = do
         let x1  = or# (uncheckedShiftRL# x 18#) 0xf0##
@@ -167,7 +149,7 @@ write mba i c
         primWrite mba (i+Offset 1) (W8# x2)
         primWrite mba (i+Offset 2) (W8# x3)
         primWrite mba (i+Offset 3) (W8# x4)
-        return (i + Offset 4)
+        pure (i + Offset 4)
 
     toContinuation :: Word# -> Word#
     toContinuation w = or# (and# w 0x3f##) 0x80##

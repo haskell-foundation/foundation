@@ -128,15 +128,6 @@ import qualified Foundation.String.Encoding.UTF16      as Encoder
 import qualified Foundation.String.Encoding.UTF32      as Encoder
 import qualified Foundation.String.Encoding.ISO_8859_1 as Encoder
 
--- | Possible failure related to validating bytes of UTF8 sequences.
-data ValidationFailure = InvalidHeader
-                       | InvalidContinuation
-                       | MissingByte
-                       | BuildingFailure
-                       deriving (Show,Eq,Typeable)
-
-instance Exception ValidationFailure
-
 -- | UTF8 Encoder
 data EncoderUTF8 = EncoderUTF8
 
@@ -154,49 +145,11 @@ validate :: UArray Word8
          -> Offset8
          -> CountOf Word8
          -> (Offset8, Maybe ValidationFailure)
-validate ba ofsStart sz = runST (Vec.unsafeIndexer ba go)
+validate array ofsStart sz = C.unsafeDewrap goBa goAddr array
   where
+    goBa ba start = BackendBA.validate end ba (ofsStart + start)
+    goAddr (Ptr addr) start = pure $ BackendAddr.validate end addr (ofsStart + start)
     end = ofsStart `offsetPlusE` sz
-
-    go :: (Offset Word8 -> Word8) -> ST s (Offset Word8, Maybe ValidationFailure)
-    go getIdx = return $ loop ofsStart
-      where
-        loop ofs
-            | ofs > end  = error "validate: internal error: went pass offset"
-            | ofs == end = (end, Nothing)
-            | otherwise  =
-                case {-# SCC "validate.one" #-} one ofs of
-                    (nextOfs, Nothing)  -> loop nextOfs
-                    (pos, Just failure) -> (pos, Just failure)
-
-        one pos =
-            case nbConts of
-                0    -> (pos + 1, Nothing)
-                0xff -> (pos, Just InvalidHeader)
-                _ | (pos + 1) `offsetPlusE` nbContsE > end -> (pos, Just MissingByte)
-                1    ->
-                    let c1 = getIdx (pos + 1)
-                     in if isContinuation c1
-                            then (pos + 2, Nothing)
-                            else (pos, Just InvalidContinuation)
-                2 ->
-                    let c1 = getIdx (pos + 1)
-                        c2 = getIdx (pos + 2)
-                     in if isContinuation c1 && isContinuation c2
-                            then (pos + 3, Nothing)
-                            else (pos, Just InvalidContinuation)
-                3 ->
-                    let c1 = getIdx (pos + 1)
-                        c2 = getIdx (pos + 2)
-                        c3 = getIdx (pos + 3)
-                     in if isContinuation c1 && isContinuation c2 && isContinuation c3
-                            then (pos + 4, Nothing)
-                            else (pos, Just InvalidContinuation)
-                _ -> error "internal error"
-          where
-            !h = getIdx pos
-            !nbContsE@(CountOf nbConts) = CountOf $ getNbBytes h
-    {-# INLINE go #-}
 
 -- | Similar to 'validate' but works on a 'MutableByteArray'
 mutableValidate :: PrimMonad prim

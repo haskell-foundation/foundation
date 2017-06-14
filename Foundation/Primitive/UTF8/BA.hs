@@ -12,7 +12,9 @@ module Foundation.Primitive.UTF8.BA
     , nextAscii
     , nextAsciiDigit
     , expectAscii
-    , next , prev , prevSkip
+    , next
+    , prev
+    , prevSkip
     , write
     -- temporary
     , primIndex
@@ -65,35 +67,17 @@ expectAscii ba n v = primIndex ba n == v
 
 next :: Immutable -> Offset8 -> (# Char, Offset8 #)
 next ba n =
-    case getNbBytes# h of
-        0# -> (# toChar# h, n + Offset 1 #)
-        1# -> (# toChar# (decode2 (primIndex ba (n + Offset 1))) , n + Offset 2 #)
-        2# -> (# toChar# (decode3 (primIndex ba (n + Offset 1))
-                                  (primIndex ba (n + Offset 2))) , n + Offset 3 #)
-        3# -> (# toChar# (decode4 (primIndex ba (n + Offset 1))
-                                  (primIndex ba (n + Offset 2))
-                                  (primIndex ba (n + Offset 3))) , n + Offset 4 #)
-        r -> error ("next: internal error: invalid input: offset=" <> show n <> " table=" <> show (I# r) <> " h=" <> show (W# h))
+    case getNbBytes h of
+        0 -> (# toChar1 h, n + Offset 1 #)
+        1 -> (# toChar2 h (primIndex ba (n + Offset 1)) , n + Offset 2 #)
+        2 -> (# toChar3 h (primIndex ba (n + Offset 1))
+                          (primIndex ba (n + Offset 2)) , n + Offset 3 #)
+        3 -> (# toChar4 h (primIndex ba (n + Offset 1))
+                          (primIndex ba (n + Offset 2))
+                          (primIndex ba (n + Offset 3)) , n + Offset 4 #)
+        r -> error ("next: internal error: invalid input: offset=" <> show n <> " table=" <> show r <> " h=" <> show h)
   where
-    !(W8# h) = primIndex ba n
-
-    decode2 :: Word8 -> Word#
-    decode2 (W8# c1) =
-        or# (uncheckedShiftL# (maskHeader2# h) 6#)
-            (maskContinuation# c1)
-
-    decode3 :: Word8 -> Word8 -> Word#
-    decode3 (W8# c1) (W8# c2) =
-        or3# (uncheckedShiftL# (maskHeader3# h) 12#)
-             (uncheckedShiftL# (maskContinuation# c1) 6#)
-             (maskContinuation# c2)
-
-    decode4 :: Word8 -> Word8 -> Word8 -> Word#
-    decode4 (W8# c1) (W8# c2) (W8# c3) =
-        or4# (uncheckedShiftL# (maskHeader4# h) 18#)
-             (uncheckedShiftL# (maskContinuation# c1) 12#)
-             (uncheckedShiftL# (maskContinuation# c2) 6#)
-             (maskContinuation# c3)
+    !h = primIndex ba n
 {-# INLINE next #-}
 
 -- Given a non null offset, give the previous character and the offset of this character
