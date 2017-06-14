@@ -18,6 +18,8 @@ module Foundation.Primitive.UTF8.Addr
     , write
     -- temporary
     , primRead
+    , primWrite
+    , primIndex
     ) where
 
 import           GHC.Int
