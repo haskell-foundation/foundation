@@ -65,14 +65,14 @@ toChar2 (W8# w1) (W8# w2)=
 
 toChar3 :: Word8 -> Word8 -> Word8 -> Char
 toChar3 (W8# w1) (W8# w2) (W8# w3) =
-    toChar# (or3# (uncheckedShiftL# (maskHeader2# w1) 12#)
+    toChar# (or3# (uncheckedShiftL# (maskHeader3# w1) 12#)
                   (uncheckedShiftL# (maskContinuation# w2) 6#)
                   (maskContinuation# w3)
             )
 
 toChar4 :: Word8 -> Word8 -> Word8 -> Word8 -> Char
 toChar4 (W8# w1) (W8# w2) (W8# w3) (W8# w4) =
-    toChar# (or4# (uncheckedShiftL# (maskHeader2# w1) 18#)
+    toChar# (or4# (uncheckedShiftL# (maskHeader4# w1) 18#)
                   (uncheckedShiftL# (maskContinuation# w2) 12#)
                   (uncheckedShiftL# (maskContinuation# w3) 6#)
                   (maskContinuation# w4)
