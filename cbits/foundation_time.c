@@ -2,6 +2,14 @@
 
 #ifdef FOUNDATION_SYSTEM_API_NO_CLOCK
 
+typedef enum {
+	FOUNDATION_CLOCK_REALTIME,
+	FOUNDATION_CLOCK_MONOTONIC,
+	FOUNDATION_CLOCK_PROCESS_CPUTIME_ID,
+	FOUNDATION_CLOCK_THREAD_CPUTIME_ID
+} foundation_clockid_t;
+
+
 #ifdef FOUNDATION_SYSTEM_MACOS
 #include <time.h>
 #include <mach/clock.h>
@@ -11,14 +19,6 @@
 /* OSX MONOTONIC COMPAT:
  * http://web.archive.org/web/20100517095152/http://www.wand.net.nz/~smr26/wordpress/2009/01/19/monotonic-time-in-mac-os-x/comment-page-1/
  */
-
-
-typedef enum {
-	FOUNDATION_CLOCK_REALTIME,
-	FOUNDATION_CLOCK_MONOTONIC,
-	FOUNDATION_CLOCK_PROCESS_CPUTIME_ID,
-	FOUNDATION_CLOCK_THREAD_CPUTIME_ID
-} foundation_clockid_t;
 
 
 static mach_timebase_info_data_t timebase = {0,0};
@@ -72,6 +72,47 @@ int foundation_time_clock_gettime(unsigned int clockid, struct timespec *timespe
 		mach_port_deallocate(mach_task_self(), cclock);
 		timespec->tv_sec = mts.tv_sec;
 		timespec->tv_nsec = mts.tv_nsec;
+		break;
+	default:
+		return -1;
+	}
+	return 0;
+}
+
+#elif defined(FOUNDATION_SYSTEM_WINDOWS)
+
+#include <windows.h>
+
+// from:
+// https://stackoverflow.com/questions/5404277/porting-clock-gettime-to-windows
+
+struct timespec { long tv_sec; long tv_nsec; }; //header part
+
+#define BILLION                             (1E9)
+
+int foundation_time_clock_getres(unsigned int clockid, struct timespec *timespec)
+{
+}
+
+int foundation_time_clock_gettime(unsigned int clockid, struct timespec *ct)
+{
+	LARGE_INTEGER count;
+	static LARGE_INTEGER counts_per_sec = { .QuadPart = -1 };
+
+	switch (clockid) {
+	case FOUNDATION_CLOCK_MONOTONIC:
+		if (counts_per_sec.QuadPart == -1) {
+			if (0 == QueryPerformanceFrequency(&counts_per_sec)) {
+				counts_per_sec.QuadPart = 0;
+			}
+		}
+
+		if ((NULL == ct) || (counts_per_sec.QuadPart <= 0) || (0 == QueryPerformanceCounter(&count))) {
+			return -1;
+		}
+
+		ct->tv_sec = count.QuadPart / counts_per_sec.QuadPart;
+		ct->tv_nsec = ((count.QuadPart % counts_per_sec.QuadPart) * BILLION) / counts_per_sec.QuadPart;
 		break;
 	default:
 		return -1;
