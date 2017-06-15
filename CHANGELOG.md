@@ -1,3 +1,22 @@
+## 0.0.11
+
+* Add Hlint support (configuration file), and default travis job
+* Property report error through with the ASCII, UTF16, UTF32 string decoders
+* Fix issue with OSX < Sierra
+* Improve Parser and fix backtracking issue
+* Strictify UArray to contains a strict ByteArray#
+* Improve any & all for most collection types
+* Improve minimum & maximum for most collection types
+* Add foldl1 & foldr1
+* Add takeWhile & dropWhile
+* Remove foldl
+* Add basic String builder
+* Add String replace function
+* Add conduit sourceList
+* Improve performance of String uncons, unsnoc, filter and fromBytes UTF8 (validate)
+* Improve UArray filter
+* Fix compilation issue on windows with `clock_gettime` which is not available though all possible compilation mode
+
 ## 0.0.10
 
 * Cleanup collection APIs that take a lone Int (length, take, drop, splitAt, ..) to take a CountOf
