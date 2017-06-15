@@ -116,6 +116,8 @@ library
                      Foundation.Boot.List
                      Foundation.String.Internal
                      Foundation.String.UTF8
+                     Foundation.String.UTF8.BA
+                     Foundation.String.UTF8.Addr
                      Foundation.String.Encoding.Encoding
                      Foundation.String.Encoding.UTF16
                      Foundation.String.Encoding.UTF32
@@ -188,6 +190,8 @@ library
                      Foundation.Primitive.UTF8.Table
                      Foundation.Primitive.UTF8.Helper
                      Foundation.Primitive.UTF8.Base
+                     Foundation.Primitive.UTF8.BA
+                     Foundation.Primitive.UTF8.Addr
                      Foundation.Primitive.Runtime
                      Foundation.Primitive.Imports
                      Foundation.Monad.MonadIO

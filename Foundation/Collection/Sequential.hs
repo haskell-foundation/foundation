@@ -76,6 +76,14 @@ class (IsList c, Item c ~ Element c, Monoid c, Collection c) => Sequential c whe
     breakElem :: Eq (Element c) => Element c -> c -> (c,c)
     breakElem c = break (== c)
 
+    -- | Return the longest prefix in the collection that satisfy the predicate
+    takeWhile :: (Element c -> Bool) -> c -> c
+    takeWhile predicate = fst . span predicate
+
+    -- | Return the longest prefix in the collection that satisfy the predicate
+    dropWhile :: (Element c -> Bool) -> c -> c
+    dropWhile predicate = snd . span predicate
+
     -- | The 'intersperse' function takes an element and a list and
     -- \`intersperses\' that element between the elements of the list.
     -- For example,
@@ -199,6 +207,8 @@ instance Sequential [a] where
     break = Data.List.break
     intersperse = Data.List.intersperse
     span = Data.List.span
+    dropWhile = Data.List.dropWhile
+    takeWhile = Data.List.takeWhile
     filter = Data.List.filter
     partition = Data.List.partition
     reverse = Data.List.reverse

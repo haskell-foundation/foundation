@@ -9,6 +9,7 @@ module Fake.Text
     , reverse
     , decimal
     , double
+    , decodeUtf8
     ) where
 
 import Prelude (undefined, Either(..))
@@ -22,6 +23,7 @@ take        = undefined
 filter _    = undefined
 reverse     = undefined
 any         = undefined
+decodeUtf8  = undefined
 
 decimal :: Text -> Either a (b, c)
 decimal = undefined

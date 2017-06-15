@@ -5,7 +5,7 @@ module Test.Foundation.Parser
   ( testParsers
   ) where
 
-import Foundation
+import           Foundation
 import           Foundation.Parser
 import qualified Foundation.Parser as P
 
@@ -65,10 +65,10 @@ parseTestCases = testGroup "units"
         , testCase "MoreFail" $ parseTestCase "a" (P.take 2) $ TestCaseMore mempty TestCaseFail
         ]
     , testGroup "takeWhile"
-        [ testCase "OK" $ parseTestCase "a " (takeWhile (' ' /=)) (TestCaseOk " " "a")
-        , testCase "OkRemains" $ parseTestCase "ab bc" (takeWhile (' ' /=)) (TestCaseOk " bc" "ab")
-        , testCase "MoreOk" $ parseTestCase "ab" (takeWhile (' ' /=)) $ TestCaseMore "cd " (TestCaseOk " " "abcd")
-        , testCase "MoreEmptyOK" $ parseTestCase "aa" (takeWhile (' ' /=)) $ TestCaseMore mempty (TestCaseOk "" "aa")
+        [ testCase "OK" $ parseTestCase "a " (P.takeWhile (' ' /=)) (TestCaseOk " " "a")
+        , testCase "OkRemains" $ parseTestCase "ab bc" (P.takeWhile (' ' /=)) (TestCaseOk " bc" "ab")
+        , testCase "MoreOk" $ parseTestCase "ab" (P.takeWhile (' ' /=)) $ TestCaseMore "cd " (TestCaseOk " " "abcd")
+        , testCase "MoreEmptyOK" $ parseTestCase "aa" (P.takeWhile (' ' /=)) $ TestCaseMore mempty (TestCaseOk "" "aa")
         ]
     , testGroup "takeAll"
         [ testCase "OK" $ parseTestCase "abc" takeAll (TestCaseMore mempty $ TestCaseOk "" "abc")
@@ -98,7 +98,7 @@ parseTestCases = testGroup "units"
             (TestCaseOk "\0" [True, False, True, False, True, False])
         ]
     , testGroup "parseOnly"
-        [ testCase "takeWhile" $ case parseOnly (takeWhile (' ' /=)) ("abc" :: [Char]) of
+        [ testCase "takeWhile" $ case parseOnly (P.takeWhile (' ' /=)) ("abc" :: [Char]) of
             Right "abc" -> return ()
             _           -> error "failed"
         ]

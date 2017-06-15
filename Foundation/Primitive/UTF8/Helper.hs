@@ -11,7 +11,6 @@
 {-# LANGUAGE MagicHash                  #-}
 {-# LANGUAGE NoImplicitPrelude          #-}
 {-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE UnboxedTuples              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE CPP                        #-}
 module Foundation.Primitive.UTF8.Helper
@@ -19,45 +18,73 @@ module Foundation.Primitive.UTF8.Helper
 
 import           Foundation.Internal.Base
 import           Foundation.Internal.Primitive
-import           Foundation.Bits
 import           Foundation.Primitive.Types.OffsetSize
-import           Foundation.Numerical
-import           Foundation.Primitive.Types
 import           GHC.Prim
 import           GHC.Types
 import           GHC.Word
 
--- same as nextAscii but with a ByteArray#
-nextAsciiBA :: ByteArray# -> Offset8 -> (# Word8, Bool #)
-nextAsciiBA ba n = (# w, not (testBit w 7) #)
-  where
-    !w = primBaIndex ba n
-{-# INLINE nextAsciiBA #-}
+-- | Possible failure related to validating bytes of UTF8 sequences.
+data ValidationFailure = InvalidHeader
+                       | InvalidContinuation
+                       | MissingByte
+                       | BuildingFailure
+                       deriving (Show,Eq,Typeable)
 
--- same as nextAscii but with a ByteArray#
-nextAsciiPtr :: Ptr Word8 -> Offset8 -> (# Word8, Bool #)
-nextAsciiPtr (Ptr addr) n = (# w, not (testBit w 7) #)
-  where !w = primAddrIndex addr n
-{-# INLINE nextAsciiPtr #-}
+instance Exception ValidationFailure
 
--- | nextAsciiBa specialized to get a digit between 0 and 9 (included)
-nextAsciiDigitBA :: ByteArray# -> Offset8 -> (# Word8, Bool #)
-nextAsciiDigitBA ba n = (# d, d < 0xa #)
-  where !d = primBaIndex ba n - 0x30
-{-# INLINE nextAsciiDigitBA #-}
+-- mask an UTF8 continuation byte (stripping the leading 10 and returning 6 valid bits)
+maskContinuation# :: Word# -> Word#
+maskContinuation# v = and# v 0x3f##
+{-# INLINE maskContinuation# #-}
 
-nextAsciiDigitPtr :: Ptr Word8 -> Offset8 -> (# Word8, Bool #)
-nextAsciiDigitPtr (Ptr addr) n = (# d, d < 0xa #)
-  where !d = primAddrIndex addr n - 0x30
-{-# INLINE nextAsciiDigitPtr #-}
+-- mask a UTF8 header for 2 bytes encoding (110xxxxx and 5 valid bits)
+maskHeader2# :: Word# -> Word#
+maskHeader2# h = and# h 0x1f##
+{-# INLINE maskHeader2# #-}
 
-expectAsciiBA :: ByteArray# -> Offset8 -> Word8 -> Bool
-expectAsciiBA ba n v = primBaIndex ba n == v
-{-# INLINE expectAsciiBA #-}
+-- mask a UTF8 header for 3 bytes encoding (1110xxxx and 4 valid bits)
+maskHeader3# :: Word# -> Word#
+maskHeader3# h = and# h 0xf##
+{-# INLINE maskHeader3# #-}
 
-expectAsciiPtr :: Ptr Word8 -> Offset8 -> Word8 -> Bool
-expectAsciiPtr (Ptr ptr) n v = primAddrIndex ptr n == v
-{-# INLINE expectAsciiPtr #-}
+-- mask a UTF8 header for 3 bytes encoding (11110xxx and 3 valid bits)
+maskHeader4# :: Word# -> Word#
+maskHeader4# h = and# h 0x7##
+{-# INLINE maskHeader4# #-}
+
+or3# :: Word# -> Word# -> Word# -> Word#
+or3# a b c = or# a (or# b c)
+{-# INLINE or3# #-}
+
+or4# :: Word# -> Word# -> Word# -> Word# -> Word#
+or4# a b c d = or# (or# a b) (or# c d)
+{-# INLINE or4# #-}
+
+toChar# :: Word# -> Char
+toChar# w = C# (chr# (word2Int# w))
+{-# INLINE toChar# #-}
+
+toChar1 :: Word8 -> Char
+toChar1 (W8# w) = toChar# w
+
+toChar2 :: Word8 -> Word8 -> Char
+toChar2 (W8# w1) (W8# w2)=
+    toChar# (or# (uncheckedShiftL# (maskHeader2# w1) 6#) (maskContinuation# w2))
+
+toChar3 :: Word8 -> Word8 -> Word8 -> Char
+toChar3 (W8# w1) (W8# w2) (W8# w3) =
+    toChar# (or3# (uncheckedShiftL# (maskHeader3# w1) 12#)
+                  (uncheckedShiftL# (maskContinuation# w2) 6#)
+                  (maskContinuation# w3)
+            )
+
+toChar4 :: Word8 -> Word8 -> Word8 -> Word8 -> Char
+toChar4 (W8# w1) (W8# w2) (W8# w3) (W8# w4) =
+    toChar# (or4# (uncheckedShiftL# (maskHeader4# w1) 18#)
+                  (uncheckedShiftL# (maskContinuation# w2) 12#)
+                  (uncheckedShiftL# (maskContinuation# w3) 6#)
+                  (maskContinuation# w4)
+            )
 
 -- | Different way to encode a Character in UTF8 represented as an ADT
 data UTF8Char =
@@ -116,6 +143,9 @@ skipNextHeaderValue !x
     | x < 0xF0  = CountOf 3 -- 0b11110000
     | otherwise = CountOf 4
 {-# INLINE skipNextHeaderValue #-}
+
+headerIsAscii :: Word8 -> Bool
+headerIsAscii x = x < 0x80
 
 charToBytes :: Int -> Size8
 charToBytes c

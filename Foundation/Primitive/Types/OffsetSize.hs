@@ -18,6 +18,7 @@ module Foundation.Primitive.Types.OffsetSize
     , offsetMinusE
     , offsetRecast
     , offsetCast
+    , offsetSub
     , sizeCast
     , sizeLastOffset
     , sizeAsOffset
@@ -108,6 +109,13 @@ offsetPlusE (Offset ofs) (CountOf sz) = Offset (ofs + sz)
 
 offsetMinusE :: Offset ty -> CountOf ty -> Offset ty
 offsetMinusE (Offset ofs) (CountOf sz) = Offset (ofs - sz)
+
+-- | subtract 2 CountOf values of the same type.
+--
+-- m need to be greater than n, otherwise negative count error ensue
+-- use the safer (-) version if unsure.
+offsetSub :: Offset a -> Offset a -> Offset a
+offsetSub (Offset m) (Offset n) = Offset (m - n)
 
 offsetRecast :: Size8 -> Size8 -> Offset ty -> Offset ty2
 offsetRecast szTy (CountOf szTy2) ofs =

@@ -9,6 +9,7 @@ import GHC.ST
 import Foundation
 import Foundation.Collection
 import Foundation.String.Read
+import Foundation.String
 import BenchUtil.Common
 import BenchUtil.RefData
 
@@ -19,6 +20,7 @@ import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Char8 as ByteString (readInt, readInteger)
 import qualified Data.Text as Text
 import qualified Data.Text.Read as Text
+import qualified Data.Text.Encoding as Text
 #else
 import qualified Fake.ByteString as ByteString
 import qualified Fake.Text as Text
@@ -35,6 +37,7 @@ benchsString = bgroup "String"
     , benchReverse
     , benchFilter
     , benchRead
+    , benchFromUTF8Bytes
     ]
   where
     diffTextString :: (String -> a)
@@ -50,6 +53,21 @@ benchsString = bgroup "String"
       where
         s = fromList dat
         t = Text.pack dat
+
+    diffToTextString :: (UArray Word8 -> String)
+                     -> (ByteString.ByteString -> Text.Text)
+                     -> [Word8]
+                     -> [Benchmark]
+    diffToTextString foundationBench textBench dat =
+        [ bench "String" $ whnf foundationBench s
+#ifdef BENCH_ALL
+        , bench "Text"   $ whnf textBench t
+#endif
+        ]
+      where
+        s = fromList dat
+        t = ByteString.pack dat
+
 
     diffBsTextString :: (String -> a)
                    -> (Text.Text -> b)
@@ -131,6 +149,9 @@ benchsString = bgroup "String"
         stringReadInteger :: String -> Integer
         stringReadInteger = maybe undefined id . readIntegral
 
+    benchFromUTF8Bytes = bgroup "FromUTF8" $
+        fmap (\(n, dat) -> bgroup n $ diffToTextString (fst . fromBytes UTF8) (Text.decodeUtf8) dat)
+             (fmap (second (toList . toBytes UTF8 . fromList)) allDat)
 
     toString :: ([Char] -> String) -> [Char] -> Benchmarkable
     toString = whnf

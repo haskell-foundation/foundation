@@ -89,6 +89,7 @@ import qualified Foundation.Array.Unboxed           as Vec
 import qualified Foundation.Array.Unboxed           as C
 import           Foundation.Array.Unboxed.ByteArray (MutableByteArray)
 import qualified Foundation.Array.Unboxed.Mutable   as MVec
+import           Foundation.Class.Bifunctor
 import           Foundation.Internal.Base
 import           Foundation.Internal.Natural
 import           Foundation.Internal.MonadTrans
@@ -97,12 +98,17 @@ import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Numerical
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
+import           Foundation.Primitive.FinalPtr
 import           Foundation.Primitive.IntegralConv
 import           Foundation.Primitive.Floating
 import           Foundation.Boot.Builder
 import           Foundation.Primitive.UTF8.Table
 import           Foundation.Primitive.UTF8.Helper
 import           Foundation.Primitive.UTF8.Base
+import qualified Foundation.Primitive.UTF8.BA as PrimBA
+import qualified Foundation.Primitive.UTF8.Addr as PrimAddr
+import qualified Foundation.String.UTF8.BA as BackendBA
+import qualified Foundation.String.UTF8.Addr as BackendAddr
 import           GHC.Prim
 import           GHC.ST
 import           GHC.Types
@@ -123,15 +129,6 @@ import qualified Foundation.String.Encoding.UTF16      as Encoder
 import qualified Foundation.String.Encoding.UTF32      as Encoder
 import qualified Foundation.String.Encoding.ISO_8859_1 as Encoder
 
--- | Possible failure related to validating bytes of UTF8 sequences.
-data ValidationFailure = InvalidHeader
-                       | InvalidContinuation
-                       | MissingByte
-                       | BuildingFailure
-                       deriving (Show,Eq,Typeable)
-
-instance Exception ValidationFailure
-
 -- | UTF8 Encoder
 data EncoderUTF8 = EncoderUTF8
 
@@ -149,49 +146,14 @@ validate :: UArray Word8
          -> Offset8
          -> CountOf Word8
          -> (Offset8, Maybe ValidationFailure)
-validate ba ofsStart sz = runST (Vec.unsafeIndexer ba go)
+validate array ofsStart sz = C.unsafeDewrap goBa goAddr array
   where
+    unTranslateOffset start = first (\e -> e `offsetSub` start)
+    goBa ba start =
+        unTranslateOffset start $ BackendBA.validate (start+end) ba (start + ofsStart)
+    goAddr (Ptr addr) start =
+        pure $ unTranslateOffset start $ BackendAddr.validate (start+end) addr (ofsStart + start)
     end = ofsStart `offsetPlusE` sz
-
-    go :: (Offset Word8 -> Word8) -> ST s (Offset Word8, Maybe ValidationFailure)
-    go getIdx = return $ loop ofsStart
-      where
-        loop ofs
-            | ofs > end  = error "validate: internal error: went pass offset"
-            | ofs == end = (end, Nothing)
-            | otherwise  =
-                case {-# SCC "validate.one" #-} one ofs of
-                    (nextOfs, Nothing)  -> loop nextOfs
-                    (pos, Just failure) -> (pos, Just failure)
-
-        one pos =
-            case nbConts of
-                0    -> (pos + 1, Nothing)
-                0xff -> (pos, Just InvalidHeader)
-                _ | (pos + 1) `offsetPlusE` nbContsE > end -> (pos, Just MissingByte)
-                1    ->
-                    let c1 = getIdx (pos + 1)
-                     in if isContinuation c1
-                            then (pos + 2, Nothing)
-                            else (pos, Just InvalidContinuation)
-                2 ->
-                    let c1 = getIdx (pos + 1)
-                        c2 = getIdx (pos + 2)
-                     in if isContinuation c1 && isContinuation c2
-                            then (pos + 3, Nothing)
-                            else (pos, Just InvalidContinuation)
-                3 ->
-                    let c1 = getIdx (pos + 1)
-                        c2 = getIdx (pos + 2)
-                        c3 = getIdx (pos + 3)
-                     in if isContinuation c1 && isContinuation c2 && isContinuation c3
-                            then (pos + 4, Nothing)
-                            else (pos, Just InvalidContinuation)
-                _ -> error "internal error"
-          where
-            !h = getIdx pos
-            !nbContsE@(CountOf nbConts) = CountOf $ getNbBytes h
-    {-# INLINE go #-}
 
 -- | Similar to 'validate' but works on a 'MutableByteArray'
 mutableValidate :: PrimMonad prim
@@ -753,21 +715,23 @@ cons c s@(String ba)
 --
 -- If empty, Nothing is returned
 unsnoc :: String -> Maybe (String, Char)
-unsnoc s
-    | null s    = Nothing
-    | otherwise = case index s (sizeLastOffset $ length s) of
-        Nothing -> Nothing
-        Just c  -> Just (revDrop 1 s, c)
+unsnoc s@(String arr)
+    | sz == 0   = Nothing
+    | otherwise =
+        let (# c, idx #) = prev s (sizeAsOffset sz)
+         in Just (String $ Vec.take (offsetAsSize idx) arr, c)
+  where
+    sz = size s
 
 -- | Extract the First character of a string, and the String stripped of the first character.
 --
 -- If empty, Nothing is returned
 uncons :: String -> Maybe (Char, String)
-uncons s
+uncons s@(String ba)
     | null s    = Nothing
-    | otherwise = case index s 0 of
-          Nothing -> Nothing
-          Just c  -> Just (c, drop 1 s)
+    | otherwise =
+        let (# c, idx #) = next s azero
+         in Just (c, String $ Vec.drop (offsetAsSize idx) ba)
 
 -- | Look for a predicate in the String and return the matched character, if any.
 find :: (Char -> Bool) -> String -> Maybe Char
@@ -784,12 +748,21 @@ find predicate s = loop (Offset 0)
                     False -> loop idx'
 
 -- | Sort the character in a String using a specific sort function
+--
+-- TODO: optimise not going through a list
 sortBy :: (Char -> Char -> Ordering) -> String -> String
 sortBy sortF s = fromList $ Data.List.sortBy sortF $ toList s -- FIXME for tests
 
 -- | Filter characters of a string using the predicate
 filter :: (Char -> Bool) -> String -> String
-filter p s = fromList $ Data.List.filter p $ toList s
+filter predicate (String arr) = runST $ do
+    (finalSize, dst) <- newNative sz $ \mba ->
+        case arr of
+            C.UVecBA start _ _ ba -> BackendBA.copyFilter predicate sz mba ba start
+            C.UVecAddr start _ fptr -> withFinalPtr fptr $ \(Ptr addr) -> BackendAddr.copyFilter predicate sz mba addr start
+    freezeShrink finalSize dst
+  where
+    !sz = C.length arr
 
 -- | Reverse a string
 reverse :: String -> String
@@ -1041,8 +1014,8 @@ builderBuild :: PrimMonad m => Int -> Builder String MutableString Word8 m err (
 builderBuild sizeChunksI sb
     | sizeChunksI <= 3 = builderBuild 64 sb
     | otherwise        = do
-        first         <- new sizeChunks
-        ((), (i, st, e)) <- runState (runBuilder sb) (Offset 0, BuildingState [] (CountOf 0) first sizeChunks, Nothing)
+        firstChunk         <- new sizeChunks
+        ((), (i, st, e)) <- runState (runBuilder sb) (Offset 0, BuildingState [] (CountOf 0) firstChunk sizeChunks, Nothing)
         case e of
           Just err -> return (Left err)
           Nothing -> do
@@ -1080,14 +1053,14 @@ readIntegral str
   where
     !sz = size str
     withBa ba ofs =
-        let negativeSign = expectAsciiBA ba ofs 0x2d
+        let negativeSign = PrimBA.expectAscii ba ofs 0x2d
             startOfs     = if negativeSign then succ ofs else ofs
          in case decimalDigitsBA 0 ba endOfs startOfs of
                 (# acc, True, endOfs' #) | endOfs' > startOfs -> Just $! if negativeSign then negate acc else acc
                 _                                             -> Nothing
       where !endOfs = ofs `offsetPlusE` sz
-    withPtr ptr ofs = return $
-        let negativeSign = expectAsciiPtr ptr ofs 0x2d
+    withPtr (Ptr ptr) ofs = return $
+        let negativeSign = PrimAddr.expectAscii ptr ofs 0x2d
             startOfs     = if negativeSign then succ ofs else ofs
          in case decimalDigitsPtr 0 ptr endOfs startOfs of
                 (# acc, True, endOfs' #) | endOfs' > startOfs -> Just $! if negativeSign then negate acc else acc
@@ -1180,7 +1153,7 @@ readFloatingExact str f
     !sz = size str
 
     withBa ba stringStart =
-        let !isNegative = expectAsciiBA ba stringStart 0x2d
+        let !isNegative = PrimBA.expectAscii ba stringStart 0x2d
          in consumeIntegral isNegative (if isNegative then stringStart+1 else stringStart)
       where
         eofs = stringStart `offsetPlusE` sz
@@ -1188,7 +1161,7 @@ readFloatingExact str f
             case decimalDigitsBA 0 ba eofs startOfs of
                 (# acc, True , endOfs #) | endOfs > startOfs -> f isNegative acc 0 Nothing -- end of stream and no '.'
                 (# acc, False, endOfs #) | endOfs > startOfs ->
-                    if expectAsciiBA ba endOfs 0x2e
+                    if PrimBA.expectAscii ba endOfs 0x2e
                         then consumeFloat isNegative acc (endOfs + 1)
                         else consumeExponant isNegative acc 0 endOfs
                 _                                            -> Nothing
@@ -1205,22 +1178,22 @@ readFloatingExact str f
             | startOfs == eofs = f isNegative integral floatingDigits Nothing
             | otherwise        =
                 -- consume 'E' or 'e'
-                case nextAsciiBA ba startOfs of
+                case PrimBA.nextAscii ba startOfs of
                     (# 0x45, True #) -> consumeExponantSign (startOfs+1)
                     (# 0x65, True #) -> consumeExponantSign (startOfs+1)
                     (# _   , _    #) -> Nothing
           where
             consumeExponantSign ofs
                 | ofs == eofs = Nothing
-                | otherwise   = let exponentNegative = expectAsciiBA ba ofs 0x2d
+                | otherwise   = let exponentNegative = PrimBA.expectAscii ba ofs 0x2d
                                  in consumeExponantNumber exponentNegative (if exponentNegative then ofs + 1 else ofs)
 
             consumeExponantNumber exponentNegative ofs =
                 case decimalDigitsBA 0 ba eofs ofs of
                     (# acc, True, endOfs #) | endOfs > ofs -> f isNegative integral floatingDigits (Just $! if exponentNegative then negate acc else acc)
                     _                                      -> Nothing
-    withPtr ptr stringStart = return $
-        let !isNegative = expectAsciiPtr ptr stringStart 0x2d
+    withPtr (Ptr ptr) stringStart = return $
+        let !isNegative = PrimAddr.expectAscii ptr stringStart 0x2d
          in consumeIntegral isNegative (if isNegative then stringStart+1 else stringStart)
       where
         eofs = stringStart `offsetPlusE` sz
@@ -1228,7 +1201,7 @@ readFloatingExact str f
             case decimalDigitsPtr 0 ptr eofs startOfs of
                 (# acc, True , endOfs #) | endOfs > startOfs -> f isNegative acc 0 Nothing -- end of stream and no '.'
                 (# acc, False, endOfs #) | endOfs > startOfs ->
-                    if expectAsciiPtr ptr endOfs 0x2e
+                    if PrimAddr.expectAscii ptr endOfs 0x2e
                         then consumeFloat isNegative acc (endOfs + 1)
                         else consumeExponant isNegative acc 0 endOfs
                 _                                            -> Nothing
@@ -1245,14 +1218,14 @@ readFloatingExact str f
             | startOfs == eofs = f isNegative integral floatingDigits Nothing
             | otherwise        =
                 -- consume 'E' or 'e'
-                case nextAsciiPtr ptr startOfs of
+                case PrimAddr.nextAscii ptr startOfs of
                     (# 0x45, True #) -> consumeExponantSign (startOfs+1)
                     (# 0x65, True #) -> consumeExponantSign (startOfs+1)
                     (# _   , _    #) -> Nothing
           where
             consumeExponantSign ofs
                 | ofs == eofs = Nothing
-                | otherwise   = let exponentNegative = expectAsciiPtr ptr ofs 0x2d
+                | otherwise   = let exponentNegative = PrimAddr.expectAscii ptr ofs 0x2d
                                  in consumeExponantNumber exponentNegative (if exponentNegative then ofs + 1 else ofs)
 
             consumeExponantNumber exponentNegative ofs =
@@ -1313,7 +1286,7 @@ decimalDigitsBA startAcc ba !endOfs !startOfs = loop startAcc startOfs
     loop !acc !ofs
         | ofs == endOfs = (# acc, True, ofs #)
         | otherwise     =
-            case nextAsciiDigitBA ba ofs of
+            case PrimBA.nextAsciiDigit ba ofs of
                 (# d, True #) -> loop (10 * acc + integralUpsize d) (succ ofs)
                 (# _, _ #)    -> (# acc, False, ofs #)
 {-# SPECIALIZE decimalDigitsBA :: Integer -> ByteArray# -> Offset Word8 -> Offset Word8 -> (# Integer, Bool, Offset Word8 #) #-}
@@ -1324,7 +1297,7 @@ decimalDigitsBA startAcc ba !endOfs !startOfs = loop startAcc startOfs
 -- | same as decimalDigitsBA specialized for ptr #
 decimalDigitsPtr :: (IntegralUpsize Word8 acc, Additive acc, Multiplicative acc, Integral acc)
                  => acc
-                 -> Ptr Word8
+                 -> Addr#
                  -> Offset Word8 -- end offset
                  -> Offset Word8 -- start offset
                  -> (# acc, Bool, Offset Word8 #)
@@ -1333,13 +1306,13 @@ decimalDigitsPtr startAcc ptr !endOfs !startOfs = loop startAcc startOfs
     loop !acc !ofs
         | ofs == endOfs = (# acc, True, ofs #)
         | otherwise     =
-            case nextAsciiDigitPtr ptr ofs of
+            case PrimAddr.nextAsciiDigit ptr ofs of
                 (# d, True #) -> loop (10 * acc + integralUpsize d) (succ ofs)
                 (# _, _ #)    -> (# acc, False, ofs #)
-{-# SPECIALIZE decimalDigitsPtr :: Integer -> Ptr Word8 -> Offset Word8 -> Offset Word8 -> (# Integer, Bool, Offset Word8 #) #-}
-{-# SPECIALIZE decimalDigitsPtr :: Natural -> Ptr Word8 -> Offset Word8 -> Offset Word8 -> (# Natural, Bool, Offset Word8 #) #-}
-{-# SPECIALIZE decimalDigitsPtr :: Int -> Ptr Word8 -> Offset Word8 -> Offset Word8 -> (# Int, Bool, Offset Word8 #) #-}
-{-# SPECIALIZE decimalDigitsPtr :: Word -> Ptr Word8 -> Offset Word8 -> Offset Word8 -> (# Word, Bool, Offset Word8 #) #-}
+{-# SPECIALIZE decimalDigitsPtr :: Integer -> Addr# -> Offset Word8 -> Offset Word8 -> (# Integer, Bool, Offset Word8 #) #-}
+{-# SPECIALIZE decimalDigitsPtr :: Natural -> Addr# -> Offset Word8 -> Offset Word8 -> (# Natural, Bool, Offset Word8 #) #-}
+{-# SPECIALIZE decimalDigitsPtr :: Int -> Addr# -> Offset Word8 -> Offset Word8 -> (# Int, Bool, Offset Word8 #) #-}
+{-# SPECIALIZE decimalDigitsPtr :: Word -> Addr# -> Offset Word8 -> Offset Word8 -> (# Word, Bool, Offset Word8 #) #-}
 
 -- | Convert a 'String' to the upper-case equivalent.
 --   Does not properly support multicharacter Unicode conversions.

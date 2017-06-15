@@ -65,7 +65,7 @@ import           Control.Monad (MonadPlus, mzero, mplus)
 import           Foundation.Internal.Base
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Numerical
-import           Foundation.Collection hiding (take)
+import           Foundation.Collection hiding (take, takeWhile)
 import qualified Foundation.Collection as C
 import           Foundation.String
 
