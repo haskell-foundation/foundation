@@ -79,6 +79,48 @@ int foundation_time_clock_gettime(unsigned int clockid, struct timespec *timespe
 	return 0;
 }
 
+#elif defined(FOUNDATION_SYSTEM_WINDOWS)
+
+#include <windows.h>
+
+// from:
+// https://stackoverflow.com/questions/5404277/porting-clock-gettime-to-windows
+
+struct timespec { long tv_sec; long tv_nsec; }; //header part
+
+#define BILLION                             (1E9)
+
+static LARGE_INTEGER foundation_time_counts_per_sec = 0;
+
+int foundation_time_clock_getres(unsigned int clockid, struct timespec *timespec)
+{
+}
+
+int foundation_time_clock_gettime(unsigned int clockid, struct timespec *ct)
+{
+	LARGE_INTEGER count;
+
+	switch (clockid) {
+	case FOUNDATION_CLOCK_MONOTONIC:
+		if (foundation_time_counts_per_sec.QuadPart == 0) {
+			if (0 == QueryPerformanceFrequency(&foundation_time_counts_per_sec)) {
+				foundation_time_counts_per_sec.QuadPart = 0;
+			}
+		}
+
+		if ((NULL == ct) || (foundation_time_counts_per_sec.QuadPart <= 0) || (0 == QueryPerformanceCounter(&count))) {
+			return -1;
+		}
+
+		ct->tv_sec = count.QuadPart / foundation_time_counts_per_sec.QuadPart;
+		ct->tv_nsec = ((count.QuadPart % foundation_time_counts_per_sec.QuadPart) * BILLION) / foundation_time_counts_per_sec.QuadPart;
+		break;
+	default:
+		return -1;
+	}
+	return 0;
+}
+
 #endif
 
 #endif
