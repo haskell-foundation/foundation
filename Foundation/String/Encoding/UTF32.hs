@@ -47,7 +47,7 @@ next getter off = Right (char, off + Offset 1)
 
 write :: (PrimMonad st, Monad st)
       => Char
-      -> Builder (UArray Word32) (MUArray Word32) Word32 st ()
+      -> Builder (UArray Word32) (MUArray Word32) Word32 st err ()
 write c = builderAppend w32
   where
     !(C# ch) = c

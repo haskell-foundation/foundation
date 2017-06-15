@@ -67,6 +67,7 @@ module Foundation.String.UTF8
     , replace
     , builderAppend
     , builderBuild
+    , builderBuild_
     , readInteger
     , readIntegral
     , readNatural
@@ -126,6 +127,7 @@ import qualified Foundation.String.Encoding.ISO_8859_1 as Encoder
 data ValidationFailure = InvalidHeader
                        | InvalidContinuation
                        | MissingByte
+                       | BuildingFailure
                        deriving (Show,Eq,Typeable)
 
 instance Exception ValidationFailure
@@ -279,7 +281,7 @@ nextWithIndexer getter off =
 
 writeWithBuilder :: (PrimMonad st, Monad st)
                  => Char
-                 -> Builder (UArray Word8) (MVec.MUArray Word8) Word8 st ()
+                 -> Builder (UArray Word8) (MVec.MUArray Word8) Word8 st err ()
 writeWithBuilder c
     | bool# (ltWord# x 0x80##   ) = encode1
     | bool# (ltWord# x 0x800##  ) = encode2
@@ -872,17 +874,19 @@ data Encoding
     deriving (Typeable, Data, Eq, Ord, Show, Enum, Bounded)
 
 fromEncoderBytes :: ( Encoder.Encoding encoding
-                    , Exception (Encoder.Error encoding)
                     , PrimType (Encoder.Unit encoding)
                     )
                  => encoding
                  -> UArray Word8
                  -> (String, Maybe ValidationFailure, UArray Word8)
 fromEncoderBytes enc bytes =
-    ( String $ runST $ Encoder.convertFromTo enc EncoderUTF8 (Vec.recast bytes)
-    , Nothing
-    , mempty
-    )
+    case runST $ Encoder.convertFromTo enc EncoderUTF8 (Vec.recast bytes) of
+        -- TODO: Don't swallow up specific error (second element of pair)
+        -- TODO: Confused why all this recasting is necessary. I "typed hole"-ed my way to get this function to compile.  Feels like there should be a cleaner method.
+        Left (off, _) ->
+            let (b1, b2) = Vec.splitAt (offsetAsSize off) (Vec.recast bytes)
+            in (String $ Vec.recast b1, Just BuildingFailure, Vec.recast b2)
+        Right converted -> (String converted, Nothing, mempty)
 
 -- | Convert a ByteArray to a string assuming a specific encoding.
 --
@@ -913,6 +917,7 @@ fromBytes UTF8       bytes
     toErr MissingByte         = Nothing
     toErr InvalidHeader       = Just InvalidHeader
     toErr InvalidContinuation = Just InvalidContinuation
+    toErr BuildingFailure     = Just BuildingFailure
 
 -- | Convert a UTF8 array of bytes to a String.
 --
@@ -928,6 +933,8 @@ fromBytesLenient bytes
     | otherwise    =
         case validate bytes (Offset 0) (C.length bytes) of
             (_, Nothing)                   -> (fromBytesUnsafe bytes, mempty)
+            -- TODO: Should anything be done in the 'BuildingFailure' case?
+            (_, Just BuildingFailure) -> error "fromBytesLenient: FIXME!"
             (pos, Just MissingByte) ->
                 let (b1,b2) = C.splitAt (offsetAsSize pos) bytes
                  in (fromBytesUnsafe b1, b2)
@@ -982,7 +989,10 @@ toEncoderBytes :: ( Encoder.Encoding encoding
                => encoding
                -> UArray Word8
                -> UArray Word8
-toEncoderBytes enc bytes = Vec.recast (runST $ Encoder.convertFromTo EncoderUTF8 enc bytes)
+toEncoderBytes enc bytes = Vec.recast $
+  case runST $ Encoder.convertFromTo EncoderUTF8 enc bytes of
+    Left _ -> error "toEncoderBytes: FIXME!"
+    Right converted -> converted
 
 -- | Convert a String to a bytearray in a specific encoding
 --
@@ -1008,8 +1018,8 @@ words :: String -> [String]
 words = fmap fromList . Prelude.words . toList
 
 -- | Append a character to a String builder
-builderAppend :: PrimMonad state => Char -> Builder String MutableString Word8 state ()
-builderAppend c = Builder $ State $ \(i, st) ->
+builderAppend :: PrimMonad state => Char -> Builder String MutableString Word8 state err ()
+builderAppend c = Builder $ State $ \(i, st, e) ->
     if offsetAsSize i + nbBytes >= chunkSize st
         then do
             cur      <- unsafeFreezeShrink (curChunk st) (offsetAsSize i)
@@ -1018,26 +1028,29 @@ builderAppend c = Builder $ State $ \(i, st) ->
             return ((), (sizeAsOffset nbBytes, st { prevChunks     = cur : prevChunks st
                                                   , prevChunksSize = offsetAsSize i + prevChunksSize st
                                                   , curChunk       = newChunk
-                                                  }))
+                                                  }, e))
         else do
             writeUTF8Char (curChunk st) i utf8Char
-            return ((), (i + sizeAsOffset nbBytes, st))
+            return ((), (i + sizeAsOffset nbBytes, st, e))
   where
     utf8Char = asUTF8Char c
     nbBytes  = numBytes utf8Char
 
 -- | Create a new String builder using chunks of @sizeChunksI@
-builderBuild :: PrimMonad m => Int -> Builder String MutableString Word8 m () -> m String
+builderBuild :: PrimMonad m => Int -> Builder String MutableString Word8 m err () -> m (Either err String)
 builderBuild sizeChunksI sb
     | sizeChunksI <= 3 = builderBuild 64 sb
     | otherwise        = do
         first         <- new sizeChunks
-        ((), (i, st)) <- runState (runBuilder sb) (Offset 0, BuildingState [] (CountOf 0) first sizeChunks)
-        cur           <- unsafeFreezeShrink (curChunk st) (offsetAsSize i)
-        -- Build final array
-        let totalSize = prevChunksSize st + offsetAsSize i
-        final <- Vec.new totalSize >>= fillFromEnd totalSize (cur : prevChunks st) >>= Vec.unsafeFreeze
-        return $ String final
+        ((), (i, st, e)) <- runState (runBuilder sb) (Offset 0, BuildingState [] (CountOf 0) first sizeChunks, Nothing)
+        case e of
+          Just err -> return (Left err)
+          Nothing -> do
+            cur <- unsafeFreezeShrink (curChunk st) (offsetAsSize i)
+            -- Build final array
+            let totalSize = prevChunksSize st + offsetAsSize i
+            final <- Vec.new totalSize >>= fillFromEnd totalSize (cur : prevChunks st) >>= Vec.unsafeFreeze
+            return . Right . String $ final
   where
     sizeChunks = CountOf sizeChunksI
 
@@ -1046,6 +1059,9 @@ builderBuild sizeChunksI sb
         let sz = Vec.length x
         Vec.unsafeCopyAtRO mba (sizeAsOffset (end - sz)) x (Offset 0) sz
         fillFromEnd (end - sz) xs mba
+
+builderBuild_ :: PrimMonad m => Int -> Builder String MutableString Word8 m () () -> m String
+builderBuild_ sizeChunksI sb = either (\() -> internalError "impossible output") id <$> builderBuild sizeChunksI sb
 
 stringDewrap :: (ByteArray# -> Offset Word8 -> a)
              -> (Ptr Word8 -> Offset Word8 -> ST s a)

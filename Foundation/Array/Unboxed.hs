@@ -93,6 +93,7 @@ module Foundation.Array.Unboxed
     , fromForeignPtr
     , builderAppend
     , builderBuild
+    , builderBuild_
     , toHexadecimal
     ) where
 
@@ -1153,8 +1154,8 @@ any p uv = loop 0
       | p (unsafeIndex uv i) = True
       | otherwise = loop (i + 1)
 
-builderAppend :: (PrimType ty, PrimMonad state) => ty -> Builder (UArray ty) (MUArray ty) ty state ()
-builderAppend v = Builder $ State $ \(i, st) ->
+builderAppend :: (PrimType ty, PrimMonad state) => ty -> Builder (UArray ty) (MUArray ty) ty state err ()
+builderAppend v = Builder $ State $ \(i, st, e) ->
     if offsetAsSize i == chunkSize st
         then do
             cur      <- unsafeFreeze (curChunk st)
@@ -1163,21 +1164,25 @@ builderAppend v = Builder $ State $ \(i, st) ->
             return ((), (Offset 1, st { prevChunks     = cur : prevChunks st
                                       , prevChunksSize = chunkSize st + prevChunksSize st
                                       , curChunk       = newChunk
-                                      }))
+                                      }, e))
         else do
             unsafeWrite (curChunk st) i v
-            return ((), (i + 1, st))
+            return ((), (i + 1, st, e))
 
-builderBuild :: (PrimType ty, PrimMonad m) => Int -> Builder (UArray ty) (MUArray ty) ty m () -> m (UArray ty)
+builderBuild :: (PrimType ty, PrimMonad m) => Int -> Builder (UArray ty) (MUArray ty) ty m err () -> m (Either err (UArray ty))
 builderBuild sizeChunksI ab
     | sizeChunksI <= 0 = builderBuild 64 ab
     | otherwise        = do
         first         <- new sizeChunks
-        ((), (i, st)) <- runState (runBuilder ab) (Offset 0, BuildingState [] (CountOf 0) first sizeChunks)
-        cur           <- unsafeFreezeShrink (curChunk st) (offsetAsSize i)
-        -- Build final array
-        let totalSize = prevChunksSize st + offsetAsSize i
-        new totalSize >>= fillFromEnd totalSize (cur : prevChunks st) >>= unsafeFreeze
+        ((), (i, st, e)) <- runState (runBuilder ab) (Offset 0, BuildingState [] (CountOf 0) first sizeChunks, Nothing)
+        case e of
+          Just err -> return (Left err)
+          Nothing -> do
+            cur <- unsafeFreezeShrink (curChunk st) (offsetAsSize i)
+            -- Build final array
+            let totalSize = prevChunksSize st + offsetAsSize i
+            bytes <- new totalSize >>= fillFromEnd totalSize (cur : prevChunks st) >>= unsafeFreeze
+            return (Right bytes)
   where
       sizeChunks = CountOf sizeChunksI
 
@@ -1186,6 +1191,9 @@ builderBuild sizeChunksI ab
           let sz = length x
           unsafeCopyAtRO mua (sizeAsOffset (end - sz)) x (Offset 0) sz
           fillFromEnd (end - sz) xs mua
+
+builderBuild_ :: (PrimType ty, PrimMonad m) => Int -> Builder (UArray ty) (MUArray ty) ty m () () -> m (UArray ty)
+builderBuild_ sizeChunksI ab = either (\() -> internalError "impossible output") id <$> builderBuild sizeChunksI ab
 
 toHexadecimal :: PrimType ty => UArray ty -> UArray Word8
 toHexadecimal ba

@@ -55,7 +55,7 @@ next getter off = Right (toChar w, off + aone)
 
 write :: (PrimMonad st, Monad st)
       => Char
-      -> Builder (UArray Word8) (MUArray Word8) Word8 st ()
+      -> Builder (UArray Word8) (MUArray Word8) Word8 st err ()
 write c@(C# ch)
     | c <= toEnum 0xFF = builderAppend (W8# x)
     | otherwise        = throw $ NotISO_8859_1 c

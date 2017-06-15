@@ -61,7 +61,7 @@ fromModified addr = runST $ do
     ba <- buildByteArray addr
     Vec.unsafeIndexer ba buildWithBytes
   where
-    buildWithBytes getAt = Vec.builderBuild 64 $ loopBuilder getAt (Offset 0)
+    buildWithBytes getAt = Vec.builderBuild_ 64 (loopBuilder getAt (Offset 0))
     loopBuilder getAt offset =
         case bs of
             [] -> internalError "ModifiedUTF8.fromModified"

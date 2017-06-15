@@ -79,7 +79,7 @@ write :: (PrimMonad st, Monad st)
       => Char
            -- ^ expecting it to be a valid Ascii character.
            -- otherwise this function will throw an exception
-      -> Builder (UArray Word8) (MUArray Word8) Word8 st ()
+      -> Builder (UArray Word8) (MUArray Word8) Word8 st err ()
 write c
     | c < toEnum 0x80 = builderAppend $ w8 c
     | otherwise       = throw $ CharNotAscii c

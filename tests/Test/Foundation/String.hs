@@ -7,6 +7,8 @@ module Test.Foundation.String
     ( testStringRefs
     ) where
 
+import Control.Monad (replicateM)
+
 import Foundation
 import Foundation.String
 import Foundation.String.ASCII (AsciiString)
@@ -32,9 +34,9 @@ testStringRefs = testGroup "String"
            , testGroup "Encoding Sample1" (testEncodings sample1)
            , testGroup "Encoding Sample2" (testEncodings sample2)
            ]
-    , testGroup "ASCII"
-        [  testCollection "Sequential" (Proxy :: Proxy AsciiString) genAsciiChar
-        ]
+    , testGroup "ASCII" $
+        [  testCollection "Sequential" (Proxy :: Proxy AsciiString) genAsciiChar ]
+        <> testAsciiStringCases
     ]
 
 testStringCases :: [TestTree]
@@ -88,19 +90,45 @@ testStringCases =
                           ]
     , testGroup "Cases"
         [ testGroup "Invalid-UTF8"
-            [ testCase "ff" $ expectFromBytesErr ("", Just InvalidHeader, 0) (fromList [0xff])
-            , testCase "80" $ expectFromBytesErr ("", Just InvalidHeader, 0) (fromList [0x80])
-            , testCase "E2 82 0C" $ expectFromBytesErr ("", Just InvalidContinuation, 0) (fromList [0xE2,0x82,0x0c])
-            , testCase "30 31 E2 82 0C" $ expectFromBytesErr ("01", Just InvalidContinuation, 2) (fromList [0x30,0x31,0xE2,0x82,0x0c])
+            [ testCase "ff" $ expectFromBytesErr UTF8 ("", Just InvalidHeader, 0) (fromList [0xff])
+            , testCase "80" $ expectFromBytesErr UTF8 ("", Just InvalidHeader, 0) (fromList [0x80])
+            , testCase "E2 82 0C" $ expectFromBytesErr UTF8 ("", Just InvalidContinuation, 0) (fromList [0xE2,0x82,0x0c])
+            , testCase "30 31 E2 82 0C" $ expectFromBytesErr UTF8 ("01", Just InvalidContinuation, 2) (fromList [0x30,0x31,0xE2,0x82,0x0c])
             ]
         ]
     ]
-  where
-    expectFromBytesErr (expectedString,expectedErr,positionErr) ba = do
-        let (s', merr, ba') = fromBytes UTF8 ba
-        assertEqual "error" expectedErr merr
-        assertEqual "remaining" (drop positionErr ba) ba'
-        assertEqual "string" expectedString (toList s')
+
+testAsciiStringCases :: [TestTree]
+testAsciiStringCases =
+    [ testGroup "Validation-ASCII7"
+        [ testProperty "fromBytes . toBytes == valid" $ \l ->
+             let s = fromList . fromLStringASCII $ l
+             in (fromBytes ASCII7 $ toBytes ASCII7 s) === (s, Nothing, mempty)
+        , testProperty "Streaming" $ \(l, randomInts) ->
+            let wholeS  = fromList . fromLStringASCII $ l
+                wholeBA = toBytes ASCII7 wholeS
+                reconstruct (prevBa, errs, acc) ba =
+                    let ba' = prevBa `mappend` ba
+                        (s, merr, nextBa) = fromBytes ASCII7 ba'
+                     in (nextBa, merr : errs, s : acc)
+
+                (remainingBa, allErrs, chunkS) = foldl' reconstruct (mempty, [], []) $ chunks randomInts wholeBA
+             in (catMaybes allErrs === []) .&&. (remainingBa === mempty) .&&. (mconcat (reverse chunkS) === wholeS)
+        ]
+    , testGroup "Cases"
+        [ testGroup "Invalid-ASCII7"
+            [ testCase "ff" $ expectFromBytesErr ASCII7 ("", Just BuildingFailure, 0) (fromList [0xff])
+            ]
+        ]
+    ]
+
+expectFromBytesErr :: Encoding -> ([Char], Maybe ValidationFailure, CountOf Word8) -> UArray Word8 -> IO ()
+expectFromBytesErr enc (expectedString,expectedErr,positionErr) ba = do
+    let x = fromBytes enc ba
+        (s', merr, ba') = x
+    assertEqual "error" expectedErr merr
+    assertEqual "remaining" (drop positionErr ba) ba'
+    assertEqual "string" expectedString (toList s')
 
 chunks :: Sequential c => RandomList -> c -> [c]
 chunks (RandomList randomInts) = loop (randomInts <> [1..])
@@ -114,3 +142,11 @@ chunks (RandomList randomInts) = loop (randomInts <> [1..])
                      in c1 : loop rs c2
                 [] ->
                     loop randomInts c
+
+newtype LStringASCII = LStringASCII { fromLStringASCII :: LString }
+    deriving (Show, Eq, Ord)
+
+instance Arbitrary LStringASCII where
+    arbitrary = do
+        n <- choose (0,200)
+        LStringASCII <$> replicateM n (toEnum <$> choose (1, 127))
