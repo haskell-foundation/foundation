@@ -35,7 +35,9 @@ size_CTimeZone = #const sizeof(struct timezone)
 size_CTimeT :: CSize
 size_CTimeT = #const sizeof(time_t)
 
-#if defined __APPLE__
+
+------------------------------------------------------------------------
+#ifdef __APPLE__
 
 #include <Availability.h>
 
@@ -44,6 +46,11 @@ size_CTimeT = #const sizeof(time_t)
 #define FOUNDATION_SYSTEM_API_NO_CLOCK
 #endif
 
+#endif
+
+------------------------------------------------------------------------
+#ifdef _WIN32
+#define FOUNDATION_SYSTEM_API_NO_CLOCK
 #endif
 
 ------------------------------------------------------------------------
