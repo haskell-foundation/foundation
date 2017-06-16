@@ -25,7 +25,9 @@ import Test.Foundation.Conduit
 import Test.Foundation.Number
 import Test.Foundation.Array
 import Test.Foundation.ChunkedUArray
+#if MIN_VERSION_base(4,9,0)
 import Test.Foundation.Primitive.BlockN
+#endif
 import Test.Foundation.String
 import Test.Foundation.Parser
 import Test.Foundation.Storable
@@ -316,7 +318,9 @@ tests =
             ( testZippableProps (Proxy :: Proxy (Array Int)) (Proxy :: Proxy (Array Char))
                 arbitrary arbitrary )
         ]
+#if MIN_VERSION_base(4,9,0)
     , testBlockN
+#endif
     , testParsers
     , testForeignStorableRefs
     , testConduit

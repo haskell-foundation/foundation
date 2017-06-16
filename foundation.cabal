@@ -241,7 +241,8 @@ library
     exposed-modules: Foundation.Tuple.Nth
                      Foundation.List.ListN
                      Foundation.Primitive.Nat
-                     Foundation.Primitive.BlockN
+  if impl(ghc >= 8.0)
+    exposed-modules: Foundation.Primitive.BlockN
 
   default-extensions: NoImplicitPrelude
                       RebindableSyntax
@@ -285,12 +286,14 @@ test-suite test-foundation
                      Test.Foundation.Number
                      Test.Foundation.Encoding
                      Test.Foundation.Parser
-                     Test.Foundation.Primitive.BlockN
                      Test.Foundation.Array
                      Test.Foundation.String
                      Test.Foundation.Storable
                      Test.Foundation.Misc
                      Imports
+  if impl(ghc >= 8.0)
+    other-modules:   Test.Foundation.Primitive.BlockN
+
   default-extensions: NoImplicitPrelude
                       RebindableSyntax
   if flag(minimal-deps)
