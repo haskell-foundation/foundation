@@ -15,6 +15,5 @@ environment:
 
 test_script:
 - stack setup > nul
-- echo "" | stack --no-terminal build
-- stack test
-- stack exec -- ghci -e "Fondation.Tuple2 1 1"
+- echo "" | stack --no-terminal build --test --bench
+- stack exec -- ghci -e "Foundation.Tuple2 1 1"
