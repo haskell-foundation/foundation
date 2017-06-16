@@ -285,6 +285,7 @@ test-suite test-foundation
                      Test.Foundation.Number
                      Test.Foundation.Encoding
                      Test.Foundation.Parser
+                     Test.Foundation.Primitive.BlockN
                      Test.Foundation.Array
                      Test.Foundation.String
                      Test.Foundation.Storable
