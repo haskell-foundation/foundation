@@ -9,11 +9,6 @@ Foundation
 
 Documentation: [foundation on hackage](http://hackage.haskell.org/package/foundation)
 
-ZuriHac 2017
-============
-
-_temporary chapter_. You can contact us on [Gitter](https://gitter.im/haskell-foundation/foundation). We are also room **1.261** if you are looking for us (you can find **Nei Mitchell** and **Vincent Hanquez**).
-
 Goals
 =====
 
