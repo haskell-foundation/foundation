@@ -96,8 +96,10 @@ module Foundation.Array.Unboxed
     , builderBuild
     , builderBuild_
     , toHexadecimal
+    , toBase64Internal
     ) where
 
+import           Control.Monad (when)
 import           GHC.Prim
 import           GHC.Types
 import           GHC.Word
@@ -1252,3 +1254,71 @@ toHexadecimal ba
                 unsafeWrite ma dIdx     (W8# wHi)
                 unsafeWrite ma (dIdx+1) (W8# wLo)
                 loop (dIdx + 2) (sIdx+1)
+
+toBase64Internal :: PrimType ty => Addr# -> UArray ty -> Bool -> UArray Word8
+toBase64Internal table src padded
+    | len == CountOf 0 = empty
+    | otherwise = runST $ do
+        ma <- new dstLen
+        unsafeIndexer b8 (go ma)
+        unsafeFreeze ma
+  where
+    b8 = unsafeRecast src
+    !len = length b8
+    !dstLen = outputLengthBase64 padded len
+    !endOfs = Offset 0 `offsetPlusE` len
+
+    go :: MUArray Word8 s -> (Offset Word8 -> Word8) -> ST s ()
+    go !ma !getAt = loop 0 0
+      where
+        eqChar = 0x3d :: Word8
+
+        loop !sIdx !dIdx
+            | sIdx >= endOfs = return ()
+            | otherwise = do
+                let !a = getAt sIdx
+                    !b = if sIdx `offsetPlusE` CountOf 1 >= endOfs then 0 else getAt (sIdx `offsetPlusE` CountOf 1)
+                    !c = if sIdx `offsetPlusE` CountOf 2 >= endOfs then 0 else getAt (sIdx `offsetPlusE` CountOf 2)
+
+                let (w,x,y,z) = convert3 table a b c
+
+                unsafeWrite ma dIdx w
+                unsafeWrite ma (dIdx `offsetPlusE` CountOf 1) x
+
+                if sIdx `offsetPlusE` CountOf 1 < endOfs
+                    then
+                        unsafeWrite ma (dIdx `offsetPlusE` CountOf 2) y
+                    else
+                        when padded (unsafeWrite ma (dIdx `offsetPlusE` CountOf 2) eqChar)
+                if sIdx `offsetPlusE` CountOf 2 < endOfs
+                    then
+                        unsafeWrite ma (dIdx `offsetPlusE` CountOf 3) z
+                    else
+                        when padded (unsafeWrite ma (dIdx `offsetPlusE` CountOf 3) eqChar)
+
+                loop (sIdx `offsetPlusE` CountOf 3) (dIdx `offsetPlusE` CountOf 4)
+
+outputLengthBase64 :: Bool -> CountOf Word8 -> CountOf Word8
+outputLengthBase64 padding (CountOf inputLenInt) = outputLength
+  where
+    outputLength = if padding then CountOf lenWithPadding else CountOf (lenWithPadding - numPadChars)
+
+    lenWithPadding :: Int
+    lenWithPadding = 4 * roundUp (Prelude.fromIntegral inputLenInt / 3.0 :: Double)
+
+    numPadChars :: Int
+    numPadChars = case inputLenInt `mod` 3 of
+        1 -> 2
+        2 -> 1
+        _ -> 0
+
+convert3 :: Addr# -> Word8 -> Word8 -> Word8 -> (Word8, Word8, Word8, Word8)
+convert3 table (W8# a) (W8# b) (W8# c) =
+    let !w = narrow8Word# (uncheckedShiftRL# a 2#)
+        !x = or# (and# (uncheckedShiftL# a 4#) 0x30##) (uncheckedShiftRL# b 4#)
+        !y = or# (and# (uncheckedShiftL# b 2#) 0x3c##) (uncheckedShiftRL# c 6#)
+        !z = and# c 0x3f##
+     in (idx w, idx x, idx y, idx z)
+  where
+    idx :: Word# -> Word8
+    idx i = W8# (indexWord8OffAddr# table (word2Int# i))

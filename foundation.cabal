@@ -286,6 +286,7 @@ test-suite test-foundation
                      Test.Foundation.Parser
                      Test.Foundation.Array
                      Test.Foundation.String
+                     Test.Foundation.String.Base64
                      Test.Foundation.Storable
                      Test.Foundation.Misc
                      Imports
