@@ -21,8 +21,7 @@ import Test.Data.Unicode
 
 testBase64Refs :: TestTree
 testBase64Refs = testGroup "String"
-    [ testGroup "Base64" $
-        testBase64Cases
+    [ testGroup "Base64" testBase64Cases
     ]
 
 testBase64Cases :: [TestTree]
