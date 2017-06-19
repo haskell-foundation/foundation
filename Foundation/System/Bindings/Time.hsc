@@ -11,6 +11,7 @@ import Foreign.C.Types
 
 #include <time.h>
 #include <sys/time.h>
+#include "foundation_system.h"
 
 type CClockId = CInt
 data CTimeSpec
@@ -34,24 +35,6 @@ size_CTimeZone = #const sizeof(struct timezone)
 
 size_CTimeT :: CSize
 size_CTimeT = #const sizeof(time_t)
-
-
-------------------------------------------------------------------------
-#ifdef __APPLE__
-
-#include <Availability.h>
-
--- in OSX 10.12, clock_* API family is defined
-#if !defined(__MAC_10_12) || __MAC_OS_X_VERSION_MIN_REQUIRED < __MAC_10_12
-#define FOUNDATION_SYSTEM_API_NO_CLOCK
-#endif
-
-#endif
-
-------------------------------------------------------------------------
-#ifdef _WIN32
-#define FOUNDATION_SYSTEM_API_NO_CLOCK
-#endif
 
 ------------------------------------------------------------------------
 #ifdef FOUNDATION_SYSTEM_API_NO_CLOCK
