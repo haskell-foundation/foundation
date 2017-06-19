@@ -73,6 +73,7 @@
 - ignore: {name: Use module export list}
 - ignore: {name: Use newtype instead of data}
 - ignore: {name: Use notElem, within: Foundation.Collection.Collection}
+- ignore: {name: Use elem, within: Foundation.Collection.Collection}
 - ignore: {name: Use print}
 - ignore: {name: Use section}
 - ignore: {name: Use span, within: Foundation.Collection.Sequential}
