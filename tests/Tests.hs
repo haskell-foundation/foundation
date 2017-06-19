@@ -24,6 +24,7 @@ import Test.Foundation.Collection
 import Test.Foundation.Conduit
 import Test.Foundation.Number
 import Test.Foundation.Array
+import Test.Foundation.String.Base64
 import Test.Foundation.ChunkedUArray
 #if MIN_VERSION_base(4,9,0)
 import Test.Foundation.Primitive.BlockN
@@ -223,6 +224,7 @@ testZippableProps proxyA proxyB genElementA genElementB =
 tests :: [TestTree]
 tests =
     [ testArrayRefs
+    , testBase64Refs
     , testChunkedUArrayRefs
     , Bits.tests
     , testCollection "Bitmap"  (Proxy :: Proxy Bitmap)  arbitrary

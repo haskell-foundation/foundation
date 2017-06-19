@@ -82,6 +82,9 @@ module Foundation.String.UTF8
     -- * Legacy utility
     , lines
     , words
+    , toBase64
+    , toBase64URL
+    , toBase64OpenBSD
     ) where
 
 import           Foundation.Array.Unboxed           (UArray)
@@ -1359,3 +1362,23 @@ isInfixOf (String needle) (String haystack)
         | needle == haystackSub = True
         | otherwise             = loop (i+1)
       where haystackSub = C.take needleLen $ C.drop i haystack
+
+-- | Transform string @src@ to base64 binary representation.
+toBase64 :: String -> String
+toBase64 (String src) = fromBytesUnsafe . Vec.toBase64Internal set src $ True
+  where
+    !set = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"#
+
+-- | Transform string @src@ to URL-safe base64 binary representation.
+-- The result will be either padded or unpadded, depending on the boolean
+-- @padded@ argument.
+toBase64URL :: Bool -> String -> String
+toBase64URL padded (String src) = fromBytesUnsafe . Vec.toBase64Internal set src $ padded
+  where
+    !set = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"#
+
+-- | Transform string @src@ to OpenBSD base64 binary representation.
+toBase64OpenBSD :: String -> String
+toBase64OpenBSD (String src) = fromBytesUnsafe . Vec.toBase64Internal set src $ False
+  where
+    !set = "./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"#

@@ -34,6 +34,9 @@ module Foundation.String
     , lower
     , replace
     , indices
+    , toBase64
+    , toBase64URL
+    , toBase64OpenBSD
     ) where
 
 import Foundation.String.UTF8
