@@ -16,7 +16,6 @@ module Foundation.Array.Chunked.Unboxed
     ( ChunkedUArray
     ) where
 
-import qualified Data.List
 import           Data.Typeable
 import           Control.Arrow ((***))
 import           Foundation.Array.Boxed (Array)
