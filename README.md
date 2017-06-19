@@ -1,13 +1,20 @@
 Foundation
 ==========
 
-[![Build Status](https://travis-ci.org/haskell-foundation/foundation.png?branch=master)](https://travis-ci.org/haskell-foundation/foundation)
-[![Coverage Status](https://coveralls.io/repos/github/haskell-foundation/foundation/badge.svg?branch=master)](https://coveralls.io/github/haskell-foundation/foundation?branch=master)
-[![BSD](http://b.repl.ca/v1/license-BSD-blue.png)](http://en.wikipedia.org/wiki/BSD_licenses)
-[![Haskell](http://b.repl.ca/v1/language-haskell-lightgrey.png)](http://haskell.org)
+[![Linux Build Status](https://img.shields.io/travis/haskell-foundation/foundation/master.svg?label=Linux%20build)](https://travis-ci.org/haskell-foundation/foundation)
+[![Windows Build Status](https://img.shields.io/appveyor/ci/vincenthz/foundation/master.svg?label=Windows%20build)](https://ci.appveyor.com/project/vincenthz/foundation/branch/master)
 [![Doc](https://readthedocs.org/projects/haskell-foundation/badge/?version=latest)](http://haskell-foundation.readthedocs.io/en/latest/)
+[![Stackage version](https://www.stackage.org/package/foundation/badge/lts?label=Stackage)](https://www.stackage.org/package/foundation)
+[![Hackage version](https://img.shields.io/hackage/v/foundation.svg?label=Hackage)](https://hackage.haskell.org/package/foundation)
+[![BSD3](https://img.shields.io/badge/License-BSD-blue.svg)](https://en.wikipedia.org/wiki/BSD_License)
+[![Haskell](https://img.shields.io/badge/Language-Haskell-yellowgreen.svg)](https://www.haskell.org)
+[![Coverage Status](https://coveralls.io/repos/github/haskell-foundation/foundation/badge.svg?branch=master)](https://coveralls.io/github/haskell-foundation/foundation?branch=master)
 
-Documentation: [foundation on hackage](http://hackage.haskell.org/package/foundation)
+Documentation:
+
+* [Read the doc](http://haskell-foundation.readthedocs.io/en/latest/)
+* [Foundation on stackage](https://www.stackage.org/package/foundation)
+* [Foundation on hackage](https://hackage.haskell.org/package/foundation)
 
 Goals
 =====
