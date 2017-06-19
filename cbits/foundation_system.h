@@ -3,6 +3,8 @@
 
 #ifdef _WIN32
    #define FOUNDATION_SYSTEM_WINDOWS
+   #define FOUNDATION_SYSTEM_API_NO_CLOCK
+
    //define something for Windows (32-bit and 64-bit, this part is common)
    #ifdef _WIN64
       #define FOUNDATION_SYSTEM_WINDOWS_64
@@ -30,7 +32,7 @@
     #define FOUNDATION_SYSTEM_UNIX
     #define FOUNDATION_SYSTEM_LINUX
     // linux
-#elif defined(__FreeBSD__) 
+#elif defined(__FreeBSD__)
     #define FOUNDATION_SYSTEM_UNIX
     #define FOUNDATION_SYSTEM_BSD
     #define FOUNDATION_SYSTEM_FREEBSD

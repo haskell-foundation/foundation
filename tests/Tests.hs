@@ -321,6 +321,7 @@ tests =
     , testNetworkIPv4
     , testNetworkIPv6
     , testHexadecimal
+    , testTime
     , testUUID
     , testGroup "Issues"
         [ testGroup "218"
