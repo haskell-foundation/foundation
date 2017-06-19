@@ -1293,16 +1293,14 @@ toBase64Internal table src padded
 outputLengthBase64 :: Bool -> CountOf Word8 -> CountOf Word8
 outputLengthBase64 padding (CountOf inputLenInt) = outputLength
   where
-    outputLength = if padding then CountOf lenWithPadding else CountOf (lenWithPadding - numPadChars)
-
-    lenWithPadding :: Int
-    lenWithPadding = 4 * roundUp (Prelude.fromIntegral inputLenInt / 3.0 :: Double)
-
-    numPadChars :: Int
-    numPadChars = case inputLenInt `mod` 3 of
-        1 -> 2
-        2 -> 1
-        _ -> 0
+    outputLength = if padding then CountOf lenWithPadding else CountOf lenWithoutPadding
+    lenWithPadding
+        | m == 0    = 4 * d
+        | otherwise = 4 * (d + 1)
+    lenWithoutPadding
+        | m == 0    = 4 * d
+        | otherwise = 4 * d + m + 1
+    (d,m) = inputLenInt `divMod` 3
 
 convert3 :: Addr# -> Word8 -> Word8 -> Word8 -> (Word8, Word8, Word8, Word8)
 convert3 table (W8# a) (W8# b) (W8# c) =
