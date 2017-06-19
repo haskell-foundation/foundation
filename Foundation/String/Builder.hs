@@ -18,7 +18,6 @@ module Foundation.String.Builder
 
 import           Foundation.Internal.Base
 --import           Foundation.Internal.Semigroup
-import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.String.UTF8                (String)
 import qualified Foundation.String.UTF8 as S
 
