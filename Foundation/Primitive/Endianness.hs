@@ -26,7 +26,8 @@ module Foundation.Primitive.Endianness
 import Foundation.Internal.Base
 import Foundation.Internal.ByteSwap
 
-#ifdef ARCH_IS_UNKNOWN_ENDIAN
+#if defined(ARCH_IS_LITTLE_ENDIAN) || defined(ARCH_IS_BIG_ENDIAN)
+#else
 import Foreign.Marshal.Alloc (alloca)
 import Foreign.Ptr (castPtr)
 import Foreign.Storable (poke, peek)
