@@ -1,3 +1,10 @@
+## 0.0.12
+
+* Fix build windows building & time subsystem
+* Add BlockN: Typed-fixed length block of memory
+* Add Base64
+* Add 'or' and 'and'
+
 ## 0.0.11
 
 * Add Hlint support (configuration file), and default travis job
