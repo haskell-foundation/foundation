@@ -10,6 +10,7 @@
 --
 
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Foundation.Primitive.Endianness
     (
@@ -35,6 +36,8 @@ import Data.Word (Word8, Word32)
 import System.IO.Unsafe (unsafePerformIO)
 #endif
 
+import Data.Bits
+
 
 -- #if !defined(ARCH_IS_LITTLE_ENDIAN) && !defined(ARCH_IS_BIG_ENDIAN)
 -- import Foundation.System.Info (endianness, Endianness(..))
@@ -47,13 +50,13 @@ data Endianness =
 
 -- | Little Endian value
 newtype LE a = LE { unLE :: a }
-  deriving (Show, Eq, Typeable)
+  deriving (Show, Eq, Typeable, Bits)
 instance (ByteSwap a, Ord a) => Ord (LE a) where
     compare e1 e2 = compare (fromLE e1) (fromLE e2)
 
 -- | Big Endian value
 newtype BE a = BE { unBE :: a }
-  deriving (Show, Eq, Typeable)
+  deriving (Show, Eq, Typeable, Bits)
 instance (ByteSwap a, Ord a) => Ord (BE a) where
     compare e1 e2 = compare (fromBE e1) (fromBE e2)
 

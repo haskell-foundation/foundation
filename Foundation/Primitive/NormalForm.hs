@@ -7,6 +7,7 @@ module Foundation.Primitive.NormalForm
 import Foundation.Internal.Base
 import Foundation.Internal.Natural
 import Foundation.Primitive.Types.OffsetSize
+import Foundation.Primitive.Endianness
 import Foreign.C.Types
 
 -- | Data that can be fully evaluated in Normal Form
@@ -78,6 +79,10 @@ instance NormalForm a => NormalForm (Maybe a) where
 instance (NormalForm l, NormalForm r) => NormalForm (Either l r) where
     toNormalForm (Left l)  = toNormalForm l `seq` ()
     toNormalForm (Right r) = toNormalForm r `seq` ()
+instance NormalForm a => NormalForm (LE a) where
+    toNormalForm (LE a) = toNormalForm a `seq` ()
+instance NormalForm a => NormalForm (BE a) where
+    toNormalForm (BE a) = toNormalForm a `seq` ()
 
 instance NormalForm a => NormalForm [a] where
     toNormalForm []     = ()
