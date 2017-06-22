@@ -123,6 +123,8 @@ import           Foundation.Numerical
 import           Foundation.Boot.Builder
 import qualified Foundation.Boot.List as List
 import qualified Foundation.Primitive.Base16 as Base16
+import qualified Foundation.Primitive.UArray.BA as PrimBA
+import qualified Foundation.Primitive.UArray.Addr as PrimAddr
 
 -- | Copy every cells of an existing array to a new array
 copy :: PrimType ty => UArray ty -> UArray ty
@@ -664,33 +666,10 @@ filter :: forall ty . PrimType ty => (ty -> Bool) -> UArray ty -> UArray ty
 filter predicate arr = runST $ do
     (newLen, ma) <- newNative (length arr) $ \mba ->
                 case arr of
-                    (UVecAddr start _ fptr) -> withFinalPtr fptr (goAddr mba start)
-                    (UVecBA start _ _ ba)   -> goBA mba ba start
+                    (UVecAddr start len fptr) -> withFinalPtr fptr $ \(Ptr addr) ->
+                                                    PrimAddr.filter predicate mba addr start (start `offsetPlusE` len)
+                    (UVecBA start len _ ba)   -> PrimBA.filter predicate mba ba start (start `offsetPlusE` len)
     unsafeFreezeShrink ma newLen
-  where
-    !len = length arr
-    o1 = Offset 1
-
-    goBA :: PrimType ty => MutableByteArray# s -> ByteArray# -> Offset ty -> ST s (CountOf ty)
-    goBA dst src start = loop azero start
-      where
-        end = start `offsetPlusE` len
-        loop !d !s
-            | s == end    = pure (offsetAsSize d)
-            | predicate v = primMbaWrite dst d v >> loop (d+o1) (s+o1)
-            | otherwise   = loop d (s+o1)
-          where
-            v = primBaIndex src s
-    goAddr :: PrimType ty => MutableByteArray# s -> Offset ty -> (Ptr addr) -> ST s (CountOf ty)
-    goAddr dst start (Ptr addr) = loop azero start
-      where
-        end = start `offsetPlusE` len
-        loop !d !s
-            | s == end    = pure (offsetAsSize d)
-            | predicate v = primMbaWrite dst d v >> loop (d+o1) (s+o1)
-            | otherwise   = loop d (s+o1)
-          where
-            v = primAddrIndex addr s
 
 reverse :: PrimType ty => UArray ty -> UArray ty
 reverse a
