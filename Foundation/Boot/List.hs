@@ -1,6 +1,7 @@
 module Foundation.Boot.List
     ( length
     , sum
+    , foldr
     ) where
 
 import Foundation.Internal.Base
@@ -19,3 +20,6 @@ sum (i:is) = loop i is
     loop !acc [] = acc
     loop !acc (x:xs) = loop (acc+x) xs
     {-# INLINE loop #-}
+
+foldr f z []     = z
+foldr f z (x:xs) = x `f` foldr f z xs

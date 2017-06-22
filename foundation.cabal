@@ -72,6 +72,8 @@ library
                      Foundation.Bits
                      Foundation.Class.Bifunctor
                      Foundation.Class.Storable
+                     Foundation.Class.Semigroup
+                     Foundation.Class.Monoid
                      Foundation.Conduit
                      Foundation.Conduit.Textual
                      Foundation.Convertible
