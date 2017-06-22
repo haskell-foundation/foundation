@@ -1259,6 +1259,7 @@ toBase64Internal table src padded
     !len = length b8
     !dstLen = outputLengthBase64 padded len
     !endOfs = Offset 0 `offsetPlusE` len
+    !dstEndOfs = Offset 0 `offsetPlusE` dstLen
 
     go :: MUArray Word8 s -> (Offset Word8 -> Word8) -> ST s ()
     go !ma !getAt = loop 0 0
@@ -1266,43 +1267,44 @@ toBase64Internal table src padded
         eqChar = 0x3d :: Word8
 
         loop !sIdx !dIdx
-            | sIdx >= endOfs = return ()
+            | sIdx == endOfs = when padded $ do
+                when (dIdx `offsetPlusE` CountOf 1 <= dstEndOfs) $ unsafeWrite ma dIdx eqChar
+                when (dIdx `offsetPlusE` CountOf 2 == dstEndOfs) $ unsafeWrite ma (dIdx `offsetPlusE` CountOf 1) eqChar
             | otherwise = do
-                let !a = getAt sIdx
-                    !b = if sIdx `offsetPlusE` CountOf 1 >= endOfs then 0 else getAt (sIdx `offsetPlusE` CountOf 1)
-                    !c = if sIdx `offsetPlusE` CountOf 2 >= endOfs then 0 else getAt (sIdx `offsetPlusE` CountOf 2)
+                let !b2Idx = sIdx `offsetPlusE` CountOf 1
+                    !b3Idx = sIdx `offsetPlusE` CountOf 2
 
-                let (w,x,y,z) = convert3 table a b c
+                    !b2Available = b2Idx < endOfs
+                    !b3Available = b3Idx < endOfs
+
+                    !b1 = getAt sIdx
+                    !b2 = if b2Available then getAt b2Idx else 0
+                    !b3 = if b3Available then getAt b3Idx else 0
+
+                    (w,x,y,z) = convert3 table b1 b2 b3
+
+                    sNextIncr = 1 + fromEnum b2Available + fromEnum b3Available
+                    dNextIncr = 1 + sNextIncr
 
                 unsafeWrite ma dIdx w
                 unsafeWrite ma (dIdx `offsetPlusE` CountOf 1) x
 
-                if sIdx `offsetPlusE` CountOf 1 < endOfs
-                    then
-                        unsafeWrite ma (dIdx `offsetPlusE` CountOf 2) y
-                    else
-                        when padded (unsafeWrite ma (dIdx `offsetPlusE` CountOf 2) eqChar)
-                if sIdx `offsetPlusE` CountOf 2 < endOfs
-                    then
-                        unsafeWrite ma (dIdx `offsetPlusE` CountOf 3) z
-                    else
-                        when padded (unsafeWrite ma (dIdx `offsetPlusE` CountOf 3) eqChar)
+                when b2Available $ unsafeWrite ma (dIdx `offsetPlusE` CountOf 2) y
+                when b3Available $ unsafeWrite ma (dIdx `offsetPlusE` CountOf 3) z
 
-                loop (sIdx `offsetPlusE` CountOf 3) (dIdx `offsetPlusE` CountOf 4)
+                loop (sIdx `offsetPlusE` CountOf sNextIncr) (dIdx `offsetPlusE` CountOf dNextIncr)
 
 outputLengthBase64 :: Bool -> CountOf Word8 -> CountOf Word8
 outputLengthBase64 padding (CountOf inputLenInt) = outputLength
   where
-    outputLength = if padding then CountOf lenWithPadding else CountOf (lenWithPadding - numPadChars)
-
-    lenWithPadding :: Int
-    lenWithPadding = 4 * roundUp (Prelude.fromIntegral inputLenInt / 3.0 :: Double)
-
-    numPadChars :: Int
-    numPadChars = case inputLenInt `mod` 3 of
-        1 -> 2
-        2 -> 1
-        _ -> 0
+    outputLength = if padding then CountOf lenWithPadding else CountOf lenWithoutPadding
+    lenWithPadding
+        | m == 0    = 4 * d
+        | otherwise = 4 * (d + 1)
+    lenWithoutPadding
+        | m == 0    = 4 * d
+        | otherwise = 4 * d + m + 1
+    (d,m) = inputLenInt `divMod` 3
 
 convert3 :: Addr# -> Word8 -> Word8 -> Word8 -> (Word8, Word8, Word8, Word8)
 convert3 table (W8# a) (W8# b) (W8# c) =
