@@ -136,7 +136,7 @@ thaw :: (PrimMonad prim, PrimType ty) => UArray ty -> prim (MUArray ty (PrimStat
 thaw array = do
     ma <- new (length array)
     unsafeCopyAtRO ma azero array (Offset 0) (length array)
-    return ma
+    pure ma
 {-# INLINE thaw #-}
 
 -- | Return the element at a specific index from an array.
@@ -173,7 +173,7 @@ unsafeCopyFrom :: (PrimType a, PrimType b)
 unsafeCopyFrom v' newLen f = new newLen >>= fill 0 >>= unsafeFreeze
   where len = length v'
         fill i r'
-            | i .==# len = return r'
+            | i .==# len = pure r'
             | otherwise  = do f v' i r'
                               fill (i + 1) r'
 
@@ -658,7 +658,7 @@ sortBy xford vec
             ahi <- unsafeRead ma hi
             unsafeWrite ma hi ai
             unsafeWrite ma i ahi
-            return i
+            pure i
 
 filter :: forall ty . PrimType ty => (ty -> Bool) -> UArray ty -> UArray ty
 filter predicate arr = runST $ do
@@ -710,13 +710,13 @@ reverse a
       where
         !endI = sizeAsOffset ((srcStart + end) - Offset 1)
         loop !i
-            | i == end  = return ()
+            | i == end  = pure ()
             | otherwise = primMbaWrite ma i (primBaIndex ba (sizeAsOffset (endI - i))) >> loop (i+Offset 1)
     goAddr !end !ma (Ptr ba) !srcStart = loop (Offset 0)
       where
         !endI = sizeAsOffset ((srcStart + end) - Offset 1)
         loop !i
-            | i == end  = return ()
+            | i == end  = pure ()
             | otherwise = primMbaWrite ma i (primAddrIndex ba (sizeAsOffset (endI - i))) >> loop (i+Offset 1)
 {-# SPECIALIZE [3] reverse :: UArray Word8 -> UArray Word8 #-}
 
@@ -839,13 +839,13 @@ builderAppend v = Builder $ State $ \(i, st, e) ->
             cur      <- unsafeFreeze (curChunk st)
             newChunk <- new (chunkSize st)
             unsafeWrite newChunk 0 v
-            return ((), (Offset 1, st { prevChunks     = cur : prevChunks st
+            pure ((), (Offset 1, st { prevChunks     = cur : prevChunks st
                                       , prevChunksSize = chunkSize st + prevChunksSize st
                                       , curChunk       = newChunk
                                       }, e))
         else do
             unsafeWrite (curChunk st) i v
-            return ((), (i + 1, st, e))
+            pure ((), (i + 1, st, e))
 
 builderBuild :: (PrimType ty, PrimMonad m) => Int -> Builder (UArray ty) (MUArray ty) ty m err () -> m (Either err (UArray ty))
 builderBuild sizeChunksI ab
@@ -854,17 +854,17 @@ builderBuild sizeChunksI ab
         first         <- new sizeChunks
         ((), (i, st, e)) <- runState (runBuilder ab) (Offset 0, BuildingState [] (CountOf 0) first sizeChunks, Nothing)
         case e of
-          Just err -> return (Left err)
+          Just err -> pure (Left err)
           Nothing -> do
             cur <- unsafeFreezeShrink (curChunk st) (offsetAsSize i)
             -- Build final array
             let totalSize = prevChunksSize st + offsetAsSize i
             bytes <- new totalSize >>= fillFromEnd totalSize (cur : prevChunks st) >>= unsafeFreeze
-            return (Right bytes)
+            pure (Right bytes)
   where
       sizeChunks = CountOf sizeChunksI
 
-      fillFromEnd _   []     mua = return mua
+      fillFromEnd _   []     mua = pure mua
       fillFromEnd !end (x:xs) mua = do
           let sz = length x
           unsafeCopyAtRO mua (sizeAsOffset (end - sz)) x (Offset 0) sz
@@ -889,7 +889,7 @@ toHexadecimal ba
     go !ma !getAt = loop 0 0
       where
         loop !dIdx !sIdx
-            | sIdx == endOfs = return ()
+            | sIdx == endOfs = pure ()
             | otherwise      = do
                 let !(W8# !w)      = getAt sIdx
                     (# wHi, wLo #) = Base16.unsafeConvertByte w

@@ -219,7 +219,7 @@ thaw :: PrimMonad prim => Array ty -> prim (MArray ty (PrimState prim))
 thaw array = do
     m <- new (length array)
     unsafeCopyAtRO m (Offset 0) array (Offset 0) (length array)
-    return m
+    pure m
 {-# INLINE thaw #-}
 
 freeze :: PrimMonad prim => MArray ty (PrimState prim) -> prim (Array ty)
@@ -277,7 +277,7 @@ unsafeCopyFrom v' newLen f = new newLen >>= fill (Offset 0) f >>= unsafeFreeze
   where len = length v'
         endIdx = Offset 0 `offsetPlusE` len
         fill i f' r'
-            | i == endIdx = return r'
+            | i == endIdx = pure r'
             | otherwise   = do f' v' i r'
                                fill (i + Offset 1) f' r'
 
@@ -367,7 +367,7 @@ concat l = runST $ do
     r <- new (mconcat $ fmap length l)
     loop r (Offset 0) l
     unsafeFreeze r
-  where loop _ _ []     = return ()
+  where loop _ _ []     = pure ()
         loop r i (x:xs) = do
             unsafeCopyAtRO r i x (Offset 0) lx
             loop r (i `offsetPlusE` lx) xs
@@ -584,7 +584,7 @@ sortBy xford vec
     doSort ford ma = qsort 0 (sizeLastOffset len) >> unsafeFreeze ma
       where
         qsort lo hi
-            | lo >= hi  = return ()
+            | lo >= hi  = pure ()
             | otherwise = do
                 p <- partition lo hi
                 qsort lo (pred p)
@@ -592,16 +592,16 @@ sortBy xford vec
         partition lo hi = do
             pivot <- unsafeRead ma hi
             let loop i j
-                    | j == hi   = return i
+                    | j == hi   = pure i
                     | otherwise = do
                         aj <- unsafeRead ma j
                         i' <- if ford aj pivot == GT
-                                then return i
+                                then pure i
                                 else do
                                     ai <- unsafeRead ma i
                                     unsafeWrite ma j ai
                                     unsafeWrite ma i aj
-                                    return $ i + 1
+                                    pure $ i + 1
                         loop i' (j+1)
 
             i <- loop lo lo
@@ -609,7 +609,7 @@ sortBy xford vec
             ahi <- unsafeRead ma hi
             unsafeWrite ma hi ai
             unsafeWrite ma i ahi
-            return i
+            pure i
 
 filter :: forall ty . (ty -> Bool) -> Array ty -> Array ty
 filter predicate vec = runST (new len >>= copyFilterFreeze predicate (unsafeIndex vec))
@@ -619,7 +619,7 @@ filter predicate vec = runST (new len >>= copyFilterFreeze predicate (unsafeInde
     copyFilterFreeze predi getVec mvec = loop (Offset 0) (Offset 0) >>= freezeUntilIndex mvec
       where
         loop d s
-            | s .==# len  = return d
+            | s .==# len  = pure d
             | predi v     = unsafeWrite mvec d v >> loop (d+1) (s+1)
             | otherwise   = loop d (s+1)
           where
@@ -689,13 +689,13 @@ builderAppend v = Builder $ State $ \(i, st, e) ->
             cur      <- unsafeFreeze (curChunk st)
             newChunk <- new (chunkSize st)
             unsafeWrite newChunk 0 v
-            return ((), (Offset 1, st { prevChunks     = cur : prevChunks st
+            pure ((), (Offset 1, st { prevChunks     = cur : prevChunks st
                                       , prevChunksSize = chunkSize st + prevChunksSize st
                                       , curChunk       = newChunk
                                       }, e))
         else do
             unsafeWrite (curChunk st) i v
-            return ((), (i+1, st, e))
+            pure ((), (i+1, st, e))
 
 builderBuild :: PrimMonad m => Int -> Builder (Array ty) (MArray ty) ty m err () -> m (Either err (Array ty))
 builderBuild sizeChunksI ab
@@ -704,17 +704,17 @@ builderBuild sizeChunksI ab
         first         <- new sizeChunks
         ((), (i, st, e)) <- runState (runBuilder ab) (Offset 0, BuildingState [] (CountOf 0) first sizeChunks, Nothing)
         case e of
-          Just err -> return (Left err)
+          Just err -> pure (Left err)
           Nothing -> do
             cur <- unsafeFreezeShrink (curChunk st) (offsetAsSize i)
             -- Build final array
             let totalSize = prevChunksSize st + offsetAsSize i
             bytes <- new totalSize >>= fillFromEnd totalSize (cur : prevChunks st) >>= unsafeFreeze
-            return (Right bytes)
+            pure (Right bytes)
   where
     sizeChunks = CountOf sizeChunksI
 
-    fillFromEnd _   []     mua = return mua
+    fillFromEnd _   []     mua = pure mua
     fillFromEnd !end (x:xs) mua = do
         let sz = length x
         unsafeCopyAtRO mua (sizeAsOffset (end - sz)) x (Offset 0) sz

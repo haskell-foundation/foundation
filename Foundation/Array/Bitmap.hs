@@ -279,7 +279,7 @@ vFromList allBools = runST $ do
     runST $ do
     mba <- A.new nbElements
     ba  <- loop mba (0 :: Int) allBools
-    return (Bitmap len ba)
+    pure (Bitmap len ba)
   where
     loop mba _ [] = A.unsafeFreeze mba
     loop mba i l  = do

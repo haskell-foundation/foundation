@@ -36,7 +36,7 @@ import Control.Monad.ST (runST)
 data FinalPtr a = FinalPtr (Ptr a)
                 | FinalForeign (ForeignPtr a)
 instance Show (FinalPtr a) where
-    show f = runST $ withFinalPtr f (return . show)
+    show f = runST $ withFinalPtr f (pure . show)
 instance Eq (FinalPtr a) where
     (==) f1 f2 = runST (equal f1 f2)
 instance Ord (FinalPtr a) where
@@ -80,11 +80,11 @@ withFinalPtr :: PrimMonad prim => FinalPtr p -> (Ptr p -> prim a) -> prim a
 withFinalPtr (FinalPtr ptr) f = do
     r <- f ptr
     primTouch ptr
-    return r
+    pure r
 withFinalPtr (FinalForeign fptr) f = do
     r <- f (unsafeForeignPtrToPtr fptr)
     unsafePrimFromIO (touchForeignPtr fptr)
-    return r
+    pure r
 {-# INLINE withFinalPtr #-}
 
 -- | Unsafe version of 'withFinalPtr'
@@ -96,12 +96,12 @@ equal :: PrimMonad prim => FinalPtr a -> FinalPtr a -> prim Bool
 equal f1 f2 =
     withFinalPtr f1 $ \ptr1 ->
     withFinalPtr f2 $ \ptr2 ->
-        return $ ptr1 == ptr2
+        pure $ ptr1 == ptr2
 {-# INLINE equal #-}
 
 compare_ :: PrimMonad prim => FinalPtr a -> FinalPtr a -> prim Ordering
 compare_ f1 f2 =
     withFinalPtr f1 $ \ptr1 ->
     withFinalPtr f2 $ \ptr2 ->
-        return $ ptr1 `compare` ptr2
+        pure $ ptr1 `compare` ptr2
 {-# INLINE compare_ #-}
