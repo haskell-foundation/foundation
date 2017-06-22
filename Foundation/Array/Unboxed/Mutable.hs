@@ -42,7 +42,6 @@ import           GHC.Prim
 import           GHC.Types
 import           GHC.Ptr
 import           Foundation.Internal.Base
-import qualified Foundation.Primitive.Runtime as Runtime
 import           Foundation.Internal.Primitive
 import           Foundation.Internal.Proxy
 import           Foundation.Primitive.Types.OffsetSize
@@ -50,30 +49,13 @@ import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
 import           Foundation.Primitive.FinalPtr
 import           Foundation.Primitive.Exception
+import           Foundation.Primitive.UArray.Base
 import           Foundation.Numerical
 import           Foreign.Marshal.Utils (copyBytes)
 
--- | A Mutable array of types built on top of GHC primitive.
---
--- Element in this array can be modified in place.
-data MUArray ty st =
-      MUVecMA {-# UNPACK #-} !(Offset ty)
-              {-# UNPACK #-} !(CountOf ty)
-              {-# UNPACK #-} !PinnedStatus
-                             (MutableByteArray# st)
-    | MUVecAddr {-# UNPACK #-} !(Offset ty)
-                {-# UNPACK #-} !(CountOf ty)
-                               !(FinalPtr ty)
-
-mutableArrayProxyTy :: MUArray ty st -> Proxy ty
-mutableArrayProxyTy _ = Proxy
-
-sizeInMutableBytesOfContent :: PrimType ty => MUArray ty s -> Size8
-sizeInMutableBytesOfContent = primSizeInBytes . mutableArrayProxyTy
+sizeInMutableBytesOfContent :: forall ty s . PrimType ty => MUArray ty s -> Size8
+sizeInMutableBytesOfContent _ = primSizeInBytes (Proxy :: Proxy ty)
 {-# INLINE sizeInMutableBytesOfContent #-}
-
-mvectorProxyTy :: MUArray ty s -> Proxy ty
-mvectorProxyTy _ = Proxy
 
 -- | read a cell in a mutable array.
 --
@@ -84,15 +66,6 @@ read array n
     | otherwise          = unsafeRead array n
   where len = mutableLengthSize array
 {-# INLINE read #-}
-
--- | read from a cell in a mutable array without bounds checking.
---
--- Reading from invalid memory can return unpredictable and invalid values.
--- use 'read' if unsure.
-unsafeRead :: (PrimMonad prim, PrimType ty) => MUArray ty (PrimState prim) -> Offset ty -> prim ty
-unsafeRead (MUVecMA start _ _ mba) i = primMbaRead mba (start + i)
-unsafeRead (MUVecAddr start _ fptr) i = withFinalPtr fptr $ \(Ptr addr) -> primAddrRead addr (start + i)
-{-# INLINE unsafeRead #-}
 
 -- | Write to a cell in a mutable array.
 --
@@ -105,60 +78,8 @@ write array n val
     len = mutableLengthSize array
 {-# INLINE write #-}
 
--- | write to a cell in a mutable array without bounds checking.
---
--- Writing with invalid bounds will corrupt memory and your program will
--- become unreliable. use 'write' if unsure.
-unsafeWrite :: (PrimMonad prim, PrimType ty) => MUArray ty (PrimState prim) -> Offset ty -> ty -> prim ()
-unsafeWrite (MUVecMA start _ _ mba)  i v = primMbaWrite mba (start+i) v
-unsafeWrite (MUVecAddr start _ fptr) i v = withFinalPtr fptr $ \(Ptr addr) -> primAddrWrite addr (start+i) v
-{-# INLINE unsafeWrite #-}
-
--- | Create a new pinned mutable array of size @n.
---
--- all the cells are uninitialized and could contains invalid values.
---
--- All mutable arrays are allocated on a 64 bits aligned addresses
-newPinned :: (PrimMonad prim, PrimType ty) => CountOf ty -> prim (MUArray ty (PrimState prim))
-newPinned n = newFake n Proxy
-  where newFake :: (PrimMonad prim, PrimType ty) => CountOf ty -> Proxy ty -> prim (MUArray ty (PrimState prim))
-        newFake sz ty = primitive $ \s1 ->
-            case newAlignedPinnedByteArray# bytes 8# s1 of
-                (# s2, mba #) -> (# s2, MUVecMA (Offset 0) sz pinned mba #)
-          where
-                !(CountOf (I# bytes)) = sizeOfE (primSizeInBytes ty) sz
-        {-# INLINE newFake #-}
-
-newUnpinned :: (PrimMonad prim, PrimType ty) => CountOf ty -> prim (MUArray ty (PrimState prim))
-newUnpinned n = newFake n Proxy
-  where newFake :: (PrimMonad prim, PrimType ty) => CountOf ty -> Proxy ty -> prim (MUArray ty (PrimState prim))
-        newFake sz ty = primitive $ \s1 ->
-            case newByteArray# bytes s1 of
-                (# s2, mba #) -> (# s2, MUVecMA (Offset 0) sz unpinned mba #)
-          where
-                !(CountOf (I# bytes)) = sizeOfE (primSizeInBytes ty) sz
-        {-# INLINE newFake #-}
-
 empty :: PrimMonad prim => prim (MUArray ty (PrimState prim))
 empty = primitive $ \s1 -> case newByteArray# 0# s1 of { (# s2, mba #) -> (# s2, MUVecMA 0 0 unpinned mba #) }
-
--- | Create a new mutable array of size @n.
---
--- When memory for a new array is allocated, we decide if that memory region
--- should be pinned (will not be copied around by GC) or unpinned (can be
--- moved around by GC) depending on its size.
---
--- You can change the threshold value used by setting the environment variable
--- @HS_FOUNDATION_UARRAY_UNPINNED_MAX@.
-new :: (PrimMonad prim, PrimType ty) => CountOf ty -> prim (MUArray ty (PrimState prim))
-new sz
-    | sizeRecast sz <= maxSizeUnpinned = newUnpinned sz
-    | otherwise                        = newPinned sz
-  where
-    -- Safe to use here: If the value changes during runtime, this will only
-    -- have an impact on newly created arrays.
-    maxSizeUnpinned = Runtime.unsafeUArrayUnpinnedMaxSize
-{-# INLINE new #-}
 
 mutableSame :: MUArray ty st -> MUArray ty st -> Bool
 mutableSame (MUVecMA sa ea _ ma) (MUVecMA sb eb _ mb) = (sa == sb) && (ea == eb) && bool# (sameMutableByteArray# ma mb)
@@ -166,53 +87,11 @@ mutableSame (MUVecAddr s1 e1 f1) (MUVecAddr s2 e2 f2) = (s1 == s2) && (e1 == e2)
 mutableSame MUVecMA {}     MUVecAddr {}   = False
 mutableSame MUVecAddr {}   MUVecMA {}     = False
 
-
-newNative :: (PrimMonad prim, PrimType ty)
-          => CountOf ty
-          -> (MutableByteArray# (PrimState prim) -> prim a)
-          -> prim (a, MUArray ty (PrimState prim))
-newNative n f = do
-    muvec <- new n
-    case muvec of
-        (MUVecMA _ _ _ mba) -> f mba >>= \a -> pure (a, muvec)
-        MUVecAddr {}        -> error "internal error: unboxed new only supposed to allocate natively"
-
 mutableForeignMem :: (PrimMonad prim, PrimType ty)
                   => FinalPtr ty -- ^ the start pointer with a finalizer
                   -> Int         -- ^ the number of elements (in elements, not bytes)
                   -> prim (MUArray ty (PrimState prim))
 mutableForeignMem fptr nb = return $ MUVecAddr (Offset 0) (CountOf nb) fptr
-
--- | Copy a number of elements from an array to another array with offsets
-copyAt :: (PrimMonad prim, PrimType ty)
-       => MUArray ty (PrimState prim) -- ^ destination array
-       -> Offset ty                  -- ^ offset at destination
-       -> MUArray ty (PrimState prim) -- ^ source array
-       -> Offset ty                  -- ^ offset at source
-       -> CountOf ty                    -- ^ number of elements to copy
-       -> prim ()
-copyAt (MUVecMA dstStart _ _ dstMba) ed uvec@(MUVecMA srcStart _ _ srcBa) es n =
-    primitive $ \st -> (# copyMutableByteArray# srcBa os dstMba od nBytes st, () #)
-  where
-    !sz                 = primSizeInBytes (mutableArrayProxyTy uvec)
-    !(Offset (I# os))   = offsetOfE sz (srcStart + es)
-    !(Offset (I# od))   = offsetOfE sz (dstStart + ed)
-    !(CountOf (I# nBytes)) = sizeOfE sz n
-copyAt (MUVecMA dstStart _ _ dstMba) ed muvec@(MUVecAddr srcStart _ srcFptr) es n =
-    withFinalPtr srcFptr $ \srcPtr ->
-        let !(Ptr srcAddr) = srcPtr `plusPtr` os
-         in primitive $ \s -> (# compatCopyAddrToByteArray# srcAddr dstMba od nBytes s, () #)
-  where
-    !sz                 = primSizeInBytes (mutableArrayProxyTy muvec)
-    !(Offset os)        = offsetOfE sz (srcStart + es)
-    !(Offset (I# od))   = offsetOfE sz (dstStart + ed)
-    !(CountOf (I# nBytes)) = sizeOfE sz n
-copyAt dst od src os n = loop od os
-  where
-    !endIndex = os `offsetPlusE` n
-    loop !d !i
-        | i == endIndex = return ()
-        | otherwise     = unsafeRead src i >>= unsafeWrite dst d >> loop (d+1) (i+1)
 
 sub :: (PrimMonad prim, PrimType ty)
     => MUArray ty (PrimState prim)
@@ -259,16 +138,16 @@ mutableLengthSize :: PrimType ty => MUArray ty st -> CountOf ty
 mutableLengthSize (MUVecMA _ end _ _) = end
 mutableLengthSize (MUVecAddr _ end _) = end
 
-withMutablePtrHint :: (PrimMonad prim, PrimType ty)
+withMutablePtrHint :: forall ty prim a . (PrimMonad prim, PrimType ty)
                    => Bool
                    -> Bool
                    -> MUArray ty (PrimState prim)
                    -> (Ptr ty -> prim a)
                    -> prim a
-withMutablePtrHint _ _ vec@(MUVecAddr start _ fptr)  f =
+withMutablePtrHint _ _ (MUVecAddr start _ fptr)  f =
     withFinalPtr fptr (\ptr -> f (ptr `plusPtr` os))
   where
-    sz           = primSizeInBytes (mvectorProxyTy vec)
+    sz           = primSizeInBytes (Proxy :: Proxy ty)
     !(Offset os) = offsetOfE sz start
 withMutablePtrHint skipCopy skipCopyBack vec@(MUVecMA start vecSz pstatus a) f
     | isPinned pstatus = mutableByteArrayContent a >>= \ptr -> f (ptr `plusPtr` os)
@@ -284,7 +163,7 @@ withMutablePtrHint skipCopy skipCopyBack vec@(MUVecMA start vecSz pstatus a) f
         pure r
   where
     !(Offset os) = offsetOfE sz start
-    sz           = primSizeInBytes (mvectorProxyTy vec)
+    sz           = primSizeInBytes (Proxy :: Proxy ty)
 
     mutableByteArrayContent :: PrimMonad prim => MutableByteArray# (PrimState prim) -> prim (Ptr ty)
     mutableByteArrayContent mba = primitive $ \s1 ->
