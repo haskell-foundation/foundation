@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 module Foundation.Boot.List
     ( length
     , sum
@@ -10,7 +11,13 @@ import qualified GHC.List as List
 
 -- | Compute the size of the list
 length :: [a] -> Int
+#if MIN_VERSION_base(4,8,0)
 length = List.foldl' (\c _ -> c+1) 0
+#else
+length = loop 0
+  where loop !acc []     = acc
+        loop !acc (_:xs) = loop (1+acc) xs
+#endif
 
 -- | Sum the element in a list
 sum :: Additive n => [n] -> n
