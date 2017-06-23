@@ -4,10 +4,10 @@ module Foundation.Hashing.Hasher
     ) where
 
 import           Foundation.Internal.Base
+import           Foundation.Primitive.IntegralConv
 import           Foundation.Array (UArray)
 import qualified Foundation.Array.Unboxed as A
 import           Data.Bits
-import qualified Prelude
 
 -- | Incremental Hashing state. Represent an hashing algorithm
 --
@@ -57,18 +57,18 @@ class Hasher st where
     hashMixBytes ba st = A.foldl' (flip hashMix8) st (A.unsafeRecast ba)
 
 unWord16 :: Word16 -> (# Word8, Word8 #)
-unWord16 w = (# Prelude.fromIntegral (w `unsafeShiftR` 8)
-             ,  Prelude.fromIntegral w #)
+unWord16 w = (# integralDownsize (w `unsafeShiftR` 8)
+             ,  integralDownsize w #)
 {-# INLINE unWord16 #-}
 
 unWord32 :: Word32 -> (# Word8, Word8, Word8, Word8 #)
-unWord32 w = (# Prelude.fromIntegral (w `unsafeShiftR` 24)
-             ,  Prelude.fromIntegral (w `unsafeShiftR` 16)
-             ,  Prelude.fromIntegral (w `unsafeShiftR` 8)
-             ,  Prelude.fromIntegral w #)
+unWord32 w = (# integralDownsize (w `unsafeShiftR` 24)
+             ,  integralDownsize (w `unsafeShiftR` 16)
+             ,  integralDownsize (w `unsafeShiftR` 8)
+             ,  integralDownsize w #)
 {-# INLINE unWord32 #-}
 
 unWord64_32 :: Word64 -> (# Word32, Word32 #)
-unWord64_32 w = (# Prelude.fromIntegral (w `unsafeShiftR` 32)
-                ,  Prelude.fromIntegral w #)
+unWord64_32 w = (# integralDownsize (w `unsafeShiftR` 32)
+                ,  integralDownsize w #)
 {-# INLINE unWord64_32 #-}

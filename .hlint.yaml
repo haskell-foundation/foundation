@@ -85,6 +85,7 @@
 - ignore: {name: Use when}
 - ignore: {name: Use and, within: Foundation.Array.Bitmap}
 - ignore: {name: Use or, within: Foundation.Array.Bitmap}
+- ignore: {name: Use foldl, within: Foundation.Boot.List}
 
 
 # Define some custom infix operators

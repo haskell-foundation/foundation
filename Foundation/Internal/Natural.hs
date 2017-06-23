@@ -2,11 +2,13 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Foundation.Internal.Natural
     ( Natural
+    , integerToNatural
     ) where
 
 #if MIN_VERSION_base(4,8,0)
 
 import Numeric.Natural
+import Prelude (Integer, abs, fromInteger)
 
 #else
 
@@ -49,3 +51,6 @@ instance Integral Natural where
     mod = rem
 
 #endif
+
+integerToNatural :: Integer -> Natural
+integerToNatural i = fromInteger (abs i)

@@ -192,6 +192,9 @@ library
                      Foundation.Primitive.UTF8.Base
                      Foundation.Primitive.UTF8.BA
                      Foundation.Primitive.UTF8.Addr
+                     Foundation.Primitive.UArray.Base
+                     Foundation.Primitive.UArray.BA
+                     Foundation.Primitive.UArray.Addr
                      Foundation.Primitive.Runtime
                      Foundation.Primitive.Imports
                      Foundation.Monad.MonadIO

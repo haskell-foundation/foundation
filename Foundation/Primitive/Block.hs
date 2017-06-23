@@ -110,7 +110,7 @@ thaw :: (PrimMonad prim, PrimType ty) => Block ty -> prim (MutableBlock ty (Prim
 thaw array = do
     ma <- M.unsafeNew unpinned (lengthBytes array)
     M.unsafeCopyBytesRO ma 0 array 0 (lengthBytes array)
-    return ma
+    pure ma
 {-# INLINE thaw #-}
 
 freeze :: (PrimType ty, PrimMonad prim) => MutableBlock ty (PrimState prim) -> prim (Block ty)
@@ -332,7 +332,7 @@ sortBy xford vec
     doSort ford ma = qsort 0 (sizeLastOffset len) >> unsafeFreeze ma
       where
         qsort lo hi
-            | lo >= hi  = return ()
+            | lo >= hi  = pure ()
             | otherwise = do
                 p <- partition lo hi
                 qsort lo (pred p)

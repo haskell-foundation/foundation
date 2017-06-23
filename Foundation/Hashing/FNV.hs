@@ -25,12 +25,12 @@ import           Foundation.Internal.Base
 import qualified Foundation.Array.Unboxed as A
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Types
+import           Foundation.Primitive.IntegralConv
 import           Foundation.Numerical
 import           Foundation.Hashing.Hasher
 import           Data.Bits
 import           GHC.Prim
 import           GHC.ST
-import qualified Prelude
 
 -- | FNV1(a) hash (32 bit variants)
 newtype FNV1Hash32 = FNV1Hash32 Word32
@@ -41,11 +41,11 @@ newtype FNV1Hash64 = FNV1Hash64 Word64
     deriving (Show,Eq,Ord)
 
 xor32 :: Word -> Word8 -> Word
-xor32 !a !b = a `xor` Prelude.fromIntegral b
+xor32 !a !b = a `xor` integralUpsize b
 {-# INLINE xor32 #-}
 
 xor64 :: Word64 -> Word8 -> Word64
-xor64 !a !b = a `xor` Prelude.fromIntegral b
+xor64 !a !b = a `xor` integralUpsize b
 {-# INLINE xor64 #-}
 
 -- | FNV1 32 bit state
@@ -81,7 +81,7 @@ instance Hasher FNV1_32 where
     type HashInitParam FNV1_32 = Word
     hashNew = FNV1_32 0
     hashNewParam w = FNV1_32 w
-    hashEnd (FNV1_32 w) = FNV1Hash32 (Prelude.fromIntegral w)
+    hashEnd (FNV1_32 w) = FNV1Hash32 (integralDownsize w)
     hashMix8 = fnv1_32_Mix8
     hashMixBytes = fnv1_32_mixBa
 
@@ -90,7 +90,7 @@ instance Hasher FNV1a_32 where
     type HashInitParam FNV1a_32 = Word
     hashNew = FNV1a_32 0
     hashNewParam w = FNV1a_32 w
-    hashEnd (FNV1a_32 w) = FNV1Hash32 (Prelude.fromIntegral w)
+    hashEnd (FNV1a_32 w) = FNV1Hash32 (integralDownsize w)
     hashMix8 = fnv1a_32_Mix8
     hashMixBytes = fnv1a_32_mixBa
 
@@ -99,7 +99,7 @@ instance Hasher FNV1_64 where
     type HashInitParam FNV1_64 = Word64
     hashNew = FNV1_64 0xcbf29ce484222325
     hashNewParam w = FNV1_64 w
-    hashEnd (FNV1_64 w) = FNV1Hash64 (Prelude.fromIntegral w)
+    hashEnd (FNV1_64 w) = FNV1Hash64 w
     hashMix8 = fnv1_64_Mix8
     hashMixBytes = fnv1_64_mixBa
 
@@ -108,7 +108,7 @@ instance Hasher FNV1a_64 where
     type HashInitParam FNV1a_64 = Word64
     hashNew = FNV1a_64 0xcbf29ce484222325
     hashNewParam w = FNV1a_64 w
-    hashEnd (FNV1a_64 w) = FNV1Hash64 (Prelude.fromIntegral w)
+    hashEnd (FNV1a_64 w) = FNV1Hash64 w
     hashMix8 = fnv1a_64_Mix8
     hashMixBytes = fnv1a_64_mixBa
 
