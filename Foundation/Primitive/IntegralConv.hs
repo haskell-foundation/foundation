@@ -185,6 +185,16 @@ instance IntegralDownsize Word64 Word32 where
     integralDownsize      (W64# i) = W32# (narrow32Word# (word64ToWord# i))
     integralDownsizeCheck = integralDownsizeBounded integralDownsize
 
+instance IntegralDownsize Word Word8 where
+    integralDownsize (W# w) = W8# (narrow8Word# w)
+    integralDownsizeCheck = integralDownsizeBounded integralDownsize
+instance IntegralDownsize Word Word16 where
+    integralDownsize (W# w) = W16# (narrow16Word# w)
+    integralDownsizeCheck = integralDownsizeBounded integralDownsize
+instance IntegralDownsize Word Word32 where
+    integralDownsize (W# w) = W32# (narrow32Word# w)
+    integralDownsizeCheck = integralDownsizeBounded integralDownsize
+
 instance IntegralDownsize Word32 Word8 where
     integralDownsize      (W32# i) = W8# (narrow8Word# i)
     integralDownsizeCheck = integralDownsizeBounded integralDownsize

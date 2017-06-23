@@ -14,6 +14,7 @@ module Foundation.Hashing.Hashable
 
 import Foundation.Internal.Base
 import Foundation.Internal.Natural
+import Foundation.Primitive.IntegralConv
 import Foundation.Numerical.Primitives
 import Foundation.Numerical.Multiplicative
 import Foundation.Array
@@ -21,7 +22,6 @@ import Foundation.Tuple
 import Foundation.String
 import Foundation.Collection.Foldable
 import Foundation.Hashing.Hasher
-import qualified Prelude
 
 -- | Type with the ability to be hashed
 --
@@ -50,7 +50,7 @@ instance Hashable Natural where
       where
         loop 0 acc = acc
         loop w acc =
-            let b = Prelude.fromIntegral w
+            let b = integralDownsize (w :: Natural) :: Word8
              in loop (w `div` 256) (hashMix8 b acc)
 instance Hashable Int8 where
     hashMix w = hashMix8 (integralConvert w)
@@ -63,12 +63,13 @@ instance Hashable Int64 where
 instance Hashable Integer where
     hashMix i iacc
         | i == 0    = hashMix8 0 iacc
-        | i < 0     = loop (-i) (hashMix8 1 iacc)
-        | otherwise = loop i (hashMix8 0 iacc)
+        | i < 0     = loop (integerToNatural i) (hashMix8 1 iacc)
+        | otherwise = loop (integerToNatural i) (hashMix8 0 iacc)
       where
+        loop :: Hasher st => Natural -> st -> st
         loop 0 acc = acc
         loop w acc =
-            let b = Prelude.fromIntegral w
+            let b = integralDownsize w :: Word8
              in loop (w `div` 256) (hashMix8 b acc)
 
 instance Hashable String where
