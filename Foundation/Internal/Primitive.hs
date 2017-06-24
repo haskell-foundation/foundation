@@ -8,9 +8,10 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE UnliftedFFITypes #-}
 module Foundation.Internal.Primitive
     ( bool#
-    , PinnedStatus, pinned, unpinned, isPinned
+    , PinnedStatus, toPinnedStatus, pinned, unpinned, isPinned
     , compatAndI#
     , compatQuotRemInt#
     , compatCopyAddrToByteArray#
@@ -19,6 +20,8 @@ module Foundation.Internal.Primitive
     , compatGetSizeofMutableByteArray#
     , compatShrinkMutableByteArray#
     , compatResizeMutableByteArray#
+    , compatIsByteArrayPinned#
+    , compatIsMutableByteArrayPinned#
     , Word(..)
     ) where
 
@@ -168,3 +171,17 @@ compatResizeMutableByteArray# src i s =
     !len = sizeofMutableByteArray# src
 #endif
 {-# INLINE compatResizeMutableByteArray# #-}
+
+#if __GLASGOW_HASKELL__ >= 802
+compatIsByteArrayPinned# :: ByteArray# -> Pinned#
+compatIsByteArrayPinned# ba = isByteArrayPinned# ba
+
+compatIsMutableByteArrayPinned# :: MutableByteArray# s -> Pinned#
+compatIsMutableByteArrayPinned# ba = isMutableByteArrayPinned# ba
+#else
+foreign import ccall unsafe "foundation_is_bytearray_pinned"
+    compatIsByteArrayPinned# :: ByteArray# -> Pinned#
+
+foreign import ccall unsafe "foundation_is_bytearray_pinned"
+    compatIsMutableByteArrayPinned# :: MutableByteArray# s -> Pinned#
+#endif
