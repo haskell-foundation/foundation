@@ -9,9 +9,10 @@
 {-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE UnliftedFFITypes #-}
+{-# LANGUAGE PatternSynonyms #-}
 module Foundation.Internal.Primitive
     ( bool#
-    , PinnedStatus, toPinnedStatus, pinned, unpinned, isPinned
+    , PinnedStatus(..), toPinnedStatus#
     , compatAndI#
     , compatQuotRemInt#
     , compatCopyAddrToByteArray#
@@ -41,20 +42,12 @@ import           Foundation.Internal.PrimTypes
 --  GHC 7.4  | Base 4.5
 
 -- | Flag record whether a specific byte array is pinned or not
-data PinnedStatus = PinnedStatus Pinned#
+data PinnedStatus = Pinned | Unpinned
+    deriving (Prelude.Eq)
 
-toPinnedStatus :: Pinned# -> PinnedStatus
-toPinnedStatus = PinnedStatus
-
-isPinned :: PinnedStatus -> Prelude.Bool
-isPinned (PinnedStatus 0#) = Prelude.False
-isPinned _                 = Prelude.True
-
-pinned :: PinnedStatus
-pinned = PinnedStatus 1#
-
-unpinned :: PinnedStatus
-unpinned = PinnedStatus 0#
+toPinnedStatus# :: Pinned# -> PinnedStatus
+toPinnedStatus# 0# = Pinned
+toPinnedStatus# _  = Unpinned
 
 -- | turn an Int# into a Bool
 --

@@ -79,7 +79,7 @@ write array n val
 {-# INLINE write #-}
 
 empty :: PrimMonad prim => prim (MUArray ty (PrimState prim))
-empty = primitive $ \s1 -> case newByteArray# 0# s1 of { (# s2, mba #) -> (# s2, MUVecMA 0 0 unpinned mba #) }
+empty = primitive $ \s1 -> case newByteArray# 0# s1 of { (# s2, mba #) -> (# s2, MUVecMA 0 0 Unpinned mba #) }
 
 mutableSame :: MUArray ty st -> MUArray ty st -> Bool
 mutableSame (MUVecMA sa ea _ ma) (MUVecMA sb eb _ mb) = (sa == sb) && (ea == eb) && bool# (sameMutableByteArray# ma mb)
@@ -149,9 +149,9 @@ withMutablePtrHint _ _ (MUVecAddr start _ fptr)  f =
   where
     sz           = primSizeInBytes (Proxy :: Proxy ty)
     !(Offset os) = offsetOfE sz start
-withMutablePtrHint skipCopy skipCopyBack vec@(MUVecMA start vecSz pstatus a) f
-    | isPinned pstatus = mutableByteArrayContent a >>= \ptr -> f (ptr `plusPtr` os)
-    | otherwise        = do
+withMutablePtrHint skipCopy skipCopyBack vec@(MUVecMA start vecSz _ a) f
+    | isMutablePinned vec == Pinned = mutableByteArrayContent a >>= \ptr -> f (ptr `plusPtr` os)
+    | otherwise                     = do
         trampoline <- newPinned vecSz
         if not skipCopy
             then copyAt trampoline 0 vec 0 vecSz

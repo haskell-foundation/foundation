@@ -307,9 +307,9 @@ withPtr (UVecAddr start _ fptr)  f =
   where
     sz           = primSizeInBytes (Proxy :: Proxy ty)
     !(Offset os) = offsetOfE sz start
-withPtr (UVecBA start _ pstatus a) f
-    | isPinned pstatus = f (Ptr (byteArrayContents# a) `plusPtr` os)
-    | otherwise        = do
+withPtr vec@(UVecBA start _ _ a) f
+    | isPinned vec == Pinned = f (Ptr (byteArrayContents# a) `plusPtr` os)
+    | otherwise              = do
         -- TODO don't copy the whole vector, and just allocate+copy the slice.
         let !sz# = sizeofByteArray# a
         (TmpBA ba) <- primitive $ \s -> do

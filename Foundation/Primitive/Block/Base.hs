@@ -184,7 +184,7 @@ append a b
     | la == azero = b
     | lb == azero = a
     | otherwise = runST $ do
-        r  <- unsafeNew unpinned (la+lb)
+        r  <- unsafeNew Unpinned (la+lb)
         unsafeCopyBytesRO r 0                 a 0 la
         unsafeCopyBytesRO r (sizeAsOffset la) b 0 lb
         unsafeFreeze r
@@ -199,7 +199,7 @@ concat l  =
         (_,[])            -> empty
         (_,[x])           -> x
         (totalLen,chunks) -> runST $ do
-            r <- unsafeNew unpinned totalLen
+            r <- unsafeNew Unpinned totalLen
             doCopy r 0 chunks
             unsafeFreeze r
   where
@@ -247,16 +247,16 @@ unsafeNew :: PrimMonad prim
           => PinnedStatus
           -> CountOf Word8
           -> prim (MutableBlock ty (PrimState prim))
-unsafeNew pinStatus (CountOf (I# bytes))
-    | isPinned pinStatus = primitive $ \s1 -> case newByteArray# bytes s1 of { (# s2, mba #) -> (# s2, MutableBlock mba #) }
-    | otherwise          = primitive $ \s1 -> case newAlignedPinnedByteArray# bytes 8# s1 of { (# s2, mba #) -> (# s2, MutableBlock mba #) }
+unsafeNew pinSt (CountOf (I# bytes)) = case pinSt of
+    Unpinned -> primitive $ \s1 -> case newByteArray# bytes s1 of { (# s2, mba #) -> (# s2, MutableBlock mba #) }
+    _        -> primitive $ \s1 -> case newAlignedPinnedByteArray# bytes 8# s1 of { (# s2, mba #) -> (# s2, MutableBlock mba #) }
 
 -- | Create a new mutable block of a specific N size of 'ty' elements
 new :: forall prim ty . (PrimMonad prim, PrimType ty) => CountOf ty -> prim (MutableBlock ty (PrimState prim))
-new n = unsafeNew unpinned (sizeOfE (primSizeInBytes (Proxy :: Proxy ty)) n)
+new n = unsafeNew Unpinned (sizeOfE (primSizeInBytes (Proxy :: Proxy ty)) n)
 
 newPinned :: forall prim ty . (PrimMonad prim, PrimType ty) => CountOf ty -> prim (MutableBlock ty (PrimState prim))
-newPinned n = unsafeNew pinned (sizeOfE (primSizeInBytes (Proxy :: Proxy ty)) n)
+newPinned n = unsafeNew Pinned (sizeOfE (primSizeInBytes (Proxy :: Proxy ty)) n)
 
 -- | Copy a number of elements from an array to another array with offsets
 unsafeCopyElements :: forall prim ty . (PrimMonad prim, PrimType ty)

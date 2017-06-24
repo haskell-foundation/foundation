@@ -28,6 +28,8 @@ module Foundation.Primitive.Block
     , copy
     -- * safer api
     , create
+    , isPinned
+    , isMutablePinned
     , singleton
     , replicate
     , index
@@ -96,6 +98,12 @@ create n initializer
         M.iterSet initializer mb
         unsafeFreeze mb
 
+isPinned :: Block ty -> PinnedStatus
+isPinned (Block ba) = toPinnedStatus# (compatIsByteArrayPinned# ba)
+
+isMutablePinned :: MutableBlock s ty -> PinnedStatus
+isMutablePinned (MutableBlock mba) = toPinnedStatus# (compatIsMutableByteArrayPinned# mba)
+
 singleton :: PrimType ty => ty -> Block ty
 singleton ty = create 1 (const ty)
 
@@ -108,14 +116,14 @@ replicate sz ty = create sz (const ty)
 -- and its content is copied to the mutable block
 thaw :: (PrimMonad prim, PrimType ty) => Block ty -> prim (MutableBlock ty (PrimState prim))
 thaw array = do
-    ma <- M.unsafeNew unpinned (lengthBytes array)
+    ma <- M.unsafeNew Unpinned (lengthBytes array)
     M.unsafeCopyBytesRO ma 0 array 0 (lengthBytes array)
     pure ma
 {-# INLINE thaw #-}
 
 freeze :: (PrimType ty, PrimMonad prim) => MutableBlock ty (PrimState prim) -> prim (Block ty)
 freeze ma = do
-    ma' <- unsafeNew unpinned len
+    ma' <- unsafeNew Unpinned len
     M.unsafeCopyBytes ma' 0 ma 0 len
     --M.copyAt ma' (Offset 0) ma (Offset 0) len
     unsafeFreeze ma'

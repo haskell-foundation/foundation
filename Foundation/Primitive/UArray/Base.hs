@@ -9,6 +9,9 @@ module Foundation.Primitive.UArray.Base
     , newPinned
     , newNative
     , new
+    -- * Pinning status
+    , isPinned
+    , isMutablePinned
     -- * Mutable array accessor
     , unsafeRead
     , unsafeWrite
@@ -45,11 +48,9 @@ import           Foundation.Internal.Proxy
 import qualified Foundation.Boot.List as List
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.FinalPtr
---import           Foundation.Primitive.Exception
 import           Foundation.Primitive.NormalForm
 import           Foundation.Numerical
 import           Foundation.System.Bindings.Hs
---import           Foreign.Marshal.Utils (copyBytes)
 import           Foreign.C.Types
 import           System.IO.Unsafe (unsafeDupablePerformIO)
 
@@ -59,7 +60,7 @@ import           System.IO.Unsafe (unsafeDupablePerformIO)
 data MUArray ty st =
       MUVecMA {-# UNPACK #-} !(Offset ty)
               {-# UNPACK #-} !(CountOf ty)
-              {-# UNPACK #-} !PinnedStatus
+                             !PinnedStatus
                              (MutableByteArray# st)
     | MUVecAddr {-# UNPACK #-} !(Offset ty)
                 {-# UNPACK #-} !(CountOf ty)
@@ -114,6 +115,18 @@ length (UVecAddr _ len _) = len
 length (UVecBA _ len _ _) = len
 {-# INLINE[1] length #-}
 
+-- | Return if the array is pinned in memory
+--
+-- note that Foreign array are considered pinned
+isPinned :: UArray ty -> PinnedStatus
+isPinned (UVecAddr {})     = Pinned
+isPinned (UVecBA _ _ _ ba) = toPinnedStatus# (compatIsByteArrayPinned# ba)
+
+-- | Return if a mutable array is pinned in memory
+isMutablePinned :: MUArray ty st -> PinnedStatus
+isMutablePinned (MUVecAddr {})      = Pinned
+isMutablePinned (MUVecMA _ _ _ mba) = toPinnedStatus# (compatIsMutableByteArrayPinned# mba)
+
 -- | Create a new pinned mutable array of size @n.
 --
 -- all the cells are uninitialized and could contains invalid values.
@@ -124,7 +137,7 @@ newPinned n = newFake n Proxy
   where newFake :: (PrimMonad prim, PrimType ty) => CountOf ty -> Proxy ty -> prim (MUArray ty (PrimState prim))
         newFake sz ty = primitive $ \s1 ->
             case newAlignedPinnedByteArray# bytes 8# s1 of
-                (# s2, mba #) -> (# s2, MUVecMA (Offset 0) sz pinned mba #)
+                (# s2, mba #) -> (# s2, MUVecMA (Offset 0) sz Pinned mba #)
           where
                 !(CountOf (I# bytes)) = sizeOfE (primSizeInBytes ty) sz
         {-# INLINE newFake #-}
@@ -134,7 +147,7 @@ newUnpinned n = newFake n Proxy
   where newFake :: (PrimMonad prim, PrimType ty) => CountOf ty -> Proxy ty -> prim (MUArray ty (PrimState prim))
         newFake sz ty = primitive $ \s1 ->
             case newByteArray# bytes s1 of
-                (# s2, mba #) -> (# s2, MUVecMA (Offset 0) sz unpinned mba #)
+                (# s2, mba #) -> (# s2, MUVecMA (Offset 0) sz Unpinned mba #)
           where
                 !(CountOf (I# bytes)) = sizeOfE (primSizeInBytes ty) sz
         {-# INLINE newFake #-}
@@ -472,7 +485,7 @@ empty_ = runST $ primitive $ \s1 ->
         (# s3, BA0 ba #) }}
 
 empty :: UArray ty
-empty = UVecBA 0 0 unpinned ba where !(BA0 ba) = empty_
+empty = UVecBA 0 0 Unpinned ba where !(BA0 ba) = empty_
 
 -- | Append 2 arrays together by creating a new bigger array
 append :: PrimType ty => UArray ty -> UArray ty -> UArray ty
