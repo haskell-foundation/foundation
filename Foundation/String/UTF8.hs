@@ -761,7 +761,7 @@ filter :: (Char -> Bool) -> String -> String
 filter predicate (String arr) = runST $ do
     (finalSize, dst) <- newNative sz $ \mba ->
         case arr of
-            C.UVecBA start _ _ ba -> BackendBA.copyFilter predicate sz mba ba start
+            C.UVecBA start _ ba     -> BackendBA.copyFilter predicate sz mba ba start
             C.UVecAddr start _ fptr -> withFinalPtr fptr $ \(Ptr addr) -> BackendAddr.copyFilter predicate sz mba addr start
     freezeShrink finalSize dst
   where

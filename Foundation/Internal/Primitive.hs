@@ -8,9 +8,10 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE UnliftedFFITypes #-}
 module Foundation.Internal.Primitive
     ( bool#
-    , PinnedStatus, pinned, unpinned, isPinned
+    , PinnedStatus(..), toPinnedStatus#
     , compatAndI#
     , compatQuotRemInt#
     , compatCopyAddrToByteArray#
@@ -19,6 +20,8 @@ module Foundation.Internal.Primitive
     , compatGetSizeofMutableByteArray#
     , compatShrinkMutableByteArray#
     , compatResizeMutableByteArray#
+    , compatIsByteArrayPinned#
+    , compatIsMutableByteArrayPinned#
     , Word(..)
     ) where
 
@@ -29,6 +32,8 @@ import           GHC.Word
 import           GHC.IO
 #endif
 
+import           Foundation.Internal.PrimTypes
+
 --  GHC 8.0  | Base 4.9
 --  GHC 7.10 | Base 4.8
 --  GHC 7.8  | Base 4.7
@@ -36,17 +41,12 @@ import           GHC.IO
 --  GHC 7.4  | Base 4.5
 
 -- | Flag record whether a specific byte array is pinned or not
-data PinnedStatus = PinnedStatus Int#
+data PinnedStatus = Pinned | Unpinned
+    deriving (Prelude.Eq)
 
-isPinned :: PinnedStatus -> Prelude.Bool
-isPinned (PinnedStatus 0#) = Prelude.False
-isPinned _                 = Prelude.True
-
-pinned :: PinnedStatus
-pinned = PinnedStatus 1#
-
-unpinned :: PinnedStatus
-unpinned = PinnedStatus 0#
+toPinnedStatus# :: Pinned# -> PinnedStatus
+toPinnedStatus# 0# = Unpinned
+toPinnedStatus# _  = Pinned
 
 -- | turn an Int# into a Bool
 --
@@ -163,3 +163,17 @@ compatResizeMutableByteArray# src i s =
     !len = sizeofMutableByteArray# src
 #endif
 {-# INLINE compatResizeMutableByteArray# #-}
+
+#if __GLASGOW_HASKELL__ >= 802
+compatIsByteArrayPinned# :: ByteArray# -> Pinned#
+compatIsByteArrayPinned# ba = isByteArrayPinned# ba
+
+compatIsMutableByteArrayPinned# :: MutableByteArray# s -> Pinned#
+compatIsMutableByteArrayPinned# ba = isMutableByteArrayPinned# ba
+#else
+foreign import ccall unsafe "foundation_is_bytearray_pinned"
+    compatIsByteArrayPinned# :: ByteArray# -> Pinned#
+
+foreign import ccall unsafe "foundation_is_bytearray_pinned"
+    compatIsMutableByteArrayPinned# :: MutableByteArray# s -> Pinned#
+#endif

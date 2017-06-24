@@ -223,6 +223,7 @@ library
                      cbits/foundation_network.c
                      cbits/foundation_mem.c
                      cbits/foundation_time.c
+                     cbits/foundation_rts.c
 
   if flag(experimental)
     exposed-modules: Foundation.Network.HostName

@@ -79,10 +79,10 @@ write array n val
 {-# INLINE write #-}
 
 empty :: PrimMonad prim => prim (MUArray ty (PrimState prim))
-empty = primitive $ \s1 -> case newByteArray# 0# s1 of { (# s2, mba #) -> (# s2, MUVecMA 0 0 unpinned mba #) }
+empty = primitive $ \s1 -> case newByteArray# 0# s1 of { (# s2, mba #) -> (# s2, MUVecMA 0 0 mba #) }
 
 mutableSame :: MUArray ty st -> MUArray ty st -> Bool
-mutableSame (MUVecMA sa ea _ ma) (MUVecMA sb eb _ mb) = (sa == sb) && (ea == eb) && bool# (sameMutableByteArray# ma mb)
+mutableSame (MUVecMA sa ea ma) (MUVecMA sb eb mb)     = (sa == sb) && (ea == eb) && bool# (sameMutableByteArray# ma mb)
 mutableSame (MUVecAddr s1 e1 f1) (MUVecAddr s2 e2 f2) = (s1 == s2) && (e1 == e2) && finalPtrSameMemory f1 f2
 mutableSame MUVecMA {}     MUVecAddr {}   = False
 mutableSame MUVecAddr {}   MUVecMA {}     = False
@@ -98,10 +98,10 @@ sub :: (PrimMonad prim, PrimType ty)
     -> Int -- The number of elements to drop ahead
     -> Int -- Then the number of element to retain
     -> prim (MUArray ty (PrimState prim))
-sub (MUVecMA start sz pstatus mba) dropElems' takeElems
+sub (MUVecMA start sz mba) dropElems' takeElems
     | takeElems <= 0 = empty
     | resultEmpty    = empty
-    | otherwise      = return $ MUVecMA (start `offsetPlusE` dropElems) (min (CountOf takeElems) (sz - dropElems)) pstatus mba
+    | otherwise      = return $ MUVecMA (start `offsetPlusE` dropElems) (min (CountOf takeElems) (sz - dropElems)) mba
   where
     dropElems = max 0 (CountOf dropElems')
     resultEmpty = dropElems >= sz
@@ -131,11 +131,11 @@ copyAddr (MUVecAddr start _ fptr) od src os sz =
 
 -- | return the numbers of elements in a mutable array
 mutableLength :: PrimType ty => MUArray ty st -> Int
-mutableLength (MUVecMA _ (CountOf end) _ _) = end
+mutableLength (MUVecMA _ (CountOf end) _)   = end
 mutableLength (MUVecAddr _ (CountOf end) _) = end
 
 mutableLengthSize :: PrimType ty => MUArray ty st -> CountOf ty
-mutableLengthSize (MUVecMA _ end _ _) = end
+mutableLengthSize (MUVecMA _ end _)   = end
 mutableLengthSize (MUVecAddr _ end _) = end
 
 withMutablePtrHint :: forall ty prim a . (PrimMonad prim, PrimType ty)
@@ -149,9 +149,9 @@ withMutablePtrHint _ _ (MUVecAddr start _ fptr)  f =
   where
     sz           = primSizeInBytes (Proxy :: Proxy ty)
     !(Offset os) = offsetOfE sz start
-withMutablePtrHint skipCopy skipCopyBack vec@(MUVecMA start vecSz pstatus a) f
-    | isPinned pstatus = mutableByteArrayContent a >>= \ptr -> f (ptr `plusPtr` os)
-    | otherwise        = do
+withMutablePtrHint skipCopy skipCopyBack vec@(MUVecMA start vecSz a) f
+    | isMutablePinned vec == Pinned = mutableByteArrayContent a >>= \ptr -> f (ptr `plusPtr` os)
+    | otherwise                     = do
         trampoline <- newPinned vecSz
         if not skipCopy
             then copyAt trampoline 0 vec 0 vecSz
@@ -187,7 +187,7 @@ withMutablePtr = withMutablePtrHint False False
 -- | Copy from a pointer, @count@ elements, into the mutable array
 copyFromPtr :: forall prim ty . (PrimMonad prim, PrimType ty)
             => Ptr ty -> CountOf ty -> MUArray ty (PrimState prim) -> prim ()
-copyFromPtr (Ptr p) count (MUVecMA ofs arrSz _ mba)
+copyFromPtr (Ptr p) count (MUVecMA ofs arrSz mba)
     | count > arrSz = primOutOfBound OOB_MemCopy (sizeAsOffset count) arrSz
     | otherwise     = primitive $ \st -> (# copyAddrToByteArray# p mba od countBytes st, () #)
   where
@@ -208,7 +208,7 @@ copyToPtr :: forall ty prim . (PrimType ty, PrimMonad prim)
           => MUArray ty (PrimState prim) -- ^ the source mutable array to copy
           -> Ptr ty                      -- ^ The destination address where the copy is going to start
           -> prim ()
-copyToPtr (MUVecMA start sz _ ma) (Ptr p) = primitive $ \s1 ->
+copyToPtr (MUVecMA start sz ma) (Ptr p) = primitive $ \s1 ->
     case unsafeFreezeByteArray# ma s1 of
         (# s2, ba #) -> (# compatCopyByteArrayToAddr# ba offset p szBytes s2, () #)
   where

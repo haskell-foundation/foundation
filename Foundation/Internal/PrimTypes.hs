@@ -10,6 +10,8 @@ module Foundation.Internal.PrimTypes
     ( FileSize#
     , Offset#
     , CountOf#
+    , Bool#
+    , Pinned#
     ) where
 
 import GHC.Prim
@@ -26,3 +28,9 @@ type Offset# = Int#
 --
 -- for code documentation purpose only, just a simple type alias on Int#
 type CountOf# = Int#
+
+-- | Lowlevel Boolean
+type Bool# = Int#
+
+-- | Pinning status
+type Pinned# = Bool#
