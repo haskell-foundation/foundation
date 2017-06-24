@@ -9,7 +9,6 @@
 {-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE UnliftedFFITypes #-}
-{-# LANGUAGE PatternSynonyms #-}
 module Foundation.Internal.Primitive
     ( bool#
     , PinnedStatus(..), toPinnedStatus#
@@ -46,8 +45,8 @@ data PinnedStatus = Pinned | Unpinned
     deriving (Prelude.Eq)
 
 toPinnedStatus# :: Pinned# -> PinnedStatus
-toPinnedStatus# 0# = Pinned
-toPinnedStatus# _  = Unpinned
+toPinnedStatus# 0# = Unpinned
+toPinnedStatus# _  = Pinned
 
 -- | turn an Int# into a Bool
 --
