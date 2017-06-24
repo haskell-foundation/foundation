@@ -29,6 +29,8 @@ import           GHC.Word
 import           GHC.IO
 #endif
 
+import           Foundation.Internal.PrimTypes
+
 --  GHC 8.0  | Base 4.9
 --  GHC 7.10 | Base 4.8
 --  GHC 7.8  | Base 4.7
@@ -36,7 +38,10 @@ import           GHC.IO
 --  GHC 7.4  | Base 4.5
 
 -- | Flag record whether a specific byte array is pinned or not
-data PinnedStatus = PinnedStatus Int#
+data PinnedStatus = PinnedStatus Pinned#
+
+toPinnedStatus :: Pinned# -> PinnedStatus
+toPinnedStatus = PinnedStatus
 
 isPinned :: PinnedStatus -> Prelude.Bool
 isPinned (PinnedStatus 0#) = Prelude.False
