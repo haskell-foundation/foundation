@@ -18,6 +18,7 @@ module Fake.ByteString
     ) where
 
 import Prelude (undefined, Maybe(..))
+import Data.Word
 
 data ByteString = ByteString
 
@@ -29,7 +30,9 @@ break   _ _ = (undefined, undefined)
 takeWhile _ _ = undefined
 reverse     = undefined
 filter _    = undefined
+foldl' :: (Word8 -> a -> a) -> a -> ByteString -> a
 foldl' _ _ _ = undefined
+foldr :: (a -> Word8 -> a) -> a -> ByteString -> a
 foldr _ _ _ = undefined
 and _ _ = undefined
 all _ _ = undefined
