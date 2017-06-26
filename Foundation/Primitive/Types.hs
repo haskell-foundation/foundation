@@ -156,6 +156,9 @@ class Eq ty => PrimType ty where
     -- | get the size in bytes of a ty element
     primSizeInBytes :: Proxy ty -> Size8
 
+    -- | get the shift size
+    primShiftToBytes :: Proxy ty -> Int
+
     -----
     -- ByteArray section
     -----
@@ -204,9 +207,13 @@ sizeInt, sizeWord :: CountOf Word8
 #if WORD_SIZE_IN_BITS == 64
 sizeInt = CountOf 8
 sizeWord = CountOf 8
+shiftInt = 3
+shiftWord = 3
 #else
 sizeInt = CountOf 4
 sizeWord = CountOf 4
+shiftInt = 2
+shiftWord = 2
 #endif
 
 {-# SPECIALIZE [3] primBaUIndex :: ByteArray# -> Offset Word8 -> Word8 #-}
@@ -214,6 +221,8 @@ sizeWord = CountOf 4
 instance PrimType Int where
     primSizeInBytes _ = sizeInt
     {-# INLINE primSizeInBytes #-}
+    primShiftToBytes _ = shiftInt
+    {-# INLINE primShiftToBytes #-}
     primBaUIndex ba (Offset (I# n)) = I# (indexIntArray# ba n)
     {-# INLINE primBaUIndex #-}
     primMbaURead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readIntArray# mba n s1 in (# s2, I# r #)
@@ -230,6 +239,8 @@ instance PrimType Int where
 instance PrimType Word where
     primSizeInBytes _ = sizeWord
     {-# INLINE primSizeInBytes #-}
+    primShiftToBytes _ = shiftWord
+    {-# INLINE primShiftToBytes #-}
     primBaUIndex ba (Offset (I# n)) = W# (indexWordArray# ba n)
     {-# INLINE primBaUIndex #-}
     primMbaURead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readWordArray# mba n s1 in (# s2, W# r #)
@@ -246,6 +257,8 @@ instance PrimType Word where
 instance PrimType Word8 where
     primSizeInBytes _ = CountOf 1
     {-# INLINE primSizeInBytes #-}
+    primShiftToBytes _ = 0
+    {-# INLINE primShiftToBytes #-}
     primBaUIndex ba (Offset (I# n)) = W8# (indexWord8Array# ba n)
     {-# INLINE primBaUIndex #-}
     primMbaURead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readWord8Array# mba n s1 in (# s2, W8# r #)
@@ -262,6 +275,8 @@ instance PrimType Word8 where
 instance PrimType Word16 where
     primSizeInBytes _ = CountOf 2
     {-# INLINE primSizeInBytes #-}
+    primShiftToBytes _ = 1
+    {-# INLINE primShiftToBytes #-}
     primBaUIndex ba (Offset (I# n)) = W16# (indexWord16Array# ba n)
     {-# INLINE primBaUIndex #-}
     primMbaURead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readWord16Array# mba n s1 in (# s2, W16# r #)
@@ -277,6 +292,8 @@ instance PrimType Word16 where
 instance PrimType Word32 where
     primSizeInBytes _ = CountOf 4
     {-# INLINE primSizeInBytes #-}
+    primShiftToBytes _ = 2
+    {-# INLINE primShiftToBytes #-}
     primBaUIndex ba (Offset (I# n)) = W32# (indexWord32Array# ba n)
     {-# INLINE primBaUIndex #-}
     primMbaURead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readWord32Array# mba n s1 in (# s2, W32# r #)
@@ -292,6 +309,8 @@ instance PrimType Word32 where
 instance PrimType Word64 where
     primSizeInBytes _ = CountOf 8
     {-# INLINE primSizeInBytes #-}
+    primShiftToBytes _ = 3
+    {-# INLINE primShiftToBytes #-}
     primBaUIndex ba (Offset (I# n)) = W64# (indexWord64Array# ba n)
     {-# INLINE primBaUIndex #-}
     primMbaURead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readWord64Array# mba n s1 in (# s2, W64# r #)
@@ -307,6 +326,8 @@ instance PrimType Word64 where
 instance PrimType Int8 where
     primSizeInBytes _ = CountOf 1
     {-# INLINE primSizeInBytes #-}
+    primShiftToBytes _ = 0
+    {-# INLINE primShiftToBytes #-}
     primBaUIndex ba (Offset (I# n)) = I8# (indexInt8Array# ba n)
     {-# INLINE primBaUIndex #-}
     primMbaURead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readInt8Array# mba n s1 in (# s2, I8# r #)
@@ -322,6 +343,8 @@ instance PrimType Int8 where
 instance PrimType Int16 where
     primSizeInBytes _ = CountOf 2
     {-# INLINE primSizeInBytes #-}
+    primShiftToBytes _ = 1
+    {-# INLINE primShiftToBytes #-}
     primBaUIndex ba (Offset (I# n)) = I16# (indexInt16Array# ba n)
     {-# INLINE primBaUIndex #-}
     primMbaURead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readInt16Array# mba n s1 in (# s2, I16# r #)
@@ -337,6 +360,8 @@ instance PrimType Int16 where
 instance PrimType Int32 where
     primSizeInBytes _ = CountOf 4
     {-# INLINE primSizeInBytes #-}
+    primShiftToBytes _ = 2
+    {-# INLINE primShiftToBytes #-}
     primBaUIndex ba (Offset (I# n)) = I32# (indexInt32Array# ba n)
     {-# INLINE primBaUIndex #-}
     primMbaURead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readInt32Array# mba n s1 in (# s2, I32# r #)
@@ -352,6 +377,8 @@ instance PrimType Int32 where
 instance PrimType Int64 where
     primSizeInBytes _ = CountOf 8
     {-# INLINE primSizeInBytes #-}
+    primShiftToBytes _ = 3
+    {-# INLINE primShiftToBytes #-}
     primBaUIndex ba (Offset (I# n)) = I64# (indexInt64Array# ba n)
     {-# INLINE primBaUIndex #-}
     primMbaURead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readInt64Array# mba n s1 in (# s2, I64# r #)
@@ -368,6 +395,8 @@ instance PrimType Int64 where
 instance PrimType Float where
     primSizeInBytes _ = CountOf 4
     {-# INLINE primSizeInBytes #-}
+    primShiftToBytes _ = 2
+    {-# INLINE primShiftToBytes #-}
     primBaUIndex ba (Offset (I# n)) = F# (indexFloatArray# ba n)
     {-# INLINE primBaUIndex #-}
     primMbaURead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readFloatArray# mba n s1 in (# s2, F# r #)
@@ -383,6 +412,8 @@ instance PrimType Float where
 instance PrimType Double where
     primSizeInBytes _ = CountOf 8
     {-# INLINE primSizeInBytes #-}
+    primShiftToBytes _ = 3
+    {-# INLINE primShiftToBytes #-}
     primBaUIndex ba (Offset (I# n)) = D# (indexDoubleArray# ba n)
     {-# INLINE primBaUIndex #-}
     primMbaURead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readDoubleArray# mba n s1 in (# s2, D# r #)
@@ -399,6 +430,8 @@ instance PrimType Double where
 instance PrimType Char where
     primSizeInBytes _ = CountOf 4
     {-# INLINE primSizeInBytes #-}
+    primShiftToBytes _ = 2
+    {-# INLINE primShiftToBytes #-}
     primBaUIndex ba (Offset (I# n)) = C# (indexWideCharArray# ba n)
     {-# INLINE primBaUIndex #-}
     primMbaURead mba (Offset (I# n)) = primitive $ \s1 -> let (# s2, r #) = readWideCharArray# mba n s1 in (# s2, C# r #)
@@ -415,6 +448,8 @@ instance PrimType Char where
 instance PrimType CChar where
     primSizeInBytes _ = CountOf 1
     {-# INLINE primSizeInBytes #-}
+    primShiftToBytes _ = 0
+    {-# INLINE primShiftToBytes #-}
     primBaUIndex ba (Offset n) = CChar (primBaUIndex ba (Offset n))
     {-# INLINE primBaUIndex #-}
     primMbaURead mba (Offset n) = CChar <$> primMbaURead mba (Offset n)
@@ -430,6 +465,8 @@ instance PrimType CChar where
 instance PrimType CUChar where
     primSizeInBytes _ = CountOf 1
     {-# INLINE primSizeInBytes #-}
+    primShiftToBytes _ = 0
+    {-# INLINE primShiftToBytes #-}
     primBaUIndex ba (Offset n) = CUChar (primBaUIndex ba (Offset n :: Offset Word8))
     {-# INLINE primBaUIndex #-}
     primMbaURead mba (Offset n) = CUChar <$> primMbaURead mba (Offset n :: Offset Word8)
@@ -446,6 +483,8 @@ instance PrimType CUChar where
 instance PrimType a => PrimType (LE a) where
     primSizeInBytes _ = primSizeInBytes (Proxy :: Proxy a)
     {-# INLINE primSizeInBytes #-}
+    primShiftToBytes _ = primShiftToBytes (Proxy :: Proxy a)
+    {-# INLINE primShiftToBytes #-}
     primBaUIndex ba (Offset a) = LE $ primBaUIndex ba (Offset a)
     {-# INLINE primBaUIndex #-}
     primMbaURead ba (Offset a) = LE <$> primMbaURead ba (Offset a)
@@ -461,6 +500,8 @@ instance PrimType a => PrimType (LE a) where
 instance PrimType a => PrimType (BE a) where
     primSizeInBytes _ = primSizeInBytes (Proxy :: Proxy a)
     {-# INLINE primSizeInBytes #-}
+    primShiftToBytes _ = primShiftToBytes (Proxy :: Proxy a)
+    {-# INLINE primShiftToBytes #-}
     primBaUIndex ba (Offset a) = BE $ primBaUIndex ba (Offset a)
     {-# INLINE primBaUIndex #-}
     primMbaURead ba (Offset a) = BE <$> primMbaURead ba (Offset a)
@@ -501,7 +542,7 @@ instance PrimMemoryComparable a => PrimMemoryComparable (BE a) where
 -- | Cast a CountOf linked to type A (CountOf A) to a CountOf linked to type B (CountOf B)
 sizeRecast :: forall a b . (PrimType a, PrimType b) => CountOf a -> CountOf b
 sizeRecast sz = CountOf (bytes `Prelude.quot` szB)
-  where !szA          = primSizeInBytes (Proxy :: Proxy a)
+  where !szA             = primSizeInBytes (Proxy :: Proxy a)
         !(CountOf szB)   = primSizeInBytes (Proxy :: Proxy b)
         !(CountOf bytes) = sizeOfE szA sz
 {-# INLINE [1] sizeRecast #-}
