@@ -630,34 +630,38 @@ sortBy xford vec
 filter :: forall ty . PrimType ty => (ty -> Bool) -> UArray ty -> UArray ty
 filter predicate arr = runST $ do
     (newLen, ma) <- newNative (length arr) $ \mba ->
-                case arr of
-                    (UArrayAddr start len fptr) -> withFinalPtr fptr $ \(Ptr addr) ->
-                                                    PrimAddr.filter predicate mba addr start (start `offsetPlusE` len)
-                    (UArrayBA start len ba)     -> PrimBA.filter predicate mba ba start (start `offsetPlusE` len)
+            onBackendPrim (\ba -> PrimBA.filter predicate mba ba start end)
+                          (\fptr -> withFinalPtr fptr $ \(Ptr addr) ->
+                                        PrimAddr.filter predicate mba addr start end)
+                          arr
     unsafeFreezeShrink ma newLen
+  where
+    !len   = length arr
+    !start = offset arr
+    !end   = start `offsetPlusE` len
 
 reverse :: PrimType ty => UArray ty -> UArray ty
 reverse a
-    | len == CountOf 0 = mempty
-    | otherwise     = runST $ do
+    | len == 0  = mempty
+    | otherwise = runST $ do
         ((), ma) <- newNative len $ \mba -> onBackendPrim (goNative mba)
                                                           (\fptr -> withFinalPtr fptr $ goAddr mba)
                                                           a
         unsafeFreeze ma
   where
     !len = length a
-    !end = Offset 0 `offsetPlusE` len
+    !end = 0 `offsetPlusE` len
     !start = offset a
     !endI = sizeAsOffset ((start + end) - Offset 1)
 
     goNative :: MutableByteArray# s -> ByteArray# -> ST s ()
-    goNative !ma !ba = loop (Offset 0)
+    goNative !ma !ba = loop 0
       where
         loop !i
             | i == end  = pure ()
             | otherwise = primMbaWrite ma i (primBaIndex ba (sizeAsOffset (endI - i))) >> loop (i+1)
     goAddr :: MutableByteArray# s -> Ptr ty -> ST s ()
-    goAddr !ma (Ptr addr) = loop (Offset 0)
+    goAddr !ma (Ptr addr) = loop 0
       where
         loop !i
             | i == end  = pure ()
@@ -685,7 +689,7 @@ indices needle hy
         in case matcher == needle of
              -- TODO: Move away from right-appending as it's gonna be slow.
              True  -> go (currentOffset `offsetPlusE` needleLen) (ipoints <> [currentOffset])
-             False -> go (currentOffset + Offset 1) ipoints
+             False -> go (currentOffset + 1) ipoints
 
 -- | Replace all the occurrencies of `needle` with `replacement` in
 -- the `haystack` string.
@@ -784,9 +788,9 @@ builderAppend v = Builder $ State $ \(i, st, e) ->
             newChunk <- new (chunkSize st)
             unsafeWrite newChunk 0 v
             pure ((), (Offset 1, st { prevChunks     = cur : prevChunks st
-                                      , prevChunksSize = chunkSize st + prevChunksSize st
-                                      , curChunk       = newChunk
-                                      }, e))
+                                    , prevChunksSize = chunkSize st + prevChunksSize st
+                                    , curChunk       = newChunk
+                                    }, e))
         else do
             unsafeWrite (curChunk st) i v
             pure ((), (i + 1, st, e))
