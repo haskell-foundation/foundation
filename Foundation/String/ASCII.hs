@@ -190,7 +190,7 @@ break predicate = bimap AsciiString AsciiString . Vec.break predicate . toBytes
 
 breakElem :: CUChar -> AsciiString -> (AsciiString, AsciiString)
 breakElem !el (AsciiString ba) =
-    let (# v1,v2 #) = Vec.splitElem el ba in (AsciiString v1, AsciiString v2)
+    bimap AsciiString AsciiString $ Vec.splitElem el ba
 {-# INLINE breakElem #-}
 
 intersperse :: CUChar -> AsciiString -> AsciiString

@@ -464,7 +464,7 @@ breakElem !el s@(String ba)
     | sz == 0   = (mempty, mempty)
     | otherwise =
         case asUTF8Char el of
-            UTF8_1 w -> let (# v1,v2 #) = Vec.splitElem w ba in (String v1, String v2)
+            UTF8_1 w -> let !(v1,v2) = Vec.splitElem w ba in (String v1, String v2)
             _        -> runST $ Vec.unsafeIndexer ba go
   where
     sz = size s

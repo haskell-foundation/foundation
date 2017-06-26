@@ -402,35 +402,26 @@ splitAt nbElems v
     n    = min nbElems vlen
     vlen = length v
 
-splitElem :: PrimType ty => ty -> UArray ty -> (# UArray ty, UArray ty #)
-splitElem !ty r@(UArrayBA start len ba)
-    | k == end   = (# r, mempty #)
-    | k == start = (# mempty, r #)
-    | otherwise  =
-        (# UArrayBA start (offsetAsSize k - offsetAsSize start) ba
-        ,  UArrayBA k     (len - (offsetAsSize k - offsetAsSize start)) ba
-        #)
+splitElem :: PrimType ty => ty -> UArray ty -> (UArray ty, UArray ty)
+splitElem !ty arr = onBackend goBa (\fptr -> pure . goAddr fptr) arr
   where
+    !len = length arr
+    !start = offset arr
     !end = start `offsetPlusE` len
-    !k = loop start
-    loop !i | i < end && t /= ty = loop (i+Offset 1)
-            | otherwise          = i
-        where t                  = primBaIndex ba i
-splitElem !ty r@(UArrayAddr start len fptr)
-    | k == end  = (# r, mempty #)
-    | otherwise =
-        (# UArrayAddr start (offsetAsSize k - offsetAsSize start) fptr
-        ,  UArrayAddr k     (len - (offsetAsSize k - offsetAsSize start)) fptr
-        #)
-  where
-    !(Ptr addr) = withFinalPtrNoTouch fptr id
-    !end = start `offsetPlusE` len
-    !k = loop start
-    loop !i | i < end && t /= ty = loop (i+Offset 1)
-            | otherwise          = i
-        where t                  = primAddrIndex addr i
-{-# SPECIALIZE [3] splitElem :: Word8 -> UArray Word8 -> (# UArray Word8, UArray Word8 #) #-}
-{-# SPECIALIZE [3] splitElem :: Word32 -> UArray Word32 -> (# UArray Word32, UArray Word32 #) #-}
+    goBa ba
+        | k == end   = (arr, mempty)
+        | k == start = (mempty, arr)
+        | otherwise  = ( UArrayBA start (offsetAsSize k - offsetAsSize start) ba
+                       , UArrayBA k     (len - (offsetAsSize k - offsetAsSize start)) ba)
+      where !k = PrimBA.findIndexElem ty ba start (start `offsetPlusE` len)
+    goAddr fptr (Ptr addr)
+        | k == end   = (arr, mempty)
+        | k == start = (mempty, arr)
+        | otherwise  = ( UArrayAddr start (offsetAsSize k - offsetAsSize start) fptr
+                       , UArrayAddr k     (len - (offsetAsSize k - offsetAsSize start)) fptr)
+      where !k = PrimAddr.findIndexElem ty addr start (start `offsetPlusE` len)
+{-# SPECIALIZE [3] splitElem :: Word8 -> UArray Word8 -> (UArray Word8, UArray Word8) #-}
+{-# SPECIALIZE [3] splitElem :: Word32 -> UArray Word32 -> (UArray Word32, UArray Word32) #-}
 
 -- inverse a CountOf that is specified from the end (e.g. take n elements from the end)
 countFromStart :: UArray ty -> CountOf ty -> CountOf ty
@@ -522,7 +513,7 @@ break xpredicate xv
 -}
 
 breakElem :: PrimType ty => ty -> UArray ty -> (UArray ty, UArray ty)
-breakElem xelem xv = let (# v1, v2 #) = splitElem xelem xv in (v1, v2)
+breakElem xelem xv = splitElem xelem xv
 {-# SPECIALIZE [2] breakElem :: Word8 -> UArray Word8 -> (UArray Word8, UArray Word8) #-}
 {-# SPECIALIZE [2] breakElem :: Word32 -> UArray Word32 -> (UArray Word32, UArray Word32) #-}
 
