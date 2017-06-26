@@ -36,6 +36,7 @@ import qualified Foundation.Array.Unboxed           as Vec
 import qualified Foundation.Array.Unboxed           as C
 import           Foundation.Array.Unboxed.ByteArray (MutableByteArray)
 import qualified Foundation.Array.Unboxed.Mutable   as MVec
+import           Foundation.Primitive.UArray.Base   as Vec (offset, pureST, onBackend)
 import           Foundation.String.ModifiedUTF8     (fromModified)
 import           GHC.CString                        (unpackCString#, unpackCStringUtf8#)
 
@@ -90,7 +91,7 @@ sToList s = loop 0
     loop idx
         | idx .==# nbBytes = []
         | otherwise        =
-            let (# c , idx' #) = next s idx in c : loop idx'
+            let (!c , !idx') = next s idx in c : loop idx'
 
 {-# RULES
 "String sFromList" forall s .
@@ -119,29 +120,21 @@ sFromList l = runST (new bytes >>= startCopy)
         loop idx (c:xs) = write ms idx c >>= \idx' -> loop idx' xs
 {-# INLINE [0] sFromList #-}
 
-next :: String -> Offset8 -> (# Char, Offset8 #)
-next (String array) n =
-    case array of
-        Vec.UArrayBA start _ ba     -> let (# c, o #) = PrimBA.next ba (start + n)
-                                      in (# c, o `offsetSub` start #)
-        Vec.UArrayAddr start _ fptr -> unt2 $ withUnsafeFinalPtr fptr $ \(Ptr ptr) -> pureST $ t2 start (PrimAddr.next ptr (start + n))
+next :: String -> Offset8 -> (Char, Offset8)
+next (String array) !n = Vec.onBackend nextNative nextAddr array
   where
-    pureST :: a -> ST s a
-    pureST = pure
-    unt2 (a,b) = (# a, b #)
-    t2 x (# a, b #) = (a, b `offsetSub` x)
+    !start = Vec.offset array
+    reoffset !(# a, b #) = (a, b `offsetSub` start)
+    nextNative ba        = reoffset (PrimBA.next ba (start + n))
+    nextAddr _ (Ptr ptr) = pureST $ reoffset (PrimAddr.next ptr (start + n))
 
-prev :: String -> Offset8 -> (# Char, Offset8 #)
-prev (String array) n =
-    case array of
-        Vec.UArrayBA start _ ba     -> let (# c, o #) = PrimBA.prev ba (start + n)
-                                      in (# c, o `offsetSub` start #)
-        Vec.UArrayAddr start _ fptr -> unt2 $ withUnsafeFinalPtr fptr $ \(Ptr ptr) -> pureST $ t2 start (PrimAddr.prev ptr (start + n))
+prev :: String -> Offset8 -> (Char, Offset8)
+prev (String array) !n = Vec.onBackend prevNative prevAddr array
   where
-    pureST :: a -> ST s a
-    pureST = pure
-    unt2 (a,b) = (# a, b #)
-    t2 x (# a, b #) = (a, b `offsetSub` x)
+    !start = Vec.offset array
+    reoffset !(# a, b #) = (a, b `offsetSub` start)
+    prevNative ba        = reoffset (PrimBA.prev ba (start + n))
+    prevAddr _ (Ptr ptr) = pureST $ reoffset (PrimAddr.prev ptr (start + n))
 
 -- A variant of 'next' when you want the next character
 -- to be ASCII only. if Bool is False, then it's not ascii,
@@ -157,9 +150,10 @@ expectAscii (String ba) n v = Vec.unsafeIndex ba n == v
 
 write :: PrimMonad prim => MutableString (PrimState prim) -> Offset8 -> Char -> prim Offset8
 write (MutableString marray) ofs c =
-    case marray of
-        MVec.MUArrayMBA start _ mba    -> PrimBA.write mba (start + ofs) c
-        MVec.MUArrayAddr start _ fptr -> withFinalPtr fptr $ \(Ptr ptr) -> PrimAddr.write ptr (start + ofs) c
+    MVec.onMutableBackend (\mba -> PrimBA.write mba (start + ofs) c)
+                          (\fptr -> withFinalPtr fptr $ \(Ptr ptr) -> PrimAddr.write ptr (start + ofs) c)
+                          marray
+  where start = MVec.mutableOffset marray
 
 -- | Allocate a MutableString of a specific size in bytes.
 new :: PrimMonad prim

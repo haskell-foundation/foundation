@@ -18,7 +18,9 @@ module Foundation.Array.Unboxed.Mutable
     -- * Property queries
     , sizeInMutableBytesOfContent
     , mutableLength
+    , mutableOffset
     , mutableSame
+    , onMutableBackend
     -- * Allocation & Copy
     , new
     , newPinned
@@ -171,7 +173,7 @@ copyFromPtr src@(Ptr src#) count marr
     | otherwise     = onMutableBackend copyNative copyPtr marr
   where
     arrSz = mutableLength marr
-    ofs = mutOffset marr
+    ofs = mutableOffset marr
 
     sz = primSizeInBytes (Proxy :: Proxy ty)
     !(CountOf bytes@(I# bytes#)) = sizeOfE sz count
@@ -194,8 +196,9 @@ copyToPtr marr dst@(Ptr dst#) = onMutableBackend copyNative copyPtr marr
     copyPtr fptr = unsafePrimFromIO $ withFinalPtr fptr $ \ptr ->
         copyBytes dst (ptr `plusPtr` os) szBytes
 
-    !(Offset os@(I# os#)) = offsetInBytes $ mutOffset marr
+    !(Offset os@(I# os#)) = offsetInBytes $ mutableOffset marr
     !(CountOf szBytes@(I# szBytes#)) = sizeInBytes $ mutableLength marr
 
-mutOffset (MUArrayMBA ofs _ _) = ofs
-mutOffset (MUArrayAddr ofs _ _) = ofs
+mutableOffset :: MUArray ty st -> Offset ty
+mutableOffset (MUArrayMBA ofs _ _) = ofs
+mutableOffset (MUArrayAddr ofs _ _) = ofs

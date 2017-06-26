@@ -412,7 +412,7 @@ splitOn predicate s
     loop prevIdx idx
         | idx == end = [sub s prevIdx idx]
         | otherwise =
-            let (# c, idx' #) = next s idx
+            let (!c, !idx') = next s idx
              in if predicate c
                     then sub s prevIdx idx : loop idx' idx'
                     else loop prevIdx idx'
@@ -541,7 +541,7 @@ intersperse sep src
             nextDstIdx' <- write dst nextDstIdx sep'
             return (nextSrcIdx, nextDstIdx')
       where
-        (# c, nextSrcIdx #) = next src' srcIdx
+        (c, nextSrcIdx) = next src' srcIdx
 
 -- | Allocate a new @String@ with a fill function that has access to the characters of
 --   the source @String@.
@@ -673,7 +673,7 @@ charMap f src
             | srcIdx == srcEnd = return (offsetAsSize dstIdx, srcIdx)
             | dstIdx == endDst = return (offsetAsSize dstIdx, srcIdx)
             | otherwise        =
-                let (# c, srcIdx' #) = next src srcIdx
+                let (c, srcIdx') = next src srcIdx
                     c' = f c -- the mapped char
                     !nbBytes = charToBytes (fromEnum c')
                  in -- check if we have room in the destination buffer
@@ -722,7 +722,7 @@ unsnoc :: String -> Maybe (String, Char)
 unsnoc s@(String arr)
     | sz == 0   = Nothing
     | otherwise =
-        let (# c, idx #) = prev s (sizeAsOffset sz)
+        let (c, idx) = prev s (sizeAsOffset sz)
          in Just (String $ Vec.take (offsetAsSize idx) arr, c)
   where
     sz = size s
@@ -734,7 +734,7 @@ uncons :: String -> Maybe (Char, String)
 uncons s@(String ba)
     | null s    = Nothing
     | otherwise =
-        let (# c, idx #) = next s azero
+        let (c, idx) = next s azero
          in Just (c, String $ Vec.drop (offsetAsSize idx) ba)
 
 -- | Look for a predicate in the String and return the matched character, if any.
@@ -746,7 +746,7 @@ find predicate s = loop (Offset 0)
     loop idx
         | idx == end = Nothing
         | otherwise =
-            let (# c, idx' #) = next s idx
+            let (c, idx') = next s idx
              in case predicate c of
                     True  -> Just c
                     False -> loop idx'
@@ -820,7 +820,7 @@ index :: String -> Offset Char -> Maybe Char
 index s n
     | ofs >= end = Nothing
     | otherwise  =
-        let (# c, _ #) = next s ofs
+        let (c, _) = next s ofs
          in Just c
   where
     !nbBytes = size s
@@ -837,7 +837,7 @@ findIndex predicate s = loop 0 0
     loop ofs idx
         | idx .==# sz = Nothing
         | otherwise   =
-            let (# c, idx' #) = next s idx
+            let (c, idx') = next s idx
              in case predicate c of
                     True  -> Just ofs
                     False -> loop (ofs+1) idx'
