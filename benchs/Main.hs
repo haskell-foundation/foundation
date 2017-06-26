@@ -8,6 +8,7 @@ import GHC.ST
 
 import Foundation
 import Foundation.Collection
+import Foundation.Primitive.Block (Block)
 import Foundation.String.Read
 import Foundation.String
 import BenchUtil.Common
@@ -21,9 +22,11 @@ import qualified Data.ByteString.Char8 as ByteString (readInt, readInteger)
 import qualified Data.Text as Text
 import qualified Data.Text.Read as Text
 import qualified Data.Text.Encoding as Text
+import qualified Data.Vector.Unboxed as Vector
 #else
 import qualified Fake.ByteString as ByteString
 import qualified Fake.Text as Text
+import qualified Fake.Vector as Vector
 #endif
 
 --------------------------------------------------------------------------
@@ -160,25 +163,35 @@ benchsString = bgroup "String"
 benchsByteArray = bgroup "ByteArray"
     [ benchLength
     , benchTake
+    , benchSplitAt
     , benchBreakElem
+    , benchTakeWhile
+    , benchFoldl
     , benchReverse
     , benchFilter
+    , benchAll
     --, benchSplitAt
     ]
   where
-    diffByteString :: (UArray Word8 -> a)
-                   -> (ByteString.ByteString -> b)
+    diffByteArray :: (UArray Word8 -> a)
+                   -> (Block Word8 -> b)
+                   -> (ByteString.ByteString -> c)
+                   -> (Vector.Vector Word8 -> d)
                    -> [Word8]
                    -> [Benchmark]
-    diffByteString foundationBench textBench dat =
-        [ bench "UArray_W8" $ whnf foundationBench s
+    diffByteArray uarrayBench blockBench bsBench vectorBench dat =
+        [ bench "UArray_W8" $ whnf uarrayBench s
+        , bench "Block_W8" $ whnf blockBench s'
 #ifdef BENCH_ALL
-        , bench "ByteString" $ whnf textBench t
+        , bench "ByteString" $ whnf bsBench t
+        , bench "Vector_W8" $ whnf vectorBench v
 #endif
         ]
       where
         s = fromList dat
+        s' = fromList dat
         t = ByteString.pack dat
+        v = Vector.fromList dat
 
     allDat =
         [ ("bs20", rdBytes20)
@@ -188,23 +201,53 @@ benchsByteArray = bgroup "ByteArray"
     allDatSuffix s = fmap (first (\x -> x <> "-" <> s)) allDat
 
     benchLength = bgroup "Length" $
-        fmap (\(n, dat) -> bgroup n $ diffByteString length ByteString.length dat) allDat
+        fmap (\(n, dat) -> bgroup n $ diffByteArray length length ByteString.length Vector.length dat) allDat
 
     benchTake = bgroup "Take" $ mconcat $ fmap (\p ->
-        fmap (\(n, dat) -> bgroup n $ diffByteString (take (CountOf p)) (ByteString.take p) dat)
+        fmap (\(n, dat) -> bgroup n $ diffByteArray (take (CountOf p)) (take (CountOf p))
+                                                    (ByteString.take p) (Vector.take p) dat)
             $ allDatSuffix (show p)
         ) [ 0, 10, 100 ]
 
-    benchBreakElem = bgroup "BreakElem" $ mconcat $ fmap (\p ->
-        fmap (\(n, dat) -> bgroup n $ diffByteString (fst . breakElem p) (fst . ByteString.break (== p)) dat)
+    benchSplitAt = bgroup "SplitAt" $ mconcat $ fmap (\p ->
+        fmap (\(n, dat) -> bgroup n $ diffByteArray (fst . splitAt (CountOf p)) (fst . splitAt (CountOf p))
+                                                    (fst . ByteString.splitAt p) (fst . Vector.splitAt p) dat)
                 $ allDatSuffix (show p)
         ) [ 19, 199, 0 ]
 
+    benchBreakElem = bgroup "BreakElem" $ mconcat $ fmap (\p ->
+        fmap (\(n, dat) -> bgroup n $ diffByteArray (fst . breakElem p) (fst . breakElem p)
+                                                    (fst . ByteString.break (== p)) (fst . Vector.break (== p)) dat)
+                $ allDatSuffix (show p)
+        ) [ 19, 199, 0 ]
+
+    benchTakeWhile = bgroup "TakeWhile" $ fmap (\(n, dat) ->
+            bgroup n $ diffByteArray (takeWhile (< 0x80)) (takeWhile (< 0x80))
+                                     (ByteString.takeWhile (< 0x80)) (Vector.takeWhile (< 0x80)) dat)
+                $ allDat
+
+    benchFoldl = bgroup "Foldl" $ fmap (\(n, dat) ->
+            bgroup n $ diffByteArray (foldl' (+) 0) (foldl' (+) 0)
+                                     (ByteString.foldl' (+) 0) (Vector.foldl' (+) 0) dat)
+                $ allDat
+
+    benchAll = bgroup "All" $ fmap (\(n, dat) ->
+            bgroup n $ diffByteArray (all (> 0)) (all (> 0))
+                                     (ByteString.all (> 0)) (Vector.all (> 0)) dat)
+                $ allDat
+
+    benchAny = bgroup "Any" $ fmap (\(n, dat) ->
+            bgroup n $ diffByteArray (any (== 80)) (any (== 80))
+                                     (ByteString.any (== 80)) (Vector.any (== 80)) dat)
+                $ allDat
+
     benchReverse = bgroup "Reverse" $
-        fmap (\(n, dat) -> bgroup n $ diffByteString reverse ByteString.reverse dat) allDat
+        fmap (\(n, dat) -> bgroup n $ diffByteArray reverse reverse ByteString.reverse Vector.reverse dat) allDat
 
     benchFilter = bgroup "Filter" $
-        fmap (\(n, dat) -> bgroup n $ diffByteString (filter (> 100)) (ByteString.filter (> 100)) dat) allDat
+        fmap (\(n, dat) -> bgroup n $ diffByteArray (filter (> 100)) (filter (> 100))
+                                                    (ByteString.filter (> 100))
+                                                    (Vector.filter (> 100)) dat) allDat
 
 --------------------------------------------------------------------------
 

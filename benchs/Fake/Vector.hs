@@ -1,6 +1,6 @@
-module Fake.ByteString
-    ( ByteString
-    , pack
+module Fake.Vector
+    ( Vector
+    , fromList
     , length
     , splitAt
     , take
@@ -13,15 +13,11 @@ module Fake.ByteString
     , and
     , all
     , any
-    , readInt
-    , readInteger
     ) where
 
-import Prelude (undefined, Maybe(..))
+data Vector ty = Vector
 
-data ByteString = ByteString
-
-pack _      = ByteString
+fromList _  = Vector
 length      = undefined
 splitAt _ _ = (undefined, undefined)
 take        = undefined
@@ -34,8 +30,3 @@ foldr _ _ _ = undefined
 and _ _ = undefined
 all _ _ = undefined
 any _ _ = undefined
-
-readInt :: ByteString -> Maybe (a,b)
-readInt _    = undefined
-readInteger :: ByteString -> Maybe (a,b)
-readInteger _ = undefined

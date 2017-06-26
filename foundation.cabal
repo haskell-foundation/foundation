@@ -357,6 +357,7 @@ Benchmark bench
                      Sys
                      Fake.ByteString
                      Fake.Text
+                     Fake.Vector
   hs-source-dirs:    benchs
   default-language:  Haskell2010
   type:              exitcode-stdio-1.0
