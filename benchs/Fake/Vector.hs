@@ -15,6 +15,8 @@ module Fake.Vector
     , any
     ) where
 
+import Prelude (undefined)
+
 data Vector ty = Vector
 
 fromList _  = Vector
