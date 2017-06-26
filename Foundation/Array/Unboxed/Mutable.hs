@@ -210,9 +210,9 @@ copyToPtr :: forall ty prim . (PrimType ty, PrimMonad prim)
           -> prim ()
 copyToPtr (MUArrayMBA start sz ma) (Ptr p) = primitive $ \s1 ->
     case unsafeFreezeByteArray# ma s1 of
-        (# s2, ba #) -> (# compatCopyByteArrayToAddr# ba offset p szBytes s2, () #)
+        (# s2, ba #) -> (# compatCopyByteArrayToAddr# ba os p szBytes s2, () #)
   where
-    !(Offset (I# offset)) = offsetInBytes start
+    !(Offset (I# os)) = offsetInBytes start
     !(CountOf (I# szBytes)) = sizeInBytes sz
 copyToPtr (MUArrayAddr start sz fptr) dst =
     unsafePrimFromIO $ withFinalPtr fptr $ \ptr -> copyBytes dst (ptr `plusPtr` os) szBytes

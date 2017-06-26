@@ -286,9 +286,9 @@ copyToPtr :: forall ty prim . (PrimType ty, PrimMonad prim)
           -> Ptr ty    -- ^ The destination address where the copy is going to start
           -> prim ()
 copyToPtr (UArrayBA start sz ba) (Ptr p) = primitive $ \s1 ->
-    (# compatCopyByteArrayToAddr# ba offset p szBytes s1, () #)
+    (# compatCopyByteArrayToAddr# ba os p szBytes s1, () #)
   where
-    !(Offset (I# offset)) = offsetInBytes start
+    !(Offset (I# os)) = offsetInBytes start
     !(CountOf (I# szBytes)) = sizeInBytes sz
 copyToPtr (UArrayAddr start sz fptr) dst =
     unsafePrimFromIO $ withFinalPtr fptr $ \ptr -> copyBytes dst (ptr `plusPtr` os) szBytes
