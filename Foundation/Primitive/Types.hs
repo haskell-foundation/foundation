@@ -204,6 +204,7 @@ class Eq ty => PrimType ty where
                   -> prim ()
 
 sizeInt, sizeWord :: CountOf Word8
+shiftInt, shiftWord :: Int
 #if WORD_SIZE_IN_BITS == 64
 sizeInt = CountOf 8
 sizeWord = CountOf 8

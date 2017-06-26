@@ -23,6 +23,7 @@ newtype NanoSeconds = NanoSeconds Word64
 
 instance PrimType NanoSeconds where
     primSizeInBytes _        = primSizeInBytes (Proxy :: Proxy Word64)
+    primShiftToBytes _       = primShiftToBytes (Proxy :: Proxy Word64)
     primBaUIndex ba ofs      = primBaUIndex ba (coerce ofs)
     primMbaURead mba ofs     = primMbaURead mba (coerce ofs)
     primMbaUWrite mba ofs v  = primMbaUWrite mba (coerce ofs) (coerce v :: Word64)
@@ -36,6 +37,7 @@ newtype Seconds = Seconds Word64
 
 instance PrimType Seconds where
     primSizeInBytes _        = primSizeInBytes (Proxy :: Proxy Word64)
+    primShiftToBytes _       = primShiftToBytes (Proxy :: Proxy Word64)
     primBaUIndex ba ofs      = primBaUIndex ba (coerce ofs)
     primMbaURead mba ofs     = primMbaURead mba (coerce ofs)
     primMbaUWrite mba ofs v  = primMbaUWrite mba (coerce ofs) (coerce v :: Word64)

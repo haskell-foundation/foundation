@@ -74,9 +74,9 @@ instance PrimType ty => IsList (Block ty) where
 
 length :: forall ty . PrimType ty => Block ty -> CountOf ty
 length (Block ba) =
-    case primSizeInBytes (Proxy :: Proxy ty) of
-        CountOf 1           -> CountOf (I# (sizeofByteArray# ba))
-        CountOf (I# szBits) -> CountOf (I# (uncheckedIShiftRL# (sizeofByteArray# ba) szBits))
+    case primShiftToBytes (Proxy :: Proxy ty) of
+        0           -> CountOf (I# (sizeofByteArray# ba))
+        (I# szBits) -> CountOf (I# (uncheckedIShiftRL# (sizeofByteArray# ba) szBits))
 {-# INLINE[1] length #-}
 {-# SPECIALIZE [2] length :: Block Word8 -> CountOf Word8 #-}
 
