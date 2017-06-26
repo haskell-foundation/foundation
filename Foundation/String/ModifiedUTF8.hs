@@ -46,7 +46,7 @@ accessBytes offset getAtIdx = (loop offset, pastEnd)
         | otherwise      = getAtIdx off : loop (off + 1)
 
 buildByteArray :: Addr# -> ST st (UArray Word8)
-buildByteArray addr = Vec.UVecAddr (Offset 0) (CountOf 100000) `fmap`
+buildByteArray addr = Vec.UArrayAddr (Offset 0) (CountOf 100000) `fmap`
     toFinalPtr (Ptr addr) (\_ -> return ())
 
 -- | assuming the given ByteArray is a valid modified UTF-8 sequence of bytes

@@ -122,9 +122,9 @@ sFromList l = runST (new bytes >>= startCopy)
 next :: String -> Offset8 -> (# Char, Offset8 #)
 next (String array) n =
     case array of
-        Vec.UVecBA start _ ba     -> let (# c, o #) = PrimBA.next ba (start + n)
+        Vec.UArrayBA start _ ba     -> let (# c, o #) = PrimBA.next ba (start + n)
                                       in (# c, o `offsetSub` start #)
-        Vec.UVecAddr start _ fptr -> unt2 $ withUnsafeFinalPtr fptr $ \(Ptr ptr) -> pureST $ t2 start (PrimAddr.next ptr (start + n))
+        Vec.UArrayAddr start _ fptr -> unt2 $ withUnsafeFinalPtr fptr $ \(Ptr ptr) -> pureST $ t2 start (PrimAddr.next ptr (start + n))
   where
     pureST :: a -> ST s a
     pureST = pure
@@ -134,9 +134,9 @@ next (String array) n =
 prev :: String -> Offset8 -> (# Char, Offset8 #)
 prev (String array) n =
     case array of
-        Vec.UVecBA start _ ba     -> let (# c, o #) = PrimBA.prev ba (start + n)
+        Vec.UArrayBA start _ ba     -> let (# c, o #) = PrimBA.prev ba (start + n)
                                       in (# c, o `offsetSub` start #)
-        Vec.UVecAddr start _ fptr -> unt2 $ withUnsafeFinalPtr fptr $ \(Ptr ptr) -> pureST $ t2 start (PrimAddr.prev ptr (start + n))
+        Vec.UArrayAddr start _ fptr -> unt2 $ withUnsafeFinalPtr fptr $ \(Ptr ptr) -> pureST $ t2 start (PrimAddr.prev ptr (start + n))
   where
     pureST :: a -> ST s a
     pureST = pure
@@ -158,8 +158,8 @@ expectAscii (String ba) n v = Vec.unsafeIndex ba n == v
 write :: PrimMonad prim => MutableString (PrimState prim) -> Offset8 -> Char -> prim Offset8
 write (MutableString marray) ofs c =
     case marray of
-        MVec.MUVecMA start _ mba    -> PrimBA.write mba (start + ofs) c
-        MVec.MUVecAddr start _ fptr -> withFinalPtr fptr $ \(Ptr ptr) -> PrimAddr.write ptr (start + ofs) c
+        MVec.MUArrayMBA start _ mba    -> PrimBA.write mba (start + ofs) c
+        MVec.MUArrayAddr start _ fptr -> withFinalPtr fptr $ \(Ptr ptr) -> PrimAddr.write ptr (start + ofs) c
 
 -- | Allocate a MutableString of a specific size in bytes.
 new :: PrimMonad prim
