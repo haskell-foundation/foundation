@@ -184,7 +184,7 @@ freeze ma = do
     ma' <- new len
     copyAt ma' (Offset 0) ma (Offset 0) len
     unsafeFreeze ma'
-  where len = CountOf $ mutableLength ma
+  where len = mutableLength ma
 
 freezeShrink :: (PrimType ty, PrimMonad prim) => MUArray ty (PrimState prim) -> CountOf ty -> prim (UArray ty)
 freezeShrink ma n = do

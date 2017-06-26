@@ -19,7 +19,7 @@ mutableByteArraySet mba val = do
     -- naive haskell way. TODO: call memset or a 32-bit/64-bit method
     forM_ [0..(sizeLastOffset len)] $ \i -> unsafeWrite mba i val
   where
-    len = mutableLengthSize mba
+    len = mutableLength mba
 
 {-
 mutableByteArraySetBetween :: PrimMonad prim => MUArray Word8 (PrimState prim) -> Word8 -> Offset Word8 -> CountOf Word8 -> prim ()

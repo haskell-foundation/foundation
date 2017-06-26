@@ -108,6 +108,7 @@ import           Foundation.Boot.Builder
 import           Foundation.Primitive.UTF8.Table
 import           Foundation.Primitive.UTF8.Helper
 import           Foundation.Primitive.UTF8.Base
+import           Foundation.Primitive.UArray.Base as C (onBackendPrim, offset)
 import qualified Foundation.Primitive.UTF8.BA as PrimBA
 import qualified Foundation.Primitive.UTF8.Addr as PrimAddr
 import qualified Foundation.String.UTF8.BA as BackendBA
@@ -760,12 +761,13 @@ sortBy sortF s = fromList $ Data.List.sortBy sortF $ toList s -- FIXME for tests
 filter :: (Char -> Bool) -> String -> String
 filter predicate (String arr) = runST $ do
     (finalSize, dst) <- newNative sz $ \mba ->
-        case arr of
-            C.UArrayBA start _ ba     -> BackendBA.copyFilter predicate sz mba ba start
-            C.UArrayAddr start _ fptr -> withFinalPtr fptr $ \(Ptr addr) -> BackendAddr.copyFilter predicate sz mba addr start
+        C.onBackendPrim (\ba -> BackendBA.copyFilter predicate sz mba ba start)
+                        (\fptr -> withFinalPtr fptr $ \(Ptr addr) -> BackendAddr.copyFilter predicate sz mba addr start)
+                        arr
     freezeShrink finalSize dst
   where
-    !sz = C.length arr
+    !sz    = C.length arr
+    !start = C.offset arr
 
 -- | Reverse a string
 reverse :: String -> String

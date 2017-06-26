@@ -24,6 +24,7 @@ module Foundation.Primitive.UArray.Base
     , unsafeIndexer
     , onBackend
     , onBackendPrim
+    , onMutableBackend
     , unsafeDewrap
     , unsafeDewrap2
     -- * Basic lowlevel functions
@@ -126,12 +127,12 @@ offset (UArrayBA ofs _ _) = ofs
 --
 -- note that Foreign array are considered pinned
 isPinned :: UArray ty -> PinnedStatus
-isPinned (UArrayAddr {})     = Pinned
+isPinned (UArrayAddr {})   = Pinned
 isPinned (UArrayBA _ _ ba) = toPinnedStatus# (compatIsByteArrayPinned# ba)
 
 -- | Return if a mutable array is pinned in memory
 isMutablePinned :: MUArray ty st -> PinnedStatus
-isMutablePinned (MUArrayAddr {})    = Pinned
+isMutablePinned (MUArrayAddr {})     = Pinned
 isMutablePinned (MUArrayMBA _ _ mba) = toPinnedStatus# (compatIsMutableByteArrayPinned# mba)
 
 -- | Create a new pinned mutable array of size @n.
@@ -259,6 +260,16 @@ onBackendPrim :: PrimMonad prim
 onBackendPrim onBa _      (UArrayBA _ _ ba)     = onBa ba
 onBackendPrim _    onAddr (UArrayAddr _ _ fptr) = onAddr fptr
 {-# INLINE onBackendPrim #-}
+
+onMutableBackend :: PrimMonad prim
+                 => (MutableByteArray# (PrimState prim) -> prim a)
+                 -> (FinalPtr ty -> prim a)
+                 -> MUArray ty (PrimState prim)
+                 -> prim a
+onMutableBackend onMba _      (MUArrayMBA _ _ mba)   = onMba mba
+onMutableBackend _     onAddr (MUArrayAddr _ _ fptr) = onAddr fptr
+{-# INLINE onMutableBackend #-}
+
 
 unsafeDewrap :: (ByteArray# -> Offset ty -> a)
              -> (Ptr ty -> Offset ty -> ST s a)
