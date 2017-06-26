@@ -7,7 +7,7 @@
 -- very similar to an unboxed array but with the key difference:
 --
 -- * It doesn't have slicing capability (no cheap take or drop)
--- * It consume less memory: 1 Offset, 1 CountOf, 1 Pinning status trimmed
+-- * It consume less memory: 1 Offset, 1 CountOf
 -- * It's unpackable in any constructor
 -- * It uses unpinned memory by default
 --
@@ -154,17 +154,19 @@ foldr :: PrimType ty => (ty -> a -> a) -> a -> Block ty -> a
 foldr f initialAcc vec = loop 0
   where
     !len = length vec
-    loop i
+    loop !i
         | i .==# len = initialAcc
         | otherwise  = unsafeIndex vec i `f` loop (i+1)
+{-# SPECIALIZE [2] foldr :: (Word8 -> a -> a) -> a -> Block Word8 -> a #-}
 
 foldl' :: PrimType ty => (a -> ty -> a) -> a -> Block ty -> a
 foldl' f initialAcc vec = loop 0 initialAcc
   where
     !len = length vec
-    loop i !acc
+    loop !i !acc
         | i .==# len = acc
         | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
+{-# SPECIALIZE [2] foldl' :: (a -> Word8 -> a) -> a -> Block Word8 -> a #-}
 
 foldl1' :: PrimType ty => (ty -> ty -> ty) -> NonEmpty (Block ty) -> ty
 foldl1' f arr = let (initialAcc, rest) = splitAt 1 $ getNonEmpty arr
@@ -187,11 +189,11 @@ cons e vec
 
 snoc :: PrimType ty => Block ty -> ty -> Block ty
 snoc vec e
-    | len == CountOf 0 = singleton e
-    | otherwise     = runST $ do
+    | len == 0  = singleton e
+    | otherwise = runST $ do
         muv <- new (len + 1)
         M.unsafeCopyElementsRO muv 0 vec 0 len
-        M.unsafeWrite muv (0 `offsetPlusE` length vec) e
+        M.unsafeWrite muv (0 `offsetPlusE` len) e
         unsafeFreeze muv
   where
      !len = length vec
@@ -237,6 +239,7 @@ splitAt nbElems blk
   where
     n    = min nbElems vlen
     vlen = length blk
+{-# SPECIALIZE [2] splitAt :: CountOf Word8 -> Block Word8 -> (Block Word8, Block Word8) #-}
 
 revSplitAt :: PrimType ty => CountOf ty -> Block ty -> (Block ty, Block ty)
 revSplitAt n blk
@@ -252,6 +255,7 @@ break predicate blk = findBreak 0
         | predicate (unsafeIndex blk i) = splitAt (offsetAsSize i) blk
         | otherwise                     = findBreak (i + 1)
     {-# INLINE findBreak #-}
+{-# SPECIALIZE [2] break :: (Word8 -> Bool) -> Block Word8 -> (Block Word8, Block Word8) #-}
 
 span :: PrimType ty => (ty -> Bool) -> Block ty -> (Block ty, Block ty)
 span p = break (not . p)
@@ -260,28 +264,32 @@ elem :: PrimType ty => ty -> Block ty -> Bool
 elem v blk = loop 0
   where
     !len = length blk
-    loop i
+    loop !i
         | i .==# len             = False
         | unsafeIndex blk i == v = True
         | otherwise              = loop (i+1)
+        | otherwise             = False
+{-# SPECIALIZE [2] elem :: Word8 -> Block Word8 -> Bool #-}
 
 all :: PrimType ty => (ty -> Bool) -> Block ty -> Bool
 all p blk = loop 0
   where
     !len = length blk
-    loop i
+    loop !i
         | i .==# len            = True
         | p (unsafeIndex blk i) = loop (i+1)
         | otherwise             = False
+{-# SPECIALIZE [2] all :: (Word8 -> Bool) -> Block Word8 -> Bool #-}
 
 any :: PrimType ty => (ty -> Bool) -> Block ty -> Bool
 any p blk = loop 0
   where
     !len = length blk
-    loop i
+    loop !i
         | i .==# len            = False
         | p (unsafeIndex blk i) = True
         | otherwise             = loop (i+1)
+{-# SPECIALIZE [2] any :: (Word8 -> Bool) -> Block Word8 -> Bool #-}
 
 splitOn :: PrimType ty => (ty -> Bool) -> Block ty -> [Block ty]
 splitOn predicate blk
