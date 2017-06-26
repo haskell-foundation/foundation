@@ -46,6 +46,9 @@ matrix:
     language: generic
     addons: { apt: { packages: [ libgmp-dev ] } }
     compiler: ghc-8.0
+  - env: BUILD=hlint
+    language: generic
+    compiler: hlint
 
 install:
   - export PATH=$HOME/.local/bin::$HOME/.cabal/bin:$PATH
