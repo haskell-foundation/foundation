@@ -10,7 +10,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MagicHash                  #-}
 {-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE UnboxedTuples              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE CPP                        #-}
 module Foundation.Primitive.UTF8.Base
@@ -22,13 +21,13 @@ import           GHC.Word
 import           GHC.Prim
 import           Foundation.Internal.Base
 import           Foundation.Numerical
-import           Foundation.Bits
 import           Foundation.Class.Bifunctor
 import           Foundation.Primitive.NormalForm
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.FinalPtr
 import           Foundation.Primitive.UTF8.Helper
+import           Foundation.Primitive.UTF8.Types
 import qualified Foundation.Primitive.UTF8.BA       as PrimBA
 import qualified Foundation.Primitive.UTF8.Addr     as PrimAddr
 import           Foundation.Array.Unboxed           (UArray)
@@ -91,7 +90,7 @@ sToList s = loop 0
     loop idx
         | idx .==# nbBytes = []
         | otherwise        =
-            let (!c , !idx') = next s idx in c : loop idx'
+            let !(Step c idx') = next s idx in c : loop idx'
 
 {-# RULES
 "String sFromList" forall s .
@@ -120,27 +119,26 @@ sFromList l = runST (new bytes >>= startCopy)
         loop idx (c:xs) = write ms idx c >>= \idx' -> loop idx' xs
 {-# INLINE [0] sFromList #-}
 
-next :: String -> Offset8 -> (Char, Offset8)
+next :: String -> Offset8 -> Step
 next (String array) !n = Vec.onBackend nextNative nextAddr array
   where
     !start = Vec.offset array
-    reoffset !(# a, b #) = (a, b `offsetSub` start)
+    reoffset (Step a ofs) = Step a (ofs `offsetSub` start)
     nextNative ba        = reoffset (PrimBA.next ba (start + n))
     nextAddr _ (Ptr ptr) = pureST $ reoffset (PrimAddr.next ptr (start + n))
 
-prev :: String -> Offset8 -> (Char, Offset8)
+prev :: String -> Offset8 -> StepBack
 prev (String array) !n = Vec.onBackend prevNative prevAddr array
   where
     !start = Vec.offset array
-    reoffset !(# a, b #) = (a, b `offsetSub` start)
+    reoffset (StepBack a ofs) = StepBack a (ofs `offsetSub` start)
     prevNative ba        = reoffset (PrimBA.prev ba (start + n))
     prevAddr _ (Ptr ptr) = pureST $ reoffset (PrimAddr.prev ptr (start + n))
 
 -- A variant of 'next' when you want the next character
--- to be ASCII only. if Bool is False, then it's not ascii,
--- otherwise it is and the return Word8 is valid.
-nextAscii :: String -> Offset8 -> (# Word8, Bool #)
-nextAscii (String ba) n = (# w, not (testBit w 7) #)
+-- to be ASCII only.
+nextAscii :: String -> Offset8 -> StepASCII
+nextAscii (String ba) n = StepASCII w
   where
     !w = Vec.unsafeIndex ba n
 

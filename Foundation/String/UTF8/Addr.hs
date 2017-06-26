@@ -2,7 +2,6 @@
 {-# LANGUAGE MagicHash                  #-}
 {-# LANGUAGE NoImplicitPrelude          #-}
 {-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE UnboxedTuples              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE CPP                        #-}
 module Foundation.String.UTF8.Addr
@@ -20,6 +19,7 @@ import qualified Foundation.Primitive.UTF8.BA   as PrimBA
 import qualified Foundation.Primitive.UTF8.Addr as PrimBackend
 import           Foundation.Primitive.UTF8.Helper
 import           Foundation.Primitive.UTF8.Table
+import           Foundation.Primitive.UTF8.Types
 
 copyFilter :: (Char -> Bool)
            -> CountOf Word8
@@ -39,8 +39,8 @@ copyFilter predicate !sz dst src start = loop (Offset 0) start
                          | otherwise             -> loop d (s + Offset 1)
                     False ->
                         case PrimBackend.next src s of
-                            (# c, s' #) | predicate c -> PrimBA.write dst d c >>= \d' -> loop d' s'
-                                        | otherwise   -> loop d s'
+                            Step c s' | predicate c -> PrimBA.write dst d c >>= \d' -> loop d' s'
+                                      | otherwise   -> loop d s'
 
 validate :: Offset Word8
          -> PrimBackend.Immutable

@@ -1,7 +1,6 @@
 {-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE MagicHash                  #-}
 {-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE UnboxedTuples              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE CPP                        #-}
 module Foundation.Primitive.UTF8.Addr
@@ -33,7 +32,7 @@ import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
 import           Foundation.Primitive.UTF8.Helper
 import           Foundation.Primitive.UTF8.Table
-import           Foundation.Bits
+import           Foundation.Primitive.UTF8.Types
 
 type Immutable = Addr#
 type Mutable (prim :: * -> *) = Addr#
@@ -48,32 +47,31 @@ primIndex :: Immutable -> Offset Word8 -> Word8
 primIndex = primAddrIndex
 
 
-nextAscii :: Immutable -> Offset Word8 -> (# Word8, Bool #)
-nextAscii ba n = (# w, not (testBit w 7) #)
+nextAscii :: Immutable -> Offset Word8 -> StepASCII
+nextAscii ba n = StepASCII w
   where
     !w = primIndex ba n
 {-# INLINE nextAscii #-}
 
 -- | nextAsciiBa specialized to get a digit between 0 and 9 (included)
-nextAsciiDigit :: Immutable -> Offset Word8 -> (# Word8, Bool #)
-nextAsciiDigit ba n = (# d, d < 0xa #)
-  where !d = primIndex ba n - 0x30
+nextAsciiDigit :: Immutable -> Offset Word8 -> StepDigit
+nextAsciiDigit ba n = StepDigit (primIndex ba n - 0x30)
 {-# INLINE nextAsciiDigit #-}
 
 expectAscii :: Immutable -> Offset Word8 -> Word8 -> Bool
 expectAscii ba n v = primIndex ba n == v
 {-# INLINE expectAscii #-}
 
-next :: Immutable -> Offset8 -> (# Char, Offset8 #)
+next :: Immutable -> Offset8 -> Step
 next ba n =
     case getNbBytes h of
-        0 -> (# toChar1 h, n + Offset 1 #)
-        1 -> (# toChar2 h (primIndex ba (n + Offset 1)) , n + Offset 2 #)
-        2 -> (# toChar3 h (primIndex ba (n + Offset 1))
-                          (primIndex ba (n + Offset 2)) , n + Offset 3 #)
-        3 -> (# toChar4 h (primIndex ba (n + Offset 1))
-                          (primIndex ba (n + Offset 2))
-                          (primIndex ba (n + Offset 3)) , n + Offset 4 #)
+        0 -> Step (toChar1 h) (n + Offset 1)
+        1 -> Step (toChar2 h (primIndex ba (n + Offset 1))) (n + Offset 2)
+        2 -> Step (toChar3 h (primIndex ba (n + Offset 1))
+                             (primIndex ba (n + Offset 2))) (n + Offset 3)
+        3 -> Step (toChar4 h (primIndex ba (n + Offset 1))
+                             (primIndex ba (n + Offset 2))
+                             (primIndex ba (n + Offset 3))) (n + Offset 4)
         r -> error ("next: internal error: invalid input: offset=" <> show n <> " table=" <> show r <> " h=" <> show h)
   where
     !h = primIndex ba n
@@ -81,11 +79,11 @@ next ba n =
 
 -- Given a non null offset, give the previous character and the offset of this character
 -- will fail bad if apply at the beginning of string or an empty string.
-prev :: Immutable -> Offset Word8 -> (# Char, Offset8 #)
+prev :: Immutable -> Offset Word8 -> StepBack
 prev ba offset =
     case primIndex ba prevOfs1 of
         (W8# v1) | isContinuation# v1 -> atLeast2 (maskContinuation# v1)
-                 | otherwise          -> (# toChar# v1, prevOfs1 #)
+                 | otherwise          -> StepBack (toChar# v1) prevOfs1
   where
     sz1 = CountOf 1
     !prevOfs1 = offset `offsetMinusE` sz1
@@ -95,14 +93,14 @@ prev ba offset =
     atLeast2 !v  =
         case primIndex ba prevOfs2 of
             (W8# v2) | isContinuation# v2 -> atLeast3 (or# (uncheckedShiftL# (maskContinuation# v2) 6#) v)
-                     | otherwise          -> (# toChar# (or# (uncheckedShiftL# (maskHeader2# v2) 6#) v), prevOfs2 #)
+                     | otherwise          -> StepBack (toChar# (or# (uncheckedShiftL# (maskHeader2# v2) 6#) v)) prevOfs2
     atLeast3 !v =
         case primIndex ba prevOfs3 of
             (W8# v3) | isContinuation# v3 -> atLeast4 (or# (uncheckedShiftL# (maskContinuation# v3) 12#) v)
-                     | otherwise          -> (# toChar# (or# (uncheckedShiftL# (maskHeader3# v3) 12#) v), prevOfs3 #)
+                     | otherwise          -> StepBack (toChar# (or# (uncheckedShiftL# (maskHeader3# v3) 12#) v)) prevOfs3
     atLeast4 !v =
         case primIndex ba prevOfs4 of
-            (W8# v4) -> (# toChar# (or# (uncheckedShiftL# (maskHeader4# v4) 18#) v), prevOfs4 #)
+            (W8# v4) -> StepBack (toChar# (or# (uncheckedShiftL# (maskHeader4# v4) 18#) v)) prevOfs4
 
 prevSkip :: Immutable -> Offset Word8 -> Offset Word8
 prevSkip ba offset = loop (offset `offsetMinusE` sz1)

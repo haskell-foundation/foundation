@@ -108,6 +108,7 @@ import           Foundation.Boot.Builder
 import           Foundation.Primitive.UTF8.Table
 import           Foundation.Primitive.UTF8.Helper
 import           Foundation.Primitive.UTF8.Base
+import           Foundation.Primitive.UTF8.Types
 import           Foundation.Primitive.UArray.Base as C (onBackendPrim, offset)
 import qualified Foundation.Primitive.UTF8.BA as PrimBA
 import qualified Foundation.Primitive.UTF8.Addr as PrimAddr
@@ -412,7 +413,7 @@ splitOn predicate s
     loop prevIdx idx
         | idx == end = [sub s prevIdx idx]
         | otherwise =
-            let (!c, !idx') = next s idx
+            let !(Step c idx') = next s idx
              in if predicate c
                     then sub s prevIdx idx : loop idx' idx'
                     else loop prevIdx idx'
@@ -541,7 +542,7 @@ intersperse sep src
             nextDstIdx' <- write dst nextDstIdx sep'
             return (nextSrcIdx, nextDstIdx')
       where
-        (c, nextSrcIdx) = next src' srcIdx
+        !(Step c nextSrcIdx) = next src' srcIdx
 
 -- | Allocate a new @String@ with a fill function that has access to the characters of
 --   the source @String@.
@@ -673,7 +674,7 @@ charMap f src
             | srcIdx == srcEnd = return (offsetAsSize dstIdx, srcIdx)
             | dstIdx == endDst = return (offsetAsSize dstIdx, srcIdx)
             | otherwise        =
-                let (c, srcIdx') = next src srcIdx
+                let !(Step c srcIdx') = next src srcIdx
                     c' = f c -- the mapped char
                     !nbBytes = charToBytes (fromEnum c')
                  in -- check if we have room in the destination buffer
@@ -722,7 +723,7 @@ unsnoc :: String -> Maybe (String, Char)
 unsnoc s@(String arr)
     | sz == 0   = Nothing
     | otherwise =
-        let (c, idx) = prev s (sizeAsOffset sz)
+        let !(StepBack c idx) = prev s (sizeAsOffset sz)
          in Just (String $ Vec.take (offsetAsSize idx) arr, c)
   where
     sz = size s
@@ -734,7 +735,7 @@ uncons :: String -> Maybe (Char, String)
 uncons s@(String ba)
     | null s    = Nothing
     | otherwise =
-        let (c, idx) = next s azero
+        let !(Step c idx) = next s azero
          in Just (c, String $ Vec.drop (offsetAsSize idx) ba)
 
 -- | Look for a predicate in the String and return the matched character, if any.
@@ -746,7 +747,7 @@ find predicate s = loop (Offset 0)
     loop idx
         | idx == end = Nothing
         | otherwise =
-            let (c, idx') = next s idx
+            let !(Step c idx') = next s idx
              in case predicate c of
                     True  -> Just c
                     False -> loop idx'
@@ -820,7 +821,7 @@ index :: String -> Offset Char -> Maybe Char
 index s n
     | ofs >= end = Nothing
     | otherwise  =
-        let (c, _) = next s ofs
+        let (Step !c _) = next s ofs
          in Just c
   where
     !nbBytes = size s
@@ -837,7 +838,7 @@ findIndex predicate s = loop 0 0
     loop ofs idx
         | idx .==# sz = Nothing
         | otherwise   =
-            let (c, idx') = next s idx
+            let !(Step c idx') = next s idx
              in case predicate c of
                     True  -> Just ofs
                     False -> loop (ofs+1) idx'
@@ -1184,9 +1185,9 @@ readFloatingExact str f
             | otherwise        =
                 -- consume 'E' or 'e'
                 case PrimBA.nextAscii ba startOfs of
-                    (# 0x45, True #) -> consumeExponantSign (startOfs+1)
-                    (# 0x65, True #) -> consumeExponantSign (startOfs+1)
-                    (# _   , _    #) -> Nothing
+                    StepASCII 0x45 -> consumeExponantSign (startOfs+1)
+                    StepASCII 0x65 -> consumeExponantSign (startOfs+1)
+                    _              -> Nothing
           where
             consumeExponantSign ofs
                 | ofs == eofs = Nothing
@@ -1224,9 +1225,9 @@ readFloatingExact str f
             | otherwise        =
                 -- consume 'E' or 'e'
                 case PrimAddr.nextAscii ptr startOfs of
-                    (# 0x45, True #) -> consumeExponantSign (startOfs+1)
-                    (# 0x65, True #) -> consumeExponantSign (startOfs+1)
-                    (# _   , _    #) -> Nothing
+                    StepASCII 0x45 -> consumeExponantSign (startOfs+1)
+                    StepASCII 0x65 -> consumeExponantSign (startOfs+1)
+                    _              -> Nothing
           where
             consumeExponantSign ofs
                 | ofs == eofs = Nothing
@@ -1272,8 +1273,8 @@ decimalDigits startAcc str startOfs = loop startAcc startOfs
         | ofs .==# sz = (# acc, True, ofs #)
         | otherwise   =
             case nextAscii str ofs of
-                (# d, True #) | isDigit d -> loop (scale (10::Word) acc + fromDigit d) (ofs+1)
-                (# _, _ #)                -> (# acc, False, ofs #)
+                st@(StepASCII d) | isValidStepASCII st && isDigit d -> loop (scale (10::Word) acc + fromDigit d) (ofs+1)
+                                 | otherwise                        -> (# acc, False, ofs #)
     ascii0 = 0x30 -- use pattern synonym when we support >= 8.0
     ascii9 = 0x39
     isDigit c = c >= ascii0 && c <= ascii9
@@ -1292,8 +1293,8 @@ decimalDigitsBA startAcc ba !endOfs !startOfs = loop startAcc startOfs
         | ofs == endOfs = (# acc, True, ofs #)
         | otherwise     =
             case PrimBA.nextAsciiDigit ba ofs of
-                (# d, True #) -> loop (10 * acc + integralUpsize d) (succ ofs)
-                (# _, _ #)    -> (# acc, False, ofs #)
+                sg@(StepDigit d) | isValidStepDigit sg -> loop (10 * acc + integralUpsize d) (succ ofs)
+                                 | otherwise           -> (# acc, False, ofs #)
 {-# SPECIALIZE decimalDigitsBA :: Integer -> ByteArray# -> Offset Word8 -> Offset Word8 -> (# Integer, Bool, Offset Word8 #) #-}
 {-# SPECIALIZE decimalDigitsBA :: Natural -> ByteArray# -> Offset Word8 -> Offset Word8 -> (# Natural, Bool, Offset Word8 #) #-}
 {-# SPECIALIZE decimalDigitsBA :: Int -> ByteArray# -> Offset Word8 -> Offset Word8 -> (# Int, Bool, Offset Word8 #) #-}
@@ -1312,8 +1313,8 @@ decimalDigitsPtr startAcc ptr !endOfs !startOfs = loop startAcc startOfs
         | ofs == endOfs = (# acc, True, ofs #)
         | otherwise     =
             case PrimAddr.nextAsciiDigit ptr ofs of
-                (# d, True #) -> loop (10 * acc + integralUpsize d) (succ ofs)
-                (# _, _ #)    -> (# acc, False, ofs #)
+                sg@(StepDigit d) | isValidStepDigit sg -> loop (10 * acc + integralUpsize d) (succ ofs)
+                                 | otherwise           -> (# acc, False, ofs #)
 {-# SPECIALIZE decimalDigitsPtr :: Integer -> Addr# -> Offset Word8 -> Offset Word8 -> (# Integer, Bool, Offset Word8 #) #-}
 {-# SPECIALIZE decimalDigitsPtr :: Natural -> Addr# -> Offset Word8 -> Offset Word8 -> (# Natural, Bool, Offset Word8 #) #-}
 {-# SPECIALIZE decimalDigitsPtr :: Int -> Addr# -> Offset Word8 -> Offset Word8 -> (# Int, Bool, Offset Word8 #) #-}
