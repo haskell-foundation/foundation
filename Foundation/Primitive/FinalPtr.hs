@@ -18,6 +18,7 @@ module Foundation.Primitive.FinalPtr
     , castFinalPtr
     , toFinalPtr
     , toFinalPtrForeign
+    , touchFinalPtr
     , withFinalPtr
     , withUnsafeFinalPtr
     , withFinalPtrNoTouch
@@ -86,6 +87,10 @@ withFinalPtr (FinalForeign fptr) f = do
     unsafePrimFromIO (touchForeignPtr fptr)
     pure r
 {-# INLINE withFinalPtr #-}
+
+touchFinalPtr :: PrimMonad prim => FinalPtr p -> prim ()
+touchFinalPtr (FinalPtr ptr) = primTouch ptr
+touchFinalPtr (FinalForeign fptr) = unsafePrimFromIO (touchForeignPtr fptr)
 
 -- | Unsafe version of 'withFinalPtr'
 withUnsafeFinalPtr :: PrimMonad prim => FinalPtr p -> (Ptr p -> prim a) -> a

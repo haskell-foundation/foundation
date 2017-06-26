@@ -23,6 +23,7 @@ module Foundation.Primitive.UArray.Base
     , unsafeIndex
     , unsafeIndexer
     , onBackend
+    , onBackendPrim
     , unsafeDewrap
     , unsafeDewrap2
     -- * Basic lowlevel functions
@@ -33,6 +34,7 @@ module Foundation.Primitive.UArray.Base
     , compare
     , copyAt
     , unsafeCopyAtRO
+    , touch
     -- * temporary
     , pureST
     ) where
@@ -248,6 +250,15 @@ onBackend :: (ByteArray# -> a)
 onBackend onBa _      (UArrayBA _ _ ba)     = onBa ba
 onBackend _    onAddr (UArrayAddr _ _ fptr) = withUnsafeFinalPtr fptr (onAddr fptr)
 {-# INLINE onBackend #-}
+
+onBackendPrim :: PrimMonad prim
+              => (ByteArray# -> prim a)
+              -> (FinalPtr ty -> prim a)
+              -> UArray ty
+              -> prim a
+onBackendPrim onBa _      (UArrayBA _ _ ba)     = onBa ba
+onBackendPrim _    onAddr (UArrayAddr _ _ fptr) = onAddr fptr
+{-# INLINE onBackendPrim #-}
 
 unsafeDewrap :: (ByteArray# -> Offset ty -> a)
              -> (Ptr ty -> Offset ty -> ST s a)
@@ -538,3 +549,7 @@ concat l  =
         unsafeCopyAtRO r i x (Offset 0) lx
         doCopy r (i `offsetPlusE` lx) xs
       where lx = length x
+
+touch :: PrimMonad prim => UArray ty -> prim ()
+touch (UArrayBA _ _ !_) = pure ()
+touch (UArrayAddr _ _ fptr) = touchFinalPtr fptr

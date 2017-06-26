@@ -285,43 +285,33 @@ copyToPtr :: forall ty prim . (PrimType ty, PrimMonad prim)
           => UArray ty -- ^ the source array to copy
           -> Ptr ty    -- ^ The destination address where the copy is going to start
           -> prim ()
-copyToPtr (UArrayBA start sz ba) (Ptr p) = primitive $ \s1 ->
-    (# compatCopyByteArrayToAddr# ba os p szBytes s1, () #)
+copyToPtr arr dst@(Ptr dst#) = onBackendPrim copyBa copyPtr arr
   where
-    !(Offset (I# os)) = offsetInBytes start
-    !(CountOf (I# szBytes)) = sizeInBytes sz
-copyToPtr (UArrayAddr start sz fptr) dst =
-    unsafePrimFromIO $ withFinalPtr fptr $ \ptr -> copyBytes dst (ptr `plusPtr` os) szBytes
-  where
-    !(Offset os)    = offsetInBytes start
-    !(CountOf szBytes) = sizeInBytes sz
-
-data TmpBA = TmpBA ByteArray#
+    !(Offset os@(I# os#)) = offsetInBytes $ offset arr
+    !(CountOf szBytes@(I# szBytes#)) = sizeInBytes $ length arr
+    copyBa ba = primitive $ \s1 -> (# compatCopyByteArrayToAddr# ba os# dst# szBytes# s1, () #)
+    copyPtr fptr = unsafePrimFromIO $ withFinalPtr fptr $ \ptr -> copyBytes dst (ptr `plusPtr` os) szBytes
 
 withPtr :: forall ty prim a . (PrimMonad prim, PrimType ty)
         => UArray ty
         -> (Ptr ty -> prim a)
         -> prim a
-withPtr (UArrayAddr start _ fptr)  f =
-    withFinalPtr fptr (\ptr -> f (ptr `plusPtr` os))
-  where
-    sz           = primSizeInBytes (Proxy :: Proxy ty)
-    !(Offset os) = offsetOfE sz start
-withPtr vec@(UArrayBA start _ a) f
-    | isPinned vec == Pinned = f (Ptr (byteArrayContents# a) `plusPtr` os)
-    | otherwise              = do
-        -- TODO don't copy the whole vector, and just allocate+copy the slice.
-        let !sz# = sizeofByteArray# a
-        (TmpBA ba) <- primitive $ \s -> do
-            case newAlignedPinnedByteArray# sz# 8# s of { (# s2, mba #) ->
-            case copyByteArray# a 0# mba 0# sz# s2 of { s3 ->
-            case unsafeFreezeByteArray# mba s3 of { (# s4, ba #) -> (# s4, TmpBA ba #) }}}
-        r <- f (Ptr (byteArrayContents# ba))
-        unsafePrimFromIO $ primitive $ \s -> case touch# ba s of { s2 -> (# s2, () #) }
+withPtr a f
+    | isPinned a == Pinned =
+        onBackendPrim (\ba -> f (Ptr (byteArrayContents# ba) `plusPtr` os))
+                      (\fptr -> withFinalPtr fptr $ \ptr -> f (ptr `plusPtr` os))
+                      a
+    | otherwise = do
+        arr <- do
+            trampoline <- newPinned (length a)
+            unsafeCopyAtRO trampoline 0 a 0 (length a)
+            unsafeFreeze trampoline
+        r <- withPtr arr f
+        touch arr
         pure r
   where
-    sz           = primSizeInBytes (Proxy :: Proxy ty)
-    !(Offset os) = offsetOfE sz start
+    !sz          = primSizeInBytes (Proxy :: Proxy ty)
+    !(Offset os) = offsetOfE sz $ offset a
 {-# INLINE withPtr #-}
 
 -- | Recast an array of type a to an array of b
@@ -353,8 +343,7 @@ unsafeRecastBytes (UArrayAddr start len a) = UArrayAddr (primOffsetRecast start)
 {-# INLINE [1] unsafeRecastBytes #-}
 
 null :: UArray ty -> Bool
-null (UArrayBA _ sz _)  = sz == CountOf 0
-null (UArrayAddr _ l _) = l == CountOf 0
+null arr = length arr == 0
 
 -- | Take a count of elements from the array and create an array with just those elements
 take :: PrimType ty => CountOf ty -> UArray ty -> UArray ty
@@ -518,25 +507,12 @@ breakElem xelem xv = splitElem xelem xv
 {-# SPECIALIZE [2] breakElem :: Word32 -> UArray Word32 -> (UArray Word32, UArray Word32) #-}
 
 elem :: PrimType ty => ty -> UArray ty -> Bool
-elem !ty (UArrayBA start len ba)
-    | k == end   = False
-    | otherwise  = True
+elem !ty arr = onBackend goBa (\_ -> pure . goAddr) arr /= end
   where
-    !end = start `offsetPlusE` len
-    !k = loop start
-    loop !i | i < end && t /= ty = loop (i+Offset 1)
-            | otherwise          = i
-        where t                  = primBaIndex ba i
-elem ty (UArrayAddr start len fptr)
-    | k == end  = False
-    | otherwise = True
-  where
-    !(Ptr addr) = withFinalPtrNoTouch fptr id
-    !end = start `offsetPlusE` len
-    !k = loop start
-    loop !i | i < end && t /= ty = loop (i+Offset 1)
-            | otherwise          = i
-        where t                  = primAddrIndex addr i
+    !start = offset arr
+    !end = start `offsetPlusE` length arr
+    goBa ba = PrimBA.findIndexElem ty ba start end
+    goAddr (Ptr addr) = PrimAddr.findIndexElem ty addr start end
 {-# SPECIALIZE [2] elem :: Word8 -> UArray Word8 -> Bool #-}
 
 intersperse :: forall ty . PrimType ty => ty -> UArray ty -> UArray ty
@@ -664,28 +640,28 @@ reverse :: PrimType ty => UArray ty -> UArray ty
 reverse a
     | len == CountOf 0 = mempty
     | otherwise     = runST $ do
-        ((), ma) <- newNative len $ \mba ->
-                case a of
-                    (UArrayBA start _ ba)     -> goNative endOfs mba ba start
-                    (UArrayAddr start _ fptr) -> withFinalPtr fptr $ \ptr -> goAddr endOfs mba ptr start
+        ((), ma) <- newNative len $ \mba -> onBackendPrim (goNative mba)
+                                                          (\fptr -> withFinalPtr fptr $ goAddr mba)
+                                                          a
         unsafeFreeze ma
   where
     !len = length a
-    !endOfs = Offset 0 `offsetPlusE` len
+    !end = Offset 0 `offsetPlusE` len
+    !start = offset a
+    !endI = sizeAsOffset ((start + end) - Offset 1)
 
-    goNative :: PrimType ty => Offset ty -> MutableByteArray# s -> ByteArray# -> Offset ty -> ST s ()
-    goNative !end !ma !ba !srcStart = loop (Offset 0)
+    goNative :: MutableByteArray# s -> ByteArray# -> ST s ()
+    goNative !ma !ba = loop (Offset 0)
       where
-        !endI = sizeAsOffset ((srcStart + end) - Offset 1)
         loop !i
             | i == end  = pure ()
-            | otherwise = primMbaWrite ma i (primBaIndex ba (sizeAsOffset (endI - i))) >> loop (i+Offset 1)
-    goAddr !end !ma (Ptr ba) !srcStart = loop (Offset 0)
+            | otherwise = primMbaWrite ma i (primBaIndex ba (sizeAsOffset (endI - i))) >> loop (i+1)
+    goAddr :: MutableByteArray# s -> Ptr ty -> ST s ()
+    goAddr !ma (Ptr addr) = loop (Offset 0)
       where
-        !endI = sizeAsOffset ((srcStart + end) - Offset 1)
         loop !i
             | i == end  = pure ()
-            | otherwise = primMbaWrite ma i (primAddrIndex ba (sizeAsOffset (endI - i))) >> loop (i+Offset 1)
+            | otherwise = primMbaWrite ma i (primAddrIndex addr (sizeAsOffset (endI - i))) >> loop (i+1)
 {-# SPECIALIZE [3] reverse :: UArray Word8 -> UArray Word8 #-}
 
 -- Finds where are the insertion points when we search for a `needle`
