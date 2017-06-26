@@ -747,16 +747,24 @@ foldr f initialAcc vec = loop 0
         | otherwise  = unsafeIndex vec i `f` loop (i+1)
 
 foldl' :: PrimType ty => (a -> ty -> a) -> a -> UArray ty -> a
-foldl' f initialAcc vec = loop 0 initialAcc
+foldl' f initialAcc arr = onBackend goNative (\_ -> pure . goAddr) arr
   where
-    !len = length vec
-    loop i !acc
-        | i .==# len = acc
-        | otherwise  = loop (i+1) (f acc (unsafeIndex vec i))
+    !len = length arr
+    !start = offset arr
+    !end = start `offsetPlusE` len
+    goNative ba = PrimBA.foldl f initialAcc ba start end
+    goAddr (Ptr ptr) = PrimAddr.foldl f initialAcc ptr start end
+{-# SPECIALIZE [3] foldl' :: (a -> Word8 -> a) -> a -> UArray Word8 -> a #-}
 
 foldl1' :: PrimType ty => (ty -> ty -> ty) -> NonEmpty (UArray ty) -> ty
-foldl1' f arr = let (initialAcc, rest) = splitAt 1 $ getNonEmpty arr
-               in foldl' f (unsafeIndex initialAcc 0) rest
+foldl1' f (NonEmpty arr) = onBackend goNative (\_ -> pure . goAddr) arr
+  where
+    !len = length arr
+    !start = offset arr
+    !end = start `offsetPlusE` len
+    goNative ba = PrimBA.foldl1 f ba start end
+    goAddr (Ptr ptr) = PrimAddr.foldl1 f ptr start end
+{-# SPECIALIZE [3] foldl1' :: (Word8 -> Word8 -> Word8) -> NonEmpty (UArray Word8) -> Word8 #-}
 
 foldr1 :: PrimType ty => (ty -> ty -> ty) -> NonEmpty (UArray ty) -> ty
 foldr1 f arr = let (initialAcc, rest) = revSplitAt 1 $ getNonEmpty arr

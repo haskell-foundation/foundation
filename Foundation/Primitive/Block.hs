@@ -169,8 +169,12 @@ foldl' f initialAcc vec = loop 0 initialAcc
 {-# SPECIALIZE [2] foldl' :: (a -> Word8 -> a) -> a -> Block Word8 -> a #-}
 
 foldl1' :: PrimType ty => (ty -> ty -> ty) -> NonEmpty (Block ty) -> ty
-foldl1' f arr = let (initialAcc, rest) = splitAt 1 $ getNonEmpty arr
-               in foldl' f (unsafeIndex initialAcc 0) rest
+foldl1' f (NonEmpty arr) = loop 1 (unsafeIndex arr 0)
+  where
+    !len = length arr
+    loop !i !acc
+        | i .==# len = acc
+        | otherwise  = loop (i+1) (f acc (unsafeIndex arr i))
 
 foldr1 :: PrimType ty => (ty -> ty -> ty) -> NonEmpty (Block ty) -> ty
 foldr1 f arr = let (initialAcc, rest) = revSplitAt 1 $ getNonEmpty arr

@@ -2,11 +2,16 @@
 {-# LANGUAGE MagicHash                  #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE ExistentialQuantification  #-}
 {-# LANGUAGE CPP                        #-}
 module Foundation.Primitive.UArray.Addr
     ( findIndexElem
     , findIndexPredicate
+    , foldl
+    , foldr
+    , foldl1
     , filter
+    , primIndex
     ) where
 
 import           GHC.Types
@@ -39,6 +44,30 @@ findIndexPredicate predicate ba startIndex endIndex = loop startIndex
         | otherwise                 = i
       where found = predicate (primIndex ba i)
 {-# INLINE findIndexPredicate #-}
+
+foldl :: PrimType ty => (a -> ty -> a) -> a -> Immutable -> Offset ty -> Offset ty -> a
+foldl f !initialAcc ba startIndex endIndex = loop startIndex initialAcc
+  where
+    loop !i !acc
+        | i == endIndex = acc
+        | otherwise     = loop (i+1) (f acc (primIndex ba i))
+{-# INLINE foldl #-}
+
+foldr :: PrimType ty => (ty -> a -> a) -> a -> Immutable -> Offset ty -> Offset ty -> a
+foldr f !initialAcc ba startIndex endIndex = loop startIndex
+  where
+    loop !i
+        | i == endIndex = initialAcc
+        | otherwise     = primIndex ba i `f` loop (i+1)
+{-# INLINE foldr #-}
+
+foldl1 :: PrimType ty => (ty -> ty -> ty) -> Immutable -> Offset ty -> Offset ty -> ty
+foldl1 f ba startIndex endIndex = loop (startIndex+1) (primIndex ba startIndex)
+  where
+    loop !i !acc
+        | i == endIndex = acc
+        | otherwise     = loop (i+1) (f acc (primIndex ba i))
+{-# INLINE foldl1 #-}
 
 filter :: (PrimMonad prim, PrimType ty)
        => (ty -> Bool) -> MutableByteArray# (PrimState prim) -> Immutable -> Offset ty -> Offset ty -> prim (CountOf ty)
