@@ -22,10 +22,12 @@ module Foundation.Primitive.UArray.Base
     -- * Array accessor
     , unsafeIndex
     , unsafeIndexer
+    , onBackend
     , unsafeDewrap
     , unsafeDewrap2
     -- * Basic lowlevel functions
     , length
+    , offset
     , equal
     , equalMemcmp
     , compare
@@ -112,6 +114,11 @@ length :: UArray ty -> CountOf ty
 length (UArrayAddr _ len _) = len
 length (UArrayBA _ len _) = len
 {-# INLINE[1] length #-}
+
+offset :: UArray ty -> Offset ty
+offset (UArrayAddr ofs _ _) = ofs
+offset (UArrayBA ofs _ _) = ofs
+{-# INLINE[1] offset #-}
 
 -- | Return if the array is pinned in memory
 --
@@ -234,6 +241,13 @@ unsafeThaw (UArrayBA start len ba) = primitive $ \st -> (# st, MUArrayMBA start 
 unsafeThaw (UArrayAddr start len fptr) = return $ MUArrayAddr start len fptr
 {-# INLINE unsafeThaw #-}
 
+onBackend :: (ByteArray# -> a)
+          -> (FinalPtr ty -> Ptr ty -> ST s a)
+          -> UArray ty
+          -> a
+onBackend onBa _      (UArrayBA _ _ ba)     = onBa ba
+onBackend _    onAddr (UArrayAddr _ _ fptr) = withUnsafeFinalPtr fptr (onAddr fptr)
+{-# INLINE onBackend #-}
 
 unsafeDewrap :: (ByteArray# -> Offset ty -> a)
              -> (Ptr ty -> Offset ty -> ST s a)
