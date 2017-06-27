@@ -14,6 +14,10 @@ import Foundation.Array.Internal (toHexadecimal)
 import Test.Foundation.Collection (fromListP, toListP)
 
 import qualified Foundation.UUID as UUID
+import           Foundation.Parser
+
+instance Arbitrary UUID.UUID where
+    arbitrary = UUID.UUID <$> arbitrary <*> arbitrary
 
 hex :: [Word8] -> [Word8]
 hex = loop
@@ -45,4 +49,6 @@ testTime = testGroup "Time"
 testUUID = testGroup "UUID"
     [ testProperty "show" $ show UUID.nil === "00000000-0000-0000-0000-000000000000"
     , testProperty "show-bin" $ fmap show (UUID.fromBinary (fromList [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16])) === Just "100f0e0d-0c0b-0a09-0807-060504030201"
+    , testProperty "parser . show = id" $ \uuid ->
+        (either (error . show) id $ parseOnly UUID.uuidParser (show uuid)) === uuid
     ]
