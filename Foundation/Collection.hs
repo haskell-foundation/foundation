@@ -14,6 +14,7 @@ module Foundation.Collection
     , Element
     , InnerFunctor(..)
     , Foldable(..)
+    , Fold1able(..)
     , Mappable(..)
     , traverse_
     , mapM_
