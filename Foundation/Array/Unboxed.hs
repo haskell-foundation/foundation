@@ -161,7 +161,7 @@ foreignMem fptr nb = UArrayAddr (Offset 0) nb fptr
 fromForeignPtr :: PrimType ty
                => (ForeignPtr ty, Int, Int) -- ForeignPtr, an offset in prim elements, a size in prim elements
                -> UArray ty
-fromForeignPtr (fptr, ofs, len)   = UArrayAddr (Offset ofs) (CountOf len) (toFinalPtrForeign fptr)
+fromForeignPtr (fptr, ofs, len) = UArrayAddr (Offset ofs) (CountOf len) (toFinalPtrForeign fptr)
 
 
 -- | Allocate a new array with a fill function that has access to the elements of
