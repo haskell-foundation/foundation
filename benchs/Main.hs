@@ -167,10 +167,11 @@ benchsByteArray = bgroup "ByteArray"
     , benchBreakElem
     , benchTakeWhile
     , benchFoldl
+    , benchFoldl1
+    , benchFoldr
     , benchReverse
     , benchFilter
     , benchAll
-    --, benchSplitAt
     ]
   where
     diffByteArray :: (UArray Word8 -> a)
@@ -229,6 +230,16 @@ benchsByteArray = bgroup "ByteArray"
     benchFoldl = bgroup "Foldl" $ fmap (\(n, dat) ->
             bgroup n $ diffByteArray (foldl' (+) 0) (foldl' (+) 0)
                                      (ByteString.foldl' (+) 0) (Vector.foldl' (+) 0) dat)
+                $ allDat
+
+    benchFoldl1 = bgroup "Foldl1" $ fmap (\(n, dat) ->
+            bgroup n $ diffByteArray (foldl1' (+) . nonEmpty_) (foldl1' (+) . nonEmpty_)
+                                     (ByteString.foldl1' (+)) (Vector.foldl1' (+)) dat)
+                $ allDat
+
+    benchFoldr = bgroup "Foldr" $ fmap (\(n, dat) ->
+            bgroup n $ diffByteArray (foldr (+) 1) (foldr (+) 1)
+                                     (ByteString.foldr (+) 1) (Vector.foldr (+) 1) dat)
                 $ allDat
 
     benchAll = bgroup "All" $ fmap (\(n, dat) ->

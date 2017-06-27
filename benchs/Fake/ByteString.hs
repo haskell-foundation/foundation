@@ -9,6 +9,7 @@ module Fake.ByteString
     , reverse
     , filter
     , foldl'
+    , foldl1'
     , foldr
     , and
     , all
@@ -32,6 +33,8 @@ reverse     = undefined
 filter _    = undefined
 foldl' :: (Word8 -> a -> a) -> a -> ByteString -> a
 foldl' _ _ _ = undefined
+foldl1' :: (Word8 -> Word8 -> Word8) -> ByteString -> a
+foldl1' _ _ = undefined
 foldr :: (a -> Word8 -> a) -> a -> ByteString -> a
 foldr _ _ _ = undefined
 and _ _ = undefined

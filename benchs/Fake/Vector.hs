@@ -9,6 +9,7 @@ module Fake.Vector
     , reverse
     , filter
     , foldl'
+    , foldl1'
     , foldr
     , and
     , all
@@ -29,6 +30,8 @@ reverse     = undefined
 filter _    = undefined
 foldl' :: (ty -> a -> a) -> a -> Vector ty -> a
 foldl' _ _ _ = undefined
+foldl1' :: (ty -> ty -> ty) -> Vector ty -> a
+foldl1' _ _ = undefined
 foldr :: (a -> ty -> a) -> a -> Vector ty -> a
 foldr _ _ _ = undefined
 and _ _ = undefined
