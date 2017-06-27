@@ -11,9 +11,10 @@ module Foundation.UUID
     ) where
 
 import Control.Monad (unless)
+import Data.Maybe (fromMaybe)
 
 import           Foundation.Internal.Base
-import           Foundation.Collection (Element, Sequential, length)
+import           Foundation.Collection (Element, Sequential, length, foldl')
 import           Foundation.Class.Storable
 import           Foundation.Hashing.Hashable
 import           Foundation.Bits
@@ -74,7 +75,7 @@ nil :: UUID
 nil = UUID 0 0
 
 newUUID :: MonadRandom randomly => randomly UUID
-newUUID = maybe (error "Foundation.UUID.newUUID: the impossible happned") id
+newUUID = fromMaybe (error "Foundation.UUID.newUUID: the impossible happned")
         . fromBinary
         <$> getRandomBytes 16
 
@@ -132,8 +133,7 @@ parseHex count = do
                                    <> " hexadecimal characters."
     return $ listToHex 0 (toList r)
   where
-    listToHex acc [] = acc
-    listToHex acc (x:xs) = listToHex (acc * 16 + fromHex x) xs
+    listToHex = foldl' (\acc' x -> acc' * 16 + fromHex x)
     fromHex '0' = 0
     fromHex '1' = 1
     fromHex '2' = 2
