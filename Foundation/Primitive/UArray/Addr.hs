@@ -10,6 +10,8 @@ module Foundation.Primitive.UArray.Addr
     , foldl
     , foldr
     , foldl1
+    , all
+    , any
     , filter
     , primIndex
     ) where
@@ -37,7 +39,7 @@ findIndexElem ty ba startIndex endIndex = loop startIndex
 {-# INLINE findIndexElem #-}
 
 findIndexPredicate :: PrimType ty => (ty -> Bool) -> Immutable -> Offset ty -> Offset ty -> Offset ty
-findIndexPredicate predicate ba startIndex endIndex = loop startIndex
+findIndexPredicate predicate ba !startIndex !endIndex = loop startIndex
   where
     loop i
         | i < endIndex && not found = loop (i+Offset 1)
@@ -46,7 +48,7 @@ findIndexPredicate predicate ba startIndex endIndex = loop startIndex
 {-# INLINE findIndexPredicate #-}
 
 foldl :: PrimType ty => (a -> ty -> a) -> a -> Immutable -> Offset ty -> Offset ty -> a
-foldl f !initialAcc ba startIndex endIndex = loop startIndex initialAcc
+foldl f !initialAcc ba !startIndex !endIndex = loop startIndex initialAcc
   where
     loop !i !acc
         | i == endIndex = acc
@@ -79,3 +81,21 @@ filter predicate dst src start end = loop azero start
         | otherwise   = loop d (s+Offset 1)
       where
         v = primIndex src s
+
+all :: PrimType ty => (ty -> Bool) -> Immutable -> Offset ty -> Offset ty -> Bool
+all predicate ba start end = loop start
+  where
+    loop !i
+        | i == end                   = True
+        | predicate (primIndex ba i) = loop (i+1)
+        | otherwise                  = False
+{-# INLINE all #-}
+
+any :: PrimType ty => (ty -> Bool) -> Immutable -> Offset ty -> Offset ty -> Bool
+any predicate ba start end = loop start
+  where
+    loop !i
+        | i == end                   = False
+        | predicate (primIndex ba i) = True
+        | otherwise                  = loop (i+1)
+{-# INLINE any #-}

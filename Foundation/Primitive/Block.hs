@@ -272,7 +272,6 @@ elem v blk = loop 0
         | i .==# len             = False
         | unsafeIndex blk i == v = True
         | otherwise              = loop (i+1)
-        | otherwise             = False
 {-# SPECIALIZE [2] elem :: Word8 -> Block Word8 -> Bool #-}
 
 all :: PrimType ty => (ty -> Bool) -> Block ty -> Bool

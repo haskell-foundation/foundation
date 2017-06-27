@@ -771,22 +771,22 @@ foldr1 f arr = let (initialAcc, rest) = revSplitAt 1 $ getNonEmpty arr
                in foldr f (unsafeIndex initialAcc 0) rest
 
 all :: PrimType ty => (ty -> Bool) -> UArray ty -> Bool
-all p uv = loop 0
+all predicate arr = onBackend (\ba -> PrimBA.all predicate ba start end)
+                              (\_ (Ptr ptr) -> pure (PrimAddr.all predicate ptr start end))
+                              arr
   where
-    len = length uv
-    loop !i
-      | i .==# len = True
-      | not $ p (unsafeIndex uv i) = False
-      | otherwise = loop (i + 1)
+    start = offset arr
+    end = start `offsetPlusE` length arr
+{-# SPECIALIZE [3] all :: (Word8 -> Bool) -> UArray Word8 -> Bool #-}
 
 any :: PrimType ty => (ty -> Bool) -> UArray ty -> Bool
-any p uv = loop 0
+any predicate arr = onBackend (\ba -> PrimBA.any predicate ba start end)
+                              (\_ (Ptr ptr) -> pure (PrimAddr.any predicate ptr start end))
+                              arr
   where
-    len = length uv
-    loop !i
-      | i .==# len = False
-      | p (unsafeIndex uv i) = True
-      | otherwise = loop (i + 1)
+    start = offset arr
+    end = start `offsetPlusE` length arr
+{-# SPECIALIZE [3] any :: (Word8 -> Bool) -> UArray Word8 -> Bool #-}
 
 builderAppend :: (PrimType ty, PrimMonad state) => ty -> Builder (UArray ty) (MUArray ty) ty state err ()
 builderAppend v = Builder $ State $ \(i, st, e) ->
