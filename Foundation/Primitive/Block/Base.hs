@@ -19,6 +19,7 @@ module Foundation.Primitive.Block.Base
     , length
     , lengthBytes
     -- * Other methods
+    , mutableEmpty
     , new
     , newPinned
     , touch
@@ -93,6 +94,11 @@ empty_ = runST $ primitive $ \s1 ->
     case newByteArray# 0# s1           of { (# s2, mba #) ->
     case unsafeFreezeByteArray# mba s2 of { (# s3, ba  #) ->
         (# s3, Block ba #) }}
+
+mutableEmpty :: PrimMonad prim => prim (MutableBlock ty (PrimState prim))
+mutableEmpty = primitive $ \s1 ->
+    case newByteArray# 0# s1 of { (# s2, mba #) ->
+        (# s2, MutableBlock mba #) }
 
 -- | Return the element at a specific index from an array without bounds checking.
 --

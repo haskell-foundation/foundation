@@ -41,7 +41,7 @@ module Foundation.Primitive.Block.Mutable
     , mutableGetAddr
     , new
     , newPinned
-    , isPinned
+    , mutableEmpty
     , iterSet
     , read
     , write
@@ -80,13 +80,6 @@ mutableLengthSize (MutableBlock mba) =
 mutableLengthBytes :: MutableBlock ty st -> CountOf Word8
 mutableLengthBytes (MutableBlock mba) = CountOf (I# (sizeofMutableByteArray# mba))
 {-# INLINE[1] mutableLengthBytes #-}
-
--- | Return if a Mutable Block is pinned or not
-isPinned :: MutableBlock ty st -> Bool
-isPinned (MutableBlock mba) =
-    -- TODO use the exact value where the array become pinned (LARGE_OBJECT_THRESHOLD)
-    -- in 8.2, there's a primitive to know if an array in pinned
-    I# (sizeofMutableByteArray# mba) > 3000
 
 -- | Get the address of the context of the mutable block.
 --
