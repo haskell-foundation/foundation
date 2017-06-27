@@ -32,6 +32,7 @@ module Foundation.Parser
     , -- * Result
       Result(..)
     , ParseError(..)
+    , reportError
 
     , -- * Parser source
       ParserSource(..)
@@ -278,6 +279,19 @@ instance ParserSource [a] where
 -- ------------------------------------------------------------------------- --
 --                          Helpers                                          --
 -- ------------------------------------------------------------------------- --
+
+-- | helper function to report error when writing parsers
+--
+-- This way we can provide more detailed error when building custom
+-- parsers and still avoid to use the naughty _fail_.
+--
+-- @
+-- myParser :: Parser input Int
+-- myParser = reportError $ Satisfy (Just "this function is not implemented...")
+-- @
+--
+reportError :: ParseError input -> Parser input a
+reportError pe = Parser $ \buf off nm err _ -> err buf off nm pe
 
 -- | Get the next `Element input` from the parser
 anyElement :: ParserSource input => Parser input (Element input)
