@@ -89,6 +89,7 @@ module Foundation.Array.Unboxed
     , foldl1'
     , all
     , any
+    , isPrefixOf
     , foreignMem
     , fromForeignPtr
     , builderAppend
@@ -893,3 +894,12 @@ convert3 table (W8# a) (W8# b) (W8# c) =
   where
     idx :: Word# -> Word8
     idx i = W8# (indexWord8OffAddr# table (word2Int# i))
+
+isPrefixOf :: PrimType ty => UArray ty -> UArray ty -> Bool
+isPrefixOf pre arr
+    | pLen > pArr = False
+    | otherwise   = pre == unsafeTake pLen arr
+  where
+    !pLen = length pre
+    !pArr = length arr
+{-# SPECIALIZE [3] isPrefixOf :: UArray Word8 -> UArray Word8 -> Bool #-}
