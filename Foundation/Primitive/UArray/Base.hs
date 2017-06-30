@@ -129,7 +129,7 @@ offset (UArray ofs _ _) = ofs
 -- note that Foreign array are considered pinned
 isPinned :: UArray ty -> PinnedStatus
 isPinned (UArray _ _ (UArrayAddr {})) = Pinned
-isPinned (UArray _ _ (UArrayBA blk))  = BLK.isPinned blk -- toPinnedStatus# (compatIsByteArrayPinned# ba)
+isPinned (UArray _ _ (UArrayBA blk))  = BLK.isPinned blk
 
 -- | Return if a mutable array is pinned in memory
 isMutablePinned :: MUArray ty st -> PinnedStatus
