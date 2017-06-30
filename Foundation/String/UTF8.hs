@@ -1334,12 +1334,7 @@ lower = charMap toLower
 
 -- | Check whether the first string is a prefix of the second string.
 isPrefixOf :: String -> String -> Bool
-isPrefixOf (String needle) (String haystack)
-    | needleLen > hayLen = False
-    | otherwise          = needle == C.take needleLen haystack
-  where
-    needleLen = C.length needle
-    hayLen    = C.length haystack
+isPrefixOf (String needle) (String haystack) = C.isPrefixOf needle haystack
 
 -- | Check whether the first string is a suffix of the second string.
 isSuffixOf :: String -> String -> Bool
