@@ -14,6 +14,8 @@ module Foundation.Primitive.UTF8.Addr
     , prev
     , prevSkip
     , write
+    , all
+    , any
     -- temporary
     , primIndex
     , primRead
@@ -151,3 +153,23 @@ write mba !i !c
     toContinuation :: Word# -> Word#
     toContinuation w = or# (and# w 0x3f##) 0x80##
 {-# INLINE write #-}
+
+all :: (Char -> Bool) -> Immutable -> Offset Word8 -> Offset Word8 -> Bool
+all predicate ba start end = loop start
+  where
+    loop !idx
+        | idx == end  = True
+        | predicate c = loop idx'
+        | otherwise   = False
+      where (Step c idx') = next ba idx
+{-# INLINE all #-}
+
+any :: (Char -> Bool) -> Immutable -> Offset Word8 -> Offset Word8 -> Bool
+any predicate ba start end = loop start
+  where
+    loop !idx
+        | idx == end  = False
+        | predicate c = True
+        | otherwise   = loop idx'
+      where (Step c idx') = next ba idx
+{-# INLINE any #-}

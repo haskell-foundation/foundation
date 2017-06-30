@@ -146,8 +146,8 @@ instance Collection S.String where
     elem = S.elem
     minimum = Data.List.minimum . toList . getNonEmpty -- TODO faster implementation
     maximum = Data.List.maximum . toList . getNonEmpty -- TODO faster implementation
-    all p = Data.List.all p . toList
-    any p = Data.List.any p . toList
+    all = S.all
+    any = S.any
 
 instance Collection c => Collection (NonEmpty c) where
     null _ = False

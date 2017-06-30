@@ -79,6 +79,8 @@ module Foundation.String.UTF8
     , isPrefixOf
     , isSuffixOf
     , isInfixOf
+    , all
+    , any
     -- * Legacy utility
     , lines
     , words
@@ -109,7 +111,7 @@ import           Foundation.Primitive.UTF8.Table
 import           Foundation.Primitive.UTF8.Helper
 import           Foundation.Primitive.UTF8.Base
 import           Foundation.Primitive.UTF8.Types
-import           Foundation.Primitive.UArray.Base as C (onBackendPrim, offset)
+import           Foundation.Primitive.UArray.Base as C (onBackendPrim, onBackend, offset, ValidRange(..), offsetsValidRange)
 import qualified Foundation.Primitive.UTF8.BA as PrimBA
 import qualified Foundation.Primitive.UTF8.Addr as PrimAddr
 import qualified Foundation.String.UTF8.BA as BackendBA
@@ -1365,6 +1367,20 @@ isInfixOf (String needle) (String haystack)
         | needle == haystackSub = True
         | otherwise             = loop (i+1)
       where haystackSub = C.take needleLen $ C.drop i haystack
+
+all :: (Char -> Bool) -> String -> Bool
+all predicate (String arr) = C.onBackend goNative (\_ -> pure . goAddr) arr
+  where
+    !(C.ValidRange start end) = C.offsetsValidRange arr
+    goNative ba = PrimBA.all predicate ba start end
+    goAddr (Ptr addr) = PrimAddr.all predicate addr start end
+
+any :: (Char -> Bool) -> String -> Bool
+any predicate (String arr) = C.onBackend goNative (\_ -> pure . goAddr) arr
+  where
+    !(C.ValidRange start end) = C.offsetsValidRange arr
+    goNative ba = PrimBA.any predicate ba start end
+    goAddr (Ptr addr) = PrimAddr.any predicate addr start end
 
 -- | Transform string @src@ to base64 binary representation.
 toBase64 :: String -> String

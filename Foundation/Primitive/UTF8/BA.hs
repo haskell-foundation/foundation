@@ -14,6 +14,8 @@ module Foundation.Primitive.UTF8.BA
     , prev
     , prevSkip
     , write
+    , all
+    , any
     -- temporary
     , primIndex
     , primRead
