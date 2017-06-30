@@ -264,19 +264,19 @@ unsafeDewrap _ g (UArray start _ (UArrayAddr fptr))     = withUnsafeFinalPtr fpt
 unsafeDewrap f _ (UArray start _ (UArrayBA (Block ba))) = f ba start
 {-# INLINE unsafeDewrap #-}
 
-unsafeDewrap2 :: (ByteArray# -> Offset ty -> ByteArray# -> Offset ty -> a)
-              -> (Ptr ty -> Offset ty -> Ptr ty -> Offset ty -> ST s a)
-              -> (ByteArray# -> Offset ty -> Ptr ty -> Offset ty -> ST s a)
-              -> (Ptr ty -> Offset ty -> ByteArray# -> Offset ty -> ST s a)
+unsafeDewrap2 :: (ByteArray# -> ByteArray# -> a)
+              -> (Ptr ty -> Ptr ty -> ST s a)
+              -> (ByteArray# -> Ptr ty -> ST s a)
+              -> (Ptr ty -> ByteArray# -> ST s a)
               -> UArray ty
               -> UArray ty
               -> a
-unsafeDewrap2 f g h i (UArray start1 _ back1) (UArray start2 _ back2) =
+unsafeDewrap2 f g h i (UArray _ _ back1) (UArray _ _ back2) =
     case (back1, back2) of
-        (UArrayBA (Block ba1), UArrayBA (Block ba2)) -> f ba1 start1 ba2 start2
-        (UArrayAddr fptr1, UArrayAddr fptr2)         -> withUnsafeFinalPtr fptr1 $ \ptr1 -> withFinalPtr fptr2 $ \ptr2 -> g ptr1 start1 ptr2 start2
-        (UArrayBA (Block ba1), UArrayAddr fptr2)     -> withUnsafeFinalPtr fptr2 $ \ptr2 -> h ba1 start1 ptr2 start2
-        (UArrayAddr fptr1, UArrayBA (Block ba2))     -> withUnsafeFinalPtr fptr1 $ \ptr1 -> i ptr1 start1 ba2 start2
+        (UArrayBA (Block ba1), UArrayBA (Block ba2)) -> f ba1 ba2
+        (UArrayAddr fptr1, UArrayAddr fptr2)         -> withUnsafeFinalPtr fptr1 $ \ptr1 -> withFinalPtr fptr2 $ \ptr2 -> g ptr1 ptr2
+        (UArrayBA (Block ba1), UArrayAddr fptr2)     -> withUnsafeFinalPtr fptr2 $ \ptr2 -> h ba1 ptr2
+        (UArrayAddr fptr1, UArrayBA (Block ba2))     -> withUnsafeFinalPtr fptr1 $ \ptr1 -> i ptr1 ba2
 {-# INLINE [2] unsafeDewrap2 #-}
 
 pureST :: a -> ST s a
@@ -316,26 +316,25 @@ equal a b
     | la /= lb  = False
     | otherwise = unsafeDewrap2 goBaBa goPtrPtr goBaPtr goPtrBa a b
   where
+    !start1 = offset a
+    !start2 = offset b
+    !end = start1 `offsetPlusE` la
     !la = length a
     !lb = length b
-    goBaBa ba1 start1 ba2 start2 = loop start1 start2
+    goBaBa ba1 ba2 = loop start1 start2
       where
-        !end = start1 `offsetPlusE` la
         loop !i !o | i == end  = True
                    | otherwise = primBaIndex ba1 i == primBaIndex ba2 o && loop (i+o1) (o+o1)
-    goPtrPtr (Ptr addr1) start1 (Ptr addr2) start2 = pureST (loop start1 start2)
+    goPtrPtr (Ptr addr1) (Ptr addr2) = pureST (loop start1 start2)
       where
-        !end = start1 `offsetPlusE` la
         loop !i !o | i == end  = True
                    | otherwise = primAddrIndex addr1 i == primAddrIndex addr2 o && loop (i+o1) (o+o1)
-    goBaPtr ba1 start1 (Ptr addr2) start2 = pureST (loop start1 start2)
+    goBaPtr ba1 (Ptr addr2) = pureST (loop start1 start2)
       where
-        !end = start1 `offsetPlusE` la
         loop !i !o | i == end  = True
                    | otherwise = primBaIndex ba1 i == primAddrIndex addr2 o && loop (i+o1) (o+o1)
-    goPtrBa (Ptr addr1) start1 ba2 start2 = pureST (loop start1 start2)
+    goPtrBa (Ptr addr1) ba2 = pureST (loop start1 start2)
       where
-        !end = start1 `offsetPlusE` la
         loop !i !o | i == end  = True
                    | otherwise = primAddrIndex addr1 i == primBaIndex ba2 o && loop (i+o1) (o+o1)
 
@@ -361,38 +360,33 @@ equalMemcmp a b
 
 -- | Compare 2 vectors
 vCompare :: (Ord ty, PrimType ty) => UArray ty -> UArray ty -> Ordering
-vCompare a b = unsafeDewrap2 goBaBa goPtrPtr goBaPtr goPtrBa a b
+vCompare a@(UArray start1 la _) b@(UArray start2 lb _) = unsafeDewrap2 goBaBa goPtrPtr goBaPtr goPtrBa a b
   where
-    !la = length a
-    !lb = length b
+    !end = start1 `offsetPlusE` min la lb
     o1 = Offset (I# 1#)
-    goBaBa ba1 start1 ba2 start2 = loop start1 start2
+    goBaBa ba1 ba2 = loop start1 start2
       where
-        !end = start1 `offsetPlusE` min la lb
         loop !i !o | i == end   = la `compare` lb
                    | v1 == v2   = loop (i + o1) (o + o1)
                    | otherwise  = v1 `compare` v2
           where v1 = primBaIndex ba1 i
                 v2 = primBaIndex ba2 o
-    goPtrPtr (Ptr addr1) start1 (Ptr addr2) start2 = pureST (loop start1 start2)
+    goPtrPtr (Ptr addr1) (Ptr addr2) = pureST (loop start1 start2)
       where
-        !end = start1 `offsetPlusE` min la lb
         loop !i !o | i == end   = la `compare` lb
                    | v1 == v2   = loop (i + o1) (o + o1)
                    | otherwise  = v1 `compare` v2
           where v1 = primAddrIndex addr1 i
                 v2 = primAddrIndex addr2 o
-    goBaPtr ba1 start1 (Ptr addr2) start2 = pureST (loop start1 start2)
+    goBaPtr ba1 (Ptr addr2) = pureST (loop start1 start2)
       where
-        !end  = start1 `offsetPlusE` min la lb
         loop !i !o | i == end   = la `compare` lb
                    | v1 == v2   = loop (i + o1) (o + o1)
                    | otherwise  = v1 `compare` v2
           where v1 = primBaIndex ba1 i
                 v2 = primAddrIndex addr2 o
-    goPtrBa (Ptr addr1) start1 ba2 start2 = pureST (loop start1 start2)
+    goPtrBa (Ptr addr1) ba2 = pureST (loop start1 start2)
       where
-        !end  = start1 `offsetPlusE` min la lb
         loop !i !o | i == end   = la `compare` lb
                    | v1 == v2   = loop (i + o1) (o + o1)
                    | otherwise  = v1 `compare` v2
@@ -418,11 +412,11 @@ vCompareMemcmp a b = cintToOrdering $ memcmp a b sz
 {-# SPECIALIZE [3] vCompareMemcmp :: UArray Word8 -> UArray Word8 -> Ordering #-}
 
 memcmp :: PrimType ty => UArray ty -> UArray ty -> CSize -> CInt
-memcmp a b sz = unsafeDewrap2
-    (\s1 o1 s2 o2 -> unsafeDupablePerformIO $ sysHsMemcmpBaBa s1 (offsetToCSize o1) s2 (offsetToCSize o2) sz)
-    (\s1 o1 s2 o2 -> unsafePrimToST $ sysHsMemcmpPtrPtr s1 (offsetToCSize o1) s2 (offsetToCSize o2) sz)
-    (\s1 o1 s2 o2 -> unsafePrimToST $ sysHsMemcmpBaPtr s1 (offsetToCSize o1) s2 (offsetToCSize o2) sz)
-    (\s1 o1 s2 o2 -> unsafePrimToST $ sysHsMemcmpPtrBa s1 (offsetToCSize o1) s2 (offsetToCSize o2) sz)
+memcmp a@(UArray o1 _ _) b@(UArray o2 _ _) sz = unsafeDewrap2
+    (\s1 s2 -> unsafeDupablePerformIO $ sysHsMemcmpBaBa s1 (offsetToCSize o1) s2 (offsetToCSize o2) sz)
+    (\s1 s2 -> unsafePrimToST $ sysHsMemcmpPtrPtr s1 (offsetToCSize o1) s2 (offsetToCSize o2) sz)
+    (\s1 s2 -> unsafePrimToST $ sysHsMemcmpBaPtr s1 (offsetToCSize o1) s2 (offsetToCSize o2) sz)
+    (\s1 s2 -> unsafePrimToST $ sysHsMemcmpPtrBa s1 (offsetToCSize o1) s2 (offsetToCSize o2) sz)
     a b
   where
     offsetToCSize ofs = csizeOfOffset $ offsetInBytes ofs
