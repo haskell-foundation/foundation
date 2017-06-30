@@ -32,6 +32,8 @@ module Foundation.Primitive.UArray.Base
     -- * Basic lowlevel functions
     , length
     , offset
+    , ValidRange(..)
+    , offsetsValidRange
     , equal
     , equalMemcmp
     , compare
@@ -123,6 +125,11 @@ length (UArray _ len _) = len
 offset :: UArray ty -> Offset ty
 offset (UArray ofs _ _) = ofs
 {-# INLINE[1] offset #-}
+
+data ValidRange ty = ValidRange {-# UNPACK #-} !(Offset ty) {-# UNPACK #-} !(Offset ty)
+
+offsetsValidRange :: UArray ty -> ValidRange ty
+offsetsValidRange (UArray ofs len _) = ValidRange ofs (ofs `offsetPlusE` len)
 
 -- | Return if the array is pinned in memory
 --
