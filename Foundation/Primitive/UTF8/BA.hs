@@ -14,6 +14,7 @@ module Foundation.Primitive.UTF8.BA
     , prev
     , prevSkip
     , write
+    , toList
     , all
     , any
     , foldr
@@ -27,7 +28,7 @@ import           GHC.Int
 import           GHC.Types
 import           GHC.Word
 import           GHC.Prim
-import           Foundation.Internal.Base
+import           Foundation.Internal.Base hiding (toList)
 import           Foundation.Internal.Primitive
 import           Foundation.Numerical
 import           Foundation.Primitive.Types.OffsetSize
@@ -154,6 +155,14 @@ write mba !i !c
     toContinuation :: Word# -> Word#
     toContinuation w = or# (and# w 0x3f##) 0x80##
 {-# INLINE write #-}
+
+toList :: Immutable -> Offset Word8 -> Offset Word8 -> [Char]
+toList ba !start !end = loop start
+  where
+    loop !idx
+        | idx == end = []
+        | otherwise  = c : loop idx'
+      where (Step c idx') = next ba idx
 
 all :: (Char -> Bool) -> Immutable -> Offset Word8 -> Offset Word8 -> Bool
 all predicate ba start end = loop start
