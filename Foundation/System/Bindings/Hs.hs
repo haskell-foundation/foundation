@@ -31,3 +31,9 @@ foreign import ccall unsafe "_foundation_mem_findbyte" sysHsMemFindByteBa ::
 
 foreign import ccall unsafe "_foundation_mem_findbyte" sysHsMemFindByteAddr ::
     Addr# -> Offset Word8 -> Offset Word8 -> Word8 -> Offset Word8
+
+foreign import ccall unsafe "foundation_utf8_length" sysHsUTF8LengthBa ::
+    ByteArray# -> Offset Word8 -> Offset Word8 -> CountOf Char
+
+foreign import ccall unsafe "foundation_utf8_length" sysHsUTF8LengthAddr ::
+    Addr# -> Offset Word8 -> Offset Word8 -> CountOf Char

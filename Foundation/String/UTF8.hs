@@ -567,25 +567,14 @@ unsafeCopyFrom src dstBytes f = new dstBytes >>= fill (Offset 0) (Offset 0) (Off
 --
 -- this size is available in o(n)
 length :: String -> CountOf Char
-length (String ba)
-    | C.null ba = CountOf 0
-    | otherwise = Vec.unsafeDewrap goVec goAddr ba
+length (String arr)
+    | start == end = 0
+    | otherwise    = C.onBackend goVec (\_ -> pure . goAddr) arr
   where
-    goVec ma start = loop start (CountOf 0)
-      where
-        !end = start `offsetPlusE` Vec.length ba
-        loop !idx !i
-            | idx >= end = i
-            | otherwise  = loop (idx `offsetPlusE` d) (i + CountOf 1)
-          where d = skipNextHeaderValue (primBaIndex ma idx)
+    (C.ValidRange !start !end) = offsetsValidRange arr
+    goVec ma = sysHsUTF8LengthBa ma start end
 
-    goAddr (Ptr ptr) start = return $ loop start (CountOf 0)
-      where
-        !end = start `offsetPlusE` Vec.length ba
-        loop !idx !i
-            | idx >= end = i
-            | otherwise  = loop (idx `offsetPlusE` d) (i + CountOf 1)
-          where d = skipNextHeaderValue (primAddrIndex ptr idx)
+    goAddr (Ptr ptr) = sysHsUTF8LengthAddr ptr start end
 
 -- | Replicate a character @c@ @n@ times to create a string of length @n@
 replicate :: CountOf Char -> Char -> String
