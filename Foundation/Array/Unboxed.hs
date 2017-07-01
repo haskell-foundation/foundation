@@ -66,7 +66,6 @@ module Foundation.Array.Unboxed
     , revTake
     , revSplitAt
     , splitOn
-    , splitElem
     , break
     , breakElem
     , elem
@@ -122,6 +121,7 @@ import           Foundation.Primitive.Block (Block(..), MutableBlock(..))
 import           Foundation.Array.Unboxed.Mutable hiding (sub, copyToPtr)
 import           Foundation.Numerical
 import           Foundation.Boot.Builder
+import           Foundation.System.Bindings.Hs (sysHsMemFindByteBa, sysHsMemFindByteAddr)
 import qualified Foundation.Boot.List as List
 import qualified Foundation.Primitive.Base16 as Base16
 import qualified Foundation.Primitive.UArray.BA as PrimBA
@@ -373,19 +373,32 @@ splitAt nbElems arr@(UArray start len backend)
   where
     n    = min nbElems len
 
-splitElem :: PrimType ty => ty -> UArray ty -> (UArray ty, UArray ty)
-splitElem !ty arr@(UArray start len backend)
-    | k == end   = (arr, mempty)
-    | k == start = (mempty, arr)
+breakElem :: PrimType ty => ty -> UArray ty -> (UArray ty, UArray ty)
+breakElem !ty arr@(UArray start len backend)
+    | k == end   = (arr, empty)
+    | k == start = (empty, arr)
     | otherwise  = ( UArray start (offsetAsSize k - offsetAsSize start) backend
                    , UArray k     (len - (offsetAsSize k - offsetAsSize start)) backend)
   where
     !end = start `offsetPlusE` len
     !k = onBackend goBa (\fptr -> pure . goAddr fptr) arr
-    goBa ba = PrimBA.findIndexElem ty ba start (start `offsetPlusE` len)
-    goAddr _ (Ptr addr) = PrimAddr.findIndexElem ty addr start (start `offsetPlusE` len)
-{-# SPECIALIZE [3] splitElem :: Word8 -> UArray Word8 -> (UArray Word8, UArray Word8) #-}
-{-# SPECIALIZE [3] splitElem :: Word32 -> UArray Word32 -> (UArray Word32, UArray Word32) #-}
+    goBa ba = PrimBA.findIndexElem ty ba start end
+    goAddr _ (Ptr addr) = PrimAddr.findIndexElem ty addr start end
+{-# NOINLINE [3] breakElem #-}
+{-# RULES "breakElem Word8" [3] breakElem = breakElemByte #-}
+{-# SPECIALIZE [3] breakElem :: Word32 -> UArray Word32 -> (UArray Word32, UArray Word32) #-}
+
+breakElemByte :: Word8 -> UArray Word8 -> (UArray Word8, UArray Word8)
+breakElemByte !ty arr@(UArray start len backend)
+    | k == end   = (arr, empty)
+    | k == start = (empty, arr)
+    | otherwise  = ( UArray start (offsetAsSize k - offsetAsSize start) backend
+                   , UArray k     (len - (offsetAsSize k - offsetAsSize start)) backend)
+  where
+    !end = start `offsetPlusE` len
+    !k = onBackend goBa (\fptr -> pure . goAddr fptr) arr
+    goBa ba = sysHsMemFindByteBa ba start end ty
+    goAddr _ (Ptr addr) = sysHsMemFindByteAddr addr start end ty
 
 -- inverse a CountOf that is specified from the end (e.g. take n elements from the end)
 countFromStart :: UArray ty -> CountOf ty -> CountOf ty
@@ -471,11 +484,6 @@ break xpredicate xv
 {-# RULES "break (ty ==)" [3] forall (x :: forall ty . PrimType ty => ty) . break (x ==) = breakElem x #-}
 {-# RULES "break (== ty)" [3] forall (x :: Word8) . break (== x) = breakElem x #-}
 -}
-
-breakElem :: PrimType ty => ty -> UArray ty -> (UArray ty, UArray ty)
-breakElem xelem xv = splitElem xelem xv
-{-# SPECIALIZE [2] breakElem :: Word8 -> UArray Word8 -> (UArray Word8, UArray Word8) #-}
-{-# SPECIALIZE [2] breakElem :: Word32 -> UArray Word32 -> (UArray Word32, UArray Word32) #-}
 
 elem :: PrimType ty => ty -> UArray ty -> Bool
 elem !ty arr = onBackend goBa (\_ -> pure . goAddr) arr /= end

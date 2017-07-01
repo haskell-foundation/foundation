@@ -110,6 +110,7 @@ import           Foundation.Boot.Builder
 import           Foundation.Primitive.UTF8.Table
 import           Foundation.Primitive.UTF8.Helper
 import           Foundation.Primitive.UTF8.Base
+import           Foundation.System.Bindings.Hs (sysHsUTF8LengthBa, sysHsUTF8LengthAddr)
 import           Foundation.Primitive.UTF8.Types
 import           Foundation.Primitive.UArray.Base as C (onBackendPrim, onBackend, offset, ValidRange(..), offsetsValidRange)
 import qualified Foundation.Primitive.UTF8.BA as PrimBA
@@ -468,7 +469,7 @@ breakElem !el s@(String ba)
     | sz == 0   = (mempty, mempty)
     | otherwise =
         case asUTF8Char el of
-            UTF8_1 w -> let !(v1,v2) = Vec.splitElem w ba in (String v1, String v2)
+            UTF8_1 w -> let !(v1,v2) = Vec.breakElem w ba in (String v1, String v2)
             _        -> runST $ Vec.unsafeIndexer ba go
   where
     sz = size s
