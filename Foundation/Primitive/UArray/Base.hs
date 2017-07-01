@@ -31,6 +31,7 @@ module Foundation.Primitive.UArray.Base
     , unsafeDewrap
     , unsafeDewrap2
     -- * Basic lowlevel functions
+    , empty
     , length
     , offset
     , ValidRange(..)

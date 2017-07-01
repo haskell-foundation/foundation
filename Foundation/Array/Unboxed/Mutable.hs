@@ -51,7 +51,7 @@ import           Foundation.Primitive.FinalPtr
 import           Foundation.Primitive.Exception
 import qualified Foundation.Primitive.Block.Mutable as MBLK
 import           Foundation.Primitive.Block         (MutableBlock(..))
-import           Foundation.Primitive.UArray.Base
+import           Foundation.Primitive.UArray.Base hiding (empty)
 import           Foundation.Numerical
 import           Foreign.Marshal.Utils (copyBytes)
 

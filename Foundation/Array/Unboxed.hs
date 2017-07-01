@@ -344,31 +344,31 @@ null :: UArray ty -> Bool
 null arr = length arr == 0
 
 -- | Take a count of elements from the array and create an array with just those elements
-take :: PrimType ty => CountOf ty -> UArray ty -> UArray ty
+take :: CountOf ty -> UArray ty -> UArray ty
 take n arr@(UArray start len backend)
-    | n <= 0    = mempty
+    | n <= 0    = empty
     | n >= len  = arr
     | otherwise = UArray start n backend
 
-unsafeTake :: PrimType ty => CountOf ty -> UArray ty -> UArray ty
+unsafeTake :: CountOf ty -> UArray ty -> UArray ty
 unsafeTake sz (UArray start _ ba) = UArray start sz ba
 
 -- | Drop a count of elements from the array and return the new array minus those dropped elements
-drop :: PrimType ty => CountOf ty -> UArray ty -> UArray ty
+drop :: CountOf ty -> UArray ty -> UArray ty
 drop n arr@(UArray start len backend)
     | n <= 0    = arr
-    | n >= len  = mempty
+    | n >= len  = empty
     | otherwise = UArray (start `offsetPlusE` n) (len - n) backend
 
-unsafeDrop :: PrimType ty => CountOf ty -> UArray ty -> UArray ty
+unsafeDrop :: CountOf ty -> UArray ty -> UArray ty
 unsafeDrop n (UArray start sz backend) = UArray (start `offsetPlusE` sz) (sz `sizeSub` n) backend
 
 -- | Split an array into two, with a count of at most N elements in the first one
 -- and the remaining in the other.
-splitAt :: PrimType ty => CountOf ty -> UArray ty -> (UArray ty, UArray ty)
+splitAt :: CountOf ty -> UArray ty -> (UArray ty, UArray ty)
 splitAt nbElems arr@(UArray start len backend)
-    | nbElems <= 0 = (mempty, arr)
-    | n == len     = (arr, mempty)
+    | nbElems <= 0 = (empty, arr)
+    | n == len     = (arr, empty)
     | otherwise    = (UArray start n backend, UArray (start `offsetPlusE` n) (len - n) backend)
   where
     n    = min nbElems len
@@ -395,17 +395,17 @@ countFromStart v sz@(CountOf sz')
   where len@(CountOf len') = length v
 
 -- | Take the N elements from the end of the array
-revTake :: PrimType ty => CountOf ty -> UArray ty -> UArray ty
+revTake :: CountOf ty -> UArray ty -> UArray ty
 revTake n v = drop (countFromStart v n) v
 
 -- | Drop the N elements from the end of the array
-revDrop :: PrimType ty => CountOf ty -> UArray ty -> UArray ty
+revDrop :: CountOf ty -> UArray ty -> UArray ty
 revDrop n v = take (countFromStart v n) v
 
 -- | Split an array at the N element from the end, and return
 -- the last N elements in the first part of the tuple, and whatever first
 -- elements remaining in the second
-revSplitAt :: PrimType ty => CountOf ty -> UArray ty -> (UArray ty, UArray ty)
+revSplitAt :: CountOf ty -> UArray ty -> (UArray ty, UArray ty)
 revSplitAt n v = (drop sz v, take sz v) where sz = countFromStart v n
 
 splitOn :: PrimType ty => (ty -> Bool) -> UArray ty -> [UArray ty]
