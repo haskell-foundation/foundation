@@ -32,8 +32,8 @@ primIndex = primAddrIndex
 findIndexElem :: PrimType ty => ty -> Immutable -> Offset ty -> Offset ty -> Offset ty
 findIndexElem ty ba startIndex endIndex = loop startIndex
   where
-    loop i
-        | i < endIndex && t /= ty = loop (i+Offset 1)
+    loop !i
+        | i < endIndex && t /= ty = loop (i+1)
         | otherwise               = i
       where t = primIndex ba i
 {-# INLINE findIndexElem #-}
@@ -41,8 +41,8 @@ findIndexElem ty ba startIndex endIndex = loop startIndex
 findIndexPredicate :: PrimType ty => (ty -> Bool) -> Immutable -> Offset ty -> Offset ty -> Offset ty
 findIndexPredicate predicate ba !startIndex !endIndex = loop startIndex
   where
-    loop i
-        | i < endIndex && not found = loop (i+Offset 1)
+    loop !i
+        | i < endIndex && not found = loop (i+1)
         | otherwise                 = i
       where found = predicate (primIndex ba i)
 {-# INLINE findIndexPredicate #-}
