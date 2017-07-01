@@ -16,6 +16,7 @@ module Foundation.Primitive.UTF8.BA
     , write
     , all
     , any
+    , foldr
     -- temporary
     , primIndex
     , primRead
@@ -173,3 +174,13 @@ any predicate ba start end = loop start
         | otherwise   = loop idx'
       where (Step c idx') = next ba idx
 {-# INLINE any #-}
+
+foldr :: Immutable -> Offset Word8 -> Offset Word8 -> (Char -> a -> a) -> a -> a
+foldr dat start end f acc = loop start
+  where
+    loop !i
+        | i == end  = acc
+        | otherwise =
+            let (Step c i') = next dat i
+             in c `f` loop i'
+{-# INLINE foldr #-}
