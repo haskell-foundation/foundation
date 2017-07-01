@@ -5,11 +5,10 @@
 -- Stability   : experimental
 -- Portability : portable
 --
--- A simple array abstraction that allow to use typed
--- array of bytes where the array is pinned in memory
--- to allow easy use with Foreign interfaces, ByteString
--- and always aligned to 64 bytes.
+-- An unboxed array of primitive types
 --
+-- All the cells in the array are in one chunk of contiguous
+-- memory.
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE ScopedTypeVariables #-}
