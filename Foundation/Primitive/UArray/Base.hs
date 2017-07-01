@@ -352,7 +352,7 @@ equal a b
 equalBytes :: UArray Word8 -> UArray Word8 -> Bool
 equalBytes a b
     | la /= lb  = False
-    | otherwise = memcmp a b (csizeOfSize $ sizeInBytes la) == 0
+    | otherwise = memcmp a b (sizeInBytes la) == 0
   where
     !la = length a
     !lb = length b
@@ -360,7 +360,7 @@ equalBytes a b
 equalMemcmp :: PrimType ty => UArray ty -> UArray ty -> Bool
 equalMemcmp a b
     | la /= lb  = False
-    | otherwise = memcmp a b (csizeOfSize $ sizeInBytes la) == 0
+    | otherwise = memcmp a b (sizeInBytes la) == 0
   where
     !la = length a
     !lb = length b
@@ -411,23 +411,21 @@ vCompareMemcmp a b = cintToOrdering $ memcmp a b sz
   where
     la = length a
     lb = length b
-    sz = csizeOfSize $ sizeInBytes $ min la lb
+    sz = sizeInBytes $ min la lb
     cintToOrdering :: CInt -> Ordering
     cintToOrdering 0 = la `compare` lb
     cintToOrdering r | r < 0     = LT
                      | otherwise = GT
 {-# SPECIALIZE [3] vCompareMemcmp :: UArray Word8 -> UArray Word8 -> Ordering #-}
 
-memcmp :: PrimType ty => UArray ty -> UArray ty -> CSize -> CInt
-memcmp a@(UArray o1 _ _) b@(UArray o2 _ _) sz = unsafeDewrap2
-    (\s1 s2 -> unsafeDupablePerformIO $ sysHsMemcmpBaBa s1 (offsetToCSize o1) s2 (offsetToCSize o2) sz)
-    (\s1 s2 -> unsafePrimToST $ sysHsMemcmpPtrPtr s1 (offsetToCSize o1) s2 (offsetToCSize o2) sz)
-    (\s1 s2 -> unsafePrimToST $ sysHsMemcmpBaPtr s1 (offsetToCSize o1) s2 (offsetToCSize o2) sz)
-    (\s1 s2 -> unsafePrimToST $ sysHsMemcmpPtrBa s1 (offsetToCSize o1) s2 (offsetToCSize o2) sz)
+memcmp :: PrimType ty => UArray ty -> UArray ty -> CountOf Word8 -> CInt
+memcmp a@(UArray (offsetInBytes -> o1) _ _) b@(UArray (offsetInBytes -> o2) _ _) sz = unsafeDewrap2
+    (\s1 s2 -> unsafeDupablePerformIO $ sysHsMemcmpBaBa s1 o1 s2 o2 sz)
+    (\s1 s2 -> unsafePrimToST $ sysHsMemcmpPtrPtr s1 o1 s2 o2 sz)
+    (\s1 s2 -> unsafePrimToST $ sysHsMemcmpBaPtr s1 o1 s2 o2 sz)
+    (\s1 s2 -> unsafePrimToST $ sysHsMemcmpPtrBa s1 o1 s2 o2 sz)
     a b
-  where
-    offsetToCSize ofs = csizeOfOffset $ offsetInBytes ofs
-{-# SPECIALIZE [3] memcmp :: UArray Word8 -> UArray Word8 -> CSize -> CInt #-}
+{-# SPECIALIZE [3] memcmp :: UArray Word8 -> UArray Word8 -> CountOf Word8 -> CInt #-}
 
 -- | Copy a number of elements from an array to another array with offsets
 copyAt :: forall prim ty . (PrimMonad prim, PrimType ty)

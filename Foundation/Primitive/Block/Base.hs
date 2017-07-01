@@ -150,7 +150,7 @@ equal a b
 equalMemcmp :: PrimMemoryComparable ty => Block ty -> Block ty -> Bool
 equalMemcmp b1@(Block a) b2@(Block b)
     | la /= lb  = False
-    | otherwise = unsafeDupablePerformIO (sysHsMemcmpBaBa a 0 b 0 (csizeOfSize la)) == 0
+    | otherwise = unsafeDupablePerformIO (sysHsMemcmpBaBa a 0 b 0 la) == 0
   where
     la = lengthBytes b1
     lb = lengthBytes b2
@@ -182,7 +182,7 @@ compareMemcmp b1@(Block a) b2@(Block b) =
   where
     la = lengthBytes b1
     lb = lengthBytes b2
-    sz = csizeOfSize $ min la lb
+    sz = min la lb
 {-# SPECIALIZE [3] compareMemcmp :: Block Word8 -> Block Word8 -> Ordering #-}
 
 -- | Append 2 blocks together by creating a new bigger block
