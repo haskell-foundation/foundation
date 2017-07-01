@@ -1047,7 +1047,7 @@ stringDewrap withBa withPtr (String ba) = C.unsafeDewrap withBa withPtr ba
 readIntegral :: (HasNegation i, IntegralUpsize Word8 i, Additive i, Multiplicative i, IsIntegral i) => String -> Maybe i
 readIntegral str
     | sz == 0   = Nothing
-    | otherwise = stringDewrap withBa withPtr str
+    | otherwise = stringDewrap withBa (\(Ptr ptr) -> pure . withPtr ptr) str
   where
     !sz = size str
     withBa ba ofs =
@@ -1057,10 +1057,10 @@ readIntegral str
                 (# acc, True, endOfs' #) | endOfs' > startOfs -> Just $! if negativeSign then negate acc else acc
                 _                                             -> Nothing
       where !endOfs = ofs `offsetPlusE` sz
-    withPtr (Ptr ptr) ofs = return $
-        let negativeSign = PrimAddr.expectAscii ptr ofs 0x2d
+    withPtr addr ofs =
+        let negativeSign = PrimAddr.expectAscii addr ofs 0x2d
             startOfs     = if negativeSign then succ ofs else ofs
-         in case decimalDigitsPtr 0 ptr endOfs startOfs of
+         in case decimalDigitsPtr 0 addr endOfs startOfs of
                 (# acc, True, endOfs' #) | endOfs' > startOfs -> Just $! if negativeSign then negate acc else acc
                 _                                             -> Nothing
       where !endOfs = ofs `offsetPlusE` sz
