@@ -1075,13 +1075,20 @@ readInteger = readIntegral
 -- Consume many digits until end of string.
 readNatural :: String -> Maybe Natural
 readNatural str
-    | sz == 0  = Nothing
-    | otherwise =
-        case decimalDigits 0 str 0 of
-            (# acc, True, endOfs #) | endOfs > 0 -> Just acc
-            _                                    -> Nothing
+    | sz == 0   = Nothing
+    | otherwise = stringDewrap withBa (\(Ptr ptr) -> pure . withPtr ptr) str
   where
     !sz = size str
+    withBa ba stringStart =
+        case decimalDigitsBA 0 ba eofs stringStart of
+            (# acc, True, endOfs #) | endOfs > stringStart -> Just acc
+            _                                              -> Nothing
+      where eofs = stringStart `offsetPlusE` sz
+    withPtr addr stringStart =
+        case decimalDigitsPtr 0 addr eofs stringStart of
+            (# acc, True, endOfs #) | endOfs > stringStart -> Just acc
+            _                                              -> Nothing
+      where eofs = stringStart `offsetPlusE` sz
 
 -- | Try to read a Double
 readDouble :: String -> Maybe Double
@@ -1190,7 +1197,7 @@ readFloatingExact str f
                 case decimalDigitsBA 0 ba eofs ofs of
                     (# acc, True, endOfs #) | endOfs > ofs -> f isNegative integral floatingDigits (Just $! if exponentNegative then negate acc else acc)
                     _                                      -> Nothing
-    withPtr (Ptr ptr) stringStart = return $
+    withPtr (Ptr ptr) stringStart = pure $
         let !isNegative = PrimAddr.expectAscii ptr stringStart 0x2d
          in consumeIntegral isNegative (if isNegative then stringStart+1 else stringStart)
       where
@@ -1253,26 +1260,6 @@ readFloatingExact str f
 --
 -- If end offset == start offset then no digits have been consumed by
 -- this function
-decimalDigits :: (IntegralUpsize Word8 acc, Additive acc)
-              => acc
-              -> String
-              -> Offset Word8
-              -> (# acc, Bool, Offset Word8 #)
-decimalDigits startAcc str startOfs = loop startAcc startOfs
-  where
-    !sz = size str
-    loop acc ofs
-        | ofs .==# sz = (# acc, True, ofs #)
-        | otherwise   =
-            case nextAscii str ofs of
-                st@(StepASCII d) | isValidStepASCII st && isDigit d -> loop (scale (10::Word) acc + fromDigit d) (ofs+1)
-                                 | otherwise                        -> (# acc, False, ofs #)
-    ascii0 = 0x30 -- use pattern synonym when we support >= 8.0
-    ascii9 = 0x39
-    isDigit c = c >= ascii0 && c <= ascii9
-    fromDigit c = integralUpsize (c - ascii0)
-
--- | same as decimalDigitsBA for a bytearray#
 decimalDigitsBA :: (IntegralUpsize Word8 acc, Additive acc, Multiplicative acc, Integral acc)
                 => acc
                 -> ByteArray#
