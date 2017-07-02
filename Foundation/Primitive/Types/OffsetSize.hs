@@ -186,8 +186,9 @@ instance Additive (CountOf ty) where
     (+) (CountOf a) (CountOf b) = CountOf (a+b)
 
 instance Subtractive (CountOf ty) where
-    type Difference (CountOf ty) = CountOf ty
-    (CountOf a) - (CountOf b) = CountOf (a-b)
+    type Difference (CountOf ty) = Maybe (CountOf ty)
+    (CountOf a) - (CountOf b) | a >= b    = Just . CountOf $ a - b
+                              | otherwise = Nothing
 
 instance Monoid (CountOf ty) where
     mempty = azero

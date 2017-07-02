@@ -125,14 +125,11 @@ data SomeWhereInArray a = SomeWhereInArray a Int Int
 instance (StorableFixed a, Arbitrary a) => Arbitrary (SomeWhereInArray a) where
     arbitrary = do
         a  <- arbitrary
-        let p = toProxy a
-            (CountOf minsz) = size p + (alignment p - size p)
+        let p = Proxy :: Proxy a
+            Just (CountOf minsz) = (size p + alignment p - size p)
         sz <- choose (minsz, 512)
         o  <- choose (0, sz - minsz)
         return $ SomeWhereInArray a sz o
-      where
-        toProxy :: a -> Proxy a
-        toProxy _ = Proxy
 
 testPropertyStorableFixedPeekOff :: (StorableFixed a, Foreign.Storable.Storable a, Arbitrary a, Eq a, Show a)
                          => Proxy a

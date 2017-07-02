@@ -190,9 +190,9 @@ mixBa !c !array (Sip initSt initIncr currentLen) =
     goVec ba start = loop8 initSt initIncr start totalLen
       where
         loop8 !st !incr            _     0 = Sip st incr (currentLen + totalLen)
-        loop8 !st SipIncremental0 !ofs !l
-            | l < 8     = loop1 st SipIncremental0 ofs l
-            | otherwise =
+        loop8 !st SipIncremental0 !ofs !l = case l - 8 of
+            Nothing -> loop1 st SipIncremental0 ofs l
+            Just l8 ->
                 let v =     to64 56 (primBaIndex ba ofs)
                         .|. to64 48 (primBaIndex ba (ofs + Offset 1))
                         .|. to64 40 (primBaIndex ba (ofs + Offset 2))
@@ -201,12 +201,12 @@ mixBa !c !array (Sip initSt initIncr currentLen) =
                         .|. to64 16 (primBaIndex ba (ofs + Offset 5))
                         .|. to64 8  (primBaIndex ba (ofs + Offset 6))
                         .|. to64 0  (primBaIndex ba (ofs + Offset 7))
-                in loop8 (process c st v) SipIncremental0 (start + Offset 8) (l - 8)
+                in loop8 (process c st v) SipIncremental0 (start + Offset 8) l8
         loop8 !st !incr !ofs !l = loop1 st incr ofs l
-        loop1 !st !incr _     0 = Sip st incr (currentLen + totalLen)
-        loop1 !st !incr !ofs !l =
-            let (# st', incr' #) = mix8Prim c (primBaIndex ba ofs) st incr
-             in loop1 st' incr' (ofs + Offset 1) (l - 1)
+        loop1 !st !incr !ofs !l = case l - 1 of 
+            Nothing -> Sip st incr (currentLen + totalLen)
+            Just l1 -> let (# st', incr' #) = mix8Prim c (primBaIndex ba ofs) st incr
+                        in loop1 st' incr' (ofs + Offset 1) l1
 
     to64 :: Int -> Word8 -> Word64
     to64 0  !v = Prelude.fromIntegral v
@@ -216,9 +216,9 @@ mixBa !c !array (Sip initSt initIncr currentLen) =
     goAddr (Ptr ptr) start = return $ loop8 initSt initIncr start totalLen
       where
         loop8 !st !incr            _     0 = Sip st incr (currentLen + totalLen)
-        loop8 !st SipIncremental0 !ofs !l
-            | l < 8     = loop1 st SipIncremental0 ofs l
-            | otherwise =
+        loop8 !st SipIncremental0 !ofs !l = case l - 8 of
+            Nothing -> loop1 st SipIncremental0 ofs l
+            Just l8 ->
                 let v =     to64 56 (primAddrIndex ptr ofs)
                         .|. to64 48 (primAddrIndex ptr (ofs + Offset 1))
                         .|. to64 40 (primAddrIndex ptr (ofs + Offset 2))
@@ -227,12 +227,12 @@ mixBa !c !array (Sip initSt initIncr currentLen) =
                         .|. to64 16 (primAddrIndex ptr (ofs + Offset 5))
                         .|. to64 8  (primAddrIndex ptr (ofs + Offset 6))
                         .|. to64 0  (primAddrIndex ptr (ofs + Offset 7))
-                in loop8 (process c st v) SipIncremental0 (start + Offset 8) (l - 8)
+                in loop8 (process c st v) SipIncremental0 (start + Offset 8) l8 -- (l - 8)
         loop8 !st !incr !ofs !l = loop1 st incr ofs l
-        loop1 !st !incr _     0 = Sip st incr (currentLen + totalLen)
-        loop1 !st !incr !ofs !l =
-            let (# st', incr' #) = mix8Prim c (primAddrIndex ptr ofs) st incr
-             in loop1 st' incr' (ofs + Offset 1) (l - 1)
+        loop1 !st !incr !ofs !l = case l - 1 of
+          Nothing -> Sip st incr (currentLen + totalLen)
+          Just l1 -> let (# st', incr' #) = mix8Prim c (primAddrIndex ptr ofs) st incr
+                      in loop1 st' incr' (ofs + Offset 1) l1
 
 doRound :: InternalState -> InternalState
 doRound (InternalState !v0 !v1 !v2 !v3) =

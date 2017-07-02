@@ -358,9 +358,9 @@ unsafeTake sz (UArray start _ ba) = UArray start sz ba
 -- | Drop a count of elements from the array and return the new array minus those dropped elements
 drop :: CountOf ty -> UArray ty -> UArray ty
 drop n arr@(UArray start len backend)
-    | n <= 0    = arr
-    | n >= len  = empty
-    | otherwise = UArray (start `offsetPlusE` n) (len - n) backend
+    | n <= 0                             = arr
+    | Just newLen <- len - n, newLen > 0 = UArray (start `offsetPlusE` n) newLen backend
+    | otherwise                          = empty
 
 unsafeDrop :: CountOf ty -> UArray ty -> UArray ty
 unsafeDrop n (UArray start sz backend) = UArray (start `offsetPlusE` n) (sz `sizeSub` n) backend
@@ -369,18 +369,17 @@ unsafeDrop n (UArray start sz backend) = UArray (start `offsetPlusE` n) (sz `siz
 -- and the remaining in the other.
 splitAt :: CountOf ty -> UArray ty -> (UArray ty, UArray ty)
 splitAt nbElems arr@(UArray start len backend)
-    | nbElems <= 0 = (empty, arr)
-    | n == len     = (arr, empty)
-    | otherwise    = (UArray start n backend, UArray (start `offsetPlusE` n) (len - n) backend)
-  where
-    n    = min nbElems len
+    | nbElems <= 0                               = (empty, arr)
+    | Just nbTails <- len - nbElems, nbTails > 0 = (UArray start                         nbElems backend
+                                                   ,UArray (start `offsetPlusE` nbElems) nbTails backend)
+    | otherwise                                  = (arr, empty)
 
 breakElem :: PrimType ty => ty -> UArray ty -> (UArray ty, UArray ty)
 breakElem !ty arr@(UArray start len backend)
     | k == end   = (arr, empty)
     | k == start = (empty, arr)
-    | otherwise  = ( UArray start (offsetAsSize k - offsetAsSize start) backend
-                   , UArray k     (len - (offsetAsSize k - offsetAsSize start)) backend)
+    | otherwise  = ( UArray start (offsetAsSize k `sizeSub` offsetAsSize start) backend
+                   , UArray k     (len `sizeSub` (offsetAsSize k `sizeSub` offsetAsSize start)) backend)
   where
     !end = start `offsetPlusE` len
     !k = onBackend goBa (\fptr -> pure . goAddr fptr) arr
@@ -394,8 +393,8 @@ breakElemByte :: Word8 -> UArray Word8 -> (UArray Word8, UArray Word8)
 breakElemByte !ty arr@(UArray start len backend)
     | k == end   = (arr, empty)
     | k == start = (empty, arr)
-    | otherwise  = ( UArray start (offsetAsSize k - offsetAsSize start) backend
-                   , UArray k     (len - (offsetAsSize k - offsetAsSize start)) backend)
+    | otherwise  = ( UArray start (offsetAsSize k `sizeSub` offsetAsSize start) backend
+                   , UArray k     (len `sizeSub` (offsetAsSize k `sizeSub` offsetAsSize start)) backend)
   where
     !end = start `offsetPlusE` len
     !k = onBackend goBa (\fptr -> pure . goAddr fptr) arr
@@ -415,8 +414,8 @@ breakLine arr@(UArray start len backend)
     | end == start = Left False
     | k2 == end    = Left (k1 /= k2)
     | k2 == start  = Right (empty, if k2 + 1 == end then empty else unsafeDrop 1 arr)
-    | otherwise    = Right ( unsafeTake (offsetAsSize k1 - offsetAsSize start) arr
-                           , if k2+1 == end then empty else UArray (k2+1) (len - (offsetAsSize (k2+1) - offsetAsSize start)) backend)
+    | otherwise    = Right ( unsafeTake (offsetAsSize k1 `sizeSub` offsetAsSize start) arr
+                           , if k2+1 == end then empty else UArray (k2+1) (len `sizeSub` (offsetAsSize (k2+1) `sizeSub` offsetAsSize start)) backend)
   where
     !end = start `offsetPlusE` len
     -- return (offset of CR, offset of LF, whether the last element was a carriage return
@@ -527,19 +526,19 @@ elem !ty arr = onBackend goBa (\_ -> pure . goAddr) arr /= end
 {-# SPECIALIZE [2] elem :: Word8 -> UArray Word8 -> Bool #-}
 
 intersperse :: forall ty . PrimType ty => ty -> UArray ty -> UArray ty
-intersperse sep v
-    | len <= 1  = v
-    | otherwise = runST $ unsafeCopyFrom v newSize (go sep)
+intersperse sep v = case len - 1 of 
+    Nothing -> v 
+    Just 0 -> v
+    Just gaps -> runST $ unsafeCopyFrom v (len + gaps) go
   where
     len = length v
-    newSize = (scale (2:: Word) len) - 1
 
-    go :: PrimType ty => ty -> UArray ty -> Offset ty -> MUArray ty s -> ST s ()
-    go sep' oldV oldI newV
-        | oldI .==# (len - 1) = unsafeWrite newV newI e
+    go :: PrimType ty => UArray ty -> Offset ty -> MUArray ty s -> ST s ()
+    go oldV oldI newV
+        | (oldI + 1) .==# len = unsafeWrite newV newI e
         | otherwise           = do
             unsafeWrite newV newI e
-            unsafeWrite newV (newI + 1) sep'
+            unsafeWrite newV (newI + 1) sep
       where
         e = unsafeIndex oldV oldI
         newI = scale (2 :: Word) oldI
@@ -584,12 +583,10 @@ uncons vec
     !nbElems = length vec
 
 unsnoc :: PrimType ty => UArray ty -> Maybe (UArray ty, ty)
-unsnoc vec
-    | nbElems == 0 = Nothing
-    | otherwise    = Just (sub vec 0 lastElem, unsafeIndex vec lastElem)
-  where
-    !lastElem = 0 `offsetPlusE` (nbElems - 1)
-    !nbElems = length vec
+unsnoc vec = case length vec - 1 of
+    Nothing -> Nothing
+    Just newLen -> Just (sub vec 0 lastElem, unsafeIndex vec lastElem)
+                     where !lastElem = 0 `offsetPlusE` newLen
 
 find :: PrimType ty => (ty -> Bool) -> UArray ty -> Maybe ty
 find predicate vec = loop 0
@@ -711,7 +708,7 @@ replace (needle :: UArray ty) replacement haystack = runST $ do
       False -> do
         let insertionPoints = indices needle haystack
         let !occs           = List.length insertionPoints
-        let !newLen         = haystackLen - (multBy needleLen occs) + (multBy replacementLen occs)
+        let !newLen         = haystackLen `sizeSub` (multBy needleLen occs) + (multBy replacementLen occs)
         ms <- new newLen
         loop ms (Offset 0) (Offset 0) insertionPoints
   where
@@ -831,11 +828,12 @@ builderBuild sizeChunksI ab
   where
       sizeChunks = CountOf sizeChunksI
 
-      fillFromEnd _   []     mua = pure mua
+      fillFromEnd _    []     mua = pure mua
       fillFromEnd !end (x:xs) mua = do
           let sz = length x
-          unsafeCopyAtRO mua (sizeAsOffset (end - sz)) x (Offset 0) sz
-          fillFromEnd (end - sz) xs mua
+          let start = end `sizeSub` sz
+          unsafeCopyAtRO mua (sizeAsOffset start) x (Offset 0) sz
+          fillFromEnd start xs mua
 
 builderBuild_ :: (PrimType ty, PrimMonad m) => Int -> Builder (UArray ty) (MUArray ty) ty m () () -> m (UArray ty)
 builderBuild_ sizeChunksI ab = either (\() -> internalError "impossible output") id <$> builderBuild sizeChunksI ab

@@ -418,20 +418,16 @@ take nbElems a@(Array start len arr)
 
 drop :: CountOf ty -> Array ty -> Array ty
 drop nbElems a@(Array start len arr)
-    | nbElems <= 0 = a
-    | n == len     = empty
-    | otherwise    = Array (start `offsetPlusE` n) (len - n) arr
-  where
-    n = min nbElems len
+    | nbElems <= 0                               = a
+    | Just nbTails <- len - nbElems, nbTails > 0 = Array (start `offsetPlusE` nbElems) nbTails arr
+    | otherwise                                  = empty
 
 splitAt :: CountOf ty -> Array ty -> (Array ty, Array ty)
 splitAt nbElems a@(Array start len arr)
     | nbElems <= 0 = (empty, a)
-    | n == len     = (a, empty)
-    | otherwise    =
-        (Array start n arr, Array (start `offsetPlusE` n) (len - n) arr)
-  where
-    n = min nbElems len
+    | Just nbTails <- len - nbElems, nbTails > 0 = ( Array start                         nbElems arr
+                                                   , Array (start `offsetPlusE` nbElems) nbTails arr)
+    | otherwise = (a, empty)
 
 -- inverse a CountOf that is specified from the end (e.g. take n elements from the end)
 countFromStart :: Array ty -> CountOf ty -> CountOf ty
@@ -485,9 +481,10 @@ break predicate v = findBreak 0
                 else findBreak (i+1)
 
 intersperse :: ty -> Array ty -> Array ty
-intersperse sep v
-    | len <= CountOf 1 = v
-    | otherwise     = runST $ unsafeCopyFrom v ((len + len) - CountOf 1) (go (Offset 0 `offsetPlusE` (len - CountOf 1)) sep)
+intersperse sep v = case len - 1 of
+    Nothing -> v
+    Just 0 -> v
+    Just more -> runST $ unsafeCopyFrom v (len + more) (go (Offset 0 `offsetPlusE` more) sep)
   where len = length v
         -- terminate 1 before the end
 
@@ -551,9 +548,9 @@ uncons vec
     !len = length vec
 
 unsnoc :: Array ty -> Maybe (Array ty, ty)
-unsnoc vec
-    | len == 0  = Nothing
-    | otherwise = Just (take (len - 1) vec, unsafeIndex vec (sizeLastOffset len))
+unsnoc vec = case len - 1 of 
+    Nothing -> Nothing
+    Just newLen -> Just (take newLen vec, unsafeIndex vec (sizeLastOffset len))
   where
     !len = length vec
 
@@ -732,11 +729,12 @@ builderBuild sizeChunksI ab
   where
     sizeChunks = CountOf sizeChunksI
 
-    fillFromEnd _   []     mua = pure mua
+    fillFromEnd _    []     mua = pure mua
     fillFromEnd !end (x:xs) mua = do
         let sz = length x
-        unsafeCopyAtRO mua (sizeAsOffset (end - sz)) x (Offset 0) sz
-        fillFromEnd (end - sz) xs mua
+        let start = end `sizeSub` sz
+        unsafeCopyAtRO mua (sizeAsOffset start) x (Offset 0) sz
+        fillFromEnd start xs mua
 
 builderBuild_ :: PrimMonad m => Int -> Builder (Array ty) (MArray ty) ty m () () -> m (Array ty)
 builderBuild_ sizeChunksI ab = either (\() -> internalError "impossible output") id <$> builderBuild sizeChunksI ab

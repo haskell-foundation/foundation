@@ -178,19 +178,11 @@ class (IsList c, Item c ~ Element c, Monoid c, Collection c) => Sequential c whe
     -- | Takes two collections and returns True iff the first collection is an infix of the second.
     isInfixOf :: Eq (Element c) => c -> c -> Bool
     default isInfixOf :: Eq c => c -> c -> Bool
-    isInfixOf c1 c2
-        | len1 > len2  = False
-        | otherwise    = loop 0
-      where
-        endofs = len2 - len1
-        len1 = length c1
-        len2 = length c2
-
-        loop i
-            | i == endofs = c1 == c2Sub
-            | c1 == c2Sub = True
-            | otherwise   = loop (succ i)
-          where c2Sub = take len1 $ drop i c2
+    isInfixOf c1 c2 = loop (len2 - len1) c2
+      where len1 = length c1
+            len2 = length c2
+            loop (Just cnt) c2' = c1 == take len1 c2' || loop (cnt - 1) (drop 1 c2')
+            loop Nothing    _   = False
 
     -- | Try to strip a prefix from a collection
     stripPrefix :: Eq (Element c) => c -> c -> Maybe c
