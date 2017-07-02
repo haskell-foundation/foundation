@@ -141,7 +141,7 @@ sizeCast _ (CountOf sz) = CountOf sz
 -- use the safer (-) version if unsure.
 sizeSub :: CountOf a -> CountOf a -> CountOf a
 sizeSub (CountOf m) (CountOf n)
-    | m > n     = CountOf diff
+    | diff >= 0 = CountOf diff
     | otherwise = error "sizeSub negative size"
   where
     diff = m - n
