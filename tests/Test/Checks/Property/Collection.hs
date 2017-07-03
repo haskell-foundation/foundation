@@ -278,6 +278,12 @@ testSequentialProperties proxy genElement = Group "Sequential"
         , Property "collection + empty" $ withElements $ \l1 ->
             isPrefixOf (fromListP proxy []) (fromListP proxy l1) === isPrefixOf [] l1
         ]
+    , Group "isInfixOf"
+        [ Property "b isInfixOf 'a b c'" $ with3Elements $ \(a, b, c) -> 
+            isInfixOf (toCol b) (toCol a <> toCol b <> toCol c)
+        , Property "the reverse is typically not an infix" $ withElements $ \a' ->
+            let a = toCol a'; rev = reverse a in isInfixOf rev a === (a == rev)
+        ]
     ]
 {-
     , testProperty "imap" $ \(CharMap (LUString u) i) ->
@@ -285,11 +291,13 @@ testSequentialProperties proxy genElement = Group "Sequential"
     ]
 -}
   where
+    toCol = fromListP proxy 
     toList2 (x,y) = (toList x, toList y)
     toListFirst (x,y) = (toList x, y)
     toListSecond (x,y) = (x, toList y)
     withElements f = forAll (generateListOfElement genElement) f
     with2Elements f = forAll ((,) <$> generateListOfElement genElement <*> generateListOfElement genElement) f
+    with3Elements f = forAll ((,,) <$> generateListOfElement genElement <*> generateListOfElement genElement <*> generateListOfElement genElement) f
     withElements2 f = forAll ((,) <$> generateListOfElement genElement <*> arbitrary) f
     withElements3 f = forAll ((,,) <$> generateListOfElement genElement <*> arbitrary <*> arbitrary) f
     withElements2E f = forAll ((,) <$> generateListOfElement genElement <*> genElement) f
