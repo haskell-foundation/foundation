@@ -25,6 +25,8 @@ module Foundation.Primitive.Types
     , sizeAsOffset
     , sizeInBytes
     , offsetInBytes
+    , offsetInElements
+    , offsetIsAligned
     , primWordGetByteAndShift
     , primWord64GetByteAndShift
     , primWord64GetHiLo
@@ -36,9 +38,11 @@ import           GHC.Prim
 import           GHC.Int
 import           GHC.Types
 import           GHC.Word
+import           Data.Bits
 import           Foreign.C.Types
 import           Foundation.Internal.Proxy
 import           Foundation.Internal.Base
+import           Foundation.Numerical.Subtractive
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Endianness
 import           Foundation.Primitive.Monad
@@ -558,7 +562,20 @@ sizeInBytes :: forall a . PrimType a => CountOf a -> CountOf Word8
 sizeInBytes sz = sizeOfE (primSizeInBytes (Proxy :: Proxy a)) sz
 
 offsetInBytes :: forall a . PrimType a => Offset a -> Offset Word8
-offsetInBytes sz = offsetOfE (primSizeInBytes (Proxy :: Proxy a)) sz
+offsetInBytes ofs = offsetShiftL (primShiftToBytes (Proxy :: Proxy a)) ofs
+{-# INLINE [2] offsetInBytes #-}
+{-# SPECIALIZE INLINE [3] offsetInBytes :: Offset Word64 -> Offset Word8 #-}
+{-# SPECIALIZE INLINE [3] offsetInBytes :: Offset Word32 -> Offset Word8 #-}
+{-# SPECIALIZE INLINE [3] offsetInBytes :: Offset Word16 -> Offset Word8 #-}
+{-# RULES "offsetInBytes Bytes" [3] forall x . offsetInBytes x = x #-}
+
+offsetInElements :: forall a . PrimType a => Offset Word8 -> Offset a
+offsetInElements ofs = offsetShiftR (primShiftToBytes (Proxy :: Proxy a)) ofs
+{-# INLINE [2] offsetInElements #-}
+{-# SPECIALIZE INLINE [3] offsetInBytes :: Offset Word64 -> Offset Word8 #-}
+{-# SPECIALIZE INLINE [3] offsetInBytes :: Offset Word32 -> Offset Word8 #-}
+{-# SPECIALIZE INLINE [3] offsetInBytes :: Offset Word16 -> Offset Word8 #-}
+{-# RULES "offsetInElements Bytes" [3] forall x . offsetInElements x = x #-}
 
 primOffsetRecast :: forall a b . (PrimType a, PrimType b) => Offset a -> Offset b
 primOffsetRecast !ofs =
@@ -569,6 +586,14 @@ primOffsetRecast !ofs =
     !(CountOf szB) = primSizeInBytes (Proxy :: Proxy b)
 {-# INLINE [1] primOffsetRecast #-}
 {-# RULES "primOffsetRecast W8" [3] forall a . primOffsetRecast a = primOffsetRecastBytes a #-}
+
+offsetIsAligned :: forall a . PrimType a => Proxy a -> Offset Word8 -> Bool
+offsetIsAligned _ (Offset ofs) = (ofs .&. mask) == 0
+   where (CountOf sz) = primSizeInBytes (Proxy :: Proxy a)
+         mask = sz - 1
+{-# INLINE [1] offsetIsAligned #-}
+{-# SPECIALIZE [3] offsetIsAligned :: Proxy Word64 -> Offset Word8 -> Bool #-}
+{-# RULES "offsetInAligned Bytes" [3] forall (prx :: Proxy Word8) x . offsetIsAligned prx x = True #-}
 
 primOffsetRecastBytes :: forall b . PrimType b => Offset Word8 -> Offset b
 primOffsetRecastBytes (Offset 0) = Offset 0

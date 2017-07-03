@@ -19,6 +19,8 @@ module Foundation.Primitive.Types.OffsetSize
     , offsetRecast
     , offsetCast
     , offsetSub
+    , offsetShiftL
+    , offsetShiftR
     , sizeCast
     , sizeLastOffset
     , sizeAsOffset
@@ -43,6 +45,7 @@ import GHC.Int
 import GHC.Prim
 import Foreign.C.Types
 import System.Posix.Types (CSsize (..))
+import Data.Bits
 import Foundation.Internal.Base
 import Foundation.Internal.Proxy
 import Foundation.Numerical.Primitives
@@ -117,6 +120,12 @@ offsetRecast :: Size8 -> Size8 -> Offset ty -> Offset ty2
 offsetRecast szTy (CountOf szTy2) ofs =
     let (Offset bytes) = offsetOfE szTy ofs
      in Offset (bytes `div` szTy2)
+
+offsetShiftR :: Int -> Offset ty -> Offset ty2
+offsetShiftR n (Offset o) = Offset (o `unsafeShiftR` n)
+
+offsetShiftL :: Int -> Offset ty -> Offset ty2
+offsetShiftL n (Offset o) = Offset (o `unsafeShiftL` n)
 
 offsetCast :: Proxy (a -> b) -> Offset a -> Offset b
 offsetCast _ (Offset o) = Offset o
