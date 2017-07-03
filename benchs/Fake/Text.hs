@@ -13,7 +13,7 @@ module Fake.Text
     , decodeUtf8
     ) where
 
-import Prelude (undefined, Either(..))
+import Prelude (undefined, Either(..), Char)
 
 data Text = Text
 
