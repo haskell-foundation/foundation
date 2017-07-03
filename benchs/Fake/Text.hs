@@ -1,6 +1,7 @@
 module Fake.Text
     ( Text
     , pack
+    , unpack
     , length
     , splitAt
     , take
@@ -17,6 +18,8 @@ import Prelude (undefined, Either(..))
 data Text = Text
 
 pack _      = Text
+unpack :: Text -> [Char]
+unpack _ = undefined
 length      = undefined
 splitAt _ _ = (undefined, undefined)
 take        = undefined

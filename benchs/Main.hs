@@ -33,6 +33,7 @@ import qualified Fake.Vector as Vector
 
 benchsString = bgroup "String"
     [ benchLength
+    , benchUnpack
     , benchElem
     , benchTake
     , benchSplitAt
@@ -99,6 +100,9 @@ benchsString = bgroup "String"
 
     benchLength = bgroup "Length" $
         fmap (\(n, dat) -> bgroup n $ diffTextString length Text.length dat)
+            allDat
+    benchUnpack = bgroup "Unpack" $
+        fmap (\(n, dat) -> bgroup n $ diffTextString (length . toList) (length . Text.unpack) dat)
             allDat
     benchElem = bgroup "Elem" $
         fmap (\(n, dat) -> bgroup n $ diffTextString (elem '.') (Text.any (== '.')) dat)

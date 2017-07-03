@@ -16,6 +16,7 @@ module Fake.ByteString
     , any
     , readInt
     , readInteger
+    , unpack
     ) where
 
 import Prelude (undefined, Maybe(..))
@@ -40,6 +41,8 @@ foldr _ _ _ = undefined
 and _ _ = undefined
 all _ _ = undefined
 any _ _ = undefined
+unpack :: ByteString -> [Word8]
+unpack = undefined
 
 readInt :: ByteString -> Maybe (a,b)
 readInt _    = undefined

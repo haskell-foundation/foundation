@@ -1,6 +1,7 @@
 module Fake.Vector
     ( Vector
     , fromList
+    , toList
     , length
     , splitAt
     , take
@@ -21,6 +22,8 @@ import Prelude (undefined)
 data Vector ty = Vector
 
 fromList _  = Vector
+toList :: Vector ty -> [ty]
+toList _ = undefined
 length      = undefined
 splitAt _ _ = (undefined, undefined)
 take        = undefined
