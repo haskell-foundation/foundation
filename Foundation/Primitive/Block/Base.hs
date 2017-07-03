@@ -19,6 +19,7 @@ module Foundation.Primitive.Block.Base
     , length
     , lengthBytes
     -- * Other methods
+    , mutableEmpty
     , new
     , newPinned
     , touch
@@ -74,10 +75,11 @@ instance PrimType ty => IsList (Block ty) where
 
 length :: forall ty . PrimType ty => Block ty -> CountOf ty
 length (Block ba) =
-    let !(CountOf (I# szBits)) = primSizeInBytes (Proxy :: Proxy ty)
-        !elems              = quotInt# (sizeofByteArray# ba) szBits
-     in CountOf (I# elems)
+    case primShiftToBytes (Proxy :: Proxy ty) of
+        0           -> CountOf (I# (sizeofByteArray# ba))
+        (I# szBits) -> CountOf (I# (uncheckedIShiftRL# (sizeofByteArray# ba) szBits))
 {-# INLINE[1] length #-}
+{-# SPECIALIZE [2] length :: Block Word8 -> CountOf Word8 #-}
 
 lengthBytes :: Block ty -> CountOf Word8
 lengthBytes (Block ba) = CountOf (I# (sizeofByteArray# ba))
@@ -92,6 +94,11 @@ empty_ = runST $ primitive $ \s1 ->
     case newByteArray# 0# s1           of { (# s2, mba #) ->
     case unsafeFreezeByteArray# mba s2 of { (# s3, ba  #) ->
         (# s3, Block ba #) }}
+
+mutableEmpty :: PrimMonad prim => prim (MutableBlock ty (PrimState prim))
+mutableEmpty = primitive $ \s1 ->
+    case newByteArray# 0# s1 of { (# s2, mba #) ->
+        (# s2, MutableBlock mba #) }
 
 -- | Return the element at a specific index from an array without bounds checking.
 --
@@ -143,7 +150,7 @@ equal a b
 equalMemcmp :: PrimMemoryComparable ty => Block ty -> Block ty -> Bool
 equalMemcmp b1@(Block a) b2@(Block b)
     | la /= lb  = False
-    | otherwise = unsafeDupablePerformIO (sysHsMemcmpBaBa a 0 b 0 (csizeOfSize la)) == 0
+    | otherwise = unsafeDupablePerformIO (sysHsMemcmpBaBa a 0 b 0 la) == 0
   where
     la = lengthBytes b1
     lb = lengthBytes b2
@@ -175,7 +182,7 @@ compareMemcmp b1@(Block a) b2@(Block b) =
   where
     la = lengthBytes b1
     lb = lengthBytes b2
-    sz = csizeOfSize $ min la lb
+    sz = min la lb
 {-# SPECIALIZE [3] compareMemcmp :: Block Word8 -> Block Word8 -> Ordering #-}
 
 -- | Append 2 blocks together by creating a new bigger block

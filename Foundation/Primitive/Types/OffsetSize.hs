@@ -19,6 +19,8 @@ module Foundation.Primitive.Types.OffsetSize
     , offsetRecast
     , offsetCast
     , offsetSub
+    , offsetShiftL
+    , offsetShiftR
     , sizeCast
     , sizeLastOffset
     , sizeAsOffset
@@ -43,6 +45,7 @@ import GHC.Int
 import GHC.Prim
 import Foreign.C.Types
 import System.Posix.Types (CSsize (..))
+import Data.Bits
 import Foundation.Internal.Base
 import Foundation.Internal.Proxy
 import Foundation.Numerical.Primitives
@@ -73,12 +76,8 @@ type Offset8 = Offset Word8
 -- considering that GHC/Haskell are mostly using this for offset.
 -- Trying to bring some sanity by a lightweight wrapping.
 newtype Offset ty = Offset Int
-    deriving (Show,Eq,Ord,Enum,Additive,Typeable)
+    deriving (Show,Eq,Ord,Enum,Additive,Typeable,Integral)
 
-instance Integral (Offset ty) where
-    fromInteger n
-        | n < 0     = error "CountOf: fromInteger: negative"
-        | otherwise = Offset . fromInteger $ n
 instance IsIntegral (Offset ty) where
     toInteger (Offset i) = toInteger i
 instance IsNatural (Offset ty) where
@@ -121,6 +120,12 @@ offsetRecast :: Size8 -> Size8 -> Offset ty -> Offset ty2
 offsetRecast szTy (CountOf szTy2) ofs =
     let (Offset bytes) = offsetOfE szTy ofs
      in Offset (bytes `div` szTy2)
+
+offsetShiftR :: Int -> Offset ty -> Offset ty2
+offsetShiftR n (Offset o) = Offset (o `unsafeShiftR` n)
+
+offsetShiftL :: Int -> Offset ty -> Offset ty2
+offsetShiftL n (Offset o) = Offset (o `unsafeShiftL` n)
 
 offsetCast :: Proxy (a -> b) -> Offset a -> Offset b
 offsetCast _ (Offset o) = Offset o
@@ -169,12 +174,8 @@ type Size8 = CountOf Word8
 --
 -- Same caveats as 'Offset' apply here.
 newtype CountOf ty = CountOf Int
-    deriving (Show,Eq,Ord,Enum,Typeable)
+    deriving (Show,Eq,Ord,Enum,Typeable,Integral)
 
-instance Integral (CountOf ty) where
-    fromInteger n
-        | n < 0     = error "CountOf: fromInteger: negative"
-        | otherwise = CountOf . fromInteger $ n
 instance IsIntegral (CountOf ty) where
     toInteger (CountOf i) = toInteger i
 instance IsNatural (CountOf ty) where

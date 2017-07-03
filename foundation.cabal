@@ -192,6 +192,7 @@ library
                      Foundation.Primitive.UTF8.Base
                      Foundation.Primitive.UTF8.BA
                      Foundation.Primitive.UTF8.Addr
+                     Foundation.Primitive.UTF8.Types
                      Foundation.Primitive.UArray.Base
                      Foundation.Primitive.UArray.BA
                      Foundation.Primitive.UArray.Addr
@@ -223,6 +224,7 @@ library
                      cbits/foundation_network.c
                      cbits/foundation_mem.c
                      cbits/foundation_time.c
+                     cbits/foundation_utf8.c
                      cbits/foundation_rts.c
 
   if flag(experimental)
@@ -357,6 +359,7 @@ Benchmark bench
                      Sys
                      Fake.ByteString
                      Fake.Text
+                     Fake.Vector
   hs-source-dirs:    benchs
   default-language:  Haskell2010
   type:              exitcode-stdio-1.0

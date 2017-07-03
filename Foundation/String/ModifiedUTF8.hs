@@ -27,6 +27,7 @@ import           Control.Monad (mapM_)
 import           Foundation.Internal.Base
 import           Foundation.Primitive.Types.OffsetSize
 import qualified Foundation.Array.Unboxed as Vec
+import qualified Foundation.Primitive.UArray.Base as Vec
 import           Foundation.Array.Unboxed (UArray)
 import           Foundation.Numerical
 import           Foundation.Primitive.FinalPtr
@@ -46,7 +47,7 @@ accessBytes offset getAtIdx = (loop offset, pastEnd)
         | otherwise      = getAtIdx off : loop (off + 1)
 
 buildByteArray :: Addr# -> ST st (UArray Word8)
-buildByteArray addr = Vec.UVecAddr (Offset 0) (CountOf 100000) `fmap`
+buildByteArray addr = Vec.UArray (Offset 0) (CountOf 100000) . Vec.UArrayAddr <$>
     toFinalPtr (Ptr addr) (\_ -> return ())
 
 -- | assuming the given ByteArray is a valid modified UTF-8 sequence of bytes

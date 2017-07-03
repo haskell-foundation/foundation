@@ -1,9 +1,12 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ViewPatterns #-}
 module Foundation.Primitive.UArray.Base
     ( MUArray(..)
     , UArray(..)
+    , MUArrayBackend(..)
+    , UArrayBackend(..)
     -- * New mutable array creation
     , newUnpinned
     , newPinned
@@ -22,15 +25,23 @@ module Foundation.Primitive.UArray.Base
     -- * Array accessor
     , unsafeIndex
     , unsafeIndexer
+    , onBackend
+    , onBackendPrim
+    , onMutableBackend
     , unsafeDewrap
     , unsafeDewrap2
     -- * Basic lowlevel functions
+    , empty
     , length
+    , offset
+    , ValidRange(..)
+    , offsetsValidRange
     , equal
     , equalMemcmp
     , compare
     , copyAt
     , unsafeCopyAtRO
+    , touch
     -- * temporary
     , pureST
     ) where
@@ -49,6 +60,10 @@ import qualified Foundation.Boot.List as List
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.FinalPtr
 import           Foundation.Primitive.NormalForm
+import           Foundation.Primitive.Block (MutableBlock(..), Block(..))
+import qualified Foundation.Primitive.Block as BLK
+import qualified Foundation.Primitive.Block.Base as BLK (touch)
+import qualified Foundation.Primitive.Block.Mutable as MBLK
 import           Foundation.Numerical
 import           Foundation.System.Bindings.Hs
 import           Foreign.C.Types
@@ -57,26 +72,24 @@ import           System.IO.Unsafe (unsafeDupablePerformIO)
 -- | A Mutable array of types built on top of GHC primitive.
 --
 -- Element in this array can be modified in place.
-data MUArray ty st =
-      MUVecMA {-# UNPACK #-} !(Offset ty)
-              {-# UNPACK #-} !(CountOf ty)
-                             (MutableByteArray# st)
-    | MUVecAddr {-# UNPACK #-} !(Offset ty)
-                {-# UNPACK #-} !(CountOf ty)
-                               !(FinalPtr ty)
+data MUArray ty st = MUArray {-# UNPACK #-} !(Offset ty)
+                             {-# UNPACK #-} !(CountOf ty)
+                                            !(MUArrayBackend ty st)
+
+data MUArrayBackend ty st = MUArrayMBA (MutableBlock ty st) | MUArrayAddr (FinalPtr ty)
+
 
 -- | An array of type built on top of GHC primitive.
 --
 -- The elements need to have fixed sized and the representation is a
 -- packed contiguous array in memory that can easily be passed
 -- to foreign interface
-data UArray ty =
-      UVecBA {-# UNPACK #-} !(Offset ty)
-             {-# UNPACK #-} !(CountOf ty)
-                            !ByteArray#
-    | UVecAddr {-# UNPACK #-} !(Offset ty)
-               {-# UNPACK #-} !(CountOf ty)
-                              !(FinalPtr ty)
+data UArray ty = UArray {-# UNPACK #-} !(Offset ty)
+                        {-# UNPACK #-} !(CountOf ty)
+                                       !(UArrayBackend ty)
+    deriving (Typeable)
+
+data UArrayBackend ty = UArrayBA !(Block ty) | UArrayAddr !(FinalPtr ty)
     deriving (Typeable)
 
 instance Data ty => Data (UArray ty) where
@@ -88,8 +101,7 @@ arrayType :: DataType
 arrayType = mkNoRepType "Foundation.UArray"
 
 instance NormalForm (UArray ty) where
-    toNormalForm (UVecBA _ _ !_) = ()
-    toNormalForm (UVecAddr {}) = ()
+    toNormalForm (UArray _ _ !_) = ()
 instance (PrimType ty, Show ty) => Show (UArray ty) where
     show v = show (toList v)
 instance (PrimType ty, Eq ty) => Eq (UArray ty) where
@@ -109,56 +121,49 @@ instance PrimType ty => IsList (UArray ty) where
     toList = vToList
 
 length :: UArray ty -> CountOf ty
-length (UVecAddr _ len _) = len
-length (UVecBA _ len _) = len
+length (UArray _ len _) = len
 {-# INLINE[1] length #-}
+
+offset :: UArray ty -> Offset ty
+offset (UArray ofs _ _) = ofs
+{-# INLINE[1] offset #-}
+
+data ValidRange ty = ValidRange {-# UNPACK #-} !(Offset ty) {-# UNPACK #-} !(Offset ty)
+
+offsetsValidRange :: UArray ty -> ValidRange ty
+offsetsValidRange (UArray ofs len _) = ValidRange ofs (ofs `offsetPlusE` len)
 
 -- | Return if the array is pinned in memory
 --
 -- note that Foreign array are considered pinned
 isPinned :: UArray ty -> PinnedStatus
-isPinned (UVecAddr {})     = Pinned
-isPinned (UVecBA _ _ ba) = toPinnedStatus# (compatIsByteArrayPinned# ba)
+isPinned (UArray _ _ (UArrayAddr {})) = Pinned
+isPinned (UArray _ _ (UArrayBA blk))  = BLK.isPinned blk
 
 -- | Return if a mutable array is pinned in memory
 isMutablePinned :: MUArray ty st -> PinnedStatus
-isMutablePinned (MUVecAddr {})    = Pinned
-isMutablePinned (MUVecMA _ _ mba) = toPinnedStatus# (compatIsMutableByteArrayPinned# mba)
+isMutablePinned (MUArray _ _ (MUArrayAddr {})) = Pinned
+isMutablePinned (MUArray _ _ (MUArrayMBA mb))  = BLK.isMutablePinned mb
 
 -- | Create a new pinned mutable array of size @n.
 --
 -- all the cells are uninitialized and could contains invalid values.
 --
 -- All mutable arrays are allocated on a 64 bits aligned addresses
-newPinned :: (PrimMonad prim, PrimType ty) => CountOf ty -> prim (MUArray ty (PrimState prim))
-newPinned n = newFake n Proxy
-  where newFake :: (PrimMonad prim, PrimType ty) => CountOf ty -> Proxy ty -> prim (MUArray ty (PrimState prim))
-        newFake sz ty = primitive $ \s1 ->
-            case newAlignedPinnedByteArray# bytes 8# s1 of
-                (# s2, mba #) -> (# s2, MUVecMA (Offset 0) sz mba #)
-          where
-                !(CountOf (I# bytes)) = sizeOfE (primSizeInBytes ty) sz
-        {-# INLINE newFake #-}
+newPinned :: forall prim ty . (PrimMonad prim, PrimType ty) => CountOf ty -> prim (MUArray ty (PrimState prim))
+newPinned n = MUArray 0 n . MUArrayMBA <$> MBLK.newPinned n
 
-newUnpinned :: (PrimMonad prim, PrimType ty) => CountOf ty -> prim (MUArray ty (PrimState prim))
-newUnpinned n = newFake n Proxy
-  where newFake :: (PrimMonad prim, PrimType ty) => CountOf ty -> Proxy ty -> prim (MUArray ty (PrimState prim))
-        newFake sz ty = primitive $ \s1 ->
-            case newByteArray# bytes s1 of
-                (# s2, mba #) -> (# s2, MUVecMA (Offset 0) sz mba #)
-          where
-                !(CountOf (I# bytes)) = sizeOfE (primSizeInBytes ty) sz
-        {-# INLINE newFake #-}
+newUnpinned :: forall prim ty . (PrimMonad prim, PrimType ty) => CountOf ty -> prim (MUArray ty (PrimState prim))
+newUnpinned n = MUArray 0 n . MUArrayMBA <$> MBLK.new n
 
 newNative :: (PrimMonad prim, PrimType ty)
           => CountOf ty
-          -> (MutableByteArray# (PrimState prim) -> prim a)
+          -> (MutableByteArray# (PrimState prim) -> prim a) -- ^ move to a MutableBlock
           -> prim (a, MUArray ty (PrimState prim))
 newNative n f = do
-    muvec <- new n
-    case muvec of
-        (MUVecMA _ _ mba) -> f mba >>= \a -> pure (a, muvec)
-        MUVecAddr {}      -> error "internal error: unboxed new only supposed to allocate natively"
+    mb@(MutableBlock mba) <- MBLK.new n
+    a <- f mba
+    pure (a, MUArray 0 n (MUArrayMBA mb))
 
 -- | Create a new mutable array of size @n.
 --
@@ -183,8 +188,8 @@ new sz
 -- Reading from invalid memory can return unpredictable and invalid values.
 -- use 'read' if unsure.
 unsafeRead :: (PrimMonad prim, PrimType ty) => MUArray ty (PrimState prim) -> Offset ty -> prim ty
-unsafeRead (MUVecMA start _ mba) i = primMbaRead mba (start + i)
-unsafeRead (MUVecAddr start _ fptr) i = withFinalPtr fptr $ \(Ptr addr) -> primAddrRead addr (start + i)
+unsafeRead (MUArray start _ (MUArrayMBA (MutableBlock mba))) i = primMbaRead mba (start + i)
+unsafeRead (MUArray start _ (MUArrayAddr fptr)) i = withFinalPtr fptr $ \(Ptr addr) -> primAddrRead addr (start + i)
 {-# INLINE unsafeRead #-}
 
 
@@ -193,8 +198,8 @@ unsafeRead (MUVecAddr start _ fptr) i = withFinalPtr fptr $ \(Ptr addr) -> primA
 -- Writing with invalid bounds will corrupt memory and your program will
 -- become unreliable. use 'write' if unsure.
 unsafeWrite :: (PrimMonad prim, PrimType ty) => MUArray ty (PrimState prim) -> Offset ty -> ty -> prim ()
-unsafeWrite (MUVecMA start _ mba)  i v = primMbaWrite mba (start+i) v
-unsafeWrite (MUVecAddr start _ fptr) i v = withFinalPtr fptr $ \(Ptr addr) -> primAddrWrite addr (start+i) v
+unsafeWrite (MUArray start _ (MUArrayMBA mb)) i v = MBLK.unsafeWrite mb (start+i) v
+unsafeWrite (MUArray start _ (MUArrayAddr fptr)) i v = withFinalPtr fptr $ \(Ptr addr) -> primAddrWrite addr (start+i) v
 {-# INLINE unsafeWrite #-}
 
 -- | Return the element at a specific index from an array without bounds checking.
@@ -202,59 +207,85 @@ unsafeWrite (MUVecAddr start _ fptr) i v = withFinalPtr fptr $ \(Ptr addr) -> pr
 -- Reading from invalid memory can return unpredictable and invalid values.
 -- use 'index' if unsure.
 unsafeIndex :: forall ty . PrimType ty => UArray ty -> Offset ty -> ty
-unsafeIndex (UVecBA start _ ba) n = primBaIndex ba (start + n)
-unsafeIndex (UVecAddr start _ fptr) n = withUnsafeFinalPtr fptr (\(Ptr addr) -> return (primAddrIndex addr (start+n)) :: IO ty)
+unsafeIndex (UArray start _ (UArrayBA ba)) n = BLK.unsafeIndex ba (start + n)
+unsafeIndex (UArray start _ (UArrayAddr fptr)) n = withUnsafeFinalPtr fptr (\(Ptr addr) -> return (primAddrIndex addr (start+n)) :: IO ty)
 {-# INLINE unsafeIndex #-}
 
 unsafeIndexer :: (PrimMonad prim, PrimType ty) => UArray ty -> ((Offset ty -> ty) -> prim a) -> prim a
-unsafeIndexer (UVecBA start _ ba) f = f (\n -> primBaIndex ba (start + n))
-unsafeIndexer (UVecAddr start _ fptr) f = withFinalPtr fptr $ \(Ptr addr) -> f (\n -> primAddrIndex addr (start + n))
+unsafeIndexer (UArray start _ (UArrayBA ba)) f = f (\n -> BLK.unsafeIndex ba (start + n))
+unsafeIndexer (UArray start _ (UArrayAddr fptr)) f = withFinalPtr fptr $ \(Ptr addr) -> f (\n -> primAddrIndex addr (start + n))
 {-# INLINE unsafeIndexer #-}
 
 -- | Freeze a mutable array into an array.
 --
 -- the MUArray must not be changed after freezing.
 unsafeFreeze :: PrimMonad prim => MUArray ty (PrimState prim) -> prim (UArray ty)
-unsafeFreeze (MUVecMA start len mba) = primitive $ \s1 ->
-    case unsafeFreezeByteArray# mba s1 of
-        (# s2, ba #) -> (# s2, UVecBA start len ba #)
-unsafeFreeze (MUVecAddr start len fptr) = return $ UVecAddr start len fptr
+unsafeFreeze (MUArray start len (MUArrayMBA mba)) =
+    UArray start len . UArrayBA <$> MBLK.unsafeFreeze mba
+unsafeFreeze (MUArray start len (MUArrayAddr fptr)) =
+    pure $ UArray start len (UArrayAddr fptr)
 {-# INLINE unsafeFreeze #-}
 
 unsafeFreezeShrink :: (PrimType ty, PrimMonad prim) => MUArray ty (PrimState prim) -> CountOf ty -> prim (UArray ty)
-unsafeFreezeShrink (MUVecMA start _ mba) n = unsafeFreeze (MUVecMA start n mba)
-unsafeFreezeShrink (MUVecAddr start _ fptr) n = unsafeFreeze (MUVecAddr start n fptr)
+unsafeFreezeShrink (MUArray start _ backend) n = unsafeFreeze (MUArray start n backend)
 {-# INLINE unsafeFreezeShrink #-}
 
 -- | Thaw an immutable array.
 --
 -- The UArray must not be used after thawing.
 unsafeThaw :: (PrimType ty, PrimMonad prim) => UArray ty -> prim (MUArray ty (PrimState prim))
-unsafeThaw (UVecBA start len ba) = primitive $ \st -> (# st, MUVecMA start len (unsafeCoerce# ba) #)
-unsafeThaw (UVecAddr start len fptr) = return $ MUVecAddr start len fptr
+unsafeThaw (UArray start len (UArrayBA blk)) = MUArray start len . MUArrayMBA <$> BLK.unsafeThaw blk
+unsafeThaw (UArray start len (UArrayAddr fptr)) = pure $ MUArray start len (MUArrayAddr fptr)
 {-# INLINE unsafeThaw #-}
+
+onBackend :: (ByteArray# -> a)
+          -> (FinalPtr ty -> Ptr ty -> ST s a)
+          -> UArray ty
+          -> a
+onBackend onBa _      (UArray _ _ (UArrayBA (Block ba))) = onBa ba
+onBackend _    onAddr (UArray _ _ (UArrayAddr fptr))     = withUnsafeFinalPtr fptr (onAddr fptr)
+{-# INLINE onBackend #-}
+
+onBackendPrim :: PrimMonad prim
+              => (ByteArray# -> prim a)
+              -> (FinalPtr ty -> prim a)
+              -> UArray ty
+              -> prim a
+onBackendPrim onBa _      (UArray _ _ (UArrayBA (Block ba))) = onBa ba
+onBackendPrim _    onAddr (UArray _ _ (UArrayAddr fptr))     = onAddr fptr
+{-# INLINE onBackendPrim #-}
+
+onMutableBackend :: PrimMonad prim
+                 => (MutableByteArray# (PrimState prim) -> prim a)
+                 -> (FinalPtr ty -> prim a)
+                 -> MUArray ty (PrimState prim)
+                 -> prim a
+onMutableBackend onMba _      (MUArray _ _ (MUArrayMBA (MutableBlock mba)))   = onMba mba
+onMutableBackend _     onAddr (MUArray _ _ (MUArrayAddr fptr)) = onAddr fptr
+{-# INLINE onMutableBackend #-}
 
 
 unsafeDewrap :: (ByteArray# -> Offset ty -> a)
              -> (Ptr ty -> Offset ty -> ST s a)
              -> UArray ty
              -> a
-unsafeDewrap _ g (UVecAddr start _ fptr) = withUnsafeFinalPtr fptr $ \ptr -> g ptr start
-unsafeDewrap f _ (UVecBA start _ ba)     = f ba start
+unsafeDewrap _ g (UArray start _ (UArrayAddr fptr))     = withUnsafeFinalPtr fptr $ \ptr -> g ptr start
+unsafeDewrap f _ (UArray start _ (UArrayBA (Block ba))) = f ba start
 {-# INLINE unsafeDewrap #-}
 
-unsafeDewrap2 :: (ByteArray# -> Offset ty -> ByteArray# -> Offset ty -> a)
-              -> (Ptr ty -> Offset ty -> Ptr ty -> Offset ty -> ST s a)
-              -> (ByteArray# -> Offset ty -> Ptr ty -> Offset ty -> ST s a)
-              -> (Ptr ty -> Offset ty -> ByteArray# -> Offset ty -> ST s a)
+unsafeDewrap2 :: (ByteArray# -> ByteArray# -> a)
+              -> (Ptr ty -> Ptr ty -> ST s a)
+              -> (ByteArray# -> Ptr ty -> ST s a)
+              -> (Ptr ty -> ByteArray# -> ST s a)
               -> UArray ty
               -> UArray ty
               -> a
-unsafeDewrap2 f _ _ _ (UVecBA start1 _ ba1)     (UVecBA start2 _ ba2)     = f ba1 start1 ba2 start2
-unsafeDewrap2 _ f _ _ (UVecAddr start1 _ fptr1) (UVecAddr start2 _ fptr2) = withUnsafeFinalPtr fptr1 $ \ptr1 ->
-                                                                                  withFinalPtr fptr2 $ \ptr2 -> f ptr1 start1 ptr2 start2
-unsafeDewrap2 _ _ f _ (UVecBA start1 _ ba1)     (UVecAddr start2 _ fptr2) = withUnsafeFinalPtr fptr2 $ \ptr2 -> f ba1 start1 ptr2 start2
-unsafeDewrap2 _ _ _ f (UVecAddr start1 _ fptr1) (UVecBA start2 _ ba2)     = withUnsafeFinalPtr fptr1 $ \ptr1 -> f ptr1 start1 ba2 start2
+unsafeDewrap2 f g h i (UArray _ _ back1) (UArray _ _ back2) =
+    case (back1, back2) of
+        (UArrayBA (Block ba1), UArrayBA (Block ba2)) -> f ba1 ba2
+        (UArrayAddr fptr1, UArrayAddr fptr2)         -> withUnsafeFinalPtr fptr1 $ \ptr1 -> withFinalPtr fptr2 $ \ptr2 -> g ptr1 ptr2
+        (UArrayBA (Block ba1), UArrayAddr fptr2)     -> withUnsafeFinalPtr fptr2 $ \ptr2 -> h ba1 ptr2
+        (UArrayAddr fptr1, UArrayBA (Block ba2))     -> withUnsafeFinalPtr fptr1 $ \ptr1 -> i ptr1 ba2
 {-# INLINE [2] unsafeDewrap2 #-}
 
 pureST :: a -> ST s a
@@ -294,26 +325,25 @@ equal a b
     | la /= lb  = False
     | otherwise = unsafeDewrap2 goBaBa goPtrPtr goBaPtr goPtrBa a b
   where
+    !start1 = offset a
+    !start2 = offset b
+    !end = start1 `offsetPlusE` la
     !la = length a
     !lb = length b
-    goBaBa ba1 start1 ba2 start2 = loop start1 start2
+    goBaBa ba1 ba2 = loop start1 start2
       where
-        !end = start1 `offsetPlusE` la
         loop !i !o | i == end  = True
                    | otherwise = primBaIndex ba1 i == primBaIndex ba2 o && loop (i+o1) (o+o1)
-    goPtrPtr (Ptr addr1) start1 (Ptr addr2) start2 = pureST (loop start1 start2)
+    goPtrPtr (Ptr addr1) (Ptr addr2) = pureST (loop start1 start2)
       where
-        !end = start1 `offsetPlusE` la
         loop !i !o | i == end  = True
                    | otherwise = primAddrIndex addr1 i == primAddrIndex addr2 o && loop (i+o1) (o+o1)
-    goBaPtr ba1 start1 (Ptr addr2) start2 = pureST (loop start1 start2)
+    goBaPtr ba1 (Ptr addr2) = pureST (loop start1 start2)
       where
-        !end = start1 `offsetPlusE` la
         loop !i !o | i == end  = True
                    | otherwise = primBaIndex ba1 i == primAddrIndex addr2 o && loop (i+o1) (o+o1)
-    goPtrBa (Ptr addr1) start1 ba2 start2 = pureST (loop start1 start2)
+    goPtrBa (Ptr addr1) ba2 = pureST (loop start1 start2)
       where
-        !end = start1 `offsetPlusE` la
         loop !i !o | i == end  = True
                    | otherwise = primAddrIndex addr1 i == primBaIndex ba2 o && loop (i+o1) (o+o1)
 
@@ -324,7 +354,7 @@ equal a b
 equalBytes :: UArray Word8 -> UArray Word8 -> Bool
 equalBytes a b
     | la /= lb  = False
-    | otherwise = memcmp a b (csizeOfSize $ sizeInBytes la) == 0
+    | otherwise = memcmp a b (sizeInBytes la) == 0
   where
     !la = length a
     !lb = length b
@@ -332,45 +362,40 @@ equalBytes a b
 equalMemcmp :: PrimType ty => UArray ty -> UArray ty -> Bool
 equalMemcmp a b
     | la /= lb  = False
-    | otherwise = memcmp a b (csizeOfSize $ sizeInBytes la) == 0
+    | otherwise = memcmp a b (sizeInBytes la) == 0
   where
     !la = length a
     !lb = length b
 
 -- | Compare 2 vectors
 vCompare :: (Ord ty, PrimType ty) => UArray ty -> UArray ty -> Ordering
-vCompare a b = unsafeDewrap2 goBaBa goPtrPtr goBaPtr goPtrBa a b
+vCompare a@(UArray start1 la _) b@(UArray start2 lb _) = unsafeDewrap2 goBaBa goPtrPtr goBaPtr goPtrBa a b
   where
-    !la = length a
-    !lb = length b
+    !end = start1 `offsetPlusE` min la lb
     o1 = Offset (I# 1#)
-    goBaBa ba1 start1 ba2 start2 = loop start1 start2
+    goBaBa ba1 ba2 = loop start1 start2
       where
-        !end = start1 `offsetPlusE` min la lb
         loop !i !o | i == end   = la `compare` lb
                    | v1 == v2   = loop (i + o1) (o + o1)
                    | otherwise  = v1 `compare` v2
           where v1 = primBaIndex ba1 i
                 v2 = primBaIndex ba2 o
-    goPtrPtr (Ptr addr1) start1 (Ptr addr2) start2 = pureST (loop start1 start2)
+    goPtrPtr (Ptr addr1) (Ptr addr2) = pureST (loop start1 start2)
       where
-        !end = start1 `offsetPlusE` min la lb
         loop !i !o | i == end   = la `compare` lb
                    | v1 == v2   = loop (i + o1) (o + o1)
                    | otherwise  = v1 `compare` v2
           where v1 = primAddrIndex addr1 i
                 v2 = primAddrIndex addr2 o
-    goBaPtr ba1 start1 (Ptr addr2) start2 = pureST (loop start1 start2)
+    goBaPtr ba1 (Ptr addr2) = pureST (loop start1 start2)
       where
-        !end  = start1 `offsetPlusE` min la lb
         loop !i !o | i == end   = la `compare` lb
                    | v1 == v2   = loop (i + o1) (o + o1)
                    | otherwise  = v1 `compare` v2
           where v1 = primBaIndex ba1 i
                 v2 = primAddrIndex addr2 o
-    goPtrBa (Ptr addr1) start1 ba2 start2 = pureST (loop start1 start2)
+    goPtrBa (Ptr addr1) ba2 = pureST (loop start1 start2)
       where
-        !end  = start1 `offsetPlusE` min la lb
         loop !i !o | i == end   = la `compare` lb
                    | v1 == v2   = loop (i + o1) (o + o1)
                    | otherwise  = v1 `compare` v2
@@ -388,23 +413,21 @@ vCompareMemcmp a b = cintToOrdering $ memcmp a b sz
   where
     la = length a
     lb = length b
-    sz = csizeOfSize $ sizeInBytes $ min la lb
+    sz = sizeInBytes $ min la lb
     cintToOrdering :: CInt -> Ordering
     cintToOrdering 0 = la `compare` lb
     cintToOrdering r | r < 0     = LT
                      | otherwise = GT
 {-# SPECIALIZE [3] vCompareMemcmp :: UArray Word8 -> UArray Word8 -> Ordering #-}
 
-memcmp :: PrimType ty => UArray ty -> UArray ty -> CSize -> CInt
-memcmp a b sz = unsafeDewrap2
-    (\s1 o1 s2 o2 -> unsafeDupablePerformIO $ sysHsMemcmpBaBa s1 (offsetToCSize o1) s2 (offsetToCSize o2) sz)
-    (\s1 o1 s2 o2 -> unsafePrimToST $ sysHsMemcmpPtrPtr s1 (offsetToCSize o1) s2 (offsetToCSize o2) sz)
-    (\s1 o1 s2 o2 -> unsafePrimToST $ sysHsMemcmpBaPtr s1 (offsetToCSize o1) s2 (offsetToCSize o2) sz)
-    (\s1 o1 s2 o2 -> unsafePrimToST $ sysHsMemcmpPtrBa s1 (offsetToCSize o1) s2 (offsetToCSize o2) sz)
+memcmp :: PrimType ty => UArray ty -> UArray ty -> CountOf Word8 -> CInt
+memcmp a@(UArray (offsetInBytes -> o1) _ _) b@(UArray (offsetInBytes -> o2) _ _) sz = unsafeDewrap2
+    (\s1 s2 -> unsafeDupablePerformIO $ sysHsMemcmpBaBa s1 o1 s2 o2 sz)
+    (\s1 s2 -> unsafePrimToST $ sysHsMemcmpPtrPtr s1 o1 s2 o2 sz)
+    (\s1 s2 -> unsafePrimToST $ sysHsMemcmpBaPtr s1 o1 s2 o2 sz)
+    (\s1 s2 -> unsafePrimToST $ sysHsMemcmpPtrBa s1 o1 s2 o2 sz)
     a b
-  where
-    offsetToCSize ofs = csizeOfOffset $ offsetInBytes ofs
-{-# SPECIALIZE [3] memcmp :: UArray Word8 -> UArray Word8 -> CSize -> CInt #-}
+{-# SPECIALIZE [3] memcmp :: UArray Word8 -> UArray Word8 -> CountOf Word8 -> CInt #-}
 
 -- | Copy a number of elements from an array to another array with offsets
 copyAt :: forall prim ty . (PrimMonad prim, PrimType ty)
@@ -414,14 +437,14 @@ copyAt :: forall prim ty . (PrimMonad prim, PrimType ty)
        -> Offset ty                  -- ^ offset at source
        -> CountOf ty                    -- ^ number of elements to copy
        -> prim ()
-copyAt (MUVecMA dstStart _ dstMba) ed (MUVecMA srcStart _ srcBa) es n =
+copyAt (MUArray dstStart _ (MUArrayMBA (MutableBlock dstMba))) ed (MUArray srcStart _ (MUArrayMBA (MutableBlock srcBa))) es n =
     primitive $ \st -> (# copyMutableByteArray# srcBa os dstMba od nBytes st, () #)
   where
     !sz                 = primSizeInBytes (Proxy :: Proxy ty)
     !(Offset (I# os))   = offsetOfE sz (srcStart + es)
     !(Offset (I# od))   = offsetOfE sz (dstStart + ed)
     !(CountOf (I# nBytes)) = sizeOfE sz n
-copyAt (MUVecMA dstStart _ dstMba) ed (MUVecAddr srcStart _ srcFptr) es n =
+copyAt (MUArray dstStart _ (MUArrayMBA (MutableBlock dstMba))) ed (MUArray srcStart _ (MUArrayAddr srcFptr)) es n =
     withFinalPtr srcFptr $ \srcPtr ->
         let !(Ptr srcAddr) = srcPtr `plusPtr` os
          in primitive $ \s -> (# compatCopyAddrToByteArray# srcAddr dstMba od nBytes s, () #)
@@ -450,14 +473,14 @@ unsafeCopyAtRO :: forall prim ty . (PrimMonad prim, PrimType ty)
                -> Offset ty                   -- ^ offset at source
                -> CountOf ty                     -- ^ number of elements to copy
                -> prim ()
-unsafeCopyAtRO (MUVecMA dstStart _ dstMba) ed (UVecBA srcStart _ srcBa) es n =
+unsafeCopyAtRO (MUArray dstStart _ (MUArrayMBA (MutableBlock dstMba))) ed (UArray srcStart _ (UArrayBA (Block srcBa))) es n =
     primitive $ \st -> (# copyByteArray# srcBa os dstMba od nBytes st, () #)
   where
     sz = primSizeInBytes (Proxy :: Proxy ty)
     !(Offset (I# os))   = offsetOfE sz (srcStart+es)
     !(Offset (I# od))   = offsetOfE sz (dstStart+ed)
     !(CountOf (I# nBytes)) = sizeOfE sz n
-unsafeCopyAtRO (MUVecMA dstStart _ dstMba) ed (UVecAddr srcStart _ srcFptr) es n =
+unsafeCopyAtRO (MUArray dstStart _ (MUArrayMBA (MutableBlock dstMba))) ed (UArray srcStart _ (UArrayAddr srcFptr)) es n =
     withFinalPtr srcFptr $ \srcPtr ->
         let !(Ptr srcAddr) = srcPtr `plusPtr` os
          in primitive $ \s -> (# compatCopyAddrToByteArray# srcAddr dstMba od nBytes s, () #)
@@ -473,17 +496,14 @@ unsafeCopyAtRO dst od src os n = loop od os
         | i == endIndex = return ()
         | otherwise     = unsafeWrite dst d (unsafeIndex src i) >> loop (d+1) (i+1)
 
-
-data BA0 = BA0 !ByteArray# -- zero ba
-
-empty_ :: BA0
+empty_ :: Block ()
 empty_ = runST $ primitive $ \s1 ->
     case newByteArray# 0# s1           of { (# s2, mba #) ->
     case unsafeFreezeByteArray# mba s2 of { (# s3, ba  #) ->
-        (# s3, BA0 ba #) }}
+        (# s3, Block ba #) }}
 
 empty :: UArray ty
-empty = UVecBA 0 0 ba where !(BA0 ba) = empty_
+empty = UArray 0 0 (UArrayBA $ Block ba) where !(Block ba) = empty_
 
 -- | Append 2 arrays together by creating a new bigger array
 append :: PrimType ty => UArray ty -> UArray ty -> UArray ty
@@ -524,3 +544,7 @@ concat l  =
         unsafeCopyAtRO r i x (Offset 0) lx
         doCopy r (i `offsetPlusE` lx) xs
       where lx = length x
+
+touch :: PrimMonad prim => UArray ty -> prim ()
+touch (UArray _ _ (UArrayBA blk))    = BLK.touch blk
+touch (UArray _ _ (UArrayAddr fptr)) = touchFinalPtr fptr

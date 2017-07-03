@@ -1,6 +1,7 @@
 module Fake.Text
     ( Text
     , pack
+    , unpack
     , length
     , splitAt
     , take
@@ -12,11 +13,13 @@ module Fake.Text
     , decodeUtf8
     ) where
 
-import Prelude (undefined, Either(..))
+import Prelude (undefined, Either(..), Char)
 
 data Text = Text
 
 pack _      = Text
+unpack :: Text -> [Char]
+unpack _ = undefined
 length      = undefined
 splitAt _ _ = (undefined, undefined)
 take        = undefined
