@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "foundation_prim.h"
 
+#if 0
 static const uint64_t utf8_mask_80 = 0x8080808080808080ULL;
 static const uint64_t utf8_mask_40 = 0x4040404040404040ULL;
 
@@ -59,7 +60,7 @@ int foundation_utf8_validate(const uint8_t *c, size_t offset, size_t end)
         /* 2 bytes */
         else if (h < 0xE0) { if      (offset + 1 >= end) { goto fail2; }
             else if (IS_CONT(c[offset+1])) { offset += 2; }
-            else { goto fail1; } 
+            else { goto fail1; }
         }
         /* 3 bytes */
         else if (h < 0xF0) { if      (offset + 2 >= end) { goto fail2; }
@@ -81,3 +82,4 @@ fail1:
 fail2:
     return 2;
 }
+#endif

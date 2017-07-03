@@ -18,8 +18,10 @@ module Foundation.Primitive.UTF8.Addr
     , all
     , any
     , foldr
+    , length
     -- temporary
     , primIndex
+    , primIndex64
     , primRead
     , primWrite
     ) where
@@ -28,8 +30,10 @@ import           GHC.Int
 import           GHC.Types
 import           GHC.Word
 import           GHC.Prim
+import           Data.Bits
 import           Foundation.Internal.Base hiding (toList)
 import           Foundation.Internal.Primitive
+import           Foundation.Internal.Proxy
 import           Foundation.Numerical
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
@@ -50,6 +54,8 @@ primRead = primAddrRead
 primIndex :: Immutable -> Offset Word8 -> Word8
 primIndex = primAddrIndex
 
+primIndex64 :: Immutable -> Offset Word64 -> Word64
+primIndex64 = primAddrIndex
 
 nextAscii :: Immutable -> Offset Word8 -> StepASCII
 nextAscii ba n = StepASCII w
@@ -193,3 +199,46 @@ foldr dat start end f acc = loop start
             let (Step c i') = next dat i
              in c `f` loop i'
 {-# INLINE foldr #-}
+
+length :: Immutable -> Offset Word8 -> Offset Word8 -> CountOf Char
+length dat start end
+    | start == end = 0
+    | otherwise    = processStart 0 start
+  where
+    end64 :: Offset Word64
+    end64 = offsetInElements end
+
+    prx64 :: Proxy Word64
+    prx64 = Proxy
+
+    mask64_80 :: Word64
+    mask64_80 = 0x8080808080808080
+
+    processStart :: CountOf Char -> Offset Word8 -> CountOf Char
+    processStart !c !i
+        | i == end                = c
+        | offsetIsAligned prx64 i = processAligned c (offsetInElements i)
+        | otherwise               =
+            let h    = primIndex dat i
+                cont = (h .&. 0xc0) == 0x80
+                c'   = if cont then c else c+1
+             in processStart c' (i+1)
+    processAligned :: CountOf Char -> Offset Word64 -> CountOf Char
+    processAligned !c !i
+        | i >= end64 = processEnd c (offsetInBytes i)
+        | otherwise  =
+            let !h   = primIndex64 dat i
+                !h80 = h .&. mask64_80
+             in if h80 == 0
+                 then processAligned (c+8) (i+1)
+                 else let !nbAscii = if h80 == mask64_80 then 0 else CountOf (8 - popCount h80)
+                          !nbHigh  = CountOf $ popCount (h .&. (h80 `unsafeShiftR` 1))
+                       in processAligned (c + nbAscii + nbHigh) (i+1)
+    processEnd !c !i
+        | i == end  = c
+        | otherwise =
+            let h    = primIndex dat i
+                cont = (h .&. 0xc0) == 0x80
+                c'   = if cont then c else c+1
+             in processStart c' (i+1)
+{-# INLINE length #-}

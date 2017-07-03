@@ -110,7 +110,6 @@ import           Foundation.Boot.Builder
 import           Foundation.Primitive.UTF8.Table
 import           Foundation.Primitive.UTF8.Helper
 import           Foundation.Primitive.UTF8.Base
-import           Foundation.System.Bindings.Hs (sysHsUTF8LengthBa, sysHsUTF8LengthAddr)
 import           Foundation.Primitive.UTF8.Types
 import           Foundation.Primitive.UArray.Base as C (onBackendPrim, onBackend, offset, ValidRange(..), offsetsValidRange)
 import qualified Foundation.Primitive.UTF8.BA as PrimBA
@@ -572,9 +571,8 @@ length (String arr)
     | otherwise    = C.onBackend goVec (\_ -> pure . goAddr) arr
   where
     (C.ValidRange !start !end) = offsetsValidRange arr
-    goVec ma = sysHsUTF8LengthBa ma start end
-
-    goAddr (Ptr ptr) = sysHsUTF8LengthAddr ptr start end
+    goVec ma = PrimBA.length ma start end
+    goAddr (Ptr ptr) = PrimAddr.length ptr start end
 
 -- | Replicate a character @c@ @n@ times to create a string of length @n@
 replicate :: CountOf Char -> Char -> String
