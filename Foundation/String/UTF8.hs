@@ -985,9 +985,15 @@ toBytes ISO_8859_1 (String bytes) = toEncoderBytes Encoder.ISO_8859_1 bytes
 toBytes UTF16      (String bytes) = toEncoderBytes Encoder.UTF16      bytes
 toBytes UTF32      (String bytes) = toEncoderBytes Encoder.UTF32      bytes
 
--- | Split lines in a string using newline as separation
+-- | Split lines in a string using newline as separation.
+--
+-- Note that carriage return preceding a newline are also strip for
+-- maximum compatibility between Windows and Unix system.
 lines :: String -> [String]
-lines = fmap fromList . Prelude.lines . toList
+lines s =
+    case breakLine s of
+        Left _         -> [s]
+        Right (line,r) -> line : lines r
 
 -- | Split words in a string using spaces as separation
 --
