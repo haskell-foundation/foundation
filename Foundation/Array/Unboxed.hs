@@ -88,6 +88,7 @@ module Foundation.Array.Unboxed
     , all
     , any
     , isPrefixOf
+    , isSuffixOf
     , foreignMem
     , fromForeignPtr
     , builderAppend
@@ -910,3 +911,12 @@ isPrefixOf pre arr
     !pLen = length pre
     !pArr = length arr
 {-# SPECIALIZE [3] isPrefixOf :: UArray Word8 -> UArray Word8 -> Bool #-}
+
+isSuffixOf :: PrimType ty => UArray ty -> UArray ty -> Bool
+isSuffixOf suffix arr
+    | pLen > pArr = False
+    | otherwise   = suffix == revTake pLen arr
+  where
+    !pLen = length suffix
+    !pArr = length arr
+{-# SPECIALIZE [3] isSuffixOf :: UArray Word8 -> UArray Word8 -> Bool #-}

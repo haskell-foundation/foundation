@@ -264,6 +264,7 @@ instance UV.PrimType ty => Sequential (UV.UArray ty) where
     singleton = fromList . (:[])
     replicate = UV.replicate
     isPrefixOf = UV.isPrefixOf
+    isSuffixOf = UV.isSuffixOf
 
 instance Sequential (BA.Array ty) where
     take = BA.take
