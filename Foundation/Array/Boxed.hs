@@ -60,6 +60,8 @@ module Foundation.Array.Boxed
     , foldr1
     , all
     , any
+    , isPrefixOf
+    , isSuffixOf
     , builderAppend
     , builderBuild
     , builderBuild_
@@ -681,6 +683,22 @@ any p ba = loop 0
       | i .==# len = False
       | p (unsafeIndex ba i) = True
       | otherwise = loop (i + 1)
+
+isPrefixOf :: Eq ty => Array ty -> Array ty -> Bool
+isPrefixOf pre arr
+    | pLen > pArr = False
+    | otherwise   = pre == take pLen arr
+  where
+    !pLen = length pre
+    !pArr = length arr
+
+isSuffixOf :: Eq ty => Array ty -> Array ty -> Bool
+isSuffixOf suffix arr
+    | pLen > pArr = False
+    | otherwise   = suffix == revTake pLen arr
+  where
+    !pLen = length suffix
+    !pArr = length arr
 
 builderAppend :: PrimMonad state => ty -> Builder (Array ty) (MArray ty) ty state err ()
 builderAppend v = Builder $ State $ \(i, st, e) ->
