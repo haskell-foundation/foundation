@@ -423,11 +423,11 @@ breakLine arr@(UArray start len backend)
     carriageReturn = 0xd
     goBa ba =
         let k = sysHsMemFindByteBa ba start end lineFeed
-            cr = if k > start then PrimBA.primIndex ba (k `offsetSub` 1) == carriageReturn else False
+            cr = k > start && PrimBA.primIndex ba (k `offsetSub` 1) == carriageReturn
          in (if cr then k `offsetSub` 1 else k, k)
     goAddr _ (Ptr addr) =
         let k = sysHsMemFindByteAddr addr start end lineFeed
-            cr = if k > start then PrimAddr.primIndex addr (k `offsetSub` 1) == carriageReturn else False
+            cr = k > start && PrimAddr.primIndex addr (k `offsetSub` 1) == carriageReturn
          in (if cr then k `offsetSub` 1 else k, k)
 
 -- inverse a CountOf that is specified from the end (e.g. take n elements from the end)
