@@ -192,6 +192,18 @@ class (IsList c, Item c ~ Element c, Monoid c, Collection c) => Sequential c whe
             | otherwise   = loop (succ i)
           where c2Sub = take len1 $ drop i c2
 
+    -- | Try to strip a prefix from a collection
+    stripPrefix :: Eq (Element c) => c -> c -> Maybe c
+    stripPrefix pre s
+        | isPrefixOf pre s = Just $ drop (length pre) s
+        | otherwise        = Nothing
+
+    -- | Try to strip a suffix from a collection
+    stripSuffix :: Eq (Element c) => c -> c -> Maybe c
+    stripSuffix suf s
+        | isSuffixOf suf s = Just $ revDrop (length suf) s
+        | otherwise        = Nothing
+
 -- Temporary utility functions
 mconcatCollection :: (Monoid (Item c), Sequential c) => c -> Element c
 mconcatCollection c = mconcat (toList c)
@@ -315,3 +327,5 @@ instance Sequential S.String where
     isSuffixOf = S.isSuffixOf
     isPrefixOf = S.isPrefixOf
     isInfixOf  = S.isInfixOf
+    stripPrefix = S.stripPrefix
+    stripSuffix = S.stripSuffix
