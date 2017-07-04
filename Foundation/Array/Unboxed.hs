@@ -413,9 +413,8 @@ breakLine :: UArray Word8 -> Either Bool (UArray Word8, UArray Word8)
 breakLine arr@(UArray start len backend)
     | end == start = Left False
     | k2 == end    = Left (k1 /= k2)
-    | k2 == start  = Right (empty, if k2 + 1 == end then empty else unsafeDrop 1 arr)
-    | otherwise    = Right ( unsafeTake (offsetAsSize k1 `sizeSub` offsetAsSize start) arr
-                           , if k2+1 == end then empty else UArray (k2+1) (len `sizeSub` (offsetAsSize (k2+1) `sizeSub` offsetAsSize start)) backend)
+    | otherwise    = let newArray start' len' = if len' == 0 then empty else UArray start' len' backend
+                      in Right (newArray start (k1-start), newArray (k2+1) (end - (k2+1)))
   where
     !end = start `offsetPlusE` len
     -- return (offset of CR, offset of LF, whether the last element was a carriage return
