@@ -361,7 +361,7 @@ drop n arr@(UArray start len backend)
     | otherwise = UArray (start `offsetPlusE` n) (len - n) backend
 
 unsafeDrop :: CountOf ty -> UArray ty -> UArray ty
-unsafeDrop n (UArray start sz backend) = UArray (start `offsetPlusE` sz) (sz `sizeSub` n) backend
+unsafeDrop n (UArray start sz backend) = UArray (start `offsetPlusE` n) (sz `sizeSub` n) backend
 
 -- | Split an array into two, with a count of at most N elements in the first one
 -- and the remaining in the other.
