@@ -5,7 +5,7 @@ module Foundation.Conduit.Textual
     , toBytes
     ) where
 
-import           Foundation.Internal.Base hiding (throw)
+import           Foundation.Primitive.Imports hiding (throw)
 import           Foundation.Array.Unboxed (UArray)
 import           Foundation.String (String)
 import           Foundation.Collection
