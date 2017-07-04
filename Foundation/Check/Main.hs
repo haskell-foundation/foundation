@@ -98,7 +98,7 @@ defaultMain allTestRoot = do
             Right c -> pure c
 
     -- use the user defined seed or generate a new seed
-    seed <- maybe getRandomPrimType pure $ udfSeed cfg
+    seed <- maybe getRandomWord64 pure $ udfSeed cfg
 
     let testState = newState cfg seed
 

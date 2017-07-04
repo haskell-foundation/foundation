@@ -11,8 +11,7 @@ module Foundation.Check.Arbitrary
 
 import           Foundation.Primitive.Imports
 import           Foundation.Primitive
-import           Foundation.Primitive.IntegralConv (wordToChar)
-import           Foundation.Primitive.Floating
+import           Foundation.Primitive.IntegralConv
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Check.Gen
 import           Foundation.Random
@@ -32,45 +31,41 @@ instance Arbitrary Natural where
 
 -- prim types
 instance Arbitrary Int where
-    arbitrary = arbitraryPrimtype
+    arbitrary = int64ToInt <$> arbitraryInt64
 instance Arbitrary Word where
-    arbitrary = arbitraryPrimtype
+    arbitrary = word64ToWord <$> arbitraryWord64
 instance Arbitrary Word64 where
-    arbitrary = arbitraryPrimtype
+    arbitrary = arbitraryWord64
 instance Arbitrary Word32 where
-    arbitrary = arbitraryPrimtype
+    arbitrary = integralDownsize <$> arbitraryWord64
 instance Arbitrary Word16 where
-    arbitrary = arbitraryPrimtype
+    arbitrary = integralDownsize <$> arbitraryWord64
 instance Arbitrary Word8 where
-    arbitrary = arbitraryPrimtype
+    arbitrary = integralDownsize <$> arbitraryWord64
 instance Arbitrary Int64 where
-    arbitrary = arbitraryPrimtype
+    arbitrary = arbitraryInt64
 instance Arbitrary Int32 where
-    arbitrary = arbitraryPrimtype
+    arbitrary = integralDownsize <$> arbitraryInt64
 instance Arbitrary Int16 where
-    arbitrary = arbitraryPrimtype
+    arbitrary = integralDownsize <$> arbitraryInt64
 instance Arbitrary Int8 where
-    arbitrary = arbitraryPrimtype
+    arbitrary = integralDownsize <$> arbitraryInt64
 instance Arbitrary Char where
     arbitrary = arbitraryChar
 instance Arbitrary (CountOf ty) where
     arbitrary = CountOf <$> arbitrary
 
 instance Arbitrary Bool where
-    arbitrary = flip testBit 0 <$> (arbitraryPrimtype :: Gen Word)
+    arbitrary = flip testBit 0 <$> arbitraryWord64
 
 instance Arbitrary String where
     arbitrary = genWithParams $ \params ->
         fromList <$> (genMax (genMaxSizeString params) >>= \i -> replicateM (integralCast i) arbitrary)
 
 instance Arbitrary Float where
-    arbitrary = toFloat <$> arbitrary <*> arbitrary <*> arbitrary
-      where toFloat i n Nothing  = integerToFloat i + (naturalToFloat n / 100000)
-            toFloat i n (Just e) = (integerToFloat i + (naturalToFloat n / 1000000)) * (integerToFloat e)
+    arbitrary = arbitraryF32
 instance Arbitrary Double where
-    arbitrary = toDouble <$> arbitrary <*> arbitrary <*> arbitrary
-      where toDouble i n Nothing  = integerToDouble i + (naturalToDouble n / 100000)
-            toDouble i n (Just e) = (integerToDouble i + (naturalToDouble n / 1000000)) * (integerToDouble e)
+    arbitrary = arbitraryF64
 
 instance Arbitrary a => Arbitrary (Maybe a) where
     arbitrary = frequency $ nonEmpty_ [ (1, pure Nothing), (4, Just <$> arbitrary) ]
@@ -121,12 +116,21 @@ arbitraryChar = frequency $ nonEmpty_
     , (1, wordToChar <$> genMax 0x10ffff)
     ]
 
-arbitraryPrimtype :: PrimType ty => Gen ty
-arbitraryPrimtype = genWithRng getRandomPrimType
+arbitraryWord64 :: Gen Word64
+arbitraryWord64 = genWithRng getRandomWord64
 
-arbitraryUArrayOf :: PrimType ty => Word -> Gen (UArray ty)
-arbitraryUArrayOf size =
-    between (0, size) >>= \sz -> (fromList <$> replicateM (integralCast sz) arbitraryPrimtype)
+arbitraryInt64 :: Gen Int64
+arbitraryInt64 = integralCast <$> arbitraryWord64
+
+arbitraryF64 :: Gen Double
+arbitraryF64 = genWithRng getRandomF64
+
+arbitraryF32 :: Gen Float
+arbitraryF32 = genWithRng getRandomF32
+
+arbitraryUArrayOf :: (PrimType ty, Arbitrary ty) => Word -> Gen (UArray ty)
+arbitraryUArrayOf size = between (0, size) >>=
+    \sz -> fromList <$> replicateM (integralCast sz) arbitrary
 
 -- | Call one of the generator weighted
 frequency :: NonEmpty [(Word, Gen a)] -> Gen a
@@ -151,4 +155,4 @@ between (x,y) = (+) x <$> genMax range
   where range = y - x
 
 genMax :: Word -> Gen Word
-genMax m = (flip mod m) <$> arbitraryPrimtype
+genMax m = flip mod m <$> arbitrary

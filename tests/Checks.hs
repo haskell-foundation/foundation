@@ -75,13 +75,13 @@ readFloatingExact' :: String -> Maybe (Bool, Natural, Word, Maybe Int)
 readFloatingExact' str = readFloatingExact str (\s x y z -> Just (s,x,y,z))
 
 doubleEqualApprox :: Double -> Double -> PropertyCheck
-doubleEqualApprox d1 d2 = (propertyCompare pName1 (<) (negate lim) d) `propertyAnd` (propertyCompare pName2 (<) d lim)
+doubleEqualApprox d1 d2 = propertyCompare name (<) (abs d) lim
   where
         d = d2 - d1
 
-        pName1 = show (negate lim) <> " < " <> show d2 <> " - " <> show d1 <> " (== " <> show d <> " )"
-        pName2 = show d1 <> " - " <> show d2 <> " (== " <> show d <> " )" <> " < " <> show lim
-        lim = 1.0e-8
+        name = show d1 <> " - " <> show d2 <> " (differential=" <> show (abs d) <> " )" <> " < " <> show lim
+
+        lim = min d1 d2 * (10^^(-15 :: Int))
 
 main = defaultMain $ Group "foundation"
     [ Group "Numerical"

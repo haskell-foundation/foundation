@@ -21,12 +21,13 @@ module Foundation.Random
     ( MonadRandom(..)
     , MonadRandomState(..)
     , RandomGen(..)
-    , getRandomPrimType
+    -- , getRandomPrimType
     , withRandomGenerator
     , RNG
     , RNGv1
     ) where
 
+import           Foundation.Class.Storable (peek)
 import           Foundation.Internal.Base
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Internal.Proxy
@@ -37,13 +38,23 @@ import qualified Foundation.Array.Unboxed as A
 import qualified Foundation.Array.Unboxed.Mutable as A
 import           GHC.ST
 import qualified Prelude
+import qualified Foreign.Marshal.Alloc (alloca)
 
 -- | A monad constraint that allows to generate random bytes
 class (Functor m, Applicative m, Monad m) => MonadRandom m where
     getRandomBytes :: CountOf Word8 -> m (UArray Word8)
+    getRandomWord64 :: m Word64
+    getRandomF32 :: m Float
+    getRandomF64 :: m Double
 
 instance MonadRandom IO where
-    getRandomBytes = getEntropy
+    getRandomBytes  = getEntropy
+    getRandomWord64 = flip A.index 0 . A.unsafeRecast
+                  <$> getRandomBytes (A.primSizeInBytes (Proxy :: Proxy Word64))
+    getRandomF32 = flip A.index 0 . A.unsafeRecast
+                  <$> getRandomBytes (A.primSizeInBytes (Proxy :: Proxy Word64))
+    getRandomF64 = flip A.index 0 . A.unsafeRecast
+                  <$> getRandomBytes (A.primSizeInBytes (Proxy :: Proxy Word64))
 
 -- | A Deterministic Random Generator (DRG) class
 class RandomGen gen where
@@ -58,6 +69,13 @@ class RandomGen gen where
 
     -- | Generate N bytes of randomness from a DRG
     randomGenerate :: CountOf Word8 -> gen -> (UArray Word8, gen)
+
+    -- | Generate a Word64 from a DRG
+    randomGenerateWord64 :: gen -> (Word64, gen)
+
+    randomGenerateF32 :: gen -> (Float, gen)
+
+    randomGenerateF64 :: gen -> (Double, gen)
 
 -- | A simple Monad class very similar to a State Monad
 -- with the state being a RandomGenerator.
@@ -82,10 +100,10 @@ instance Monad (MonadRandomState gen) where
 
 instance RandomGen gen => MonadRandom (MonadRandomState gen) where
     getRandomBytes n = MonadRandomState (randomGenerate n)
+    getRandomWord64  = MonadRandomState randomGenerateWord64
+    getRandomF32  = MonadRandomState randomGenerateF32
+    getRandomF64  = MonadRandomState randomGenerateF64
 
-getRandomPrimType :: forall randomly ty . (PrimType ty, MonadRandom randomly) => randomly ty
-getRandomPrimType =
-    flip A.index 0 . A.unsafeRecast <$> getRandomBytes (A.primSizeInBytes (Proxy :: Proxy ty))
 
 -- | Run a pure computation with a Random Generator in the 'MonadRandomState'
 withRandomGenerator :: RandomGen gen
@@ -114,6 +132,9 @@ instance RandomGen RNGv1 where
         | A.length bs == 32 = Just $ RNGv1 bs
         | otherwise         = Nothing
     randomGenerate = rngv1Generate
+    randomGenerateWord64 = rngv1GenerateWord64
+    randomGenerateF32 = rngv1GenerateF32
+    randomGenerateF64 = rngv1GenerateF64
 
 rngv1KeySize :: CountOf Word8
 rngv1KeySize = 32
@@ -130,6 +151,33 @@ rngv1Generate n@(CountOf x) (RNGv1 key) = runST $ do
     (,) <$> A.unsafeFreeze dst
         <*> (RNGv1 <$> A.unsafeFreeze newKey)
 
+rngv1GenerateWord64 :: RNGv1 -> (Word64, RNGv1)
+rngv1GenerateWord64 (RNGv1 key) = runST $ unsafePrimFromIO $
+    Foreign.Marshal.Alloc.alloca $ \dst -> do
+        newKey <- A.newPinned rngv1KeySize
+        A.withMutablePtr newKey $ \newKeyP ->
+          A.withPtr key           $ \keyP  ->
+            c_rngv1_generate_word64 newKeyP dst keyP *> return ()
+        (,) <$> peek dst <*> (RNGv1 <$> A.unsafeFreeze newKey)
+
+rngv1GenerateF32 :: RNGv1 -> (Float, RNGv1)
+rngv1GenerateF32 (RNGv1 key) = runST $ unsafePrimFromIO $
+    Foreign.Marshal.Alloc.alloca $ \dst -> do
+        newKey <- A.newPinned rngv1KeySize
+        A.withMutablePtr newKey $ \newKeyP ->
+          A.withPtr key           $ \keyP  ->
+            c_rngv1_generate_f32 newKeyP dst keyP *> return ()
+        (,) <$> peek dst <*> (RNGv1 <$> A.unsafeFreeze newKey)
+
+rngv1GenerateF64 :: RNGv1 -> (Double, RNGv1)
+rngv1GenerateF64 (RNGv1 key) = runST $ unsafePrimFromIO $
+    Foreign.Marshal.Alloc.alloca $ \dst -> do
+        newKey <- A.newPinned rngv1KeySize
+        A.withMutablePtr newKey $ \newKeyP ->
+          A.withPtr key           $ \keyP  ->
+            c_rngv1_generate_f64 newKeyP dst keyP *> return ()
+        (,) <$> peek dst <*> (RNGv1 <$> A.unsafeFreeze newKey)
+
 -- return 0 on success, !0 for failure
 foreign import ccall unsafe "foundation_rngV1_generate"
    c_rngv1_generate :: Ptr Word8 -- new key
@@ -137,3 +185,21 @@ foreign import ccall unsafe "foundation_rngV1_generate"
                     -> Ptr Word8 -- current key
                     -> Word32    -- number of bytes to generate
                     -> IO Word32
+
+foreign import ccall unsafe "foundation_rngV1_generate_word64"
+   c_rngv1_generate_word64 :: Ptr Word8  -- new key
+                           -> Ptr Word64 -- destination
+                           -> Ptr Word8  -- current key
+                           -> IO Word32
+
+foreign import ccall unsafe "foundation_rngV1_generate_f32"
+   c_rngv1_generate_f32 :: Ptr Word8  -- new key
+                        -> Ptr Float -- destination
+                        -> Ptr Word8  -- current key
+                        -> IO Word32
+
+foreign import ccall unsafe "foundation_rngV1_generate_f64"
+   c_rngv1_generate_f64 :: Ptr Word8  -- new key
+                        -> Ptr Double -- destination
+                        -> Ptr Word8  -- current key
+                        -> IO Word32

@@ -143,3 +143,34 @@ int foundation_rngV1_generate(uint8_t newkey[CHACHA_KEY_SIZE], uint8_t *dst, uin
 	return 0;
 }
 
+int foundation_rngV1_generate_word32(uint8_t newkey[CHACHA_KEY_SIZE], uint32_t *dst_w, uint8_t key[CHACHA_KEY_SIZE])
+{
+	return foundation_rngV1_generate(newkey, (uint8_t*)dst_w, key, sizeof(uint32_t));
+}
+
+int foundation_rngV1_generate_word64(uint8_t newkey[CHACHA_KEY_SIZE], uint64_t *dst_w, uint8_t key[CHACHA_KEY_SIZE])
+{
+	return foundation_rngV1_generate(newkey, (uint8_t*)dst_w, key, sizeof(uint64_t));
+}
+
+int foundation_rngV1_generate_f32(uint8_t newkey[CHACHA_KEY_SIZE], float *dst_w, uint8_t key[CHACHA_KEY_SIZE])
+{
+	uint32_t const UPPER_MASK = 0x3F800000UL;
+	uint32_t const LOWER_MASK = 0x007FFFFFUL;
+	uint32_t tmp32;
+	int r = foundation_rngV1_generate_word32(newkey, &tmp32, key);
+	tmp32 = UPPER_MASK | (tmp32 & LOWER_MASK);
+	*dst_w = (float)tmp32 - 1.0;
+	return r;
+}
+
+int foundation_rngV1_generate_f64(uint8_t newkey[CHACHA_KEY_SIZE], double *dst_w, uint8_t key[CHACHA_KEY_SIZE])
+{
+	uint64_t const UPPER_MASK = 0x3FF0000000000000ULL;
+	uint64_t const LOWER_MASK = 0x000FFFFFFFFFFFFFULL;
+	uint64_t tmp64;
+	int r = foundation_rngV1_generate_word64(newkey, &tmp64, key);
+	tmp64 = UPPER_MASK | (tmp64 & LOWER_MASK);
+	*dst_w = (double)tmp64 - 1.0;
+	return r;
+}

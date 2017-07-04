@@ -9,6 +9,7 @@ module Foundation.Primitive.IntegralConv
     , IntegralUpsize(..)
     , IntegralCast(..)
     , intToInt64
+    , int64ToInt
     , wordToWord64
     , word64ToWord32s
     , word64ToWord
