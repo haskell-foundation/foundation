@@ -68,6 +68,7 @@ module Foundation.Array.Unboxed
     , splitOn
     , break
     , breakElem
+    , breakLine
     , elem
     , indices
     , intersperse
@@ -399,6 +400,36 @@ breakElemByte !ty arr@(UArray start len backend)
     !k = onBackend goBa (\fptr -> pure . goAddr fptr) arr
     goBa ba = sysHsMemFindByteBa ba start end ty
     goAddr _ (Ptr addr) = sysHsMemFindByteAddr addr start end ty
+
+-- | Similar to breakElem specialized to split on linefeed
+--
+-- it either returns:
+-- * Left. no line has been found, and whether the last character is a CR
+-- * Right, a line has been found with an optional CR, and it returns
+--   the array of bytes on the left of the CR/LF, and the
+--   the array of bytes on the right of the LF.
+--
+breakLine :: UArray Word8 -> Either Bool (UArray Word8, UArray Word8)
+breakLine arr@(UArray start len backend)
+    | end == start = Left False
+    | k2 == end    = Left (k1 /= k2)
+    | k2 == start  = Right (empty, if k2 + 1 == end then empty else unsafeDrop 1 arr)
+    | otherwise    = Right ( unsafeTake (offsetAsSize k1 - offsetAsSize start) arr
+                           , if k2+1 == end then empty else UArray (k2+1) (len - (offsetAsSize (k2+1) - offsetAsSize start)) backend)
+  where
+    !end = start `offsetPlusE` len
+    -- return (offset of CR, offset of LF, whether the last element was a carriage return
+    !(k1, k2) = onBackend goBa (\fptr -> pure . goAddr fptr) arr
+    lineFeed = 0xa
+    carriageReturn = 0xd
+    goBa ba =
+        let k = sysHsMemFindByteBa ba start end lineFeed
+            cr = if k > start then PrimBA.primIndex ba (k `offsetSub` 1) == carriageReturn else False
+         in (if cr then k `offsetSub` 1 else k, k)
+    goAddr _ (Ptr addr) =
+        let k = sysHsMemFindByteAddr addr start end lineFeed
+            cr = if k > start then PrimAddr.primIndex addr (k `offsetSub` 1) == carriageReturn else False
+         in (if cr then k `offsetSub` 1 else k, k)
 
 -- inverse a CountOf that is specified from the end (e.g. take n elements from the end)
 countFromStart :: UArray ty -> CountOf ty -> CountOf ty
