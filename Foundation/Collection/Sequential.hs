@@ -287,6 +287,8 @@ instance Sequential (BA.Array ty) where
     sortBy = BA.sortBy
     singleton = BA.singleton
     replicate = BA.replicate
+    isSuffixOf = BA.isSuffixOf
+    isPrefixOf = BA.isPrefixOf
 
 instance Sequential S.String where
     take = S.take
