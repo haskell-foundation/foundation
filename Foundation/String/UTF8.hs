@@ -52,6 +52,7 @@ module Foundation.String.UTF8
     , span
     , break
     , breakElem
+    , breakLine
     , dropWhile
     , singleton
     , charMap
@@ -485,6 +486,15 @@ breakElem !el s@(String ba)
                 case el == c of
                     True  -> return $ splitIndex idx s
                     False -> loop idx'
+
+-- | Same as break but cut on a line feed with an optional carriage return.
+--
+-- This is the same operation as 'breakElem LF' dropping the last character of the
+-- string if it's a CR.
+--
+-- Also for efficiency reason (streaming), it returns if the last character was a CR character.
+breakLine :: String -> Either Bool (String, String)
+breakLine (String arr) = bimap String String <$> Vec.breakLine arr
 
 -- | Apply a @predicate@ to the string to return the longest prefix that satisfy the predicate and
 -- the remaining

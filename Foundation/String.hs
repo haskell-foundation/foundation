@@ -37,6 +37,7 @@ module Foundation.String
     , toBase64
     , toBase64URL
     , toBase64OpenBSD
+    , breakLine
     ) where
 
 import Foundation.String.UTF8
