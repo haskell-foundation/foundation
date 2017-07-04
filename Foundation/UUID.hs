@@ -14,7 +14,7 @@ import Control.Monad (unless)
 import Data.Maybe (fromMaybe)
 
 import           Foundation.Internal.Base
-import           Foundation.Collection (Element, Sequential, length, foldl')
+import           Foundation.Collection (Element, Sequential, foldl')
 import           Foundation.Class.Storable
 import           Foundation.Hashing.Hashable
 import           Foundation.Bits
@@ -117,21 +117,21 @@ uuidParser = do
     return $ UUID (hex1 .<<. 32 .|. hex2 .<<. 16 .|. hex3)
                   (hex4 .<<. 48 .|. hex5)
 
+
 parseHex :: ( ParserSource input, Element input ~ Char
             , Sequential (Chunk input), Element input ~ Element (Chunk input)
             )
          => CountOf Char -> Parser input Word64
 parseHex count = do
-    r <- takeWhile $ \c -> ('0' <= c && c <= '9') || ('a' <= c && c <= 'f')
-    unless (length r == count) $
-        reportError $ Satisfy $ Just $ "Hexadecimal: parser received "
-                                   <> fromList (show $ length r)
-                                   <> " but expected "
-                                   <> fromList (show count)
-                                   <> " hexadecimal characters."
-    return $ listToHex 0 (toList r)
+    r <- toList <$> take count
+    unless (and $ isValidHexa <$> r) $
+        reportError $ Satisfy $ Just $ "expecting hexadecimal character only: "
+                                    <> fromList (show r)
+    return $ listToHex 0 r
   where
     listToHex = foldl' (\acc' x -> acc' * 16 + fromHex x)
+    isValidHexa :: Char -> Bool
+    isValidHexa c = ('0' <= c && c <= '9') || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F')
     fromHex '0' = 0
     fromHex '1' = 1
     fromHex '2' = 2
