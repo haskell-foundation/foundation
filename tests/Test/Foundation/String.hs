@@ -96,6 +96,22 @@ testStringCases =
             , testCase "30 31 E2 82 0C" $ expectFromBytesErr UTF8 ("01", Just InvalidContinuation, 2) (fromList [0x30,0x31,0xE2,0x82,0x0c])
             ]
         ]
+    , testGroup "Lines"
+        [ testCase "Hello<LF>Foundation" $
+            (breakLine "Hello\nFoundation" @?= Right ("Hello", "Foundation"))
+        , testCase "Hello<CRLF>Foundation" $
+            (breakLine "Hello\r\nFoundation" @?= Right ("Hello", "Foundation"))
+        , testCase "Hello<LF>Foundation" $
+            (breakLine (drop 5 "Hello\nFoundation\nSomething") @?= Right ("", "Foundation\nSomething"))
+        , testCase "Hello<CR>" $
+            (breakLine "Hello\r" @?= Left True)
+        , testCase "CR" $
+            (breakLine "\r" @?= Left True)
+        , testCase "LF" $
+            (breakLine "\n" @?= Right ("", ""))
+        , testCase "empty" $
+            (breakLine "" @?= Left False)
+        ]
     ]
 
 testAsciiStringCases :: [TestTree]
