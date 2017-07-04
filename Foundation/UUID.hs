@@ -46,8 +46,6 @@ instance Storable UUID where
 instance StorableFixed UUID where
     size      _ = 16
     alignment _ = 8
-instance IsString UUID where
-    fromString = either throw id . parseOnly uuidParser
 
 withComponent :: UUID -> (Word32 -> Word16 -> Word16 -> Word16 -> Word64 -> a) -> a
 withComponent (UUID a b) f = f x1 x2 x3 x4 x5
