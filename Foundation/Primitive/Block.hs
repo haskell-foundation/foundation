@@ -175,6 +175,7 @@ foldl1' f (NonEmpty arr) = loop 1 (unsafeIndex arr 0)
     loop !i !acc
         | i .==# len = acc
         | otherwise  = loop (i+1) (f acc (unsafeIndex arr i))
+{-# SPECIALIZE [3] foldl1' :: (Word8 -> Word8 -> Word8) -> NonEmpty (Block Word8) -> Word8 #-}
 
 foldr1 :: PrimType ty => (ty -> ty -> ty) -> NonEmpty (Block ty) -> ty
 foldr1 f arr = let (initialAcc, rest) = revSplitAt 1 $ getNonEmpty arr
