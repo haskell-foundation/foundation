@@ -80,6 +80,8 @@ module Foundation.String.UTF8
     , isPrefixOf
     , isSuffixOf
     , isInfixOf
+    , stripPrefix
+    , stripSuffix
     , all
     , any
     -- * Legacy utility
@@ -1353,6 +1355,24 @@ isInfixOf (String needle) (String haystack)
         | needle == haystackSub = True
         | otherwise             = loop (i+1)
       where haystackSub = C.take needleLen $ C.drop i haystack
+
+-- | Try to strip a prefix from the start of a String.
+--
+-- If the prefix is not starting the string, then Nothing is returned,
+-- otherwise the striped string is returned
+stripPrefix :: String -> String -> Maybe String
+stripPrefix (String suffix) (String arr)
+    | C.isPrefixOf suffix arr = Just $ String $ C.drop (C.length suffix) arr
+    | otherwise               = Nothing
+
+-- | Try to strip a suffix from the end of a String.
+--
+-- If the suffix is not ending the string, then Nothing is returned,
+-- otherwise the striped string is returned
+stripSuffix :: String -> String -> Maybe String
+stripSuffix (String prefix) (String arr)
+    | C.isSuffixOf prefix arr = Just $ String $ C.revDrop (C.length prefix) arr
+    | otherwise               = Nothing
 
 all :: (Char -> Bool) -> String -> Bool
 all predicate (String arr) = C.onBackend goNative (\_ -> pure . goAddr) arr
