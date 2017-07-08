@@ -33,6 +33,7 @@ Misc:
 * Faster Offset/Size convertions
 * Add Base64 support
 * Add LE/BE instance for NormalForm
+* Add UUID generation and parsing
 
 ## 0.0.12
 
