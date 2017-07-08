@@ -86,6 +86,8 @@ module Foundation
     , Prelude.Float
     , Prelude.Double
     , CountOf(..), Offset(..)
+    , toCount
+    , fromCount
       -- ** Collection types
     , UArray
     , PrimType
@@ -197,3 +199,11 @@ type LString = Prelude.String
 -- | Returns a list of the program's command line arguments (not including the program name).
 getArgs :: Prelude.IO [String]
 getArgs = (Data.List.map fromList <$> System.Environment.getArgs)
+
+fromCount :: CountOf ty -> Prelude.Int
+fromCount (CountOf n) = n
+
+toCount :: Prelude.Int -> CountOf ty
+toCount i
+    | i Prelude.<= 0    = CountOf 0
+    | Prelude.otherwise = CountOf i
