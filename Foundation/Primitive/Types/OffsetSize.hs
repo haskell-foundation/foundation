@@ -55,6 +55,7 @@ import Foundation.Numerical.Subtractive
 import Foundation.Numerical.Multiplicative
 import Foundation.Primitive.IntegralConv
 import Data.List (foldl')
+import qualified Prelude
 
 #if WORD_SIZE_IN_BITS < 64
 import GHC.IntWord64
@@ -76,7 +77,7 @@ type Offset8 = Offset Word8
 -- considering that GHC/Haskell are mostly using this for offset.
 -- Trying to bring some sanity by a lightweight wrapping.
 newtype Offset ty = Offset Int
-    deriving (Show,Eq,Ord,Enum,Additive,Typeable,Integral)
+    deriving (Show,Eq,Ord,Enum,Additive,Typeable,Integral,Prelude.Num)
 
 instance IsIntegral (Offset ty) where
     toInteger (Offset i) = toInteger i
@@ -175,6 +176,17 @@ type Size8 = CountOf Word8
 -- Same caveats as 'Offset' apply here.
 newtype CountOf ty = CountOf Int
     deriving (Show,Eq,Ord,Enum,Typeable,Integral)
+
+instance Prelude.Num (CountOf ty) where
+    fromInteger a = CountOf (fromInteger a)
+    (+) (CountOf a) (CountOf b) = CountOf (a+b)
+    (-) (CountOf a) (CountOf b)
+        | b > a     = CountOf 0
+        | otherwise = CountOf (a - b)
+    (*) (CountOf a) (CountOf b) = CountOf (a*b)
+    abs a = a
+    negate _ = error "cannot negate CountOf: use Foundation Numerical hierarchy for this function to not be exposed to CountOf"
+    signum (CountOf a) = CountOf (Prelude.signum a)
 
 instance IsIntegral (CountOf ty) where
     toInteger (CountOf i) = toInteger i
