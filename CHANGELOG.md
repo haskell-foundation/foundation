@@ -1,3 +1,39 @@
+## 0.0.13
+
+Block:
+* Optimise fold
+
+UArray:
+* Re-organise type to be more modular for later change
+* Remove the pinned array explicit status in favor of asking
+  the runtime system directly on demand.
+* Optimise fold operations
+* Optimise all&any
+* Optimise isPrefixOf
+* Optimise isSuffixOf
+* Optimise finding byte
+* Add an optimise function to break on line (CRLF & LF) as part of a stream
+
+String:
+* Optimise length
+* Optimise all&any
+* Optimise foldr
+* Remove many unboxed tuples (next, prev, ..) in favor of a strict unpack
+  constructor
+* Optimise lines using array breakLine
+
+Collection:
+* add stripPrefix & stripSuffix
+
+Tests:
+* Improve performance
+
+Misc:
+* Cleanup Offset/Size types with the C boundary
+* Faster Offset/Size convertions
+* Add Base64 support
+* Add LE/BE instance for NormalForm
+
 ## 0.0.12
 
 * Fix build windows building & time subsystem
