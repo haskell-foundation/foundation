@@ -1,18 +1,31 @@
-{-# LANGUAGE UnboxedTuples #-}
+{-# LANGUAGE UnboxedTuples    #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-}
+
 module Foundation.UUID
     ( UUID(..)
+    , newUUID
     , nil
     , fromBinary
+    , uuidParser
     ) where
 
+import Control.Monad (unless)
+import Data.Maybe (fromMaybe)
+
 import           Foundation.Internal.Base
+import           Foundation.Collection (Element, Sequential, foldl')
 import           Foundation.Class.Storable
 import           Foundation.Hashing.Hashable
 import           Foundation.Bits
+import           Foundation.Parser
+import           Foundation.Numerical
 import           Foundation.Primitive
 import           Foundation.Primitive.Base16
 import           Foundation.Primitive.IntegralConv
+import           Foundation.Primitive.Types.OffsetSize
 import qualified Foundation.Array.Unboxed as UA
+import           Foundation.Random (MonadRandom, getRandomBytes)
 
 data UUID = UUID {-# UNPACK #-} !Word64 {-# UNPACK #-} !Word64
     deriving (Eq,Ord,Typeable)
@@ -59,6 +72,11 @@ toLString uuid = withComponent uuid $ \x1 x2 x3 x4 x5 ->
 nil :: UUID
 nil = UUID 0 0
 
+newUUID :: MonadRandom randomly => randomly UUID
+newUUID = fromMaybe (error "Foundation.UUID.newUUID: the impossible happned")
+        . fromBinary
+        <$> getRandomBytes 16
+
 fromBinary :: UA.UArray Word8 -> Maybe UUID
 fromBinary ba
     | UA.length ba /= 16 = Nothing
@@ -85,3 +103,55 @@ fromBinary ba
     b13 = integralUpsize (UA.unsafeIndex ba 13)
     b14 = integralUpsize (UA.unsafeIndex ba 14)
     b15 = integralUpsize (UA.unsafeIndex ba 15)
+
+uuidParser :: ( ParserSource input, Element input ~ Char
+              , Sequential (Chunk input), Element input ~ Element (Chunk input)
+              )
+           => Parser input UUID
+uuidParser = do
+    hex1 <- parseHex (CountOf 8) <* element '-'
+    hex2 <- parseHex (CountOf 4) <* element '-'
+    hex3 <- parseHex (CountOf 4) <* element '-'
+    hex4 <- parseHex (CountOf 4) <* element '-'
+    hex5 <- parseHex (CountOf 12)
+    return $ UUID (hex1 .<<. 32 .|. hex2 .<<. 16 .|. hex3)
+                  (hex4 .<<. 48 .|. hex5)
+
+
+parseHex :: ( ParserSource input, Element input ~ Char
+            , Sequential (Chunk input), Element input ~ Element (Chunk input)
+            )
+         => CountOf Char -> Parser input Word64
+parseHex count = do
+    r <- toList <$> take count
+    unless (and $ isValidHexa <$> r) $
+        reportError $ Satisfy $ Just $ "expecting hexadecimal character only: "
+                                    <> fromList (show r)
+    return $ listToHex 0 r
+  where
+    listToHex = foldl' (\acc' x -> acc' * 16 + fromHex x)
+    isValidHexa :: Char -> Bool
+    isValidHexa c = ('0' <= c && c <= '9') || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F')
+    fromHex '0' = 0
+    fromHex '1' = 1
+    fromHex '2' = 2
+    fromHex '3' = 3
+    fromHex '4' = 4
+    fromHex '5' = 5
+    fromHex '6' = 6
+    fromHex '7' = 7
+    fromHex '8' = 8
+    fromHex '9' = 9
+    fromHex 'a' = 10
+    fromHex 'b' = 11
+    fromHex 'c' = 12
+    fromHex 'd' = 13
+    fromHex 'e' = 14
+    fromHex 'f' = 15
+    fromHex 'A' = 10
+    fromHex 'B' = 11
+    fromHex 'C' = 12
+    fromHex 'D' = 13
+    fromHex 'E' = 14
+    fromHex 'F' = 15
+    fromHex _   = error "Foundation.UUID.parseUUID: the impossible happened"
