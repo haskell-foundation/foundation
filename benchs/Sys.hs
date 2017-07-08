@@ -19,6 +19,9 @@ instance RandomGen NullRandom where
     randomNew        = return NullRandom
     randomNewFrom    = error "no randomNewFrom"
     randomGenerate (CountOf n) r = (fromList (Prelude.replicate n 0), r)
+    randomGenerateWord64 r = (0, r)
+    randomGenerateF32 r = (0.0, r)
+    randomGenerateF64 r = (0.0, r)
 
 benchSys =
     [ bgroup "Random"
