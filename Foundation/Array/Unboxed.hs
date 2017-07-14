@@ -55,6 +55,7 @@ module Foundation.Array.Unboxed
     , map
     , mapIndex
     , findIndex
+    , revFindIndex
     , index
     , null
     , take
@@ -488,6 +489,18 @@ findIndex ty arr
     goBa ba = PrimBA.findIndexElem ty ba start end
     goAddr (Ptr addr) = PrimAddr.findIndexElem ty addr start end
 {-# SPECIALIZE [3] findIndex :: Word8 -> UArray Word8 -> Maybe (Offset Word8) #-}
+
+revFindIndex :: PrimType ty => ty -> UArray ty -> Maybe (Offset ty)
+revFindIndex ty arr
+    | k == end  = Nothing
+    | otherwise = Just (k `offsetSub` start)
+  where
+    !k = onBackend goBa (\_ -> pure . goAddr) arr
+    !start = offset arr
+    !end = start `offsetPlusE` length arr
+    goBa ba = PrimBA.revFindIndexElem ty ba start end
+    goAddr (Ptr addr) = PrimAddr.revFindIndexElem ty addr start end
+{-# SPECIALIZE [3] revFindIndex :: Word8 -> UArray Word8 -> Maybe (Offset Word8) #-}
 
 break :: forall ty . PrimType ty => (ty -> Bool) -> UArray ty -> (UArray ty, UArray ty)
 break xpredicate xv
