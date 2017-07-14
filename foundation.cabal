@@ -179,6 +179,7 @@ library
                      Foundation.Primitive.Types
                      Foundation.Primitive.Types.OffsetSize
                      Foundation.Primitive.Types.Ptr
+                     Foundation.Primitive.Types.Char7
                      Foundation.Primitive.Monad
                      Foundation.Primitive.NormalForm
                      Foundation.Primitive.Utils

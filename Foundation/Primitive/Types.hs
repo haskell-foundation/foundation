@@ -46,6 +46,7 @@ import           Foundation.Numerical.Subtractive
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Endianness
 import           Foundation.Primitive.Monad
+import           Foundation.Primitive.Types.Char7 (Char7(..))
 import qualified Prelude (quot)
 
 #if WORD_SIZE_IN_BITS < 64
@@ -483,6 +484,24 @@ instance PrimType CUChar where
     primAddrRead addr (Offset n) = CUChar <$> primAddrRead addr (Offset n :: Offset Word8)
     {-# INLINE primAddrRead #-}
     primAddrWrite addr (Offset n) (CUChar w8) = primAddrWrite addr (Offset n) w8
+    {-# INLINE primAddrWrite #-}
+
+instance PrimType Char7 where
+    primSizeInBytes _ = CountOf 1
+    {-# INLINE primSizeInBytes #-}
+    primShiftToBytes _ = 0
+    {-# INLINE primShiftToBytes #-}
+    primBaUIndex ba (Offset n) = Char7 (primBaUIndex ba (Offset n :: Offset Word8))
+    {-# INLINE primBaUIndex #-}
+    primMbaURead mba (Offset n) = Char7 <$> primMbaURead mba (Offset n :: Offset Word8)
+    {-# INLINE primMbaURead #-}
+    primMbaUWrite mba (Offset n) (Char7 w8) = primMbaUWrite mba (Offset n) w8
+    {-# INLINE primMbaUWrite #-}
+    primAddrIndex addr (Offset n) = Char7 $ primAddrIndex addr (Offset n :: Offset Word8)
+    {-# INLINE primAddrIndex #-}
+    primAddrRead addr (Offset n) = Char7 <$> primAddrRead addr (Offset n :: Offset Word8)
+    {-# INLINE primAddrRead #-}
+    primAddrWrite addr (Offset n) (Char7 w8) = primAddrWrite addr (Offset n) w8
     {-# INLINE primAddrWrite #-}
 
 instance PrimType a => PrimType (LE a) where
