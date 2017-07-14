@@ -477,18 +477,16 @@ sub (UArray start len backend) startIdx expectedEndIdx
     newLen = endIdx - startIdx
     endIdx = min expectedEndIdx (0 `offsetPlusE` len)
 
-findIndex :: forall ty . PrimType ty => ty -> UArray ty -> Maybe (Offset ty)
-findIndex tyOuter ba = runST $ unsafeIndexer ba (go tyOuter)
+findIndex :: PrimType ty => ty -> UArray ty -> Maybe (Offset ty)
+findIndex ty arr
+    | k == end  = Nothing
+    | otherwise = Just (k `offsetSub` start)
   where
-    !len = length ba
-
-    go :: PrimType ty => ty -> (Offset ty -> ty) -> ST s (Maybe (Offset ty))
-    go ty getIdx = loop (Offset 0)
-      where
-        loop ofs
-            | ofs .==# len     = pure Nothing
-            | getIdx ofs == ty = pure $ Just ofs
-            | otherwise        = loop (ofs + Offset 1)
+    !k = onBackend goBa (\_ -> pure . goAddr) arr
+    !start = offset arr
+    !end = start `offsetPlusE` length arr
+    goBa ba = PrimBA.findIndexElem ty ba start end
+    goAddr (Ptr addr) = PrimAddr.findIndexElem ty addr start end
 {-# SPECIALIZE [3] findIndex :: Word8 -> UArray Word8 -> Maybe (Offset Word8) #-}
 
 break :: forall ty . PrimType ty => (ty -> Bool) -> UArray ty -> (UArray ty, UArray ty)
