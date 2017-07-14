@@ -14,6 +14,8 @@ import Foundation.Primitive.Block (Block)
 import Foundation.Array.Unboxed (UArray)
 import Foundation.Array.Boxed (Array)
 import Foundation.String.UTF8 (String)
+import Foundation.Primitive.Types.AsciiString (AsciiString)
+import Foundation.Primitive.Types.Char7 (Char7)
 
 -- | Element type of a collection
 type family Element container
@@ -22,3 +24,4 @@ type instance Element (Block ty) = ty
 type instance Element (UArray ty) = ty
 type instance Element (Array ty) = ty
 type instance Element String = Char
+type instance Element AsciiString = Char7

@@ -11,7 +11,7 @@ import Control.Monad (replicateM)
 
 import Foundation
 import Foundation.String
-import Foundation.String.ASCII (AsciiString)
+import Foundation.Primitive (AsciiString)
 import Control.Exception
 import Data.Either
 

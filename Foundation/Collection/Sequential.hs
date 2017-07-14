@@ -12,6 +12,8 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ConstrainedClassMethods #-}
 {-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE StandaloneDeriving #-}
 module Foundation.Collection.Sequential
     ( Sequential(..)
     ) where
@@ -19,6 +21,7 @@ module Foundation.Collection.Sequential
 import           Foundation.Internal.Base
 import           Foundation.Numerical.Subtractive
 import           Foundation.Primitive.Types.OffsetSize
+import           Foundation.Primitive.Types.AsciiString (AsciiString(..))
 import           Foundation.Collection.Element
 import           Foundation.Collection.Collection
 import qualified Foundation.Collection.List as ListExtra
@@ -321,3 +324,5 @@ instance Sequential S.String where
     isInfixOf  = S.isInfixOf
     stripPrefix = S.stripPrefix
     stripSuffix = S.stripSuffix
+
+deriving instance Sequential AsciiString

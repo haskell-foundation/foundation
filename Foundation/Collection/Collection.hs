@@ -18,6 +18,8 @@
 --
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Foundation.Collection.Collection
     ( Collection(..)
     -- * NonEmpty Property
@@ -32,6 +34,7 @@ module Foundation.Collection.Collection
 
 import           Foundation.Internal.Base hiding (and)
 import           Foundation.Primitive.Types.OffsetSize
+import           Foundation.Primitive.Types.AsciiString
 import           Foundation.Collection.Element
 import           Foundation.Collection.NonEmpty
 import qualified Data.List
@@ -138,7 +141,7 @@ instance Collection (BA.Array ty) where
     all     = BA.all
     any     = BA.any
 
-
+deriving instance Collection AsciiString
 
 instance Collection S.String where
     null = S.null
