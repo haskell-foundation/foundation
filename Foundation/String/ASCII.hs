@@ -17,6 +17,12 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UnboxedTuples              #-}
 {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE CPP                        #-}
+
+#if __GLASGOW_HASKELL__ >= 800
+{-# OPTIONS_GHC -Wno-inline-rule-shadowing #-}
+#endif
+
 module Foundation.String.ASCII
     ( AsciiString
     --, Buffer

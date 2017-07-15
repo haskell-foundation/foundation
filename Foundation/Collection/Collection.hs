@@ -18,6 +18,7 @@
 --
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ExistentialQuantification #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 module Foundation.Collection.Collection
     ( Collection(..)
     -- * NonEmpty Property

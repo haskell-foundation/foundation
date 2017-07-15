@@ -11,6 +11,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE OverloadedStrings #-}
+
+#if __GLASGOW_HASKELL__ >= 800
+{-# OPTIONS_GHC -Wno-inline-rule-shadowing #-}
+#endif
+
 module Foundation.Conduit.Internal
     ( Pipe(..)
     , Conduit(..)
