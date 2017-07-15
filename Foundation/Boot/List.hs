@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP #-}
 module Foundation.Boot.List
     ( length
+    , null
     , sum
     , reverse
     ) where
@@ -18,6 +19,10 @@ length = loop 0
   where loop !acc []     = acc
         loop !acc (_:xs) = loop (1+acc) xs
 #endif
+
+null :: [a] -> Bool
+null []    = True
+null (_:_) = False
 
 -- | Sum the element in a list
 sum :: Additive n => [n] -> n

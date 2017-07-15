@@ -44,6 +44,8 @@ module Foundation.Primitive.Imports
     , Foundation.Primitive.Types.OffsetSize.Offset
     , Foundation.Primitive.Types.OffsetSize.CountOf
     , Prelude.Char
+    , Foundation.Primitive.Types.Char7.Char7
+    , Foundation.Primitive.Types.AsciiString.AsciiString
     , Foundation.Primitive.UTF8.Base.String
     , Foundation.Array.Unboxed.UArray
     , Foundation.Array.Boxed.Array
@@ -91,6 +93,8 @@ import qualified Foundation.Primitive.UTF8.Base
 import qualified Foundation.Primitive.Error
 import qualified Foundation.Primitive.Show
 import qualified Foundation.Primitive.Types.OffsetSize
+import qualified Foundation.Primitive.Types.AsciiString
+import qualified Foundation.Primitive.Types.Char7
 import qualified GHC.Exts
 import qualified GHC.Generics
 import qualified GHC.Ptr

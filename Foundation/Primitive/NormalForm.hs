@@ -7,6 +7,7 @@ module Foundation.Primitive.NormalForm
 import Foundation.Internal.Base
 import Foundation.Internal.Natural
 import Foundation.Primitive.Types.OffsetSize
+import Foundation.Primitive.Types.Char7
 import Foundation.Primitive.Endianness
 import Foreign.C.Types
 
@@ -41,6 +42,7 @@ instance NormalForm Natural where toNormalForm !_ = ()
 instance NormalForm Float  where toNormalForm !_ = ()
 instance NormalForm Double where toNormalForm !_ = ()
 
+instance NormalForm Char7 where toNormalForm !_ = ()
 instance NormalForm Char where toNormalForm !_ = ()
 instance NormalForm Bool where toNormalForm !_ = ()
 instance NormalForm ()   where toNormalForm !_ = ()

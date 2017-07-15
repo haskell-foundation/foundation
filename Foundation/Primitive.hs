@@ -34,9 +34,15 @@ module Foundation.Primitive
     -- * Block of memory
     , Block
     , MutableBlock
+
+    -- * Ascii
+    , Char7
+    , AsciiString(..)
     ) where
 
 import Foundation.Primitive.Types
+import Foundation.Primitive.Types.Char7
+import Foundation.Primitive.Types.AsciiString
 import Foundation.Primitive.Monad
 import Foundation.Primitive.Endianness
 import Foundation.Primitive.IntegralConv

@@ -5,6 +5,7 @@
 {-# LANGUAGE CPP                        #-}
 module Foundation.Primitive.UArray.BA
     ( findIndexElem
+    , revFindIndexElem
     , findIndexPredicate
     , foldl
     , foldr
@@ -36,6 +37,18 @@ findIndexElem ty ba startIndex endIndex = loop startIndex
         | otherwise               = i
       where t = primIndex ba i
 {-# INLINE findIndexElem #-}
+
+revFindIndexElem :: PrimType ty => ty -> Immutable -> Offset ty -> Offset ty -> Offset ty
+revFindIndexElem ty ba startIndex endIndex
+    | endIndex > startIndex = loop (endIndex `offsetMinusE` 1)
+    | otherwise             = endIndex
+  where
+    loop !i
+        | t == ty        = i
+        | i > startIndex = loop (i `offsetMinusE` 1)
+        | otherwise      = endIndex
+      where t = primIndex ba i
+{-# INLINE revFindIndexElem #-}
 
 findIndexPredicate :: PrimType ty => (ty -> Bool) -> Immutable -> Offset ty -> Offset ty -> Offset ty
 findIndexPredicate predicate ba !startIndex !endIndex = loop startIndex

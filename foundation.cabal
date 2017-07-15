@@ -76,7 +76,6 @@ library
                      Foundation.Conduit.Textual
                      Foundation.Convertible
                      Foundation.String
-                     Foundation.String.ASCII
                      Foundation.String.Read
                      Foundation.String.Builder
                      Foundation.IO
@@ -92,6 +91,7 @@ library
                      Foundation.Collection
                      Foundation.Primitive
                      Foundation.Primitive.Block
+                     Foundation.Primitive.Types.Char7
                      Foundation.List.DList
                      Foundation.Monad
                      Foundation.Monad.Reader
@@ -179,6 +179,7 @@ library
                      Foundation.Primitive.Types
                      Foundation.Primitive.Types.OffsetSize
                      Foundation.Primitive.Types.Ptr
+                     Foundation.Primitive.Types.AsciiString
                      Foundation.Primitive.Monad
                      Foundation.Primitive.NormalForm
                      Foundation.Primitive.Utils

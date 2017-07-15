@@ -10,7 +10,8 @@
 --
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-
+{-# LANGUAGE StandaloneDeriving    #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Foundation.Collection.Zippable
     ( BoxedZippable(..)
     , Zippable(..)
@@ -22,6 +23,7 @@ import qualified Foundation.String.UTF8 as S
 import           Foundation.Collection.Element
 import           Foundation.Collection.Sequential
 import           Foundation.Internal.Base
+import           Foundation.Primitive.Types.AsciiString(AsciiString(..))
 import qualified Prelude
 import           GHC.ST
 
@@ -96,6 +98,8 @@ instance Zippable S.String where
       go _  []       _        = return ()
       go _  _        []       = return ()
       go f' (a':as') (b':bs') = S.builderAppend (f' a' b') >> go f' as' bs'
+
+deriving instance Zippable AsciiString
 
 class Zippable col => BoxedZippable col where
 
