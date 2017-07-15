@@ -227,7 +227,7 @@ failure _ _ _ = ParseFailed
 success :: ParserSource input => input -> Offset (Element input) -> NoMore -> r -> Result input r
 success buf off _ = ParseOk rest
   where
-    !rest = subChunk buf off (length buf - offsetAsSize off)
+    !rest = subChunk buf off (length buf `sizeSub` offsetAsSize off)
 {-# INLINE success #-}
 
 -- | parse only the given input
@@ -374,12 +374,11 @@ take n = Parser $ \buf off nm err ok ->
     let lenI = sizeAsOffset (length buf) - off
      in if endOfParserSource buf off && n > 0
        then err buf off nm $ NotEnough n
-       else if n <= lenI
-         then let t = subChunk buf off n
-               in ok buf (off + sizeAsOffset n) nm t
-         else let h = subChunk buf off lenI
-               in runParser_ (take $ n - lenI) buf (sizeAsOffset lenI) nm err $
-                    \buf' off' nm' t -> ok buf' off' nm' (h <> t)
+       else case n - lenI of
+              Just s | s > 0 -> let h = subChunk buf off lenI
+                                 in runParser_ (take s) buf (sizeAsOffset lenI) nm err $
+                                      \buf' off' nm' t -> ok buf' off' nm' (h <> t)
+              _              -> ok buf (off + sizeAsOffset n) nm (subChunk buf off n)
 
 takeWhile :: ( ParserSource input, Sequential (Chunk input)
              )
@@ -422,9 +421,9 @@ skip n = Parser $ \buf off nm err ok ->
     let lenI = sizeAsOffset (length buf) - off
      in if endOfParserSource buf off && n > 0
        then err buf off nm $ NotEnough n
-       else if n <= lenI
-         then ok buf (off + sizeAsOffset n) nm ()
-         else runParser_ (skip $ n - lenI) buf (sizeAsOffset lenI) nm err ok
+       else case n - lenI of
+              Just s | s > 0 -> runParser_ (skip s) buf (sizeAsOffset lenI) nm err ok
+              _              -> ok buf (off + sizeAsOffset n) nm ()
 
 skipWhile :: ( ParserSource input, Sequential (Chunk input)
              )

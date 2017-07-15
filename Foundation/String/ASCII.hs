@@ -160,14 +160,19 @@ splitAt n = bimap AsciiString AsciiString . Vec.splitAt n . toBytes
 -- we can process the string from the end using a skipPrev instead of getting the length
 
 revTake :: CountOf CUChar -> AsciiString -> AsciiString
-revTake nbElems v = drop (length v - nbElems) v
+revTake nbElems v = case length v - nbElems of
+    Nothing        -> v
+    Just dropElems -> drop dropElems v
 
 revDrop :: CountOf CUChar -> AsciiString -> AsciiString
-revDrop nbElems v = take (length v - nbElems) v
+revDrop nbElems v = case length v - nbElems of
+    Nothing        -> fromList []
+    Just keepElems -> take keepElems v
 
 revSplitAt :: CountOf CUChar -> AsciiString -> (AsciiString, AsciiString)
-revSplitAt n v = (drop idx v, take idx v)
-  where idx = length v - n
+revSplitAt n v =  case length v - n of
+   Nothing  -> (v         , fromList [])
+   Just idx -> (drop idx v, take idx v)
 
 -- | Split on the input string using the predicate as separator
 --

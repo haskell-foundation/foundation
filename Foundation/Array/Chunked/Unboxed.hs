@@ -231,10 +231,14 @@ splitAt n c@(ChunkedUArray spine)
                     )
 
 revTake :: PrimType ty => CountOf ty -> ChunkedUArray ty -> ChunkedUArray ty
-revTake n c = drop (length c - n) c
+revTake n c = case length c - n of
+    Nothing -> c
+    Just elems -> drop elems c
 
 revDrop :: PrimType ty => CountOf ty -> ChunkedUArray ty -> ChunkedUArray ty
-revDrop n c = take (length c - n) c
+revDrop n c = case length c - n of
+    Nothing -> empty
+    Just keepElems -> take keepElems c
 
 -- TODO: Improve implementation.
 splitOn :: PrimType ty => (ty -> Bool) -> ChunkedUArray ty -> [ChunkedUArray ty]

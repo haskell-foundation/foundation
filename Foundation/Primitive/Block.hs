@@ -223,33 +223,28 @@ uncons vec
     !nbElems = length vec
 
 unsnoc :: PrimType ty => Block ty -> Maybe (Block ty, ty)
-unsnoc vec
-    | nbElems == 0 = Nothing
-    | otherwise    = Just (sub vec 0 lastElem, unsafeIndex vec lastElem)
-  where
-    !lastElem = 0 `offsetPlusE` (nbElems - 1)
-    !nbElems = length vec
+unsnoc vec = case length vec - 1 of
+    Nothing -> Nothing
+    Just offset -> Just (sub vec 0 lastElem, unsafeIndex vec lastElem)
+                     where !lastElem = 0 `offsetPlusE` offset
 
 splitAt :: PrimType ty => CountOf ty -> Block ty -> (Block ty, Block ty)
 splitAt nbElems blk
     | nbElems <= 0 = (mempty, blk)
-    | n == vlen    = (blk, mempty)
-    | otherwise    = runST $ do
+    | Just nbTails <- length blk - nbElems, nbTails > 0 = runST $ do
         left  <- new nbElems
-        right <- new (vlen - nbElems)
+        right <- new nbTails
         M.unsafeCopyElementsRO left  0 blk 0                      nbElems
-        M.unsafeCopyElementsRO right 0 blk (sizeAsOffset nbElems) (vlen - nbElems)
-
+        M.unsafeCopyElementsRO right 0 blk (sizeAsOffset nbElems) nbTails
         (,) <$> unsafeFreeze left <*> unsafeFreeze right
-  where
-    n    = min nbElems vlen
-    vlen = length blk
+    | otherwise    = (blk, mempty)
 {-# SPECIALIZE [2] splitAt :: CountOf Word8 -> Block Word8 -> (Block Word8, Block Word8) #-}
 
 revSplitAt :: PrimType ty => CountOf ty -> Block ty -> (Block ty, Block ty)
-revSplitAt n blk
-    | n <= 0    = (mempty, blk)
-    | otherwise = let (x,y) = splitAt (length blk - n) blk in (y,x)
+revSplitAt n blk 
+    | n <= 0                         = (mempty, blk)
+    | Just nbElems <- length blk - n = let (x, y) = splitAt nbElems blk in (y, x)
+    | otherwise                      = (blk, mempty)
 
 break :: PrimType ty => (ty -> Bool) -> Block ty -> (Block ty, Block ty)
 break predicate blk = findBreak 0
@@ -380,21 +375,21 @@ sortBy xford vec
             pure i
 
 intersperse :: forall ty . PrimType ty => ty -> Block ty -> Block ty
-intersperse sep blk
-    | len <= 1  = blk
-    | otherwise = runST $ do
-        mb <- new newSize
+intersperse sep blk = case len - 1 of
+    Nothing -> blk
+    Just 0 -> blk
+    Just size -> runST $ do
+        mb <- new (len+size)
         go mb
         unsafeFreeze mb
   where
     !len = length blk
-    newSize = len + len - 1
 
     go :: MutableBlock ty s -> ST s ()
     go mb = loop 0 0
       where
         loop !o !i
-            | i .==# (len - 1) = unsafeWrite mb o (unsafeIndex blk i)
+            | (i + 1) .==# len = unsafeWrite mb o (unsafeIndex blk i)
             | otherwise        = do
                 unsafeWrite mb o     (unsafeIndex blk i)
                 unsafeWrite mb (o+1) sep

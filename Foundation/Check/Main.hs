@@ -231,7 +231,7 @@ pushGroup name list = do
     whenGroupOnly $ if groupHasSubGroup list then displayCurrent name else return ()
     withState $ \s -> ((), s { testPath = push (testPath s) name, indent = indent s + 2 })
     results <- mapM test list
-    withState $ \s -> ((), s { testPath = pop (testPath s), indent = indent s - 2 })
+    withState $ \s -> ((), s { testPath = pop (testPath s), indent = indent s `sizeSub` 2 })
     let totFail = sum $ fmap nbFail results
         tot = sum $ fmap nbTests results
     whenGroupOnly $ case (groupHasSubGroup list, totFail) of

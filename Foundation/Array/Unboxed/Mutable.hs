@@ -101,11 +101,12 @@ sub :: (PrimMonad prim, PrimType ty)
     -> prim (MUArray ty (PrimState prim))
 sub (MUArray start sz back) dropElems' takeElems
     | takeElems <= 0 = empty
-    | resultEmpty    = empty
-    | otherwise      = pure $ MUArray (start `offsetPlusE` dropElems) (min (CountOf takeElems) (sz - dropElems)) back
+    | Just keepElems <- sz - dropElems, keepElems > 0 
+                     = pure $ MUArray (start `offsetPlusE` dropElems) (min (CountOf takeElems) keepElems) back
+    | otherwise      = empty
   where
     dropElems = max 0 (CountOf dropElems')
-    resultEmpty = dropElems >= sz
+
 
 -- | return the numbers of elements in a mutable array
 mutableLength :: PrimType ty => MUArray ty st -> CountOf ty

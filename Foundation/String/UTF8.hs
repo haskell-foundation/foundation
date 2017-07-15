@@ -534,29 +534,26 @@ elem !el s@(String ba) =
 -- > intersperse ' ' "Hello Foundation"
 -- "H e l l o   F o u n d a t i o n"
 intersperse :: Char -> String -> String
-intersperse sep src
-    | srcLen <= 1 = src
-    | otherwise   = runST $ unsafeCopyFrom src dstBytes (go sep)
-  where
-    !srcBytes = size src
-    !srcLen   = length src
-    dstBytes = (srcBytes :: Size8)
-             + ((srcLen - 1) `scale` charToBytes (fromEnum sep))
-
-    lastSrcI :: Offset Char
-    lastSrcI = 0 `offsetPlusE` (srcLen - 1)
-
-    go :: Char -> String -> Offset Char -> Offset8 -> MutableString s -> Offset8 -> ST s (Offset8, Offset8)
-    go sep' src' srcI srcIdx dst dstIdx
-        | srcI == lastSrcI = do
-            nextDstIdx <- write dst dstIdx c
-            return (nextSrcIdx, nextDstIdx)
-        | otherwise        = do
-            nextDstIdx  <- write dst dstIdx c
-            nextDstIdx' <- write dst nextDstIdx sep'
-            return (nextSrcIdx, nextDstIdx')
-      where
-        !(Step c nextSrcIdx) = next src' srcIdx
+intersperse sep src = case length src - 1 of
+    Nothing   -> src
+    Just 0    -> src
+    Just gaps -> runST $ unsafeCopyFrom src dstBytes go
+        where
+          lastSrcI :: Offset Char
+          lastSrcI = 0 `offsetPlusE` gaps
+          dstBytes = (size src :: Size8) + (gaps `scale` charToBytes (fromEnum sep))
+          
+          go :: String -> Offset Char -> Offset8 -> MutableString s -> Offset8 -> ST s (Offset8, Offset8)
+          go src' srcI srcIdx dst dstIdx
+              | srcI == lastSrcI = do
+                  nextDstIdx <- write dst dstIdx c
+                  return (nextSrcIdx, nextDstIdx)
+              | otherwise        = do
+                  nextDstIdx  <- write dst dstIdx c
+                  nextDstIdx' <- write dst nextDstIdx sep
+                  return (nextSrcIdx, nextDstIdx')
+            where
+              !(Step c nextSrcIdx) = next src' srcIdx
 
 -- | Allocate a new @String@ with a fill function that has access to the characters of
 --   the source @String@.
@@ -1041,11 +1038,12 @@ builderBuild sizeChunksI sb
   where
     sizeChunks = CountOf sizeChunksI
 
-    fillFromEnd _   []            mba = return mba
+    fillFromEnd _    []            mba = return mba
     fillFromEnd !end (String x:xs) mba = do
         let sz = Vec.length x
-        Vec.unsafeCopyAtRO mba (sizeAsOffset (end - sz)) x (Offset 0) sz
-        fillFromEnd (end - sz) xs mba
+        let start = end `sizeSub` sz
+        Vec.unsafeCopyAtRO mba (sizeAsOffset start) x (Offset 0) sz
+        fillFromEnd start xs mba
 
 builderBuild_ :: PrimMonad m => Int -> Builder String MutableString Word8 m () () -> m String
 builderBuild_ sizeChunksI sb = either (\() -> internalError "impossible output") id <$> builderBuild sizeChunksI sb
@@ -1342,19 +1340,13 @@ isSuffixOf (String needle) (String haystack)
 --
 -- TODO: implemented the naive way and thus terribly inefficient, reimplement properly
 isInfixOf :: String -> String -> Bool
-isInfixOf (String needle) (String haystack)
-    | needleLen > hayLen = False
-    | otherwise          = loop 0
-  where
-    endOfs    = hayLen - needleLen
-    needleLen = C.length needle
-    hayLen    = C.length haystack
-
-    loop i
-        | i == endOfs           = needle == haystackSub
-        | needle == haystackSub = True
-        | otherwise             = loop (i+1)
-      where haystackSub = C.take needleLen $ C.drop i haystack
+isInfixOf (String needle) (String haystack) 
+    = loop (hayLen - needleLen) haystack
+    where 
+      needleLen = C.length needle
+      hayLen    = C.length haystack
+      loop Nothing    _         = False
+      loop (Just cnt) haystack' = needle == C.take needleLen haystack' || loop (cnt-1) (C.drop 1 haystack')
 
 -- | Try to strip a prefix from the start of a String.
 --

@@ -142,7 +142,7 @@ sizeCast _ (CountOf sz) = CountOf sz
 -- use the safer (-) version if unsure.
 sizeSub :: CountOf a -> CountOf a -> CountOf a
 sizeSub (CountOf m) (CountOf n)
-    | m > n     = CountOf diff
+    | diff >= 0 = CountOf diff
     | otherwise = error "sizeSub negative size"
   where
     diff = m - n
@@ -198,8 +198,9 @@ instance Additive (CountOf ty) where
     (+) (CountOf a) (CountOf b) = CountOf (a+b)
 
 instance Subtractive (CountOf ty) where
-    type Difference (CountOf ty) = CountOf ty
-    (CountOf a) - (CountOf b) = CountOf (a-b)
+    type Difference (CountOf ty) = Maybe (CountOf ty)
+    (CountOf a) - (CountOf b) | a >= b    = Just . CountOf $ a - b
+                              | otherwise = Nothing
 
 instance Monoid (CountOf ty) where
     mempty = azero
