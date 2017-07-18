@@ -207,6 +207,7 @@ library
                      Foundation.Random.Class
                      Foundation.Random.DRG
                      Foundation.Random.ChaChaDRG
+                     Foundation.Random.XorShift
                      Foundation.Array.Chunked.Unboxed
                      Foundation.Array.Unboxed
                      Foundation.Array.Unboxed.Mutable
