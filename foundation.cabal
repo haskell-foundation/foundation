@@ -204,6 +204,9 @@ library
                      Foundation.Monad.Transformer
                      Foundation.Monad.Identity
                      Foundation.Monad.Base
+                     Foundation.Random.Class
+                     Foundation.Random.DRG
+                     Foundation.Random.ChaChaDRG
                      Foundation.Array.Chunked.Unboxed
                      Foundation.Array.Unboxed
                      Foundation.Array.Unboxed.Mutable

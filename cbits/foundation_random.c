@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <errno.h>
 #include <string.h>
+#include "foundation_prim.h"
 #include "foundation_system.h"
 #include "foundation_bits.h"
 
@@ -12,7 +13,9 @@
 #include <linux/types.h>
 #include <linux/random.h>
 #include <unistd.h>
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 #endif
 
 #include <stdio.h>
@@ -111,7 +114,7 @@ static void chacha_core(int rounds,
 	out[15] = cpu_to_le32(x15);
 }
 
-int foundation_rngV1_generate(uint8_t newkey[CHACHA_KEY_SIZE], uint8_t *dst, uint8_t key[CHACHA_KEY_SIZE], uint32_t bytes)
+int foundation_rngV1_generate(uint8_t newkey[CHACHA_KEY_SIZE], uint8_t *dst, uint8_t key[CHACHA_KEY_SIZE], FsCountOf bytes)
 {
 	const int rounds = 20;
 	uint8_t nonce[CHACHA_NONCE_SIZE] = { 0 };
