@@ -25,6 +25,7 @@ module Foundation.Primitive.Types.OffsetSize
     , sizeLastOffset
     , sizeAsOffset
     , sizeSub
+    , countOfRoundUp
     , offsetAsSize
     , (+.)
     , (.==#)
@@ -214,6 +215,10 @@ instance IntegralCast Word (CountOf ty) where
 
 sizeOfE :: Size8 -> CountOf ty -> Size8
 sizeOfE (CountOf sz) (CountOf ty) = CountOf (ty * sz)
+
+-- | alignment need to be a power of 2
+countOfRoundUp :: Int -> CountOf ty -> CountOf ty
+countOfRoundUp alignment (CountOf n) = CountOf ((n + (alignment-1)) .&. complement (alignment-1))
 
 -- when #if WORD_SIZE_IN_BITS < 64 the 2 following are wrong
 -- instead of using FromIntegral and being silently wrong
