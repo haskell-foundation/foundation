@@ -14,7 +14,7 @@ import Foundation
 import Foundation.Numerical -- hiding (Positive)
 import qualified Prelude
 
-#if !(MIN_VERSION_base(4,8,0))
+#if (MIN_VERSION_base(4,9,0))
 instance Arbitrary Natural where
     arbitrary = fromInteger <$> (arbitrary `suchThat` \i -> i >= 0)
 #endif
