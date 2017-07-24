@@ -12,7 +12,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Foundation.Primitive.Bounded
     ( Zn64
+    , unZn64
     , Zn
+    , unZn
     , zn64
     , zn
     , zn64Nat
@@ -28,7 +30,7 @@ import           Foundation.Primitive.Nat
 import qualified Prelude
 
 -- | A type level bounded natural backed by a Word64
-newtype Zn64 (n :: Nat) = Zn64 Word64 
+newtype Zn64 (n :: Nat) = Zn64 { unZn64 :: Word64 }
     deriving (Show,Eq,Ord)
 
 -- | Create an element of ℤ/nℤ from a Word64
@@ -43,7 +45,7 @@ zn64Nat :: forall m n . (KnownNat m, KnownNat n, NatWithinBound Word64 m, NatWit
 zn64Nat p = Zn64 (natValWord64 p)
 
 -- | A type level bounded natural
-newtype Zn (n :: Nat) = Zn Natural
+newtype Zn (n :: Nat) = Zn { unZn :: Natural }
     deriving (Show,Eq,Ord)
 
 -- | Create an element of ℤ/nℤ from a Natural.

@@ -1,6 +1,7 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Foundation.Check.Arbitrary
     ( Arbitrary(..)
     , frequency
@@ -11,7 +12,9 @@ module Foundation.Check.Arbitrary
 
 import           Foundation.Primitive.Imports
 import           Foundation.Primitive
+import           Foundation.Primitive.Nat
 import           Foundation.Primitive.IntegralConv
+import           Foundation.Primitive.Bounded
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Check.Gen
 import           Foundation.Random
@@ -28,6 +31,11 @@ instance Arbitrary Integer where
     arbitrary = arbitraryInteger
 instance Arbitrary Natural where
     arbitrary = arbitraryNatural
+
+instance (NatWithinBound Word64 n, KnownNat n) => Arbitrary (Zn64 n) where
+    arbitrary = zn64 <$> arbitrary
+instance KnownNat n => Arbitrary (Zn n) where
+    arbitrary = zn <$> arbitraryNatural
 
 -- prim types
 instance Arbitrary Int where

@@ -155,6 +155,7 @@ library
                      Foundation.Internal.CallStack
                      Foundation.Internal.Environment
                      Foundation.Primitive.Error
+                     Foundation.Primitive.Bounded
                      Foundation.Internal.Primitive
                      Foundation.Internal.IsList
                      Foundation.Internal.Identity
