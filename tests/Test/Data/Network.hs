@@ -19,10 +19,10 @@ module Test.Data.Network
     ) where
 
 import Foundation
+import Foundation.Check
 import Foundation.Network.IPv4 as IPv4
 import Foundation.Network.IPv6 as IPv6
 import Foundation.Class.Storable as F
-import Test.Tasty.QuickCheck
 import qualified Foreign.Storable as Foreign
 
 instance Arbitrary IPv4 where
@@ -42,10 +42,10 @@ instance Foreign.Storable IPv6 where
 
 genIPv4Tuple :: Gen (Word8, Word8, Word8, Word8)
 genIPv4Tuple =
-    (,,,) <$> choose (0, 255)
-          <*> choose (0, 255)
-          <*> choose (0, 255)
-          <*> choose (0, 255)
+    (,,,) <$> arbitrary
+          <*> arbitrary
+          <*> arbitrary
+          <*> arbitrary
 
 genIPv6Tuple :: Gen (Word16, Word16, Word16, Word16, Word16, Word16, Word16, Word16)
 genIPv6Tuple =

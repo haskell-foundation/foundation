@@ -31,9 +31,6 @@ import Test.Foundation.Primitive.BlockN
 #endif
 import Test.Foundation.String
 import Test.Foundation.Parser
-import Test.Foundation.Storable
-import Test.Foundation.Network.IPv4
-import Test.Foundation.Network.IPv6
 import qualified Test.Foundation.Bits as Bits
 
 data CharMap = CharMap LUString Prelude.Int
@@ -323,13 +320,7 @@ tests =
     , testBlockN
 #endif
     , testParsers
-    , testForeignStorableRefs
     , testConduit
-    , testNetworkIPv4
-    , testNetworkIPv6
-    -- , testHexadecimal
-    -- , testTime
-    -- , testUUID
     , testGroup "Issues"
         [ testGroup "218"
             [ testCase "Foundation Strings" $

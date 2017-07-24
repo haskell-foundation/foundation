@@ -19,6 +19,9 @@ import Data.Ratio
 
 import Test.Foundation.Random
 import Test.Foundation.Misc
+import Test.Foundation.Storable
+import Test.Foundation.Network.IPv4
+import Test.Foundation.Network.IPv6
 import Test.Checks.Property.Collection
 
 applyFstToSnd :: (String, String -> b) -> b
@@ -173,6 +176,9 @@ main = defaultMain $ Group "foundation"
       [ matrixToGroup "Unboxed" $ primTypesMatrixArbitrary $ \prx arb s ->
             collectionProperties ("Unboxed " <> s) (functorProxy (Proxy :: Proxy ChunkedUArray) prx) arb
       ]
+    , testForeignStorableRefs
+    , testNetworkIPv4
+    , testNetworkIPv6
     , testHexadecimal
     , testTime
     , testUUID

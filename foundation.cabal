@@ -293,15 +293,12 @@ test-suite test-foundation
                      Test.Foundation.Conduit
                      Test.Foundation.Bits
                      Test.Foundation.ChunkedUArray
-                     Test.Foundation.Network.IPv4
-                     Test.Foundation.Network.IPv6
                      Test.Foundation.Number
                      Test.Foundation.Encoding
                      Test.Foundation.Parser
                      Test.Foundation.Array
                      Test.Foundation.String
                      Test.Foundation.String.Base64
-                     Test.Foundation.Storable
                      Imports
   if impl(ghc >= 8.0)
     other-modules:   Test.Foundation.Primitive.BlockN
@@ -330,6 +327,9 @@ test-suite check-foundation
   other-modules:     Test.Checks.Property.Collection
                      Test.Foundation.Random
                      Test.Foundation.Misc
+                     Test.Foundation.Storable
+                     Test.Foundation.Network.IPv4
+                     Test.Foundation.Network.IPv6
   default-extensions: NoImplicitPrelude
                       RebindableSyntax
                       OverloadedStrings
