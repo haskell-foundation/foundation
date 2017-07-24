@@ -5,6 +5,7 @@
 --
 -- An implementation of a timing framework
 --
+{-# LANGUAGE CPP #-}
 module Foundation.Timing
     ( Timing(..)
     , Measure(..)
@@ -29,7 +30,7 @@ import qualified GHC.Stats as GHC
 
 data Timing = Timing
     { timeDiff           :: !NanoSeconds
-    , timeBytesAllocated :: !(Maybe Int64)
+    , timeBytesAllocated :: !(Maybe Word64)
     }
 
 data Measure = Measure
@@ -37,10 +38,27 @@ data Measure = Measure
     , iters        :: Word
     }
 
-getGCStats :: IO (Maybe GHC.GCStats)
+#if __GLASGOW_HASKELL__ >= 802
+type GCStats = GHC.RTSStats
+
+getGCStats :: IO (Maybe GCStats)
+getGCStats = do
+    r <- GHC.getRTSStatsEnabled
+    if r then pure Nothing else Just <$> GHC.getRTSStats
+
+diffGC :: Maybe GHC.RTSStats -> Maybe GHC.RTSStats -> Maybe Word64
+diffGC gc2 gc1 = ((-) `on` GHC.allocated_bytes) <$> gc2 <*> gc1
+#else
+type GCStats = GHC.GCStats
+
+getGCStats :: IO (Maybe GCStats)
 getGCStats = do
     r <- GHC.getGCStatsEnabled
     if r then pure Nothing else Just <$> GHC.getGCStats
+
+diffGC :: Maybe GHC.GCStats -> Maybe GHC.GCStats -> Maybe Word64
+diffGC gc2 gc1 = integralCast <$> (((-) `on` GHC.bytesAllocated) <$> gc2 <*> gc1)
+#endif
 
 -- | Simple one-time measurement of time & other metrics spent in a function
 stopWatch :: (a -> b) -> a -> IO Timing
@@ -49,7 +67,7 @@ stopWatch f !a = do
     gc1 <- getGCStats
     (_, ns) <- measuringNanoSeconds (evaluate $ f a)
     gc2 <- getGCStats
-    return $ Timing ns (((-) `on` GHC.bytesAllocated) <$> gc2 <*> gc1)
+    return $ Timing ns (diffGC gc2 gc1)
 
 -- | In depth timing & other metrics analysis of a function
 measure :: Word -> (a -> b) -> a -> IO Measure
