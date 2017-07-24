@@ -89,6 +89,10 @@ instance (Arbitrary a, Arbitrary b, Arbitrary c, Arbitrary d, Arbitrary e, Arbit
     => Arbitrary (a,b,c,d,e,f) where
     arbitrary = (,,,,,) <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
+instance Arbitrary a => Arbitrary [a] where
+    arbitrary = genWithParams $ \params ->
+        fromList <$> (genMax (genMaxSizeArray params) >>= \i -> replicateM (integralCast i) arbitrary)
+
 arbitraryInteger :: Gen Integer
 arbitraryInteger =
     -- TODO use the sized parameter
