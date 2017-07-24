@@ -14,7 +14,9 @@ import Foundation
 import Foundation.Numerical -- hiding (Positive)
 import qualified Prelude
 
-#if (MIN_VERSION_base(4,9,0))
+-- we need to define an Arbitrary instance if base 4.8, since it doesn't export a natural type
+-- and that Foundation define a compat one.
+#if MIN_VERSION_base(4,8,0)
 instance Arbitrary Natural where
     arbitrary = fromInteger <$> (arbitrary `suchThat` \i -> i >= 0)
 #endif
