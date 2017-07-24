@@ -301,7 +301,6 @@ test-suite test-foundation
                      Test.Foundation.String
                      Test.Foundation.String.Base64
                      Test.Foundation.Storable
-                     Test.Foundation.Misc
                      Imports
   if impl(ghc >= 8.0)
     other-modules:   Test.Foundation.Primitive.BlockN
@@ -329,6 +328,7 @@ test-suite check-foundation
   main-is:           Checks.hs
   other-modules:     Test.Checks.Property.Collection
                      Test.Foundation.Random
+                     Test.Foundation.Misc
   default-extensions: NoImplicitPrelude
                       RebindableSyntax
                       OverloadedStrings

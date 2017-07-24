@@ -26,6 +26,8 @@ module Test.Checks.Property.Collection
     , testMonoidProperties
     , testCollectionProperties
     , testSequentialProperties
+    , fromListP
+    , toListP
     ) where
 
 import Foundation
