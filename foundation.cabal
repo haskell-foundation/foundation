@@ -288,6 +288,8 @@ test-suite check-foundation
                      Test.Foundation.Random
                      Test.Foundation.Misc
                      Test.Foundation.Storable
+                     Test.Foundation.Number
+                     Test.Data.Network
                      Test.Foundation.Network.IPv4
                      Test.Foundation.Network.IPv6
   default-extensions: NoImplicitPrelude
