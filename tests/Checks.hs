@@ -20,8 +20,10 @@ import Data.Ratio
 import Test.Foundation.Random
 import Test.Foundation.Misc
 import Test.Foundation.Storable
+import Test.Foundation.Number
 import Test.Foundation.Network.IPv4
 import Test.Foundation.Network.IPv6
+import Test.Foundation.String.Base64
 import Test.Checks.Property.Collection
 
 applyFstToSnd :: (String, String -> b) -> b
@@ -95,6 +97,7 @@ main = defaultMain $ Group "foundation"
         , Group "Word64"
             [ testAdditive (Proxy :: Proxy Word64)
             ]
+        , Group "Number" testNumberRefs
         ]
     , Group "String"
         [ Group "reading"
@@ -179,6 +182,7 @@ main = defaultMain $ Group "foundation"
     , testForeignStorableRefs
     , testNetworkIPv4
     , testNetworkIPv6
+    , testBase64Refs
     , testHexadecimal
     , testTime
     , testUUID

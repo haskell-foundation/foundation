@@ -7,102 +7,96 @@ module Test.Foundation.String.Base64
     ( testBase64Refs
     ) where
 
-import Imports ((@?=), testCase)
-
 import Control.Monad
 import Foundation
 import Foundation.Numerical
 import Foundation.String
+import Foundation.Check
 
-import Test.Tasty
-import Test.Tasty.QuickCheck
-
-import Test.Data.Unicode
-
-testBase64Refs :: TestTree
-testBase64Refs = testGroup "String"
-    [ testGroup "Base64" testBase64Cases
+testBase64Refs :: Test
+testBase64Refs = Group "String"
+    [ Group "Base64" testBase64Cases
     ]
 
-testBase64Cases :: [TestTree]
+testBase64Cases :: [Test]
 testBase64Cases =
-    [ testGroup "toBase64"
-        [ testProperty "length with padding" $ \(LUString l) ->
+    [ Group "toBase64"
+        [ Property "length with padding" $ \l ->
             let s = fromList l
                 b = toBytes UTF8 s
                 blen = length b
              in (length . toBytes UTF8 . toBase64 $ s) === outputLengthBase64 True blen
-        , testProperty "valid chars" $ \(LUString l) ->
+        , Property "valid chars" $ \l ->
             let s = fromList l
                 s64 = toBase64 s
                 b64 = toBytes UTF8 s64
             in all ((||) <$> isPlainBase64Char <*> isPadding) b64 === True
-        , testCase "test string: 'pleasure.'" $ do
+        , Property "test string: 'pleasure.'" $ do
             let s = fromList "pleasure."
-            toBase64 s @?= fromList "cGxlYXN1cmUu"
-        , testCase "test string: 'leasure.'" $ do
+            toBase64 s === fromList "cGxlYXN1cmUu"
+        , Property "test string: 'leasure.'" $ do
             let s = fromList "leasure."
-            toBase64 s @?= fromList "bGVhc3VyZS4="
-        , testCase "test string: 'easure.'" $ do
+            toBase64 s === fromList "bGVhc3VyZS4="
+        , Property "test string: 'easure.'" $ do
             let s = fromList "easure."
-            toBase64 s @?= fromList "ZWFzdXJlLg=="
-        , testCase "test string: 'asure.'" $ do
+            toBase64 s === fromList "ZWFzdXJlLg=="
+        , Property "test string: 'asure.'" $ do
             let s = fromList "asure."
-            toBase64 s @?= fromList "YXN1cmUu"
-        , testCase "test string: 'sure.'" $ do
+            toBase64 s === fromList "YXN1cmUu"
+        , Property "test string: 'sure.'" $ do
             let s = fromList "sure."
-            toBase64 s @?= fromList "c3VyZS4="
+            toBase64 s === fromList "c3VyZS4="
         ]
-    , testGroup "toBase64OpenBSD"
-        [ testProperty "length without padding" $ \(LUString l) ->
+    , Group "toBase64OpenBSD"
+        [ Property "length without padding" $ \l ->
             let s = fromList l
                 b = toBytes UTF8 s
                 blen = length b
             in (length . toBytes UTF8 . toBase64OpenBSD $ s) === outputLengthBase64 False blen
-        , testProperty "valid chars" $ \(LUString l) ->
+        , Property "valid chars" $ \l ->
             let s = fromList l
                 s64 = toBase64OpenBSD s
                 b64 = toBytes UTF8 s64
             in all isBase64OpenBSDChar b64 === True
         ]
-    , testGroup "toBase64URL"
-        [ testProperty "length with padding" $ \(LUString l) ->
+    , Group "toBase64URL"
+        [ Property "length with padding" $ \l ->
             let s = fromList l
                 b = toBytes UTF8 s
                 blen = length b
             in (length . toBytes UTF8 . toBase64URL True $ s) === outputLengthBase64 True blen,
-          testProperty "length without padding" $ \(LUString l) ->
+          Property "length without padding" $ \l ->
             let s = fromList l
                 b = toBytes UTF8 s
                 blen = length b
             in (length . toBytes UTF8 . toBase64URL False $ s) === outputLengthBase64 False blen
-        , testProperty "valid chars (with padding)" $ \(LUString l) ->
+        , Property "valid chars (with padding)" $ \l ->
             let s = fromList l
                 s64 = toBase64URL True s
                 b64 = toBytes UTF8 s64
             in all ((||) <$> isBase64URLChar <*> isPadding) b64 === True
-        , testProperty "valid chars (without padding)" $ \(LUString l) ->
+        , Property "valid chars (without padding)" $ \l ->
             let s = fromList l
                 s64 = toBase64URL False s
                 b64 = toBytes UTF8 s64
             in all isBase64URLChar b64 === True
-        , testCase "test string: 'pleasure.'" $ do
+        , Property "test string: 'pleasure.'" $ do
             let s = fromList "pleasure."
-            toBase64URL False s @?= fromList "cGxlYXN1cmUu"
-        , testCase "test string: 'leasure.'" $ do
+            toBase64URL False s === fromList "cGxlYXN1cmUu"
+        , Property "test string: 'leasure.'" $ do
             let s = fromList "leasure."
-            toBase64URL False s @?= fromList "bGVhc3VyZS4"
-        , testCase "test string: '<empty>'" $ do
+            toBase64URL False s === fromList "bGVhc3VyZS4"
+        , Property "test string: '<empty>'" $ do
             let s = fromList ""
-            toBase64URL False s @?= fromList ""
-        , testCase "test string: '\\DC4\\251\\156\\ETX\\217~'" $ do
+            toBase64URL False s === fromList ""
+        , Property "test string: '\\DC4\\251\\156\\ETX\\217~'" $ do
             -- the byte list represents "\DC4\251\156\ETX\217~"
             let s = fromBytesUnsafe . fromList $ [0x14, 0xfb, 0x9c, 0x03, 0xd9, 0x7e]
-            toBase64URL False s @?= fromList "FPucA9l-"
-        , testCase "test string: '\\DC4\\251\\156\\ETX\\217\\DEL'" $ do
+            toBase64URL False s === fromList "FPucA9l-"
+        , Property "test string: '\\DC4\\251\\156\\ETX\\217\\DEL'" $ do
             -- the byte list represents "\DC4\251\156\ETX\217\DEL"
             let s = fromBytesUnsafe . fromList $ [0x14, 0xfb, 0x9c, 0x03, 0xd9, 0x7f]
-            toBase64URL False s @?= fromList "FPucA9l_"
+            toBase64URL False s === fromList "FPucA9l_"
         ]
     ]
 
