@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE CPP #-}
 module Main where
 
 
@@ -21,10 +22,15 @@ import Test.Foundation.Random
 import Test.Foundation.Misc
 import Test.Foundation.Storable
 import Test.Foundation.Number
+import Test.Foundation.Conduit
 import Test.Foundation.Network.IPv4
 import Test.Foundation.Network.IPv6
 import Test.Foundation.String.Base64
 import Test.Checks.Property.Collection
+
+#if MIN_VERSION_base(4,9,0)
+import Test.Foundation.Primitive.BlockN
+#endif
 
 applyFstToSnd :: (String, String -> b) -> b
 applyFstToSnd (a, fab) = fab a
@@ -187,4 +193,8 @@ main = defaultMain $ Group "foundation"
     , testTime
     , testUUID
     , testRandom
+    , testConduit
+#if MIN_VERSION_base(4,9,0)
+    , testBlockN
+#endif
     ]
