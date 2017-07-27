@@ -10,7 +10,7 @@ import Foundation
 import Foundation.Check
 
 import Foundation.Array.Internal (toHexadecimal)
-import Test.Checks.Property.Collection (fromListP, toListP)
+import Test.Checks.Property.Collection (fromListP)
 
 import qualified Foundation.UUID as UUID
 import           Foundation.Parser

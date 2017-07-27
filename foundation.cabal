@@ -287,6 +287,8 @@ test-suite check-foundation
   other-modules:     Test.Checks.Property.Collection
                      Test.Foundation.Random
                      Test.Foundation.Misc
+                     Test.Foundation.Conduit
+                     Test.Foundation.Primitive.BlockN
                      Test.Foundation.Storable
                      Test.Foundation.Number
                      Test.Foundation.String.Base64

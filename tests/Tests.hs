@@ -217,10 +217,8 @@ testZippableProps proxyA proxyB genElementA genElementB =
 tests :: [TestTree]
 tests =
     [ testArrayRefs
-    , testBase64Refs
     , testChunkedUArrayRefs
     , Bits.tests
-    , testCollection "Bitmap"  (Proxy :: Proxy Bitmap)  arbitrary
     , testStringRefs
     , testGroup "VFS"
         [ testGroup "FilePath" $ testCaseFilePath <> (testPath (arbitrary :: Gen FilePath))

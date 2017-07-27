@@ -152,6 +152,7 @@ main = defaultMain $ Group "foundation"
             ]
         ]
     , collectionProperties "DList a" (Proxy :: Proxy (DList Word8)) arbitrary
+    , collectionProperties "Bitmap"  (Proxy :: Proxy Bitmap)  arbitrary
     , Group "Array"
       [ matrixToGroup "Block" $ primTypesMatrixArbitrary $ \prx arb s ->
             collectionProperties ("Block " <> s) (functorProxy (Proxy :: Proxy Block) prx) arb

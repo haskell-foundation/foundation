@@ -16,6 +16,7 @@ import           Foundation.Primitive.Nat
 import           Foundation.Primitive.IntegralConv
 import           Foundation.Primitive.Bounded
 import           Foundation.Primitive.Types.OffsetSize
+import qualified Foundation.Primitive.Types.Char7 as Char7
 import           Foundation.Check.Gen
 import           Foundation.Random
 import           Foundation.Bits
@@ -60,6 +61,8 @@ instance Arbitrary Int8 where
     arbitrary = integralDownsize <$> arbitraryInt64
 instance Arbitrary Char where
     arbitrary = arbitraryChar
+instance Arbitrary Char7 where
+    arbitrary = Char7.fromByteMask . integralDownsize <$> arbitraryWord64
 instance Arbitrary (CountOf ty) where
     arbitrary = CountOf <$> arbitrary
 
@@ -67,6 +70,10 @@ instance Arbitrary Bool where
     arbitrary = flip testBit 0 <$> arbitraryWord64
 
 instance Arbitrary String where
+    arbitrary = genWithParams $ \params ->
+        fromList <$> (genMax (genMaxSizeString params) >>= \i -> replicateM (integralCast i) arbitrary)
+
+instance Arbitrary AsciiString where
     arbitrary = genWithParams $ \params ->
         fromList <$> (genMax (genMaxSizeString params) >>= \i -> replicateM (integralCast i) arbitrary)
 
