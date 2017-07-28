@@ -10,42 +10,37 @@ module Test.Foundation.String
 import Control.Monad (replicateM)
 
 import Foundation
+import Foundation.Check
 import Foundation.String
 import Foundation.Primitive (AsciiString)
-import Control.Exception
-import Data.Either
 
-import Test.Tasty
-import Test.Tasty.QuickCheck
-import Test.Tasty.HUnit
-
-import Test.Data.Unicode
-import Test.Data.ASCII
 import Test.Data.List
-import Test.Foundation.Collection
-import Test.Foundation.Encoding
+import Test.Checks.Property.Collection
+--import Test.Foundation.Encoding
 
-testStringRefs :: TestTree
-testStringRefs = testGroup "String"
-    [ testGroup "UTF8" $
-        [  testCollection "Sequential" (Proxy :: Proxy String) genUnicodeChar ]
+testStringRefs :: Test
+testStringRefs = Group "String"
+    [ Group "UTF8" $
+        [  collectionProperties "String" (Proxy :: Proxy String) arbitrary ]
         <> testStringCases
+        {-
         <> [ testGroup "Encoding Sample0" (testEncodings sample0)
            , testGroup "Encoding Sample1" (testEncodings sample1)
            , testGroup "Encoding Sample2" (testEncodings sample2)
            ]
-    , testGroup "ASCII" $
-        [  testCollection "Sequential" (Proxy :: Proxy AsciiString) genAsciiChar ]
-        <> testAsciiStringCases
+           -}
+    , Group "ASCII" $
+        [  collectionProperties "AsciiString" (Proxy :: Proxy AsciiString) arbitrary ]
+        -- <> testAsciiStringCases
     ]
 
-testStringCases :: [TestTree]
+testStringCases :: [Test]
 testStringCases =
-    [ testGroup "Validation"
-        [ testProperty "fromBytes . toBytes == valid" $ \(LUString l) ->
+    [ Group "Validation"
+        [ Property "fromBytes . toBytes == valid" $ \l ->
             let s = fromList l
              in (fromBytes UTF8 $ toBytes UTF8 s) === (s, Nothing, mempty)
-        , testProperty "Streaming" $ \(LUString l, randomInts) ->
+        , Property "Streaming" $ \(l, randomInts) ->
             let wholeS  = fromList l
                 wholeBA = toBytes UTF8 wholeS
                 reconstruct (prevBa, errs, acc) ba =
@@ -54,8 +49,9 @@ testStringCases =
                      in (nextBa, merr : errs, s : acc)
 
                 (remainingBa, allErrs, chunkS) = foldl' reconstruct (mempty, [], []) $ chunks randomInts wholeBA
-             in (catMaybes allErrs === []) .&&. (remainingBa === mempty) .&&. (mconcat (reverse chunkS) === wholeS)
+             in (catMaybes allErrs === []) `propertyAnd` (remainingBa === mempty) `propertyAnd` (mconcat (reverse chunkS) === wholeS)
         ]
+    {-
     , testGroup "replace" [
           testCase "indices '' 'bb' should raise an error" $ do
             res <- try (evaluate $ indices "" "bb")
@@ -112,15 +108,17 @@ testStringCases =
         , testCase "empty" $
             (breakLine "" @?= Left False)
         ]
+        -}
     ]
 
-testAsciiStringCases :: [TestTree]
+{-
+testAsciiStringCases :: [Test]
 testAsciiStringCases =
-    [ testGroup "Validation-ASCII7"
-        [ testProperty "fromBytes . toBytes == valid" $ \l ->
+    [ Group "Validation-ASCII7"
+        [ Property "fromBytes . toBytes == valid" $ \l ->
              let s = fromList . fromLStringASCII $ l
              in (fromBytes ASCII7 $ toBytes ASCII7 s) === (s, Nothing, mempty)
-        , testProperty "Streaming" $ \(l, randomInts) ->
+        , Property "Streaming" $ \(l, randomInts) ->
             let wholeS  = fromList . fromLStringASCII $ l
                 wholeBA = toBytes ASCII7 wholeS
                 reconstruct (prevBa, errs, acc) ba =
@@ -131,8 +129,8 @@ testAsciiStringCases =
                 (remainingBa, allErrs, chunkS) = foldl' reconstruct (mempty, [], []) $ chunks randomInts wholeBA
              in (catMaybes allErrs === []) .&&. (remainingBa === mempty) .&&. (mconcat (reverse chunkS) === wholeS)
         ]
-    , testGroup "Cases"
-        [ testGroup "Invalid-ASCII7"
+    , Group "Cases"
+        [ Group "Invalid-ASCII7"
             [ testCase "ff" $ expectFromBytesErr ASCII7 ("", Just BuildingFailure, 0) (fromList [0xff])
             ]
         ]
@@ -145,6 +143,7 @@ expectFromBytesErr enc (expectedString,expectedErr,positionErr) ba = do
     assertEqual "error" expectedErr merr
     assertEqual "remaining" (drop positionErr ba) ba'
     assertEqual "string" expectedString (toList s')
+-}
 
 chunks :: Sequential c => RandomList -> c -> [c]
 chunks (RandomList randomInts) = loop (randomInts <> [1..])
@@ -158,11 +157,3 @@ chunks (RandomList randomInts) = loop (randomInts <> [1..])
                      in c1 : loop rs c2
                 [] ->
                     loop randomInts c
-
-newtype LStringASCII = LStringASCII { fromLStringASCII :: LString }
-    deriving (Show, Eq, Ord)
-
-instance Arbitrary LStringASCII where
-    arbitrary = do
-        n <- choose (0,200)
-        LStringASCII <$> replicateM n (toEnum <$> choose (1, 127))

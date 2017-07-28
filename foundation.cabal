@@ -292,7 +292,9 @@ test-suite check-foundation
                      Test.Foundation.Storable
                      Test.Foundation.Number
                      Test.Foundation.String.Base64
+                     Test.Foundation.String
                      Test.Data.Network
+                     Test.Data.List
                      Test.Foundation.Network.IPv4
                      Test.Foundation.Network.IPv6
   default-extensions: NoImplicitPrelude

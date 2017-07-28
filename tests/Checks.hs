@@ -23,6 +23,7 @@ import Test.Foundation.Misc
 import Test.Foundation.Storable
 import Test.Foundation.Number
 import Test.Foundation.Conduit
+import Test.Foundation.String
 import Test.Foundation.Network.IPv4
 import Test.Foundation.Network.IPv6
 import Test.Foundation.String.Base64
@@ -186,6 +187,7 @@ main = defaultMain $ Group "foundation"
       [ matrixToGroup "Unboxed" $ primTypesMatrixArbitrary $ \prx arb s ->
             collectionProperties ("Unboxed " <> s) (functorProxy (Proxy :: Proxy ChunkedUArray) prx) arb
       ]
+    , testStringRefs
     , testForeignStorableRefs
     , testNetworkIPv4
     , testNetworkIPv6

@@ -10,11 +10,15 @@ module Foundation.Monad
     , MonadBracket(..)
     , MonadTrans(..)
     , Identity(..)
+    , replicateM
     ) where
 
+import Foundation.Primitive.Imports
+import Foundation.Primitive.Types.OffsetSize
 import Foundation.Monad.MonadIO
 import Foundation.Monad.Exception
 import Foundation.Monad.Transformer
+import Foundation.Numerical
 
 #if MIN_VERSION_base(4,8,0)
 import Data.Functor.Identity
@@ -58,3 +62,13 @@ instance MonadZip Identity where
     munzip (Identity (x, y)) = (Identity x, Identity y)
 
 #endif
+
+-- | @'replicateM' n act@ performs the action @n@ times,
+-- gathering the results.
+replicateM :: Applicative m => CountOf a -> m a -> m [a]
+replicateM (CountOf count) f = loop count
+  where
+    loop cnt
+        | cnt <= 0  = pure []
+        | otherwise = liftA2 (:) f (loop (cnt - 1))
+{-# INLINEABLE replicateM #-}

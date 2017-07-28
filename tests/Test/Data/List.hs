@@ -8,9 +8,10 @@ module Test.Data.List
     ) where
 
 import Foundation
+import Foundation.Primitive
 import Foundation.Collection (nonEmpty_, NonEmpty)
-import Test.Tasty.QuickCheck
-import Control.Monad
+import Foundation.Check
+import Foundation.Monad
 
 -- | convenient function to replicate thegiven Generator of `e` a randomly
 -- choosen amount of time.
@@ -19,14 +20,20 @@ generateListOfElement = generateListOfElementMaxN 100
 
 -- | convenient function to generate up to a certain amount of time the given
 -- generator.
-generateListOfElementMaxN :: Int -> Gen e -> Gen [e]
-generateListOfElementMaxN n e = choose (0,n) >>= flip replicateM e
+generateListOfElementMaxN :: CountOf e -> Gen e -> Gen [e]
+generateListOfElementMaxN (CountOf n) e = replicateBetween 0 (integralCast n) e
 
-generateNonEmptyListOfElement :: Int -> Gen e -> Gen (NonEmpty [e])
-generateNonEmptyListOfElement n e = nonEmpty_ <$> (choose (1,n) >>= flip replicateM e)
+generateNonEmptyListOfElement :: CountOf e -> Gen e -> Gen (NonEmpty [e])
+generateNonEmptyListOfElement (CountOf n) e = nonEmpty_ <$> replicateBetween 1 (integralCast n) e
 
 data RandomList = RandomList [Int]
     deriving (Show,Eq)
 
 instance Arbitrary RandomList where
-    arbitrary = RandomList <$> (choose (100,400) >>= flip replicateM (choose (0,8)))
+    arbitrary = RandomList <$> replicateBetween 100 400 (integralCast <$> between (0,8))
+
+replicateBetween n1 n2 f =
+    between (n1, n2) >>= \n -> replicateM (CountOf (toInt n)) f
+  where
+    toInt :: Word -> Int
+    toInt = integralCast
