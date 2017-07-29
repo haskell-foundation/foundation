@@ -19,6 +19,7 @@ import Foundation.Monad.MonadIO
 import Foundation.Monad.Exception
 import Foundation.Monad.Transformer
 import Foundation.Numerical
+import Control.Applicative (liftA2)
 
 #if MIN_VERSION_base(4,8,0)
 import Data.Functor.Identity
