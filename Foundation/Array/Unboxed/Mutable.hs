@@ -170,7 +170,7 @@ copyFromPtr src@(Ptr src#) count marr
 
     sz = primSizeInBytes (Proxy :: Proxy ty)
     !(CountOf bytes@(I# bytes#)) = sizeOfE sz count
-    !(Offset od@(I# od#)) = offsetOfE sz $ ofs
+    !(Offset od@(I# od#)) = offsetOfE sz ofs
 
     copyNative mba = primitive $ \st -> (# copyAddrToByteArray# src# mba od# bytes# st, () #)
     copyPtr fptr = withFinalPtr fptr $ \dst ->
