@@ -15,7 +15,6 @@ module Foundation.Hashing.Hashable
 import Foundation.Internal.Base
 import Foundation.Internal.Natural
 import Foundation.Primitive.IntegralConv
-import Foundation.Numerical.Primitives
 import Foundation.Numerical.Multiplicative
 import Foundation.Array
 import Foundation.Tuple
@@ -53,13 +52,13 @@ instance Hashable Natural where
             let b = integralDownsize (w :: Natural) :: Word8
              in loop (w `div` 256) (hashMix8 b acc)
 instance Hashable Int8 where
-    hashMix w = hashMix8 (integralConvert w)
+    hashMix w = hashMix8 (integralCast w)
 instance Hashable Int16 where
-    hashMix w = hashMix16 (integralConvert w)
+    hashMix w = hashMix16 (integralCast w)
 instance Hashable Int32 where
-    hashMix w = hashMix32 (integralConvert w)
+    hashMix w = hashMix32 (integralCast w)
 instance Hashable Int64 where
-    hashMix w = hashMix64 (integralConvert w)
+    hashMix w = hashMix64 (integralCast w)
 instance Hashable Integer where
     hashMix i iacc
         | i == 0    = hashMix8 0 iacc

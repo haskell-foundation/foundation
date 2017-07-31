@@ -165,7 +165,6 @@ library
                      Foundation.Internal.Natural
                      Foundation.Internal.NumLiteral
                      Foundation.Internal.Typeable
-                     Foundation.Numerical.Primitives
                      Foundation.Numerical.Number
                      Foundation.Numerical.Additive
                      Foundation.Numerical.Subtractive

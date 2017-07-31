@@ -49,7 +49,6 @@ import System.Posix.Types (CSsize (..))
 import Data.Bits
 import Foundation.Internal.Base
 import Foundation.Internal.Proxy
-import Foundation.Numerical.Primitives
 import Foundation.Numerical.Number
 import Foundation.Numerical.Additive
 import Foundation.Numerical.Subtractive
@@ -83,7 +82,7 @@ newtype Offset ty = Offset Int
 instance IsIntegral (Offset ty) where
     toInteger (Offset i) = toInteger i
 instance IsNatural (Offset ty) where
-    toNatural (Offset i) = toNatural (intToWord i)
+    toNatural (Offset i) = toNatural (integralCast i :: Word)
 instance Subtractive (Offset ty) where
     type Difference (Offset ty) = CountOf ty
     (Offset a) - (Offset b) = CountOf (a-b)
@@ -192,7 +191,7 @@ instance Prelude.Num (CountOf ty) where
 instance IsIntegral (CountOf ty) where
     toInteger (CountOf i) = toInteger i
 instance IsNatural (CountOf ty) where
-    toNatural (CountOf i) = toNatural (intToWord i)
+    toNatural (CountOf i) = toNatural (integralCast i :: Word)
 
 instance Additive (CountOf ty) where
     azero = CountOf 0
