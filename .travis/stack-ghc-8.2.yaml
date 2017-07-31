@@ -1,18 +1,3 @@
-compiler: ghc-8.2.0.20170507
-compiler-check: match-exact
-resolver: lts-8.21
-allow-newer: true
-setup-info:
-  ghc:
-    linux64:
-      8.2.0.20170507:
-        url: https://downloads.haskell.org/~ghc/8.2.1-rc2/ghc-8.2.0.20170507-x86_64-deb7-linux.tar.xz
-        content-length: 139665772
-        sha1: 966acfc7bcfad9ad3cb6c2d10f447e5bd09c642e
+resolver: nightly-2017-07-31
 packages:
 - '.'
-extra-deps: []
-flags:
-  foundation:
-    minimal-deps: true
-extra-package-dbs: []
