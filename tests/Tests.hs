@@ -26,15 +26,8 @@ import Test.Foundation.Number
 import Test.Foundation.Array
 import Test.Foundation.String.Base64
 import Test.Foundation.ChunkedUArray
-#if MIN_VERSION_base(4,9,0)
-import Test.Foundation.Primitive.BlockN
-#endif
 import Test.Foundation.String
 import Test.Foundation.Parser
-import Test.Foundation.Storable
-import Test.Foundation.Network.IPv4
-import Test.Foundation.Network.IPv6
-import Test.Foundation.Misc
 import qualified Test.Foundation.Bits as Bits
 
 data CharMap = CharMap LUString Prelude.Int
@@ -224,10 +217,8 @@ testZippableProps proxyA proxyB genElementA genElementB =
 tests :: [TestTree]
 tests =
     [ testArrayRefs
-    , testBase64Refs
     , testChunkedUArrayRefs
     , Bits.tests
-    , testCollection "Bitmap"  (Proxy :: Proxy Bitmap)  arbitrary
     , testStringRefs
     , testGroup "VFS"
         [ testGroup "FilePath" $ testCaseFilePath <> (testPath (arbitrary :: Gen FilePath))
@@ -320,17 +311,7 @@ tests =
             ( testZippableProps (Proxy :: Proxy (Array Int)) (Proxy :: Proxy (Array Char))
                 arbitrary arbitrary )
         ]
-#if MIN_VERSION_base(4,9,0)
-    , testBlockN
-#endif
     , testParsers
-    , testForeignStorableRefs
-    , testConduit
-    , testNetworkIPv4
-    , testNetworkIPv6
-    , testHexadecimal
-    , testTime
-    , testUUID
     , testGroup "Issues"
         [ testGroup "218"
             [ testCase "Foundation Strings" $

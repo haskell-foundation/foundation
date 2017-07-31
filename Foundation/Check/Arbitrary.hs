@@ -1,6 +1,7 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Foundation.Check.Arbitrary
     ( Arbitrary(..)
     , frequency
@@ -11,8 +12,11 @@ module Foundation.Check.Arbitrary
 
 import           Foundation.Primitive.Imports
 import           Foundation.Primitive
+import           Foundation.Primitive.Nat
 import           Foundation.Primitive.IntegralConv
+import           Foundation.Primitive.Bounded
 import           Foundation.Primitive.Types.OffsetSize
+import qualified Foundation.Primitive.Types.Char7 as Char7
 import           Foundation.Check.Gen
 import           Foundation.Random
 import           Foundation.Bits
@@ -28,6 +32,11 @@ instance Arbitrary Integer where
     arbitrary = arbitraryInteger
 instance Arbitrary Natural where
     arbitrary = arbitraryNatural
+
+instance (NatWithinBound Word64 n, KnownNat n) => Arbitrary (Zn64 n) where
+    arbitrary = zn64 <$> arbitrary
+instance KnownNat n => Arbitrary (Zn n) where
+    arbitrary = zn <$> arbitraryNatural
 
 -- prim types
 instance Arbitrary Int where
@@ -52,6 +61,8 @@ instance Arbitrary Int8 where
     arbitrary = integralDownsize <$> arbitraryInt64
 instance Arbitrary Char where
     arbitrary = arbitraryChar
+instance Arbitrary Char7 where
+    arbitrary = Char7.fromByteMask . integralDownsize <$> arbitraryWord64
 instance Arbitrary (CountOf ty) where
     arbitrary = CountOf <$> arbitrary
 
@@ -59,6 +70,10 @@ instance Arbitrary Bool where
     arbitrary = flip testBit 0 <$> arbitraryWord64
 
 instance Arbitrary String where
+    arbitrary = genWithParams $ \params ->
+        fromList <$> (genMax (genMaxSizeString params) >>= \i -> replicateM (integralCast i) arbitrary)
+
+instance Arbitrary AsciiString where
     arbitrary = genWithParams $ \params ->
         fromList <$> (genMax (genMaxSizeString params) >>= \i -> replicateM (integralCast i) arbitrary)
 
@@ -88,6 +103,10 @@ instance (Arbitrary a, Arbitrary b, Arbitrary c, Arbitrary d, Arbitrary e)
 instance (Arbitrary a, Arbitrary b, Arbitrary c, Arbitrary d, Arbitrary e, Arbitrary f)
     => Arbitrary (a,b,c,d,e,f) where
     arbitrary = (,,,,,) <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+
+instance Arbitrary a => Arbitrary [a] where
+    arbitrary = genWithParams $ \params ->
+        fromList <$> (genMax (genMaxSizeArray params) >>= \i -> replicateM (integralCast i) arbitrary)
 
 arbitraryInteger :: Gen Integer
 arbitraryInteger =

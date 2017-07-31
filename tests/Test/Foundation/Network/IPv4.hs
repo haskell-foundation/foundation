@@ -6,32 +6,30 @@ module Test.Foundation.Network.IPv4
 
 import Foundation
 import Foundation.Network.IPv4
-
-import Test.Tasty
-import Test.Tasty.QuickCheck
+import Foundation.Check
 
 import Test.Data.Network
 import Test.Foundation.Storable
 
 -- | test property equality for the given Collection
-testEquality :: Gen IPv4 -> TestTree
-testEquality genElement = testGroup "equality"
-    [ testProperty "x == x" $ forAll genElement (\x -> x === x)
-    , testProperty "x == y" $ forAll ((,) <$> genElement <*> genElement) $
+testEquality :: Gen IPv4 -> Test
+testEquality genElement = Group "equality"
+    [ Property "x == x" $ forAll genElement (\x -> x === x)
+    , Property "x == y" $ forAll ((,) <$> genElement <*> genElement) $
         \(x,y) -> (toTuple x == toTuple y) === (x == y)
     ]
 
 -- | test ordering
-testOrdering :: Gen IPv4 -> TestTree
-testOrdering genElement = testProperty "ordering" $
+testOrdering :: Gen IPv4 -> Test
+testOrdering genElement = Property "ordering" $
     forAll ((,) <$> genElement <*> genElement) $ \(x, y) ->
         (toTuple x `compare` toTuple y) === x `compare` y
 
-testNetworkIPv4 :: TestTree
-testNetworkIPv4 = testGroup "IPv4"
-    [ testProperty "toTuple . fromTuple == id" $
+testNetworkIPv4 :: Test
+testNetworkIPv4 = Group "IPv4"
+    [ Property "toTuple . fromTuple == id" $
         forAll genIPv4Tuple $ \x -> x === toTuple (fromTuple x)
-    , testProperty "toString . fromString == id" $
+    , Property "toString . fromString == id" $
         forAll genIPv4String $ \x -> x === toString (fromString $ toList x)
     , testEquality genIPv4
     , testOrdering genIPv4

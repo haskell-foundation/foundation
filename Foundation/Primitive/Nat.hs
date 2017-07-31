@@ -20,6 +20,7 @@ module Foundation.Primitive.Nat
     , type (<=), type (<=?), type (+), type (*), type (^), type (-)
     , CmpNat
     -- * Nat convertion
+    , natValNatural
     , natValInt
     , natValInt8
     , natValInt16
@@ -49,6 +50,9 @@ import qualified Prelude (fromIntegral)
 #if __GLASGOW_HASKELL__ >= 800
 import           Data.Type.Bool
 #endif
+
+natValNatural :: forall n proxy . KnownNat n => proxy n -> Natural
+natValNatural n = Prelude.fromIntegral (natVal n)
 
 natValInt :: forall n proxy . (KnownNat n, NatWithinBound Int n) => proxy n -> Int
 natValInt n = Prelude.fromIntegral (natVal n)

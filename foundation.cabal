@@ -30,7 +30,7 @@ build-type:          Simple
 homepage:            https://github.com/haskell-foundation/foundation
 bug-reports:         https://github.com/haskell-foundation/foundation/issues
 cabal-version:       >=1.10
-tested-with:         GHC==8.0.2, GHC==7.10.3, GHC==7.8.4
+tested-with:         GHC==8.2.1, GHC==8.0.2, GHC==7.10.3
 extra-source-files:  cbits/*.h
 extra-doc-files:     README.md
                      CHANGELOG.md
@@ -155,6 +155,7 @@ library
                      Foundation.Internal.CallStack
                      Foundation.Internal.Environment
                      Foundation.Primitive.Error
+                     Foundation.Primitive.Bounded
                      Foundation.Internal.Primitive
                      Foundation.Internal.IsList
                      Foundation.Internal.Identity
@@ -279,56 +280,23 @@ library
   if flag(bounds-check)
     cpp-options: -DFOUNDATION_BOUNDS_CHECK
 
-test-suite test-foundation
-  type:              exitcode-stdio-1.0
-  hs-source-dirs:    tests
-  main-is:           Tests.hs
-  other-modules:     Test.Utils.Foreign
-                     Test.Data.List
-                     Test.Data.Network
-                     Test.Data.Unicode
-                     Test.Data.ASCII
-                     Test.Foundation.Collection
-                     Test.Foundation.Conduit
-                     Test.Foundation.Bits
-                     Test.Foundation.ChunkedUArray
-                     Test.Foundation.Network.IPv4
-                     Test.Foundation.Network.IPv6
-                     Test.Foundation.Number
-                     Test.Foundation.Encoding
-                     Test.Foundation.Parser
-                     Test.Foundation.Array
-                     Test.Foundation.String
-                     Test.Foundation.String.Base64
-                     Test.Foundation.Storable
-                     Test.Foundation.Misc
-                     Imports
-  if impl(ghc >= 8.0)
-    other-modules:   Test.Foundation.Primitive.BlockN
-
-  default-extensions: NoImplicitPrelude
-                      RebindableSyntax
-  if flag(minimal-deps)
-    buildable: False
-  else
-    build-depends:   base >= 3 && < 5
-                   , mtl
-                   , QuickCheck
-                   , tasty
-                   , tasty-quickcheck
-                   , tasty-hunit
-                   , foundation
-  ghc-options:       -Wall -fno-warn-orphans -fno-warn-missing-signatures
-  default-language:  Haskell2010
-  if impl(ghc >= 8.0)
-    ghc-options:     -Wno-redundant-constraints
-
 test-suite check-foundation
   type:              exitcode-stdio-1.0
   hs-source-dirs:    tests
   main-is:           Checks.hs
   other-modules:     Test.Checks.Property.Collection
                      Test.Foundation.Random
+                     Test.Foundation.Misc
+                     Test.Foundation.Conduit
+                     Test.Foundation.Primitive.BlockN
+                     Test.Foundation.Storable
+                     Test.Foundation.Number
+                     Test.Foundation.String.Base64
+                     Test.Foundation.String
+                     Test.Data.Network
+                     Test.Data.List
+                     Test.Foundation.Network.IPv4
+                     Test.Foundation.Network.IPv6
   default-extensions: NoImplicitPrelude
                       RebindableSyntax
                       OverloadedStrings

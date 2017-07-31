@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE CPP #-}
 module Main where
 
 
@@ -18,7 +19,19 @@ import qualified Prelude
 import Data.Ratio
 
 import Test.Foundation.Random
+import Test.Foundation.Misc
+import Test.Foundation.Storable
+import Test.Foundation.Number
+import Test.Foundation.Conduit
+import Test.Foundation.String
+import Test.Foundation.Network.IPv4
+import Test.Foundation.Network.IPv6
+import Test.Foundation.String.Base64
 import Test.Checks.Property.Collection
+
+#if MIN_VERSION_base(4,9,0)
+import Test.Foundation.Primitive.BlockN
+#endif
 
 applyFstToSnd :: (String, String -> b) -> b
 applyFstToSnd (a, fab) = fab a
@@ -91,6 +104,7 @@ main = defaultMain $ Group "foundation"
         , Group "Word64"
             [ testAdditive (Proxy :: Proxy Word64)
             ]
+        , Group "Number" testNumberRefs
         ]
     , Group "String"
         [ Group "reading"
@@ -139,6 +153,7 @@ main = defaultMain $ Group "foundation"
             ]
         ]
     , collectionProperties "DList a" (Proxy :: Proxy (DList Word8)) arbitrary
+    , collectionProperties "Bitmap"  (Proxy :: Proxy Bitmap)  arbitrary
     , Group "Array"
       [ matrixToGroup "Block" $ primTypesMatrixArbitrary $ \prx arb s ->
             collectionProperties ("Block " <> s) (functorProxy (Proxy :: Proxy Block) prx) arb
@@ -172,5 +187,17 @@ main = defaultMain $ Group "foundation"
       [ matrixToGroup "Unboxed" $ primTypesMatrixArbitrary $ \prx arb s ->
             collectionProperties ("Unboxed " <> s) (functorProxy (Proxy :: Proxy ChunkedUArray) prx) arb
       ]
+    , testStringRefs
+    , testForeignStorableRefs
+    , testNetworkIPv4
+    , testNetworkIPv6
+    , testBase64Refs
+    , testHexadecimal
+    , testTime
+    , testUUID
     , testRandom
+    , testConduit
+#if MIN_VERSION_base(4,9,0)
+    , testBlockN
+#endif
     ]

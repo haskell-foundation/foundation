@@ -7,11 +7,10 @@ module Test.Foundation.Misc
     ) where
 
 import Foundation
-import Test.Tasty
-import Test.Tasty.QuickCheck
+import Foundation.Check
 
 import Foundation.Array.Internal (toHexadecimal)
-import Test.Foundation.Collection (fromListP, toListP)
+import Test.Checks.Property.Collection (fromListP)
 
 import qualified Foundation.UUID as UUID
 import           Foundation.Parser
@@ -31,13 +30,13 @@ hex = loop
       where
         (q,r) = x `divMod` 16
 
-testHexadecimal = testGroup "hexadecimal"
-    [ testProperty  "UArray(W8)" $ \l ->
+testHexadecimal = Group "hexadecimal"
+    [ Property  "UArray(W8)" $ \l ->
         toList (toHexadecimal (fromListP (Proxy :: Proxy (UArray Word8)) l)) == hex l
     ]
 
-testTime = testGroup "Time"
-    [ testProperty "foundation_time_clock_gettime links properly" $
+testTime = Group "Time"
+    [ Property "foundation_time_clock_gettime links properly" $
         $(let s :: String
               s = fromString "Hello"
 
@@ -46,9 +45,9 @@ testTime = testGroup "Time"
            in [| b |])
     ]
 
-testUUID = testGroup "UUID"
-    [ testProperty "show" $ show UUID.nil === "00000000-0000-0000-0000-000000000000"
-    , testProperty "show-bin" $ fmap show (UUID.fromBinary (fromList [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16])) === Just "100f0e0d-0c0b-0a09-0807-060504030201"
-    , testProperty "parser . show = id" $ \uuid ->
+testUUID = Group "UUID"
+    [ Property "show" $ show UUID.nil === "00000000-0000-0000-0000-000000000000"
+    , Property "show-bin" $ fmap show (UUID.fromBinary (fromList [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16])) === Just "100f0e0d-0c0b-0a09-0807-060504030201"
+    , Property "parser . show = id" $ \uuid ->
         (either (error . show) id $ parseOnly UUID.uuidParser (show uuid)) === uuid
     ]

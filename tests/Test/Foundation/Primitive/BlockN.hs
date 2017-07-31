@@ -8,31 +8,31 @@ module Test.Foundation.Primitive.BlockN
     ( testBlockN
     ) where
 
-import           Imports
 import           Data.Proxy (Proxy(..))
 import           Foundation hiding (singleton, replicate, cons, uncons, elem)
 import           Foundation.Primitive.Nat
 import qualified Foundation.Primitive.Block as B
 import           Foundation.Primitive.BlockN
+import           Foundation.Check
 
-testBlockN = testGroup "BlockN"
+testBlockN = Group "BlockN"
      [ testWithDifferentN
-     , testCase "singleton" $ assertEq' (B.singleton (1 :: Int)) (toBlock (singleton 1))
+     , Property "singleton" $ B.singleton (1 :: Int) === toBlock (singleton 1)
      ]
 
 
 testWithDifferentN =
-    testGroup "Multiple n" $ do
+    Group "Multiple n" $ do
         Foo n <- ns
         [testBlock n]
 
-testBlock :: forall n . (KnownNat n, NatWithinBound Int n) => Proxy n -> TestTree
+testBlock :: forall n . (KnownNat n, NatWithinBound Int n) => Proxy n -> Test
 testBlock nProxy =
-  testGroup ("n = " <> show size)
-    [ testCase "to/from block" $ assertEq' block (toBlock blockN)
-    , testCase "replicate" $ assertEq' (B.replicate (CountOf size) (7 :: Int)) (toBlock (rep 7))
-    , testCase "length . cons" $ assertEq' (B.length (toBlock (cons 42 blockN))) (CountOf (size+1))
-    , testCase "elem" $ assertEq' (size == 0 || size `elem` blockN) True
+  Group ("n = " <> show size)
+    [ Property "to/from block" $ block === (toBlock blockN)
+    , Property "replicate" $ B.replicate (CountOf size) (7 :: Int) === toBlock (rep 7)
+    , Property "length . cons" $ B.length (toBlock (cons 42 blockN)) === CountOf (size+1)
+    , Property "elem" $ size == 0 || size `elem` blockN
     ]
   where
     rep :: Int -> BlockN n Int
@@ -43,9 +43,7 @@ testBlock nProxy =
     Just blockN = toBlockN block :: Maybe (BlockN n Int)
 
 createBlockSized :: Int -> B.Block Int
-createBlockSized n =
-    B.create (CountOf n) (const n)
-
+createBlockSized n = B.create (CountOf n) (const n)
 
 data Foo = forall a . (KnownNat a, NatWithinBound Int a) => Foo (Proxy a)
 

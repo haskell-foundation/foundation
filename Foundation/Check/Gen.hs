@@ -20,7 +20,6 @@ import           Foundation.String
 import           Foundation.Numerical
 import           Foundation.Hashing.SipHash
 import           Foundation.Hashing.Hasher
-import qualified Foundation.Array.Unboxed as A
 
 data GenParams = GenParams
     { genMaxSizeIntegral :: Word -- maximum number of bytes
@@ -33,11 +32,8 @@ newtype GenRng = GenRng XorShift.State
 type GenSeed = Word64
 
 genRng :: GenSeed -> [String] -> (Word64 -> GenRng)
-genRng seed groups = \iteration -> GenRng $ XorShift.initialize w1 w2
+genRng seed groups = \iteration -> GenRng $ XorShift.initialize rngSeed (rngSeed * iteration)
   where
-    w1 = rngSeed
-    w2 = rngSeed * 2
-
     (SipHash rngSeed) = hashEnd $ hashMixBytes hashData iHashState
     hashData = toBytes UTF8 $ intercalate "::" groups
     iHashState :: Sip1_3

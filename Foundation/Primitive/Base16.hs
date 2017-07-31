@@ -31,8 +31,8 @@ hexWord16 (W16# w) = (toChar w1,toChar w2,toChar w3,toChar w4)
   where
     toChar :: Word# -> Char
     toChar c = C# (chr# (word2Int# c))
-    (# w1, w2 #) = unsafeConvertByte (uncheckedShiftRL# w 8#)
-    (# w3, w4 #) = unsafeConvertByte (and# w 0xff##)
+    !(# w1, w2 #) = unsafeConvertByte (uncheckedShiftRL# w 8#)
+    !(# w3, w4 #) = unsafeConvertByte (and# w 0xff##)
 
 -- | hex word32
 hexWord32 :: Word32 -> (Char, Char, Char, Char, Char, Char, Char, Char)
@@ -41,10 +41,10 @@ hexWord32 (W32# w) = (toChar w1,toChar w2,toChar w3,toChar w4
   where
     toChar :: Word# -> Char
     toChar c = C# (chr# (word2Int# c))
-    (# w1, w2 #) = unsafeConvertByte (uncheckedShiftRL# w 24#)
-    (# w3, w4 #) = unsafeConvertByte (and# (uncheckedShiftRL# w 16#) 0xff##)
-    (# w5, w6 #) = unsafeConvertByte (and# (uncheckedShiftRL# w 8#) 0xff##)
-    (# w7, w8 #) = unsafeConvertByte (and# w 0xff##)
+    !(# w1, w2 #) = unsafeConvertByte (uncheckedShiftRL# w 24#)
+    !(# w3, w4 #) = unsafeConvertByte (and# (uncheckedShiftRL# w 16#) 0xff##)
+    !(# w5, w6 #) = unsafeConvertByte (and# (uncheckedShiftRL# w 8#) 0xff##)
+    !(# w7, w8 #) = unsafeConvertByte (and# w 0xff##)
 
 data Table = Table Addr#
 
