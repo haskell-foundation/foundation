@@ -154,8 +154,6 @@ library
                      Foundation.Internal.ByteSwap
                      Foundation.Internal.CallStack
                      Foundation.Internal.Environment
-                     Foundation.Primitive.Error
-                     Foundation.Primitive.Bounded
                      Foundation.Internal.Primitive
                      Foundation.Internal.IsList
                      Foundation.Internal.Identity
@@ -171,6 +169,8 @@ library
                      Foundation.Numerical.Multiplicative
                      Foundation.Numerical.Floating
                      Foundation.IO.File
+                     Foundation.Primitive.Error
+                     Foundation.Primitive.Bounded
                      Foundation.Primitive.Base16
                      Foundation.Primitive.Block.Base
                      Foundation.Primitive.Block.Mutable
