@@ -71,11 +71,7 @@ compatAndI# = andI#
 
 -- | A version friendly of quotRemInt#
 compatQuotRemInt# :: Int# -> Int# -> (# Int#, Int# #)
-#if !MIN_VERSION_base(4,6,0)
-compatQuotRemInt# a b = (# quotInt# a b, remInt# a b #)
-#else
 compatQuotRemInt# = quotRemInt#
-#endif
 {-# INLINE compatQuotRemInt# #-}
 
 -- | A version friendly fo copyAddrToByteArray#
