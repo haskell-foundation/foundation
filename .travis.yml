@@ -37,8 +37,6 @@ matrix:
     compiler: ghc-8.0
 
   allow_failures:
-  - env: BUILD=stack RESOLVER=ghc-8.2
-    language: generic
   - env: BUILD=stack RESOLVER=ghc-8.0 EXPERIMENTAL="--flag foundation:experimental"
     language: generic
     addons: { apt: { packages: [ libgmp-dev ] } }
