@@ -5,8 +5,6 @@
 -- Stability   : experimental
 -- Portability : portable
 --
--- Different collections (list, vector, string, ..) unified under 1 API.
--- an API to rules them all, and in the darkness bind them.
 --
 {-# LANGUAGE FlexibleInstances #-}
 module Foundation.Primitive
