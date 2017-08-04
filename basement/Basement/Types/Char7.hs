@@ -36,7 +36,7 @@ import Basement.Compat.Primitive (bool#)
 
 -- | ASCII value between 0x0 and 0x7f
 newtype Char7 = Char7 { toByte :: Word8 }
-    deriving (Show,Eq,Ord)
+    deriving (Show,Eq,Ord,Typeable)
 
 -- | Convert a 'Char7' to a unicode code point 'Char'
 toChar :: Char7 -> Char

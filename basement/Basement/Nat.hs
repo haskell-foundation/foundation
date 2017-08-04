@@ -7,9 +7,6 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
 {-# LANGUAGE UndecidableInstances      #-}
-#if __GLASGOW_HASKELL__ < 710
-# error "IMPORT ERROR: cannot include this file with GHC version below 7.10
-#else
 #if __GLASGOW_HASKELL__ < 800
 {-# LANGUAGE ConstraintKinds           #-}
 #endif
@@ -118,6 +115,4 @@ type family NatWithinBound ty (n :: Nat) where
         (TypeError ('Text "Natural " ':<>: 'ShowType n ':<>: 'Text " is out of bounds for " ':<>: 'ShowType ty))
 #else
 type NatWithinBound ty n = NatInBoundOf ty n ~ 'True
-#endif
-
 #endif
