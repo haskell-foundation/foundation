@@ -30,7 +30,7 @@ import Test.Foundation.String.Base64
 import Test.Checks.Property.Collection
 
 #if MIN_VERSION_base(4,9,0)
-import Test.Basement.BlockN
+import Test.Foundation.Primitive.BlockN
 #endif
 
 applyFstToSnd :: (String, String -> b) -> b

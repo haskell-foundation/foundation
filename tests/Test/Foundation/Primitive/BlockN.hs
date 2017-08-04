@@ -4,7 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables       #-}
 {-# LANGUAGE TypeOperators             #-}
 
-module Test.Basement.BlockN
+module Test.Foundation.Primitive.BlockN
     ( testBlockN
     ) where
 

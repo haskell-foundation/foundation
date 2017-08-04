@@ -161,10 +161,8 @@ library
   include-dirs:      cbits
   c-sources:         cbits/foundation_random.c
                      cbits/foundation_network.c
-                     cbits/foundation_mem.c
                      cbits/foundation_time.c
                      cbits/foundation_utf8.c
-                     cbits/foundation_rts.c
 
   if flag(experimental)
     exposed-modules: Foundation.Network.HostName
@@ -219,7 +217,7 @@ test-suite check-foundation
                      Test.Foundation.Random
                      Test.Foundation.Misc
                      Test.Foundation.Conduit
-                     Test.Basement.BlockN
+                     Test.Foundation.Primitive.BlockN
                      Test.Foundation.Storable
                      Test.Foundation.Number
                      Test.Foundation.String.Base64
@@ -232,6 +230,7 @@ test-suite check-foundation
                       RebindableSyntax
                       OverloadedStrings
   build-depends:     base >= 3 && < 5
+                   , basement
                    , foundation
   ghc-options:       -Wall -fno-warn-orphans -fno-warn-missing-signatures
   default-language:  Haskell2010
