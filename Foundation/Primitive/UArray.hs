@@ -122,7 +122,9 @@ import           Foundation.Primitive.Exception
 import           Foundation.Primitive.UArray.Base
 import           Foundation.Primitive.Block (Block(..), MutableBlock(..))
 import           Foundation.Primitive.UArray.Mutable hiding (sub, copyToPtr)
-import           Foundation.Numerical
+import           Foundation.Numerical.Additive
+import           Foundation.Numerical.Subtractive
+import           Foundation.Numerical.Multiplicative
 import           Foundation.Primitive.MutableBuilder
 import           Foundation.Primitive.Bindings.Memory (sysHsMemFindByteBa, sysHsMemFindByteAddr)
 import qualified Foundation.Internal.ExtList as List

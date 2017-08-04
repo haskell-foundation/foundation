@@ -52,7 +52,8 @@ import           Foundation.Primitive.Exception
 import qualified Foundation.Primitive.Block.Mutable as MBLK
 import           Foundation.Primitive.Block         (MutableBlock(..))
 import           Foundation.Primitive.UArray.Base hiding (empty)
-import           Foundation.Numerical
+import           Foundation.Numerical.Additive
+import           Foundation.Numerical.Subtractive
 import           Foreign.Marshal.Utils (copyBytes)
 
 sizeInMutableBytesOfContent :: forall ty s . PrimType ty => MUArray ty s -> Size8
