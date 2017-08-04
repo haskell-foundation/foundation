@@ -80,8 +80,8 @@ import           Foundation.Primitive.Types
 import           Foundation.Primitive.NormalForm
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Exception
-import           Foundation.Boot.Builder
-import qualified Foundation.Boot.List as List
+import           Foundation.Primitive.MutableBuilder
+import qualified Foundation.Internal.ExtList as List
 
 -- | Array of a
 data Array a = Array {-# UNPACK #-} !(Offset a)

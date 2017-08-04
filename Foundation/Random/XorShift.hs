@@ -25,7 +25,7 @@ import           Foundation.Bits
 import           Foundation.Random.Class
 import           Foundation.Random.DRG
 import           Foundation.Internal.Bifunctor
-import           Foundation.Boot.List (reverse)
+import           Foundation.Internal.ExtList (reverse)
 import qualified Foundation.Array.Unboxed as A
 import qualified Prelude
 import           GHC.Prim

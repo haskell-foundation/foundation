@@ -22,7 +22,7 @@ import Data.Bits
 import qualified Prelude
 import Foundation.Array.Unboxed
 import Foundation.Array.Unboxed.Mutable (MUArray)
-import Foundation.Boot.Builder
+import Foundation.Primitive.MutableBuilder
 
 import Foundation.String.Encoding.Encoding
 

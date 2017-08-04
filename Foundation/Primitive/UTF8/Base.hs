@@ -39,7 +39,7 @@ import           Foundation.Primitive.UArray.Base   as Vec (offset, pureST, onBa
 import           GHC.CString                        (unpackCString#, unpackCStringUtf8#)
 
 import           Data.Data
-import           Foundation.Boot.List as List
+import           Foundation.Internal.ExtList as List
 
 -- | Opaque packed array of characters in the UTF8 encoding
 newtype String = String (UArray Word8)

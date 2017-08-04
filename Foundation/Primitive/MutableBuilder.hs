@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module Foundation.Boot.Builder
+module Foundation.Primitive.MutableBuilder
     ( Builder(..)
     , BuildingState(..)
     ) where

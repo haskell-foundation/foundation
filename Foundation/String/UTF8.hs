@@ -108,7 +108,7 @@ import           Foundation.Primitive.Types
 import           Foundation.Primitive.FinalPtr
 import           Foundation.Primitive.IntegralConv
 import           Foundation.Primitive.Floating
-import           Foundation.Boot.Builder
+import           Foundation.Primitive.MutableBuilder
 import           Foundation.Primitive.UTF8.Table
 import           Foundation.Primitive.UTF8.Helper
 import           Foundation.Primitive.UTF8.Base

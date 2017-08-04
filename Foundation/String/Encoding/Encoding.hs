@@ -17,7 +17,7 @@ import           Foundation.Internal.Base
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
-import           Foundation.Boot.Builder
+import           Foundation.Primitive.MutableBuilder
 import           Foundation.Numerical
 import           Foundation.Array.Unboxed (UArray)
 import           Foundation.Array.Unboxed.Mutable (MUArray)

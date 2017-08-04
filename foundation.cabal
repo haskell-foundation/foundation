@@ -112,9 +112,7 @@ library
                      Foundation.UUID
                      Foundation.System.Entropy
                      Foundation.System.Bindings
-  other-modules:     Foundation.Boot.Builder
-                     Foundation.Boot.List
-                     Foundation.String.Internal
+  other-modules:     Foundation.String.Internal
                      Foundation.String.UTF8
                      Foundation.String.UTF8.BA
                      Foundation.String.UTF8.Addr
@@ -151,9 +149,10 @@ library
                      Foundation.Internal.Base
                      Foundation.Internal.Bifunctor
                      Foundation.Internal.CallStack
-                     Foundation.Internal.Primitive
+                     Foundation.Internal.ExtList
                      Foundation.Internal.IsList
                      Foundation.Internal.Identity
+                     Foundation.Internal.Primitive
                      Foundation.Internal.PrimTypes
                      Foundation.Internal.MonadTrans
                      Foundation.Internal.Natural
@@ -180,6 +179,7 @@ library
                      Foundation.Primitive.Types.Ptr
                      Foundation.Primitive.Types.AsciiString
                      Foundation.Primitive.Monad
+                     Foundation.Primitive.MutableBuilder
                      Foundation.Primitive.NonEmpty
                      Foundation.Primitive.NormalForm
                      Foundation.Primitive.Utils

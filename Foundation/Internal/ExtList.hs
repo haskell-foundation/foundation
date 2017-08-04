@@ -1,5 +1,5 @@
 {-# LANGUAGE CPP #-}
-module Foundation.Boot.List
+module Foundation.Internal.ExtList
     ( length
     , null
     , sum

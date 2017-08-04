@@ -56,7 +56,7 @@ import           Foundation.Primitive.Types
 import           Foundation.Internal.Base
 import qualified Foundation.Primitive.Runtime as Runtime
 import           Data.Proxy
-import qualified Foundation.Boot.List as List
+import qualified Foundation.Internal.ExtList as List
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.FinalPtr
 import           Foundation.Primitive.NormalForm

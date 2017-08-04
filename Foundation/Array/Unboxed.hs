@@ -123,9 +123,9 @@ import           Foundation.Primitive.UArray.Base
 import           Foundation.Primitive.Block (Block(..), MutableBlock(..))
 import           Foundation.Array.Unboxed.Mutable hiding (sub, copyToPtr)
 import           Foundation.Numerical
-import           Foundation.Boot.Builder
+import           Foundation.Primitive.MutableBuilder
 import           Foundation.Primitive.Bindings.Memory (sysHsMemFindByteBa, sysHsMemFindByteAddr)
-import qualified Foundation.Boot.List as List
+import qualified Foundation.Internal.ExtList as List
 import qualified Foundation.Primitive.Base16 as Base16
 import qualified Foundation.Primitive.UArray.BA as PrimBA
 import qualified Foundation.Primitive.UArray.Addr as PrimAddr

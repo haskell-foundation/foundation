@@ -22,7 +22,7 @@ import qualified Foundation.String.UTF8 as S
 import           Foundation.Collection.Element
 import           Foundation.Internal.Base
 import           Foundation.Primitive.Monad
-import           Foundation.Boot.Builder
+import           Foundation.Primitive.MutableBuilder
 import           Foundation.Internal.MonadTrans
 
 -- $setup
