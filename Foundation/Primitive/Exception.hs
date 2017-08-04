@@ -17,6 +17,7 @@ module Foundation.Primitive.Exception
     , InvalidRecast(..)
     , RecastSourceSize(..)
     , RecastDestinationSize(..)
+    , NonEmptyCollectionIsEmpty(..)
     ) where
 
 import           Foundation.Internal.Base
@@ -60,3 +61,9 @@ data InvalidRecast = InvalidRecast RecastSourceSize RecastDestinationSize
     deriving (Show,Typeable)
 
 instance Exception InvalidRecast
+
+-- | Exception for using NonEmpty assertion with an empty collection
+data NonEmptyCollectionIsEmpty = NonEmptyCollectionIsEmpty
+    deriving (Show,Typeable)
+
+instance Exception NonEmptyCollectionIsEmpty

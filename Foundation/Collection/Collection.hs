@@ -35,6 +35,7 @@ module Foundation.Collection.Collection
 import           Foundation.Internal.Base hiding (and)
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Types.AsciiString
+import           Foundation.Primitive.Exception (NonEmptyCollectionIsEmpty(..))
 import           Foundation.Collection.Element
 import           Foundation.Collection.NonEmpty
 import qualified Data.List
@@ -56,15 +57,8 @@ nonEmpty c
 -- and return an asynchronous error if it is.
 nonEmpty_ :: Collection c => c -> NonEmpty c
 nonEmpty_ c
-    | null c    = error "nonEmpty_: assumption failed: collection is empty. consider using nonEmpty and adding proper cases"
+    | null c    = throw NonEmptyCollectionIsEmpty
     | otherwise = NonEmpty c
-
-type instance Element (NonEmpty a) = Element a
-
-instance Collection c => IsList (NonEmpty c) where
-    type Item (NonEmpty c) = Item c
-    toList   = toList . getNonEmpty
-    fromList = nonEmpty_ . fromList
 
 nonEmptyFmap :: Functor f => (a -> b) -> NonEmpty (f a) -> NonEmpty (f b)
 nonEmptyFmap f (NonEmpty l) = NonEmpty (fmap f l)
