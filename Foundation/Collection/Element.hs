@@ -16,7 +16,7 @@ import Foundation.Array.Boxed (Array)
 import Foundation.String.UTF8 (String)
 import Foundation.Primitive.Types.AsciiString (AsciiString)
 import Foundation.Primitive.Types.Char7 (Char7)
-import Foundation.Collection.NonEmpty
+import Foundation.Primitive.NonEmpty
 
 -- | Element type of a collection
 type family Element container

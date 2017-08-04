@@ -113,7 +113,7 @@ import           Foundation.Internal.Primitive
 import           Data.Proxy
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Internal.MonadTrans
-import           Foundation.Collection.NonEmpty
+import           Foundation.Primitive.NonEmpty
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
 import           Foundation.Primitive.FinalPtr

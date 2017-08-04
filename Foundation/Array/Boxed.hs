@@ -71,7 +71,7 @@ import           GHC.Prim
 import           GHC.Types
 import           GHC.ST
 import           Foundation.Numerical
-import           Foundation.Collection.NonEmpty
+import           Foundation.Primitive.NonEmpty
 import           Foundation.Internal.Base
 import           Data.Proxy
 import           Foundation.Internal.MonadTrans

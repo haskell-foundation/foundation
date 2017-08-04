@@ -140,7 +140,6 @@ library
                      Foundation.Collection.InnerFunctor
                      Foundation.Collection.Collection
                      Foundation.Collection.Copy
-                     Foundation.Collection.NonEmpty
                      Foundation.Collection.Sequential
                      Foundation.Collection.Keyed
                      Foundation.Collection.Indexed
@@ -179,6 +178,7 @@ library
                      Foundation.Primitive.Types.Ptr
                      Foundation.Primitive.Types.AsciiString
                      Foundation.Primitive.Monad
+                     Foundation.Primitive.NonEmpty
                      Foundation.Primitive.NormalForm
                      Foundation.Primitive.Utils
                      Foundation.Primitive.IntegralConv

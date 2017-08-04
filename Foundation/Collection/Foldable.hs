@@ -14,7 +14,7 @@ module Foundation.Collection.Foldable
 
 import           Foundation.Internal.Base
 import           Foundation.Collection.Element
-import           Foundation.Collection.NonEmpty
+import           Foundation.Primitive.NonEmpty
 import qualified Data.List
 import qualified Foundation.Array.Unboxed as UV
 import qualified Foundation.Primitive.Block as BLK

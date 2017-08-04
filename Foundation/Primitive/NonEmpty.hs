@@ -1,5 +1,5 @@
 -- |
--- Module      : Foundation.Collection.NonEmpty
+-- Module      : Foundation.Primitive.NonEmpty
 -- License     : BSD-style
 -- Maintainer  : Foundation
 -- Stability   : experimental
@@ -7,7 +7,7 @@
 --
 -- A newtype wrapper around a non-empty Collection.
 
-module Foundation.Collection.NonEmpty
+module Foundation.Primitive.NonEmpty
     ( NonEmpty(..)
     ) where
 

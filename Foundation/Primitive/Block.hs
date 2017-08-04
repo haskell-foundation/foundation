@@ -67,7 +67,7 @@ import qualified Data.List
 import           Foundation.Internal.Base
 import           Data.Proxy
 import           Foundation.Internal.Primitive
-import           Foundation.Collection.NonEmpty
+import           Foundation.Primitive.NonEmpty
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Exception
