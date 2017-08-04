@@ -34,7 +34,7 @@ import qualified Data.List
 import           Foundation.Internal.Base
 import           Data.Proxy
 import           Foundation.Internal.Primitive
-import           Foundation.System.Bindings.Hs (sysHsMemcmpBaBa)
+import           Foundation.Primitive.Bindings.Memory (sysHsMemcmpBaBa)
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.NormalForm

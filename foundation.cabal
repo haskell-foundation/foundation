@@ -167,6 +167,7 @@ library
                      Foundation.Primitive.Error
                      Foundation.Primitive.Bounded
                      Foundation.Primitive.Base16
+                     Foundation.Primitive.Bindings.Memory
                      Foundation.Primitive.Block.Base
                      Foundation.Primitive.Block.Mutable
                      Foundation.Primitive.Endianness
