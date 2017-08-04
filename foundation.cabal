@@ -271,7 +271,7 @@ Benchmark bench
   if flag(minimal-deps) || impl(ghc < 7.10)
     buildable: False
   else
-    build-depends:     base >= 4, criterion, foundation
+    build-depends:     base >= 4, criterion, basement, foundation
     if flag(bench-all)
       cpp-options:     -DBENCH_ALL
       build-depends:   text, attoparsec, vector, bytestring
