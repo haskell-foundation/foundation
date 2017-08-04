@@ -1,5 +1,5 @@
 -- |
--- Module      : Foundation.String.Encoding.ISO_8859_1
+-- Module      : Foundation.Primitive.String.Encoding.ISO_8859_1
 -- License     : BSD-style
 -- Maintainer  : Foundation
 -- Stability   : experimental
@@ -8,14 +8,14 @@
 
 {-# LANGUAGE MagicHash #-}
 
-module Foundation.String.Encoding.ISO_8859_1
+module Foundation.Primitive.String.Encoding.ISO_8859_1
     ( ISO_8859_1(..)
     , ISO_8859_1_Invalid(..)
     ) where
 
 import Foundation.Internal.Base
 import Foundation.Primitive.Types.OffsetSize
-import Foundation.Numerical
+import Foundation.Primitive.Numerical.Additive
 import Foundation.Primitive.Monad
 
 import GHC.Prim
@@ -25,7 +25,7 @@ import Foundation.Primitive.UArray
 import Foundation.Primitive.UArray.Mutable (MUArray)
 import Foundation.Primitive.MutableBuilder
 
-import Foundation.String.Encoding.Encoding
+import Foundation.Primitive.String.Encoding.Encoding
 
 -- offset of size one
 aone :: Offset Word8

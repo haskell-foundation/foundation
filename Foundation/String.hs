@@ -40,4 +40,4 @@ module Foundation.String
     , breakLine
     ) where
 
-import Foundation.String.UTF8
+import Foundation.Primitive.String

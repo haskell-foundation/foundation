@@ -1,5 +1,5 @@
 -- |
--- Module      : Foundation.String.UTF8
+-- Module      : Foundation.Primitive.String
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
@@ -20,7 +20,7 @@
 {-# LANGUAGE UnboxedTuples              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE CPP                        #-}
-module Foundation.String.UTF8
+module Foundation.Primitive.String
     ( String(..)
     , MutableString(..)
     , create
@@ -116,8 +116,8 @@ import           Foundation.Primitive.UTF8.Types
 import           Foundation.Primitive.UArray.Base as C (onBackendPrim, onBackend, offset, ValidRange(..), offsetsValidRange)
 import qualified Foundation.Primitive.UTF8.BA as PrimBA
 import qualified Foundation.Primitive.UTF8.Addr as PrimAddr
-import qualified Foundation.String.UTF8.BA as BackendBA
-import qualified Foundation.String.UTF8.Addr as BackendAddr
+import qualified Foundation.Primitive.String.BA as BackendBA
+import qualified Foundation.Primitive.String.Addr as BackendAddr
 import           GHC.Prim
 import           GHC.ST
 import           GHC.Types
@@ -132,11 +132,11 @@ import           Data.Ratio
 import           Data.Char (toUpper, toLower)
 import qualified Prelude
 
-import qualified Foundation.String.Encoding.Encoding   as Encoder
-import qualified Foundation.String.Encoding.ASCII7     as Encoder
-import qualified Foundation.String.Encoding.UTF16      as Encoder
-import qualified Foundation.String.Encoding.UTF32      as Encoder
-import qualified Foundation.String.Encoding.ISO_8859_1 as Encoder
+import qualified Foundation.Primitive.String.Encoding.Encoding   as Encoder
+import qualified Foundation.Primitive.String.Encoding.ASCII7     as Encoder
+import qualified Foundation.Primitive.String.Encoding.UTF16      as Encoder
+import qualified Foundation.Primitive.String.Encoding.UTF32      as Encoder
+import qualified Foundation.Primitive.String.Encoding.ISO_8859_1 as Encoder
 
 -- | UTF8 Encoder
 data EncoderUTF8 = EncoderUTF8

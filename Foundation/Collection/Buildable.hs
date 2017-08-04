@@ -18,7 +18,7 @@ module Foundation.Collection.Buildable
 import           Foundation.Primitive.UArray
 import           Foundation.Primitive.UArray.Mutable
 import qualified Foundation.Primitive.BoxedArray as BA
-import qualified Foundation.String.UTF8 as S
+import qualified Foundation.Primitive.String as S
 import           Foundation.Collection.Element
 import           Foundation.Internal.Base
 import           Foundation.Primitive.Monad

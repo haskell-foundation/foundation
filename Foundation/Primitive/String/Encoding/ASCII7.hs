@@ -1,5 +1,5 @@
 -- |
--- Module      : Foundation.String.Encoding.ASCII7
+-- Module      : Foundation.Primitive.String.Encoding.ASCII7
 -- License     : BSD-style
 -- Maintainer  : Foundation
 -- Stability   : experimental
@@ -8,14 +8,14 @@
 
 {-# LANGUAGE MagicHash #-}
 
-module Foundation.String.Encoding.ASCII7
+module Foundation.Primitive.String.Encoding.ASCII7
     ( ASCII7(..)
     , ASCII7_Invalid(..)
     ) where
 
 import Foundation.Internal.Base
 import Foundation.Primitive.Types.OffsetSize
-import Foundation.Numerical
+import Foundation.Primitive.Numerical.Additive
 import Foundation.Primitive.Monad
 
 import GHC.Prim
@@ -25,7 +25,7 @@ import Foundation.Primitive.UArray
 import Foundation.Primitive.UArray.Mutable (MUArray)
 import Foundation.Primitive.MutableBuilder
 
-import Foundation.String.Encoding.Encoding
+import Foundation.Primitive.String.Encoding.Encoding
 
 -- | validate a given byte is within ASCII characters encoring size
 --

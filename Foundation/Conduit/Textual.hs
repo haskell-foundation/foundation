@@ -10,7 +10,7 @@ import           Foundation.Primitive.Imports hiding (throw)
 import           Foundation.Primitive.UArray (UArray)
 import           Foundation.String (String)
 import           Foundation.Collection
-import qualified Foundation.String.UTF8 as S
+import qualified Foundation.Primitive.String as S
 import           Foundation.Conduit.Internal
 import           Foundation.Monad
 import           Data.Char (isSpace)

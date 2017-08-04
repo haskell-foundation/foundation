@@ -1,28 +1,28 @@
 -- |
--- Module      : Foundation.String.Encoding.UTF32
+-- Module      : Foundation.Primitive.String.Encoding.UTF32
 -- License     : BSD-style
 -- Maintainer  : Foundation
 -- Stability   : experimental
 -- Portability : portable
 --
 {-# LANGUAGE MagicHash #-}
-module Foundation.String.Encoding.UTF32
+module Foundation.Primitive.String.Encoding.UTF32
     ( UTF32(..)
     , UTF32_Invalid
     ) where
 
-import Foundation.Internal.Base
-import Foundation.Primitive.Types.OffsetSize
-import Foundation.Primitive.Monad
 import GHC.Prim
 import GHC.Word
 import GHC.Types
-import Foundation.Numerical
+import Foundation.Internal.Base
+import Foundation.Primitive.Types.OffsetSize
+import Foundation.Primitive.Monad
+import Foundation.Primitive.Numerical.Additive
 import Foundation.Primitive.UArray
 import Foundation.Primitive.UArray.Mutable (MUArray)
 import Foundation.Primitive.MutableBuilder
 
-import Foundation.String.Encoding.Encoding
+import Foundation.Primitive.String.Encoding.Encoding
 
 data UTF32 = UTF32
 

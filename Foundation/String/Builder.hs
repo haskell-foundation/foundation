@@ -18,8 +18,8 @@ module Foundation.String.Builder
 
 import           Foundation.Internal.Base
 --import           Foundation.Internal.Semigroup
-import           Foundation.String.UTF8                (String)
-import qualified Foundation.String.UTF8 as S
+import           Foundation.Primitive.String                (String)
+import qualified Foundation.Primitive.String as S
 
 data Builder = E String | T [Builder]
 

@@ -13,7 +13,7 @@ import Foundation.Internal.Base
 import Foundation.Primitive.Block (Block)
 import Foundation.Primitive.UArray (UArray)
 import Foundation.Primitive.BoxedArray (Array)
-import Foundation.String.UTF8 (String)
+import Foundation.Primitive.String (String)
 import Foundation.Primitive.Types.AsciiString (AsciiString)
 import Foundation.Primitive.Types.Char7 (Char7)
 import Foundation.Primitive.NonEmpty

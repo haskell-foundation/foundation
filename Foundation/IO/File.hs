@@ -31,7 +31,7 @@ import           Foundation.Array.Internal
 import           Foundation.Numerical
 import qualified Foundation.Primitive.UArray.Mutable as V
 import qualified Foundation.Primitive.UArray as V
-import qualified Foundation.String.UTF8 as S
+import qualified Foundation.Primitive.String as S
 import           Control.Exception (bracket)
 import           Foreign.Ptr (plusPtr)
 

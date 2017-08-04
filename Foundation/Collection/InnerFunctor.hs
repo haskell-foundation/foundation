@@ -5,7 +5,7 @@ module Foundation.Collection.InnerFunctor
 
 import Foundation.Internal.Base
 import Foundation.Collection.Element
-import qualified Foundation.String.UTF8 as S
+import qualified Foundation.Primitive.String as S
 import qualified Foundation.Primitive.UArray as UV
 import           Foundation.Primitive.BoxedArray (Array)
 

@@ -19,7 +19,7 @@ module Foundation.Collection.Zippable
 
 import qualified Foundation.Primitive.UArray as UV
 import qualified Foundation.Primitive.BoxedArray as BA
-import qualified Foundation.String.UTF8 as S
+import qualified Foundation.Primitive.String as S
 import           Foundation.Collection.Element
 import           Foundation.Collection.Sequential
 import           Foundation.Internal.Base

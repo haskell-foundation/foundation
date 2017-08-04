@@ -1,5 +1,5 @@
 -- |
--- Module      : Foundation.String.UTF8
+-- Module      : Foundation.Primitive.String
 -- License     : BSD-style
 -- Maintainer  : Foundation
 --

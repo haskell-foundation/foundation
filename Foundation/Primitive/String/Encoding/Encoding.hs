@@ -1,5 +1,5 @@
 -- |
--- Module      : Foundation.String.Encoding.Encoding
+-- Module      : Foundation.Primitive.String.Encoding.Encoding
 -- License     : BSD-style
 -- Maintainer  : Foundation
 -- Stability   : experimental
@@ -8,7 +8,7 @@
 
 {-# LANGUAGE FlexibleContexts #-}
 
-module Foundation.String.Encoding.Encoding
+module Foundation.Primitive.String.Encoding.Encoding
     ( Encoding(..)
     , convertFromTo
     ) where
@@ -18,7 +18,7 @@ import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
 import           Foundation.Primitive.MutableBuilder
-import           Foundation.Numerical
+import           Foundation.Primitive.Numerical.Additive
 import           Foundation.Primitive.UArray (UArray)
 import           Foundation.Primitive.UArray.Mutable (MUArray)
 import qualified Foundation.Primitive.UArray as Vec

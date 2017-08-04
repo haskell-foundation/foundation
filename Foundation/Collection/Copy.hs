@@ -7,7 +7,7 @@ import           Foundation.Internal.Base ((>>=))
 import qualified Foundation.Primitive.Block as BLK
 import qualified Foundation.Primitive.UArray as UA
 import qualified Foundation.Primitive.BoxedArray as BA
-import qualified Foundation.String.UTF8 as S
+import qualified Foundation.Primitive.String as S
 
 class Copy a where
     copy :: a -> a

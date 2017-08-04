@@ -42,7 +42,7 @@ import qualified Data.List
 import qualified Foundation.Primitive.Block as BLK
 import qualified Foundation.Primitive.UArray as UV
 import qualified Foundation.Primitive.BoxedArray as BA
-import qualified Foundation.String.UTF8 as S
+import qualified Foundation.Primitive.String as S
 
 -- | Smart constructor to create a NonEmpty collection
 --

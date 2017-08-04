@@ -7,4 +7,4 @@ module Foundation.String.Read
     , readFloatingExact
     ) where
 
-import Foundation.String.UTF8
+import Foundation.Primitive.String

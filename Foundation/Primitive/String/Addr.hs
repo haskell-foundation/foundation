@@ -4,7 +4,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE CPP                        #-}
-module Foundation.String.UTF8.BA
+module Foundation.Primitive.String.Addr
     ( copyFilter
     , validate
     ) where
@@ -12,11 +12,11 @@ module Foundation.String.UTF8.BA
 import           GHC.Prim
 import           GHC.ST
 import           Foundation.Internal.Base
-import           Foundation.Numerical
+import           Foundation.Primitive.Numerical.Additive
 import           Foundation.Primitive.Types.OffsetSize
 
-import qualified Foundation.Primitive.UTF8.BA as PrimBA
-import qualified Foundation.Primitive.UTF8.BA as PrimBackend
+import qualified Foundation.Primitive.UTF8.BA   as PrimBA
+import qualified Foundation.Primitive.UTF8.Addr as PrimBackend
 import           Foundation.Primitive.UTF8.Helper
 import           Foundation.Primitive.UTF8.Table
 import           Foundation.Primitive.UTF8.Types

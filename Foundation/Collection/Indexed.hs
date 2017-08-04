@@ -18,7 +18,7 @@ import qualified Foundation.Primitive.Block as BLK
 import qualified Foundation.Primitive.UArray as UV
 import qualified Foundation.Primitive.BoxedArray as BA
 import qualified Foundation.Primitive.Exception as A
-import qualified Foundation.String.UTF8 as S
+import qualified Foundation.Primitive.String as S
 
 -- | Collection of elements that can indexed by int
 class IndexedCollection c where

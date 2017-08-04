@@ -111,14 +111,7 @@ library
                      Foundation.UUID
                      Foundation.System.Entropy
                      Foundation.System.Bindings
-  other-modules:     Foundation.String.UTF8
-                     Foundation.String.UTF8.BA
-                     Foundation.String.UTF8.Addr
-                     Foundation.String.Encoding.Encoding
-                     Foundation.String.Encoding.UTF16
-                     Foundation.String.Encoding.UTF32
-                     Foundation.String.Encoding.ASCII7
-                     Foundation.String.Encoding.ISO_8859_1
+  other-modules:     
                      Foundation.Tuple
                      Foundation.Hashing.FNV
                      Foundation.Hashing.SipHash
@@ -193,6 +186,14 @@ library
                      Foundation.Primitive.UTF8.BA
                      Foundation.Primitive.UTF8.Addr
                      Foundation.Primitive.UTF8.Types
+                     Foundation.Primitive.String
+                     Foundation.Primitive.String.BA
+                     Foundation.Primitive.String.Addr
+                     Foundation.Primitive.String.Encoding.Encoding
+                     Foundation.Primitive.String.Encoding.UTF16
+                     Foundation.Primitive.String.Encoding.UTF32
+                     Foundation.Primitive.String.Encoding.ASCII7
+                     Foundation.Primitive.String.Encoding.ISO_8859_1
                      Foundation.Primitive.UArray.Base
                      Foundation.Primitive.UArray.BA
                      Foundation.Primitive.UArray.Addr
