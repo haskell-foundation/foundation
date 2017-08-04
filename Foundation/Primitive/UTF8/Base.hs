@@ -24,6 +24,7 @@ import           Foundation.Numerical
 import           Foundation.Class.Bifunctor
 import           Foundation.Primitive.NormalForm
 import           Foundation.Primitive.Types.OffsetSize
+import           Foundation.Primitive.Types
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.FinalPtr
 import           Foundation.Primitive.UTF8.Helper
@@ -36,7 +37,6 @@ import qualified Foundation.Array.Unboxed           as C
 import           Foundation.Array.Unboxed.ByteArray (MutableByteArray)
 import qualified Foundation.Array.Unboxed.Mutable   as MVec
 import           Foundation.Primitive.UArray.Base   as Vec (offset, pureST, onBackend)
-import           Foundation.String.ModifiedUTF8     (fromModified)
 import           GHC.CString                        (unpackCString#, unpackCStringUtf8#)
 
 import           Data.Data
@@ -92,14 +92,41 @@ sToList s = loop 0
         | otherwise        =
             let !(Step c idx') = next s idx in c : loop idx'
 
-{-# RULES
-"String sFromList" forall s .
-  sFromList (unpackCString# s) = String $ fromModified s
-  #-}
-{-# RULES
-"String sFromList" forall s .
-  sFromList (unpackCStringUtf8# s) = String $ fromModified s
-  #-}
+{-# RULES "String sFromList" forall s .  sFromList (unpackCString# s) = fromModified s #-}
+{-# RULES "String sFromList" forall s .  sFromList (unpackCStringUtf8# s) = fromModified s #-}
+
+-- | assuming the given Addr# is a valid modified UTF-8 sequence of bytes
+--
+-- We only modify the given Unicode Null-character (0xC080) into a null bytes
+--
+-- FIXME: need to evaluate the kind of modified UTF8 GHC is actually expecting
+-- it is plausible they only handle the Null Bytes, which this function actually
+-- does.
+fromModified :: Addr# -> String
+fromModified addr = countAndCopy 0 0
+  where
+    countAndCopy :: CountOf Word8 -> Offset Word8 -> String
+    countAndCopy count ofs =
+        case primAddrIndex addr ofs of
+            0x00 -> runST $ do
+                        ((), mb) <- MVec.newNative count (copy count)
+                        String <$> Vec.unsafeFreeze mb
+            0xC0 -> case primAddrIndex addr (ofs+1) of
+                        0x80 -> countAndCopy (count+1) (ofs+2)
+                        _    -> countAndCopy (count+2) (ofs+2)
+            _    -> countAndCopy (count+1) (ofs+1)
+
+    copy :: CountOf Word8 -> MutableByteArray# st -> ST st ()
+    copy count mba = loop 0 0
+      where loop o i
+                | o .==# count = pure ()
+                | otherwise    =
+                    case primAddrIndex addr i of
+                        0xC0 -> case primAddrIndex addr (i+1) of
+                                    0x80 -> primMbaUWrite mba o 0x00 >> loop (o+1) (i+2)
+                                    b2   -> primMbaUWrite mba o 0xC0 >> primMbaUWrite mba (o+1) b2 >> loop (o+2) (i+2)
+                        b1   -> primMbaUWrite mba o b1 >> loop (o+1) (i+1)
+
 
 -- | Create a new String from a list of characters
 --
