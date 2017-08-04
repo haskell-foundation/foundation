@@ -25,7 +25,7 @@ import           Foundation.Internal.Base
 import           Foundation.Primitive.Types.Char7
 import           Foundation.Primitive.UArray.Base
 import qualified Foundation.Primitive.Types.Char7 as Char7
-import qualified Foundation.Array.Unboxed as A (all, unsafeRecast)
+import qualified Foundation.Primitive.UArray as A (all, unsafeRecast)
 
 -- | Opaque packed array of characters in the ASCII encoding
 newtype AsciiString = AsciiString { toBytes :: UArray Char7 }

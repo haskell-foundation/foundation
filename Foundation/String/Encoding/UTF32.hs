@@ -18,8 +18,8 @@ import GHC.Prim
 import GHC.Word
 import GHC.Types
 import Foundation.Numerical
-import Foundation.Array.Unboxed
-import Foundation.Array.Unboxed.Mutable (MUArray)
+import Foundation.Primitive.UArray
+import Foundation.Primitive.UArray.Mutable (MUArray)
 import Foundation.Primitive.MutableBuilder
 
 import Foundation.String.Encoding.Encoding

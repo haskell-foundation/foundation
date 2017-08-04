@@ -25,7 +25,7 @@ module Foundation.Array
 
 import           Foundation.Primitive.Exception
 import           Foundation.Primitive.BoxedArray
-import           Foundation.Array.Unboxed
-import           Foundation.Array.Unboxed.Mutable
+import           Foundation.Primitive.UArray
+import           Foundation.Primitive.UArray.Mutable
 import           Foundation.Array.Bitmap
 import           Foundation.Array.Chunked.Unboxed

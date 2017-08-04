@@ -19,9 +19,9 @@ import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
 import           Foundation.Primitive.MutableBuilder
 import           Foundation.Numerical
-import           Foundation.Array.Unboxed (UArray)
-import           Foundation.Array.Unboxed.Mutable (MUArray)
-import qualified Foundation.Array.Unboxed as Vec
+import           Foundation.Primitive.UArray (UArray)
+import           Foundation.Primitive.UArray.Mutable (MUArray)
+import qualified Foundation.Primitive.UArray as Vec
 import           Foundation.Monad.Exception
 
 class Encoding encoding where

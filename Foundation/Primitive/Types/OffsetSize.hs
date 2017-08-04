@@ -62,7 +62,7 @@ import GHC.IntWord64
 #endif
 
 -- $setup
--- >>> import Foundation.Array.Unboxed
+-- >>> import Foundation.Primitive.UArray
 
 -- | File size in bytes
 newtype FileSize = FileSize Word64

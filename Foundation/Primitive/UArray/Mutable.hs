@@ -1,5 +1,5 @@
 -- |
--- Module      : Foundation.Array.Unboxed.Mutable -- License     : BSD-style
+-- Module      : Foundation.Primitive.UArray.Mutable -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
 -- Portability : portable
@@ -12,7 +12,7 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Foundation.Array.Unboxed.Mutable
+module Foundation.Primitive.UArray.Mutable
     ( MUArray(..)
     -- * Property queries
     , sizeInMutableBytesOfContent

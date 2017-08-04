@@ -1,5 +1,5 @@
 -- |
--- Module      : Foundation.Array.Unboxed
+-- Module      : Foundation.Primitive.UArray
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
@@ -13,7 +13,7 @@
 {-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE Rank2Types #-}
-module Foundation.Array.Unboxed
+module Foundation.Primitive.UArray
     ( UArray(..)
     , PrimType(..)
     -- * methods
@@ -121,7 +121,7 @@ import           Foundation.Primitive.Utils
 import           Foundation.Primitive.Exception
 import           Foundation.Primitive.UArray.Base
 import           Foundation.Primitive.Block (Block(..), MutableBlock(..))
-import           Foundation.Array.Unboxed.Mutable hiding (sub, copyToPtr)
+import           Foundation.Primitive.UArray.Mutable hiding (sub, copyToPtr)
 import           Foundation.Numerical
 import           Foundation.Primitive.MutableBuilder
 import           Foundation.Primitive.Bindings.Memory (sysHsMemFindByteBa, sysHsMemFindByteAddr)
@@ -691,7 +691,7 @@ reverse a
 -- Throws an error in case `needle` is empty.
 indices :: PrimType ty => UArray ty -> UArray ty -> [Offset ty]
 indices needle hy
-  | needleLen <= 0 = error "Foundation.Array.Unboxed.indices: needle is empty."
+  | needleLen <= 0 = error "Foundation.Primitive.UArray.indices: needle is empty."
   | otherwise = case haystackLen < needleLen of
                   True  -> []
                   False -> go (Offset 0) []
@@ -714,7 +714,7 @@ indices needle hy
 replace :: PrimType ty => UArray ty -> UArray ty -> UArray ty -> UArray ty
 replace (needle :: UArray ty) replacement haystack = runST $ do
     case null needle of
-      True -> error "Foundation.Array.Unboxed.replace: empty needle"
+      True -> error "Foundation.Primitive.UArray.replace: empty needle"
       False -> do
         let insertionPoints = indices needle haystack
         let !occs           = List.length insertionPoints

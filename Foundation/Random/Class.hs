@@ -5,7 +5,7 @@ module Foundation.Random.Class
 import           Data.Proxy
 import           Foundation.Primitive.Imports
 import           Foundation.System.Entropy
-import qualified Foundation.Array.Unboxed as A
+import qualified Foundation.Primitive.UArray as A
 
 -- | A monad constraint that allows to generate random bytes
 class (Functor m, Applicative m, Monad m) => MonadRandom m where

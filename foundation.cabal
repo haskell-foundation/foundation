@@ -197,6 +197,8 @@ library
                      Foundation.Primitive.UArray.Base
                      Foundation.Primitive.UArray.BA
                      Foundation.Primitive.UArray.Addr
+                     Foundation.Primitive.UArray.Mutable
+                     Foundation.Primitive.UArray
                      Foundation.Primitive.Runtime
                      Foundation.Primitive.Imports
                      Foundation.Monad.MonadIO
@@ -209,8 +211,6 @@ library
                      Foundation.Random.ChaChaDRG
                      Foundation.Random.XorShift
                      Foundation.Array.Chunked.Unboxed
-                     Foundation.Array.Unboxed
-                     Foundation.Array.Unboxed.Mutable
                      Foundation.Array.Bitmap
                      Foundation.Foreign.Alloc
                      Foundation.Foreign.MemoryMap

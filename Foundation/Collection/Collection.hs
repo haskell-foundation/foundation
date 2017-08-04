@@ -40,7 +40,7 @@ import           Foundation.Collection.Element
 import           Foundation.Primitive.NonEmpty
 import qualified Data.List
 import qualified Foundation.Primitive.Block as BLK
-import qualified Foundation.Array.Unboxed as UV
+import qualified Foundation.Primitive.UArray as UV
 import qualified Foundation.Primitive.BoxedArray as BA
 import qualified Foundation.String.UTF8 as S
 

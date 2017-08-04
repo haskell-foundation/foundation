@@ -24,7 +24,7 @@ import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Types
 import           Foundation.Primitive.IntegralConv
 import           Foundation.Hashing.Hasher
-import qualified Foundation.Array.Unboxed as A
+import qualified Foundation.Primitive.UArray as A
 import           Foundation.Array
 import           Foundation.Numerical
 import           Foundation.Bits

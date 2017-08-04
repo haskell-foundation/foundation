@@ -11,7 +11,7 @@ module Foundation.Collection.Element
 
 import Foundation.Internal.Base
 import Foundation.Primitive.Block (Block)
-import Foundation.Array.Unboxed (UArray)
+import Foundation.Primitive.UArray (UArray)
 import Foundation.Primitive.BoxedArray (Array)
 import Foundation.String.UTF8 (String)
 import Foundation.Primitive.Types.AsciiString (AsciiString)

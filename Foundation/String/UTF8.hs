@@ -92,10 +92,10 @@ module Foundation.String.UTF8
     , toBase64OpenBSD
     ) where
 
-import           Foundation.Array.Unboxed           (UArray)
-import qualified Foundation.Array.Unboxed           as Vec
-import qualified Foundation.Array.Unboxed           as C
-import qualified Foundation.Array.Unboxed.Mutable   as MVec
+import           Foundation.Primitive.UArray           (UArray)
+import qualified Foundation.Primitive.UArray           as Vec
+import qualified Foundation.Primitive.UArray           as C
+import qualified Foundation.Primitive.UArray.Mutable   as MVec
 import           Foundation.Internal.Bifunctor
 import           Foundation.Internal.Base
 import           Foundation.Internal.Natural

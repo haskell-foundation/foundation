@@ -16,8 +16,8 @@ module Foundation.Timing
 import           Foundation.Primitive.Imports
 import           Foundation.Primitive.IntegralConv
 import           Foundation.Primitive.Monad
--- import           Foundation.Array.Unboxed hiding (unsafeFreeze)
-import           Foundation.Array.Unboxed.Mutable (MUArray)
+-- import           Foundation.Primitive.UArray hiding (unsafeFreeze)
+import           Foundation.Primitive.UArray.Mutable (MUArray)
 import           Foundation.Collection
 import           Foundation.Time.Types
 import           Foundation.Numerical

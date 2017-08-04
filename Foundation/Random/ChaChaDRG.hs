@@ -9,8 +9,8 @@ import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
 import           Foundation.Random.Class
 import           Foundation.Random.DRG
-import qualified Foundation.Array.Unboxed as A
-import qualified Foundation.Array.Unboxed.Mutable as A
+import qualified Foundation.Primitive.UArray as A
+import qualified Foundation.Primitive.UArray.Mutable as A
 import           GHC.ST
 import qualified Foreign.Marshal.Alloc (alloca)
 

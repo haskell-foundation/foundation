@@ -26,7 +26,7 @@ import           Foundation.Collection.Element
 import           Foundation.Collection.Collection
 import qualified Foundation.Collection.List as ListExtra
 import qualified Data.List
-import qualified Foundation.Array.Unboxed as UV
+import qualified Foundation.Primitive.UArray as UV
 import qualified Foundation.Primitive.Block as BLK
 import qualified Foundation.Primitive.BoxedArray as BA
 import qualified Foundation.String.UTF8 as S

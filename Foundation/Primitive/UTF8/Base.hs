@@ -31,10 +31,10 @@ import           Foundation.Primitive.UTF8.Helper
 import           Foundation.Primitive.UTF8.Types
 import qualified Foundation.Primitive.UTF8.BA       as PrimBA
 import qualified Foundation.Primitive.UTF8.Addr     as PrimAddr
-import           Foundation.Array.Unboxed           (UArray)
-import qualified Foundation.Array.Unboxed           as Vec
-import qualified Foundation.Array.Unboxed           as C
-import qualified Foundation.Array.Unboxed.Mutable   as MVec
+import           Foundation.Primitive.UArray           (UArray)
+import qualified Foundation.Primitive.UArray           as Vec
+import qualified Foundation.Primitive.UArray           as C
+import qualified Foundation.Primitive.UArray.Mutable   as MVec
 import           Foundation.Primitive.UArray.Base   as Vec (offset, pureST, onBackend)
 import           GHC.CString                        (unpackCString#, unpackCStringUtf8#)
 

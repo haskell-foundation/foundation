@@ -24,5 +24,5 @@ module Foundation.Array.Internal
     , withMutablePtr
     ) where
 
-import           Foundation.Array.Unboxed
-import           Foundation.Array.Unboxed.Mutable hiding (copyToPtr)
+import           Foundation.Primitive.UArray
+import           Foundation.Primitive.UArray.Mutable hiding (copyToPtr)

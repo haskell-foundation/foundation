@@ -17,7 +17,7 @@ module Foundation.Collection.Zippable
     , Zippable(..)
     ) where
 
-import qualified Foundation.Array.Unboxed as UV
+import qualified Foundation.Primitive.UArray as UV
 import qualified Foundation.Primitive.BoxedArray as BA
 import qualified Foundation.String.UTF8 as S
 import           Foundation.Collection.Element

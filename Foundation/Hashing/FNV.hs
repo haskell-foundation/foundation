@@ -22,7 +22,7 @@ module Foundation.Hashing.FNV
     ) where
 
 import           Foundation.Internal.Base
-import qualified Foundation.Array.Unboxed as A
+import qualified Foundation.Primitive.UArray as A
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Types
 import           Foundation.Primitive.IntegralConv

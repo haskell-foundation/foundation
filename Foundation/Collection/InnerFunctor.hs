@@ -6,7 +6,7 @@ module Foundation.Collection.InnerFunctor
 import Foundation.Internal.Base
 import Foundation.Collection.Element
 import qualified Foundation.String.UTF8 as S
-import qualified Foundation.Array.Unboxed as UV
+import qualified Foundation.Primitive.UArray as UV
 import           Foundation.Primitive.BoxedArray (Array)
 
 -- | A monomorphic functor that maps the inner values to values of the same type

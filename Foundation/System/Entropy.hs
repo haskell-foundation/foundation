@@ -13,8 +13,8 @@ module Foundation.System.Entropy
 
 import           Foundation.Internal.Base
 import           Foundation.Primitive.Types.OffsetSize
-import qualified Foundation.Array.Unboxed.Mutable as A
-import qualified Foundation.Array.Unboxed as A
+import qualified Foundation.Primitive.UArray.Mutable as A
+import qualified Foundation.Primitive.UArray as A
 import           Control.Exception
 import           Foreign.Ptr
 import           Foundation.Numerical

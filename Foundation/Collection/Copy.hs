@@ -5,7 +5,7 @@ module Foundation.Collection.Copy
 import           GHC.ST (runST)
 import           Foundation.Internal.Base ((>>=))
 import qualified Foundation.Primitive.Block as BLK
-import qualified Foundation.Array.Unboxed as UA
+import qualified Foundation.Primitive.UArray as UA
 import qualified Foundation.Primitive.BoxedArray as BA
 import qualified Foundation.String.UTF8 as S
 

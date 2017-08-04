@@ -13,7 +13,7 @@ module Foundation.Foreign
     ) where
 
 import           Foundation.Primitive.FinalPtr
-import qualified Foundation.Array.Unboxed as V
-import qualified Foundation.Array.Unboxed.Mutable as V
+import qualified Foundation.Primitive.UArray as V
+import qualified Foundation.Primitive.UArray.Mutable as V
 
 import           Foreign.C.Types

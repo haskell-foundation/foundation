@@ -7,7 +7,7 @@ module Foundation.Conduit.Textual
     ) where
 
 import           Foundation.Primitive.Imports hiding (throw)
-import           Foundation.Array.Unboxed (UArray)
+import           Foundation.Primitive.UArray (UArray)
 import           Foundation.String (String)
 import           Foundation.Collection
 import qualified Foundation.String.UTF8 as S

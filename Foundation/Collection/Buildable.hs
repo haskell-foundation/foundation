@@ -15,8 +15,8 @@ module Foundation.Collection.Buildable
     , build_
     ) where
 
-import           Foundation.Array.Unboxed
-import           Foundation.Array.Unboxed.Mutable
+import           Foundation.Primitive.UArray
+import           Foundation.Primitive.UArray.Mutable
 import qualified Foundation.Primitive.BoxedArray as BA
 import qualified Foundation.String.UTF8 as S
 import           Foundation.Collection.Element
@@ -27,7 +27,7 @@ import           Foundation.Internal.MonadTrans
 
 -- $setup
 -- >>> import Control.Monad.ST
--- >>> import Foundation.Array.Unboxed
+-- >>> import Foundation.Primitive.UArray
 -- >>> import Foundation.Internal.Base
 -- >>> import Foundation.Primitive.OffsetSize
 

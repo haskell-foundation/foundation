@@ -24,7 +24,7 @@ import           Foundation.Primitive
 import           Foundation.Primitive.Base16
 import           Foundation.Primitive.IntegralConv
 import           Foundation.Primitive.Types.OffsetSize
-import qualified Foundation.Array.Unboxed as UA
+import qualified Foundation.Primitive.UArray as UA
 import           Foundation.Random (MonadRandom, getRandomBytes)
 
 data UUID = UUID {-# UNPACK #-} !Word64 {-# UNPACK #-} !Word64

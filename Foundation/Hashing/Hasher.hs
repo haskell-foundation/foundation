@@ -6,7 +6,7 @@ module Foundation.Hashing.Hasher
 import           Foundation.Internal.Base
 import           Foundation.Primitive.IntegralConv
 import           Foundation.Array (UArray)
-import qualified Foundation.Array.Unboxed as A
+import qualified Foundation.Primitive.UArray as A
 import           Data.Bits
 
 -- | Incremental Hashing state. Represent an hashing algorithm

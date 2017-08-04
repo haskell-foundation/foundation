@@ -28,7 +28,7 @@ import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Imports
 import           Foundation.VFS (FilePath)
 import           Foundation.Primitive.FinalPtr
-import qualified Foundation.Array.Unboxed as V
+import qualified Foundation.Primitive.UArray as V
 import qualified Foundation.Foreign.MemoryMap as I
 import qualified Prelude
 

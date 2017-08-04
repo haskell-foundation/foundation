@@ -20,8 +20,8 @@ import GHC.Types
 import Foundation.Numerical
 import Data.Bits
 import qualified Prelude
-import Foundation.Array.Unboxed
-import Foundation.Array.Unboxed.Mutable (MUArray)
+import Foundation.Primitive.UArray
+import Foundation.Primitive.UArray.Mutable (MUArray)
 import Foundation.Primitive.MutableBuilder
 
 import Foundation.String.Encoding.Encoding
