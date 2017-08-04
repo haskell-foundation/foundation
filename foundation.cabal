@@ -153,11 +153,9 @@ library
                      Foundation.Internal.Base
                      Foundation.Internal.ByteSwap
                      Foundation.Internal.CallStack
-                     Foundation.Internal.Environment
                      Foundation.Internal.Primitive
                      Foundation.Internal.IsList
                      Foundation.Internal.Identity
-                     Foundation.Internal.Proxy
                      Foundation.Internal.PrimTypes
                      Foundation.Internal.MonadTrans
                      Foundation.Internal.Natural
@@ -175,6 +173,7 @@ library
                      Foundation.Primitive.Block.Base
                      Foundation.Primitive.Block.Mutable
                      Foundation.Primitive.Endianness
+                     Foundation.Primitive.Environment
                      Foundation.Primitive.Exception
                      Foundation.Primitive.Types
                      Foundation.Primitive.Types.OffsetSize

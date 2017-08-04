@@ -12,7 +12,7 @@ module Foundation.Convertible
     ) where
 
 import Foundation.Internal.Base
-import Foundation.Internal.Proxy
+import Data.Proxy
 
 -- | Class of things that can be converted from a to b
 class Convertible a b where

@@ -32,7 +32,7 @@ import           GHC.ST
 import           GHC.IO
 import qualified Data.List
 import           Foundation.Internal.Base
-import           Foundation.Internal.Proxy
+import           Data.Proxy
 import           Foundation.Internal.Primitive
 import           Foundation.System.Bindings.Hs (sysHsMemcmpBaBa)
 import           Foundation.Primitive.Types.OffsetSize

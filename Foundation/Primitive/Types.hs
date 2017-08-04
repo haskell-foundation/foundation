@@ -40,7 +40,7 @@ import           GHC.Types
 import           GHC.Word
 import           Data.Bits
 import           Foreign.C.Types
-import           Foundation.Internal.Proxy
+import           Data.Proxy
 import           Foundation.Internal.Base
 import           Foundation.Numerical.Subtractive
 import           Foundation.Primitive.Types.OffsetSize

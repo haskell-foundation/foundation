@@ -21,7 +21,7 @@ module Foundation.Internal.Typeable
     ) where
 
 #if !MIN_VERSION_base(4,7,0)
-import Foundation.Internal.Proxy (Proxy(..))
+import Data.Proxy (Proxy(..))
 import qualified Prelude (undefined)
 #endif
 import Data.Typeable

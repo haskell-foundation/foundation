@@ -55,7 +55,7 @@ import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
 import           Foundation.Internal.Base
 import qualified Foundation.Primitive.Runtime as Runtime
-import           Foundation.Internal.Proxy
+import           Data.Proxy
 import qualified Foundation.Boot.List as List
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.FinalPtr

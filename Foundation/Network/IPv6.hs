@@ -31,7 +31,7 @@ import Foundation.Class.Storable
 import Foundation.Hashing.Hashable
 import Foundation.Numerical.Additive (scale)
 import Foundation.Internal.Base
-import Foundation.Internal.Proxy
+import Data.Proxy
 import Foundation.Primitive
 import Foundation.Primitive.Types.OffsetSize
 import Foundation.Numerical

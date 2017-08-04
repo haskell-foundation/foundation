@@ -4,7 +4,7 @@ module Foundation.Numerical.Floating
     ) where
 
 import           Foundation.Internal.Base
-import           Foundation.Internal.Proxy
+import           Data.Proxy
 import qualified Prelude
 
 -- | IEEE754 Floating Point

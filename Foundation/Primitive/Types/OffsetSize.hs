@@ -48,7 +48,7 @@ import Foreign.C.Types
 import System.Posix.Types (CSsize (..))
 import Data.Bits
 import Foundation.Internal.Base
-import Foundation.Internal.Proxy
+import Data.Proxy
 import Foundation.Numerical.Number
 import Foundation.Numerical.Additive
 import Foundation.Numerical.Subtractive

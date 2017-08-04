@@ -110,7 +110,7 @@ import           GHC.ForeignPtr (ForeignPtr)
 import           Foreign.Marshal.Utils (copyBytes)
 import           Foundation.Internal.Base
 import           Foundation.Internal.Primitive
-import           Foundation.Internal.Proxy
+import           Data.Proxy
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Internal.MonadTrans
 import           Foundation.Collection.NonEmpty

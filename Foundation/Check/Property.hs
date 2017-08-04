@@ -17,7 +17,7 @@ module Foundation.Check.Property
     ) where
 
 import Foundation.Primitive.Imports hiding (Typeable)
-import Foundation.Internal.Proxy (Proxy(..))
+import Data.Proxy (Proxy(..))
 import Foundation.Internal.Typeable
 import Foundation.Check.Gen
 import Foundation.Check.Arbitrary

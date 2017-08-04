@@ -8,9 +8,10 @@ module Foundation.Primitive.Runtime
     where
 
 import           Foundation.Internal.Base
-import           Foundation.Internal.Environment
 import           Foundation.Primitive.Types.OffsetSize
-import           System.IO.Unsafe          (unsafePerformIO)
+import           System.Environment
+import           System.IO.Unsafe (unsafePerformIO)
+import           Text.Read        (readMaybe)
 
 -- | Defines the maximum size in bytes of unpinned arrays.
 --

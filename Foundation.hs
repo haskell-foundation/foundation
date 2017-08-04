@@ -135,8 +135,8 @@ module Foundation
     , Control.Exception.SomeException
     , Control.Exception.IOException
       -- ** Proxy
-    , Foundation.Internal.Proxy.Proxy(..)
-    , Foundation.Internal.Proxy.asProxyTypeOf
+    , Data.Proxy.Proxy(..)
+    , Data.Proxy.asProxyTypeOf
       -- ** Partial
     , Foundation.Partial.Partial
     , Foundation.Partial.partial
@@ -168,7 +168,7 @@ import qualified Foundation.IO.Terminal
 import           GHC.Exts (IsString(..))
 import           Foundation.Internal.IsList
 import qualified Foundation.Internal.Base (ifThenElse)
-import qualified Foundation.Internal.Proxy
+import qualified Data.Proxy
 import qualified Foundation.Primitive.Error
 
 import qualified Foundation.Numerical
@@ -179,6 +179,7 @@ import qualified Foundation.Class.Bifunctor
 import           Foundation.Primitive.Types.OffsetSize (CountOf(..), Offset(..))
 import qualified Foundation.Primitive
 import           Foundation.Primitive.Show
+import           Foundation.Primitive.Environment (getArgs)
 import           Foundation.Internal.NumLiteral
 import           Foundation.Internal.Natural
 
@@ -187,18 +188,10 @@ import qualified Data.Either
 import qualified Data.Function
 import qualified Data.Tuple
 
-import qualified System.Environment
-import qualified Data.List
-
-
 default (Prelude.Integer, Prelude.Double)
 
 -- | Alias to Prelude String ([Char]) for compatibility purpose
 type LString = Prelude.String
-
--- | Returns a list of the program's command line arguments (not including the program name).
-getArgs :: Prelude.IO [String]
-getArgs = (Data.List.map fromList <$> System.Environment.getArgs)
 
 fromCount :: CountOf ty -> Prelude.Int
 fromCount (CountOf n) = n

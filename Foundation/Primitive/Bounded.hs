@@ -25,7 +25,7 @@ import           GHC.TypeLits
 import           Data.Word
 import           Foundation.Internal.Base
 import           Foundation.Internal.Natural
-import           Foundation.Internal.Proxy
+import           Data.Proxy
 import           Foundation.Primitive.Nat
 import qualified Prelude
 

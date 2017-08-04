@@ -2,7 +2,7 @@ module Foundation.Random.Class
     ( MonadRandom(..)
     ) where
 
-import           Foundation.Internal.Proxy
+import           Data.Proxy
 import           Foundation.Primitive.Imports
 import           Foundation.System.Entropy
 import qualified Foundation.Array.Unboxed as A
@@ -22,4 +22,3 @@ instance MonadRandom IO where
                   <$> getRandomBytes (A.primSizeInBytes (Proxy :: Proxy Word64))
     getRandomF64 = flip A.index 0 . A.unsafeRecast
                   <$> getRandomBytes (A.primSizeInBytes (Proxy :: Proxy Word64))
-

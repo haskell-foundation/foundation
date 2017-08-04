@@ -43,7 +43,7 @@ import           GHC.Types
 import           GHC.Ptr
 import           Foundation.Internal.Base
 import           Foundation.Internal.Primitive
-import           Foundation.Internal.Proxy
+import           Data.Proxy
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types

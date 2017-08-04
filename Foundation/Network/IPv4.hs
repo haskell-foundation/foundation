@@ -25,7 +25,7 @@ import Prelude (fromIntegral,read)
 import Foundation.Class.Storable
 import Foundation.Hashing.Hashable
 import Foundation.Internal.Base
-import Foundation.Internal.Proxy
+import Data.Proxy
 import Foundation.String (String)
 import Foundation.Primitive
 import Foundation.Bits

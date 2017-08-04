@@ -73,7 +73,7 @@ import           GHC.ST
 import           Foundation.Numerical
 import           Foundation.Collection.NonEmpty
 import           Foundation.Internal.Base
-import           Foundation.Internal.Proxy
+import           Data.Proxy
 import           Foundation.Internal.MonadTrans
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Types
