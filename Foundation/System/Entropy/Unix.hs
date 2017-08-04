@@ -21,7 +21,7 @@ import Control.Exception as E
 import Control.Monad
 import System.IO
 import System.IO.Unsafe (unsafePerformIO)
-import Foundation.Primitive.Compat.Base
+import Basement.Compat.Base
 import Prelude (fromIntegral)
 import Foundation.System.Entropy.Common
 import Foundation.Numerical

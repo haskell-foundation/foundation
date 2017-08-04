@@ -21,11 +21,11 @@ module Foundation.Hashing.FNV
     , FNV1a_64
     ) where
 
-import           Foundation.Primitive.Compat.Base
-import qualified Foundation.Primitive.UArray as A
-import           Foundation.Primitive.Types.OffsetSize
-import           Foundation.Primitive.Types
-import           Foundation.Primitive.IntegralConv
+import           Basement.Compat.Base
+import qualified Basement.UArray as A
+import           Basement.Types.OffsetSize
+import           Basement.Types
+import           Basement.IntegralConv
 import           Foundation.Numerical
 import           Foundation.Hashing.Hasher
 import           Data.Bits

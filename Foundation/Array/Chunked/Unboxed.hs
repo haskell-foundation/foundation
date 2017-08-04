@@ -18,17 +18,17 @@ module Foundation.Array.Chunked.Unboxed
 
 import           Data.Typeable
 import           Control.Arrow ((***))
-import           Foundation.Primitive.BoxedArray (Array)
-import qualified Foundation.Primitive.BoxedArray as A
-import           Foundation.Primitive.Exception
-import           Foundation.Primitive.UArray (UArray)
-import qualified Foundation.Primitive.UArray as U
-import           Foundation.Primitive.Compat.Bifunctor
+import           Basement.BoxedArray (Array)
+import qualified Basement.BoxedArray as A
+import           Basement.Exception
+import           Basement.UArray (UArray)
+import qualified Basement.UArray as U
+import           Basement.Compat.Bifunctor
 import qualified Foundation.Collection as C
-import           Foundation.Primitive.Compat.Base
-import           Foundation.Primitive.Types.OffsetSize
+import           Basement.Compat.Base
+import           Basement.Types.OffsetSize
 import           Foundation.Numerical
-import           Foundation.Primitive.Types
+import           Basement.Types
 import           Foundation.Primitive
 import           GHC.ST
 

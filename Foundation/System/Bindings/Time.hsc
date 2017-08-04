@@ -5,8 +5,8 @@
 
 module Foundation.System.Bindings.Time where
 
-import Foundation.Primitive.Compat.Base
-import Foundation.Primitive.Types.OffsetSize
+import Basement.Compat.Base
+import Basement.Types.OffsetSize
 import Foreign.C.Types
 
 #include <time.h>

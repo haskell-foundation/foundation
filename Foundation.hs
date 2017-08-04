@@ -27,7 +27,7 @@ module Foundation
     , Prelude.either
     , Prelude.flip
     , Prelude.const
-    , Foundation.Primitive.Error.error
+    , Basement.Error.error
     , Foundation.IO.Terminal.putStr
     , Foundation.IO.Terminal.putStrLn
     --, print
@@ -53,7 +53,7 @@ module Foundation
     , Integral (..)
     , Fractional (..)
     , HasNegation (..)
-    , Foundation.Primitive.Compat.Bifunctor.Bifunctor (..)
+    , Basement.Compat.Bifunctor.Bifunctor (..)
     , Control.Applicative.Applicative (..)
     , Prelude.Monad (..)
     , (Control.Monad.=<<)
@@ -142,7 +142,7 @@ module Foundation
     , Foundation.Partial.partial
     , Foundation.Partial.PartialError
     , Foundation.Partial.fromPartial
-    , Foundation.Primitive.Compat.Base.ifThenElse
+    , Basement.Compat.Base.ifThenElse
       -- ** Old Prelude Strings as [Char] with bridge back and forth
     , LString
     ) where
@@ -166,22 +166,22 @@ import           Foundation.Collection (Collection(..), and, or, Sequential(..)
 import qualified Foundation.IO.Terminal
 
 import           GHC.Exts (IsString(..))
-import           Foundation.Primitive.Compat.IsList
-import qualified Foundation.Primitive.Compat.Base (ifThenElse)
+import           Basement.Compat.IsList
+import qualified Basement.Compat.Base (ifThenElse)
 import qualified Data.Proxy
-import qualified Foundation.Primitive.Error
+import qualified Basement.Error
 
 import qualified Foundation.Numerical
 import qualified Foundation.Partial
 import           Foundation.Tuple
 
-import qualified Foundation.Primitive.Compat.Bifunctor
-import           Foundation.Primitive.Types.OffsetSize (CountOf(..), Offset(..))
+import qualified Basement.Compat.Bifunctor
+import           Basement.Types.OffsetSize (CountOf(..), Offset(..))
 import qualified Foundation.Primitive
-import           Foundation.Primitive.Show
-import           Foundation.Primitive.Environment (getArgs)
-import           Foundation.Primitive.Compat.NumLiteral
-import           Foundation.Primitive.Compat.Natural
+import           Basement.Show
+import           Basement.Environment (getArgs)
+import           Basement.Compat.NumLiteral
+import           Basement.Compat.Natural
 
 import qualified Data.Maybe
 import qualified Data.Either

@@ -3,10 +3,10 @@ module Foundation.Hashing.Hasher
     ( Hasher(..)
     ) where
 
-import           Foundation.Primitive.Compat.Base
-import           Foundation.Primitive.IntegralConv
+import           Basement.Compat.Base
+import           Basement.IntegralConv
 import           Foundation.Array (UArray)
-import qualified Foundation.Primitive.UArray as A
+import qualified Basement.UArray as A
 import           Data.Bits
 
 -- | Incremental Hashing state. Represent an hashing algorithm

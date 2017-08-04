@@ -3,7 +3,7 @@ module Foundation.Numerical.Floating
     ( FloatingPoint(..)
     ) where
 
-import           Foundation.Primitive.Compat.Base
+import           Basement.Compat.Base
 import           Data.Proxy
 import qualified Prelude
 

@@ -5,7 +5,7 @@ module Foundation.Monad.Exception
     , MonadBracket(..)
     ) where
 
-import           Foundation.Primitive.Compat.Base
+import           Basement.Compat.Base
 import qualified Control.Exception as E
 
 -- | Monad that can throw exception

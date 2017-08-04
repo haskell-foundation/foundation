@@ -44,8 +44,8 @@ module Foundation.List.ListN
     ) where
 
 import           Data.Proxy
-import           Foundation.Primitive.Compat.Base
-import           Foundation.Primitive.Nat
+import           Basement.Compat.Base
+import           Basement.Nat
 import           Foundation.Numerical
 import qualified Prelude
 import qualified Control.Monad as M (replicateM)

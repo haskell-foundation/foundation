@@ -29,8 +29,8 @@ import qualified System.Info
 import qualified Data.Version
 import           Data.Data
 import qualified GHC.Conc
-import           Foundation.Primitive.Compat.Base
-import           Foundation.Primitive.Endianness (Endianness(..), endianness)
+import           Basement.Compat.Base
+import           Basement.Endianness (Endianness(..), endianness)
 import           Foundation.String
 
 data OS

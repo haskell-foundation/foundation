@@ -10,8 +10,8 @@ module Foundation.Monad.Base
     , IdentityT
     ) where
 
-import Foundation.Primitive.Compat.Base (Functor(..), Applicative(..), Monad(..))
-import Foundation.Primitive.Monad
+import Basement.Compat.Base (Functor(..), Applicative(..), Monad(..))
+import Basement.Monad
 import Foundation.Monad.MonadIO
 import Foundation.Monad.Exception
 import Foundation.Monad.Transformer

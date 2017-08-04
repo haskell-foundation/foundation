@@ -30,11 +30,11 @@ module Foundation.Numerical
     , FloatingPoint(..)
     ) where
 
-import           Foundation.Primitive.Compat.Base
-import           Foundation.Primitive.Numerical.Number
-import           Foundation.Primitive.Numerical.Additive
-import           Foundation.Primitive.Numerical.Subtractive
-import           Foundation.Primitive.Numerical.Multiplicative
+import           Basement.Compat.Base
+import           Basement.Numerical.Number
+import           Basement.Numerical.Additive
+import           Basement.Numerical.Subtractive
+import           Basement.Numerical.Multiplicative
 import           Foundation.Numerical.Floating
 import qualified Prelude
 

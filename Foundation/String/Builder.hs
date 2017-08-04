@@ -16,10 +16,10 @@ module Foundation.String.Builder
     , toString
     ) where
 
-import           Foundation.Primitive.Compat.Base
---import           Foundation.Primitive.Compat.Semigroup
-import           Foundation.Primitive.String                (String)
-import qualified Foundation.Primitive.String as S
+import           Basement.Compat.Base
+--import           Basement.Compat.Semigroup
+import           Basement.String                (String)
+import qualified Basement.String as S
 
 data Builder = E String | T [Builder]
 

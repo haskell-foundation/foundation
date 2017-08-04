@@ -15,21 +15,21 @@ module Foundation.Collection.Buildable
     , build_
     ) where
 
-import           Foundation.Primitive.UArray
-import           Foundation.Primitive.UArray.Mutable
-import qualified Foundation.Primitive.BoxedArray as BA
-import qualified Foundation.Primitive.String as S
+import           Basement.UArray
+import           Basement.UArray.Mutable
+import qualified Basement.BoxedArray as BA
+import qualified Basement.String as S
 import           Foundation.Collection.Element
-import           Foundation.Primitive.Compat.Base
-import           Foundation.Primitive.Monad
-import           Foundation.Primitive.MutableBuilder
-import           Foundation.Primitive.Compat.MonadTrans
+import           Basement.Compat.Base
+import           Basement.Monad
+import           Basement.MutableBuilder
+import           Basement.Compat.MonadTrans
 
 -- $setup
 -- >>> import Control.Monad.ST
--- >>> import Foundation.Primitive.UArray
--- >>> import Foundation.Primitive.Compat.Base
--- >>> import Foundation.Primitive.OffsetSize
+-- >>> import Basement.UArray
+-- >>> import Basement.Compat.Base
+-- >>> import Basement.OffsetSize
 
 -- | Collections that can be built chunk by chunk.
 --

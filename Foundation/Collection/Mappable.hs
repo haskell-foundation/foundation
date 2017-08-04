@@ -1,5 +1,5 @@
 -- |
--- Module      : Foundation.Primitive.Mappable
+-- Module      : Basement.Mappable
 -- License     : BSD-style
 -- Maintainer  : Nicolas Di Prima <nicolas@primetype.co.uk>
 -- Stability   : experimental
@@ -17,9 +17,9 @@ module Foundation.Collection.Mappable
     , forM_
     ) where
 
-import           Foundation.Primitive.Compat.Base
+import           Basement.Compat.Base
 import qualified Data.Traversable
-import           Foundation.Primitive.BoxedArray (Array)
+import           Basement.BoxedArray (Array)
 
 -- | Functors representing data structures that can be traversed from
 -- left to right.

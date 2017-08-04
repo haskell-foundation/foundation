@@ -143,7 +143,7 @@ Code Organisation
 Every foundation modules start by `Foundation`.
 
 * `Foundation` is the prelude replacement module.
-* `Foundation.Primitive.Compat` contains only compatibilty and re-export from ghc/ghc-prim/base.
+* `Basement.Compat` contains only compatibilty and re-export from ghc/ghc-prim/base.
 * `Foundation.Primitive` is where all the lowlevel magic happens:
   * Important types that underpins many others part
   * Pervasive features

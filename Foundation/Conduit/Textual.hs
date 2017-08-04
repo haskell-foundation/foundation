@@ -6,11 +6,11 @@ module Foundation.Conduit.Textual
     , toBytes
     ) where
 
-import           Foundation.Primitive.Imports hiding (throw)
-import           Foundation.Primitive.UArray (UArray)
+import           Basement.Imports hiding (throw)
+import           Basement.UArray (UArray)
 import           Foundation.String (String)
 import           Foundation.Collection
-import qualified Foundation.Primitive.String as S
+import qualified Basement.String as S
 import           Foundation.Conduit.Internal
 import           Foundation.Monad
 import           Data.Char (isSpace)

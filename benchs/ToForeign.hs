@@ -8,7 +8,7 @@ import Data.ByteString.Internal (toForeignPtr, unsafeCreate, memcpy)
 import qualified Foundation as F
 import Foundation.Array
 import Foundation.Array.Internal (withPtr, fromForeignPtr, copyToPtr)
-import qualified Foundation.Primitive.Block as BLK
+import qualified Basement.Block as BLK
 
 fromByteString :: ByteString -> F.UArray F.Word8
 fromByteString = fromForeignPtr . toForeignPtr

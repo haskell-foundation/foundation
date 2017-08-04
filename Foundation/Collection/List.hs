@@ -16,7 +16,7 @@ module Foundation.Collection.List
 
 import qualified Data.List
 import           Data.Tuple (swap)
-import           Foundation.Primitive.Compat.Base
+import           Basement.Compat.Base
 import           Foundation.Numerical
 
 -- | Simple helper to split a list repeatly when the predicate match

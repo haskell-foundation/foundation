@@ -1,6 +1,7 @@
 resolver: lts-8.21
 packages:
 - '.'
+- basement/
 extra-deps: []
 flags: {}
 extra-package-dbs: []

@@ -15,7 +15,7 @@ module Foundation.IO.Terminal
     , exitSuccess
     ) where
 
-import           Foundation.Primitive.Imports
+import           Basement.Imports
 import qualified Prelude
 import           System.IO (stdin, stdout)
 import           System.Exit

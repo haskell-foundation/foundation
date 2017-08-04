@@ -1,5 +1,5 @@
 -- |
--- Module      : Foundation.Primitive.Foldable
+-- Module      : Basement.Foldable
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
@@ -12,13 +12,13 @@ module Foundation.Collection.Foldable
     , Fold1able(..)
     ) where
 
-import           Foundation.Primitive.Compat.Base
+import           Basement.Compat.Base
 import           Foundation.Collection.Element
-import           Foundation.Primitive.NonEmpty
+import           Basement.NonEmpty
 import qualified Data.List
-import qualified Foundation.Primitive.UArray as UV
-import qualified Foundation.Primitive.Block as BLK
-import qualified Foundation.Primitive.BoxedArray as BA
+import qualified Basement.UArray as UV
+import qualified Basement.Block as BLK
+import qualified Basement.BoxedArray as BA
 
 -- | Give the ability to fold a collection on itself
 class Foldable collection where

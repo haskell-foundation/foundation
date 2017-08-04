@@ -7,4 +7,4 @@ module Foundation.String.Read
     , readFloatingExact
     ) where
 
-import Foundation.Primitive.String
+import Basement.String

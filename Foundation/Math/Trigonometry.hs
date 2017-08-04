@@ -3,7 +3,7 @@ module Foundation.Math.Trigonometry
     ( Trigonometry(..)
     ) where
 
-import           Foundation.Primitive.Compat.Base
+import           Basement.Compat.Base
 import qualified Prelude
 
 -- | Method to support basic trigonometric functions

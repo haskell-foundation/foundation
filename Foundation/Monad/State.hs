@@ -10,8 +10,8 @@ module Foundation.Monad.State
     , runStateT
     ) where
 
-import Foundation.Primitive.Compat.Bifunctor (first)
-import Foundation.Primitive.Compat.Base (($), (.), const)
+import Basement.Compat.Bifunctor (first)
+import Basement.Compat.Base (($), (.), const)
 import Foundation.Monad.Base
 import Control.Monad ((>=>))
 

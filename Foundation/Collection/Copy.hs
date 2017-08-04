@@ -3,11 +3,11 @@ module Foundation.Collection.Copy
     ) where
 
 import           GHC.ST (runST)
-import           Foundation.Primitive.Compat.Base ((>>=))
-import qualified Foundation.Primitive.Block as BLK
-import qualified Foundation.Primitive.UArray as UA
-import qualified Foundation.Primitive.BoxedArray as BA
-import qualified Foundation.Primitive.String as S
+import           Basement.Compat.Base ((>>=))
+import qualified Basement.Block as BLK
+import qualified Basement.UArray as UA
+import qualified Basement.BoxedArray as BA
+import qualified Basement.String as S
 
 class Copy a where
     copy :: a -> a

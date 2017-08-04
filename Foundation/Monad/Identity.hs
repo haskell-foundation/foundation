@@ -8,8 +8,8 @@ module Foundation.Monad.Identity
     , runIdentityT
     ) where
 
-import Foundation.Primitive.Compat.Base hiding (throw)
-import Foundation.Primitive.Monad (MonadFailure(..))
+import Basement.Compat.Base hiding (throw)
+import Basement.Monad (MonadFailure(..))
 import Foundation.Monad.MonadIO
 import Foundation.Monad.Exception
 import Foundation.Monad.Transformer

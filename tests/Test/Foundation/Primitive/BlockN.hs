@@ -4,15 +4,15 @@
 {-# LANGUAGE ScopedTypeVariables       #-}
 {-# LANGUAGE TypeOperators             #-}
 
-module Test.Foundation.Primitive.BlockN
+module Test.Basement.BlockN
     ( testBlockN
     ) where
 
 import           Data.Proxy (Proxy(..))
 import           Foundation hiding (singleton, replicate, cons, uncons, elem)
-import           Foundation.Primitive.Nat
-import qualified Foundation.Primitive.Block as B
-import           Foundation.Primitive.BlockN
+import           Basement.Nat
+import qualified Basement.Block as B
+import           Basement.BlockN
 import           Foundation.Check
 
 testBlockN = Group "BlockN"

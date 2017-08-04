@@ -13,11 +13,11 @@ module Foundation.Timing
     , measure
     ) where
 
-import           Foundation.Primitive.Imports
-import           Foundation.Primitive.IntegralConv
-import           Foundation.Primitive.Monad
--- import           Foundation.Primitive.UArray hiding (unsafeFreeze)
-import           Foundation.Primitive.UArray.Mutable (MUArray)
+import           Basement.Imports
+import           Basement.IntegralConv
+import           Basement.Monad
+-- import           Basement.UArray hiding (unsafeFreeze)
+import           Basement.UArray.Mutable (MUArray)
 import           Foundation.Collection
 import           Foundation.Time.Types
 import           Foundation.Numerical

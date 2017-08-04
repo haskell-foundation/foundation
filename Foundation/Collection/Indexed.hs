@@ -10,15 +10,15 @@ module Foundation.Collection.Indexed
     ( IndexedCollection(..)
     ) where
 
-import           Foundation.Primitive.Compat.Base
-import           Foundation.Primitive.Types.OffsetSize
+import           Basement.Compat.Base
+import           Basement.Types.OffsetSize
 import           Foundation.Collection.Element
 import qualified Data.List
-import qualified Foundation.Primitive.Block as BLK
-import qualified Foundation.Primitive.UArray as UV
-import qualified Foundation.Primitive.BoxedArray as BA
-import qualified Foundation.Primitive.Exception as A
-import qualified Foundation.Primitive.String as S
+import qualified Basement.Block as BLK
+import qualified Basement.UArray as UV
+import qualified Basement.BoxedArray as BA
+import qualified Basement.Exception as A
+import qualified Basement.String as S
 
 -- | Collection of elements that can indexed by int
 class IndexedCollection c where

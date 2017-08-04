@@ -40,4 +40,4 @@ module Foundation.String
     , breakLine
     ) where
 
-import Foundation.Primitive.String
+import Basement.String

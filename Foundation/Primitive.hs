@@ -38,12 +38,12 @@ module Foundation.Primitive
     , AsciiString(..)
     ) where
 
-import Foundation.Primitive.Types
-import Foundation.Primitive.Types.Char7
-import Foundation.Primitive.Types.AsciiString
-import Foundation.Primitive.Monad
-import Foundation.Primitive.Endianness
-import Foundation.Primitive.IntegralConv
-import Foundation.Primitive.NormalForm
-import Foundation.Primitive.These
-import Foundation.Primitive.Block
+import Basement.Types
+import Basement.Types.Char7
+import Basement.Types.AsciiString
+import Basement.Monad
+import Basement.Endianness
+import Basement.IntegralConv
+import Basement.NormalForm
+import Basement.These
+import Basement.Block

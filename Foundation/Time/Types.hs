@@ -12,8 +12,8 @@ module Foundation.Time.Types
     ) where
 
 import           Data.Proxy
-import           Foundation.Primitive.Imports
-import           Foundation.Primitive.Types
+import           Basement.Imports
+import           Basement.Types
 import           Foundation.Numerical
 import           Data.Coerce
 

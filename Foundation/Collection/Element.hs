@@ -9,14 +9,14 @@ module Foundation.Collection.Element
     ( Element
     ) where
 
-import Foundation.Primitive.Compat.Base
-import Foundation.Primitive.Block (Block)
-import Foundation.Primitive.UArray (UArray)
-import Foundation.Primitive.BoxedArray (Array)
-import Foundation.Primitive.String (String)
-import Foundation.Primitive.Types.AsciiString (AsciiString)
-import Foundation.Primitive.Types.Char7 (Char7)
-import Foundation.Primitive.NonEmpty
+import Basement.Compat.Base
+import Basement.Block (Block)
+import Basement.UArray (UArray)
+import Basement.BoxedArray (Array)
+import Basement.String (String)
+import Basement.Types.AsciiString (AsciiString)
+import Basement.Types.Char7 (Char7)
+import Basement.NonEmpty
 
 -- | Element type of a collection
 type family Element container

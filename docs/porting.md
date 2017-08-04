@@ -4,7 +4,7 @@
 | Haskell package | Foundation module | Status |
 | ------------ | ------------- | ------------ |
 | vector  | Foundation.Array.Unboxed Foundation.Array.Boxed | Good |
-| bytestring | Foundation.Primitive.Block Foundation.Array.Unboxed Foundation.Array.Boxed | Good |
+| bytestring | Basement.Block Foundation.Array.Unboxed Foundation.Array.Boxed | Good |
 | utf8-string | Foundation.String | Good |
 | text        | Foundation.String | Good |
 | conduit     | Foundation.Conduit | Usable |

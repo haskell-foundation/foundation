@@ -24,11 +24,11 @@ module Foundation.IO.FileMap
     ) where
 
 import           Control.Exception
-import           Foundation.Primitive.Types.OffsetSize
-import           Foundation.Primitive.Imports
+import           Basement.Types.OffsetSize
+import           Basement.Imports
 import           Foundation.VFS (FilePath)
-import           Foundation.Primitive.FinalPtr
-import qualified Foundation.Primitive.UArray as V
+import           Basement.FinalPtr
+import qualified Basement.UArray as V
 import qualified Foundation.Foreign.MemoryMap as I
 import qualified Prelude
 

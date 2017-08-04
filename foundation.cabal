@@ -89,8 +89,6 @@ library
                      Foundation.Foreign
                      Foundation.Collection
                      Foundation.Primitive
-                     Foundation.Primitive.Block
-                     Foundation.Primitive.Types.Char7
                      Foundation.List.DList
                      Foundation.Monad
                      Foundation.Monad.Reader
@@ -139,68 +137,6 @@ library
                      Foundation.Conduit.Internal
                      Foundation.Numerical.Floating
                      Foundation.IO.File
-                     Foundation.Primitive.Error
-                     Foundation.Primitive.Bounded
-                     Foundation.Primitive.Base16
-                     Foundation.Primitive.Bindings.Memory
-                     Foundation.Primitive.Block.Base
-                     Foundation.Primitive.Block.Mutable
-                     Foundation.Primitive.BoxedArray
-                     Foundation.Primitive.Endianness
-                     Foundation.Primitive.Environment
-                     Foundation.Primitive.Exception
-                     Foundation.Primitive.From
-                     Foundation.Primitive.Types
-                     Foundation.Primitive.Types.OffsetSize
-                     Foundation.Primitive.Types.Ptr
-                     Foundation.Primitive.Types.AsciiString
-                     Foundation.Primitive.Monad
-                     Foundation.Primitive.MutableBuilder
-                     Foundation.Primitive.NonEmpty
-                     Foundation.Primitive.NormalForm
-                     Foundation.Primitive.Numerical.Number
-                     Foundation.Primitive.Numerical.Additive
-                     Foundation.Primitive.Numerical.Subtractive
-                     Foundation.Primitive.Numerical.Multiplicative
-                     Foundation.Primitive.Utils
-                     Foundation.Primitive.IntegralConv
-                     Foundation.Primitive.Floating
-                     Foundation.Primitive.FinalPtr
-                     Foundation.Primitive.These
-                     Foundation.Primitive.Show
-                     Foundation.Primitive.UTF8.Table
-                     Foundation.Primitive.UTF8.Helper
-                     Foundation.Primitive.UTF8.Base
-                     Foundation.Primitive.UTF8.BA
-                     Foundation.Primitive.UTF8.Addr
-                     Foundation.Primitive.UTF8.Types
-                     Foundation.Primitive.String
-                     Foundation.Primitive.String.BA
-                     Foundation.Primitive.String.Addr
-                     Foundation.Primitive.String.Encoding.Encoding
-                     Foundation.Primitive.String.Encoding.UTF16
-                     Foundation.Primitive.String.Encoding.UTF32
-                     Foundation.Primitive.String.Encoding.ASCII7
-                     Foundation.Primitive.String.Encoding.ISO_8859_1
-                     Foundation.Primitive.UArray.Base
-                     Foundation.Primitive.UArray.BA
-                     Foundation.Primitive.UArray.Addr
-                     Foundation.Primitive.UArray.Mutable
-                     Foundation.Primitive.UArray
-                     Foundation.Primitive.Runtime
-                     Foundation.Primitive.Imports
-                     Foundation.Primitive.Compat.Base
-                     Foundation.Primitive.Compat.Bifunctor
-                     Foundation.Primitive.Compat.CallStack
-                     Foundation.Primitive.Compat.ExtList
-                     Foundation.Primitive.Compat.IsList
-                     Foundation.Primitive.Compat.Identity
-                     Foundation.Primitive.Compat.Primitive
-                     Foundation.Primitive.Compat.PrimTypes
-                     Foundation.Primitive.Compat.MonadTrans
-                     Foundation.Primitive.Compat.Natural
-                     Foundation.Primitive.Compat.NumLiteral
-                     Foundation.Primitive.Compat.Typeable
                      Foundation.Monad.MonadIO
                      Foundation.Monad.Exception
                      Foundation.Monad.Transformer
@@ -249,9 +185,6 @@ library
   if impl(ghc >= 7.10)
     exposed-modules: Foundation.Tuple.Nth
                      Foundation.List.ListN
-                     Foundation.Primitive.Nat
-  if impl(ghc >= 8.0)
-    exposed-modules: Foundation.Primitive.BlockN
 
   default-extensions: NoImplicitPrelude
                       RebindableSyntax
@@ -259,6 +192,7 @@ library
                       BangPatterns
                       DeriveDataTypeable
   build-depends:     base >= 4.7 && < 5
+                   , basement
                    , ghc-prim
   -- FIXME add suport for armel mipsel
   --  CPP-options: -DARCH_IS_LITTLE_ENDIAN
@@ -285,7 +219,7 @@ test-suite check-foundation
                      Test.Foundation.Random
                      Test.Foundation.Misc
                      Test.Foundation.Conduit
-                     Test.Foundation.Primitive.BlockN
+                     Test.Basement.BlockN
                      Test.Foundation.Storable
                      Test.Foundation.Number
                      Test.Foundation.String.Base64

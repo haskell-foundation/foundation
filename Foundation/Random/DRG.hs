@@ -4,7 +4,7 @@ module Foundation.Random.DRG
     , withRandomGenerator
     ) where
 
-import           Foundation.Primitive.Imports
+import           Basement.Imports
 import           Foundation.Random.Class
 
 -- | A Deterministic Random Generator (DRG) class

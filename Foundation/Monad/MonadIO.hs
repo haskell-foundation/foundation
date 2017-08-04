@@ -6,7 +6,7 @@ module Foundation.Monad.MonadIO
 #if MIN_VERSION_base(4,9,0)
 import Control.Monad.IO.Class
 #else
-import Foundation.Primitive.Compat.Base
+import Basement.Compat.Base
 
 -- | Monads in which 'IO' computations may be embedded.
 class Monad m => MonadIO m where

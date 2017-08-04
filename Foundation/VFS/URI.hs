@@ -15,7 +15,7 @@ module Foundation.VFS.URI
     , URIPath(..)
     ) where
 
-import Foundation.Primitive.Compat.Base
+import Basement.Compat.Base
 import Foundation.VFS.Path(Path(..))
 
 -- ------------------------------------------------------------------------- --

@@ -9,14 +9,14 @@ module Foundation.Collection.Mutable
     ( MutableCollection(..)
     ) where
 
-import           Foundation.Primitive.Monad
-import           Foundation.Primitive.Types.OffsetSize
-import qualified Foundation.Primitive.Block         as BLK
-import qualified Foundation.Primitive.Block.Mutable as BLK
+import           Basement.Monad
+import           Basement.Types.OffsetSize
+import qualified Basement.Block         as BLK
+import qualified Basement.Block.Mutable as BLK
 
-import qualified Foundation.Primitive.UArray.Mutable as MUV
-import qualified Foundation.Primitive.UArray as UV
-import qualified Foundation.Primitive.BoxedArray as BA
+import qualified Basement.UArray.Mutable as MUV
+import qualified Basement.UArray as UV
+import qualified Basement.BoxedArray as BA
 
 -- | Collection of things that can be made mutable, modified and then freezed into an MutableFreezed collection
 class MutableCollection c where

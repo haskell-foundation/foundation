@@ -25,7 +25,7 @@ import Foundation.Conduit.Internal
 import Foundation.Collection
 import Foundation.IO
 import Foundation.IO.File
-import Foundation.Primitive.Compat.Base
+import Basement.Compat.Base
 import Foundation.Monad.Base
 import Foundation.Array
 import Foundation

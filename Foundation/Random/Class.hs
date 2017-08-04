@@ -3,9 +3,9 @@ module Foundation.Random.Class
     ) where
 
 import           Data.Proxy
-import           Foundation.Primitive.Imports
+import           Basement.Imports
 import           Foundation.System.Entropy
-import qualified Foundation.Primitive.UArray as A
+import qualified Basement.UArray as A
 
 -- | A monad constraint that allows to generate random bytes
 class (Functor m, Applicative m, Monad m) => MonadRandom m where

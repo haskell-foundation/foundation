@@ -13,9 +13,9 @@ module Foundation.Monad
     , replicateM
     ) where
 
-import Foundation.Primitive.Imports
-import Foundation.Primitive.Types.OffsetSize
-import Foundation.Primitive.Monad (MonadFailure(..))
+import Basement.Imports
+import Basement.Types.OffsetSize
+import Basement.Monad (MonadFailure(..))
 import Foundation.Monad.MonadIO
 import Foundation.Monad.Exception
 import Foundation.Monad.Transformer
@@ -29,7 +29,7 @@ import Data.Functor.Identity
 
 import Control.Monad.Fix
 import Control.Monad.Zip
-import Foundation.Primitive.Compat.Base
+import Basement.Compat.Base
 
 import GHC.Generics (Generic1)
 

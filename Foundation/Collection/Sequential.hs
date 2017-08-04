@@ -18,18 +18,18 @@ module Foundation.Collection.Sequential
     ( Sequential(..)
     ) where
 
-import           Foundation.Primitive.Compat.Base
-import           Foundation.Primitive.Numerical.Subtractive
-import           Foundation.Primitive.Types.OffsetSize
-import           Foundation.Primitive.Types.AsciiString (AsciiString(..))
+import           Basement.Compat.Base
+import           Basement.Numerical.Subtractive
+import           Basement.Types.OffsetSize
+import           Basement.Types.AsciiString (AsciiString(..))
 import           Foundation.Collection.Element
 import           Foundation.Collection.Collection
 import qualified Foundation.Collection.List as ListExtra
 import qualified Data.List
-import qualified Foundation.Primitive.UArray as UV
-import qualified Foundation.Primitive.Block as BLK
-import qualified Foundation.Primitive.BoxedArray as BA
-import qualified Foundation.Primitive.String as S
+import qualified Basement.UArray as UV
+import qualified Basement.Block as BLK
+import qualified Basement.BoxedArray as BA
+import qualified Basement.String as S
 
 -- | A set of methods for ordered colection
 class (IsList c, Item c ~ Element c, Monoid c, Collection c) => Sequential c where

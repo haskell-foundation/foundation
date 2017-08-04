@@ -37,12 +37,12 @@ import qualified Foreign.Ptr
 import qualified Foreign.Storable (peek, poke)
 import           Foreign.C.Types (CChar, CUChar)
 
-import Foundation.Primitive.Compat.Base
-import Foundation.Primitive.Types.OffsetSize
+import Basement.Compat.Base
+import Basement.Types.OffsetSize
 import Foundation.Collection
 import Foundation.Collection.Buildable (builderLift, build_)
-import Foundation.Primitive.Types
-import Foundation.Primitive.Endianness
+import Basement.Types
+import Basement.Endianness
 import Foundation.Numerical
 
 -- | Storable type of self determined size.

@@ -19,10 +19,10 @@ module Foundation.VFS.Path
     , suffix
     ) where
 
-import Foundation.Primitive.Compat.Base
+import Basement.Compat.Base
 
 -- $setup
--- >>> import Foundation.Primitive.Compat.Base
+-- >>> import Basement.Compat.Base
 -- >>> import Foundation.VFS.FilePath
 -- >>> import Foundation.VFS.Path
 

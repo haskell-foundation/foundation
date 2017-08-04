@@ -12,9 +12,9 @@ module Foundation.Check.Print
 
 import           Foundation.Check.Property
 import           Foundation.Check.Types
-import           Foundation.Primitive.Imports
+import           Basement.Imports
 import           Foundation.Collection
-import           Foundation.Primitive.Compat.Bifunctor (bimap)
+import           Basement.Compat.Bifunctor (bimap)
 import           Foundation.Numerical
 
 propertyToResult :: PropertyTestArg -> (PropertyResult, Bool)

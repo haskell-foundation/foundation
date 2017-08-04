@@ -32,17 +32,17 @@ module Foundation.Collection.Collection
     , or
     ) where
 
-import           Foundation.Primitive.Compat.Base hiding (and)
-import           Foundation.Primitive.Types.OffsetSize
-import           Foundation.Primitive.Types.AsciiString
-import           Foundation.Primitive.Exception (NonEmptyCollectionIsEmpty(..))
+import           Basement.Compat.Base hiding (and)
+import           Basement.Types.OffsetSize
+import           Basement.Types.AsciiString
+import           Basement.Exception (NonEmptyCollectionIsEmpty(..))
 import           Foundation.Collection.Element
-import           Foundation.Primitive.NonEmpty
+import           Basement.NonEmpty
 import qualified Data.List
-import qualified Foundation.Primitive.Block as BLK
-import qualified Foundation.Primitive.UArray as UV
-import qualified Foundation.Primitive.BoxedArray as BA
-import qualified Foundation.Primitive.String as S
+import qualified Basement.Block as BLK
+import qualified Basement.UArray as UV
+import qualified Basement.BoxedArray as BA
+import qualified Basement.String as S
 
 -- | Smart constructor to create a NonEmpty collection
 --

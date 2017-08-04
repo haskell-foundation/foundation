@@ -15,7 +15,7 @@
 module Foundation.System.Bindings.Linux
    where
 
-import Foundation.Primitive.Compat.Base
+import Basement.Compat.Base
 import Foreign.C.Types
 import Foundation.System.Bindings.PosixDef
 

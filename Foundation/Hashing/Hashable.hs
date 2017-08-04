@@ -12,10 +12,10 @@ module Foundation.Hashing.Hashable
     ( Hashable(..)
     ) where
 
-import Foundation.Primitive.Compat.Base
-import Foundation.Primitive.Compat.Natural
-import Foundation.Primitive.IntegralConv
-import Foundation.Primitive.Numerical.Multiplicative
+import Basement.Compat.Base
+import Basement.Compat.Natural
+import Basement.IntegralConv
+import Basement.Numerical.Multiplicative
 import Foundation.Array
 import Foundation.Tuple
 import Foundation.String

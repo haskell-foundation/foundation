@@ -8,8 +8,8 @@ module Foundation.Check.Config
     , configHelp
     ) where
 
-import           Foundation.Primitive.Imports
-import           Foundation.Primitive.IntegralConv
+import           Basement.Imports
+import           Basement.IntegralConv
 import           Foundation.String.Read
 import           Foundation.Check.Gen
 

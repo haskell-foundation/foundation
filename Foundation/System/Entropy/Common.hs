@@ -12,7 +12,7 @@ module Foundation.System.Entropy.Common
     ( EntropySystemMissing(..)
     ) where
 
-import Foundation.Primitive.Compat.Base
+import Basement.Compat.Base
 
 data EntropySystemMissing = EntropySystemMissing
     deriving (Show,Eq,Typeable)
