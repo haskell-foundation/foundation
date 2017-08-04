@@ -1,4 +1,4 @@
-module Foundation.Numerical.Subtractive
+module Foundation.Primitive.Numerical.Subtractive
     ( Subtractive(..)
     ) where
 

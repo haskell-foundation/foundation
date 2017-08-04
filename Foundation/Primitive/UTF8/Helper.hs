@@ -120,7 +120,7 @@ asUTF8Char !c
       {-# INLINE toContinuation #-}
 
 -- given the encoding of UTF8 Char, get the number of bytes of this sequence
-numBytes :: UTF8Char -> Size8
+numBytes :: UTF8Char -> CountOf Word8
 numBytes UTF8_1{} = CountOf 1
 numBytes UTF8_2{} = CountOf 2
 numBytes UTF8_3{} = CountOf 3
@@ -138,7 +138,7 @@ skipNextHeaderValue !x
 headerIsAscii :: Word8 -> Bool
 headerIsAscii x = x < 0x80
 
-charToBytes :: Int -> Size8
+charToBytes :: Int -> CountOf Word8
 charToBytes c
     | c < 0x80     = CountOf 1
     | c < 0x800    = CountOf 2

@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-module Foundation.Numerical.Multiplicative
+module Foundation.Primitive.Numerical.Multiplicative
     ( Multiplicative(..)
     , IDivisible(..)
     , Divisible(..)
@@ -9,8 +9,8 @@ module Foundation.Numerical.Multiplicative
 
 import           Foundation.Internal.Base
 import           Foundation.Internal.Natural
-import           Foundation.Numerical.Number
-import           Foundation.Numerical.Additive
+import           Foundation.Primitive.Numerical.Number
+import           Foundation.Primitive.Numerical.Additive
 import qualified Prelude
 
 -- | Represent class of things that can be multiplied together

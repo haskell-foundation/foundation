@@ -64,7 +64,7 @@ import           Foundation.Primitive.Block (MutableBlock(..), Block(..))
 import qualified Foundation.Primitive.Block as BLK
 import qualified Foundation.Primitive.Block.Base as BLK (touch)
 import qualified Foundation.Primitive.Block.Mutable as MBLK
-import           Foundation.Numerical.Additive
+import           Foundation.Primitive.Numerical.Additive
 import           Foundation.Primitive.Bindings.Memory
 import           Foreign.C.Types
 import           System.IO.Unsafe (unsafeDupablePerformIO)

@@ -19,7 +19,7 @@ module Foundation.Collection.Sequential
     ) where
 
 import           Foundation.Internal.Base
-import           Foundation.Numerical.Subtractive
+import           Foundation.Primitive.Numerical.Subtractive
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Types.AsciiString (AsciiString(..))
 import           Foundation.Collection.Element

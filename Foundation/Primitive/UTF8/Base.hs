@@ -20,7 +20,7 @@ import           GHC.Types
 import           GHC.Word
 import           GHC.Prim
 import           Foundation.Internal.Base
-import           Foundation.Numerical.Additive
+import           Foundation.Primitive.Numerical.Additive
 import           Foundation.Internal.Bifunctor
 import           Foundation.Primitive.NormalForm
 import           Foundation.Primitive.Types.OffsetSize
@@ -181,7 +181,7 @@ write (MutableString marray) ofs c =
 
 -- | Allocate a MutableString of a specific size in bytes.
 new :: PrimMonad prim
-    => Size8 -- ^ in number of bytes, not of elements.
+    => CountOf Word8 -- ^ in number of bytes, not of elements.
     -> prim (MutableString (PrimState prim))
 new n = MutableString `fmap` MVec.new n
 

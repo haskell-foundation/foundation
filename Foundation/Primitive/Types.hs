@@ -42,7 +42,7 @@ import           Data.Bits
 import           Foreign.C.Types
 import           Data.Proxy
 import           Foundation.Internal.Base
-import           Foundation.Numerical.Subtractive
+import           Foundation.Primitive.Numerical.Subtractive
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Endianness
 import           Foundation.Primitive.Monad
@@ -159,7 +159,7 @@ primMutableArrayWrite ma (Offset (I# ofs)) v =
 -- Types need to be a instance of storable and have fixed sized.
 class Eq ty => PrimType ty where
     -- | get the size in bytes of a ty element
-    primSizeInBytes :: Proxy ty -> Size8
+    primSizeInBytes :: Proxy ty -> CountOf Word8
 
     -- | get the shift size
     primShiftToBytes :: Proxy ty -> Int

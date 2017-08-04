@@ -30,7 +30,6 @@ module Foundation.Primitive.Types.OffsetSize
     , (+.)
     , (.==#)
     , CountOf(..)
-    , Size8
     , sizeOfE
     , csizeOfOffset
     , csizeOfSize
@@ -49,10 +48,11 @@ import System.Posix.Types (CSsize (..))
 import Data.Bits
 import Foundation.Internal.Base
 import Data.Proxy
-import Foundation.Numerical.Number
-import Foundation.Numerical.Additive
-import Foundation.Numerical.Subtractive
-import Foundation.Numerical.Multiplicative
+import Foundation.Primitive.From
+import Foundation.Primitive.Numerical.Number
+import Foundation.Primitive.Numerical.Additive
+import Foundation.Primitive.Numerical.Subtractive
+import Foundation.Primitive.Numerical.Multiplicative
 import Foundation.Primitive.IntegralConv
 import Data.List (foldl')
 import qualified Prelude
@@ -60,9 +60,6 @@ import qualified Prelude
 #if WORD_SIZE_IN_BITS < 64
 import GHC.IntWord64
 #endif
-
--- $setup
--- >>> import Foundation.Primitive.UArray
 
 -- | File size in bytes
 newtype FileSize = FileSize Word64
@@ -91,7 +88,6 @@ instance IntegralCast Int (Offset ty) where
 instance IntegralCast Word (Offset ty) where
     integralCast (W# w) = Offset (I# (word2Int# w))
 
-
 (+.) :: Offset ty -> Int -> Offset ty
 (+.) (Offset a) b = Offset (a + b)
 {-# INLINE (+.) #-}
@@ -101,7 +97,7 @@ instance IntegralCast Word (Offset ty) where
 (.==#) (Offset ofs) (CountOf sz) = ofs == sz
 {-# INLINE (.==#) #-}
 
-offsetOfE :: Size8 -> Offset ty -> Offset8
+offsetOfE :: CountOf Word8 -> Offset ty -> Offset8
 offsetOfE (CountOf sz) (Offset ty) = Offset (ty * sz)
 
 offsetPlusE :: Offset ty -> CountOf ty -> Offset ty
@@ -117,7 +113,7 @@ offsetMinusE (Offset ofs) (CountOf sz) = Offset (ofs - sz)
 offsetSub :: Offset a -> Offset a -> Offset a
 offsetSub (Offset m) (Offset n) = Offset (m - n)
 
-offsetRecast :: Size8 -> Size8 -> Offset ty -> Offset ty2
+offsetRecast :: CountOf Word8 -> CountOf Word8 -> Offset ty -> Offset ty2
 offsetRecast szTy (CountOf szTy2) ofs =
     let (Offset bytes) = offsetOfE szTy ofs
      in Offset (bytes `div` szTy2)
@@ -161,10 +157,6 @@ offsetAsSize :: Offset a -> CountOf a
 offsetAsSize (Offset a) = CountOf a
 {-# INLINE offsetAsSize #-}
 
-
--- | CountOf of a data structure in bytes.
-type Size8 = CountOf Word8
-
 -- | CountOf of a data structure.
 --
 -- More specifically, it represents the number of elements of type `ty` that fit
@@ -187,6 +179,11 @@ instance Prelude.Num (CountOf ty) where
     abs a = a
     negate _ = error "cannot negate CountOf: use Foundation Numerical hierarchy for this function to not be exposed to CountOf"
     signum (CountOf a) = CountOf (Prelude.signum a)
+
+instance From (CountOf ty) Int where
+    from (CountOf n) = n
+instance From (CountOf ty) Word where
+    from (CountOf n) = from n
 
 instance IsIntegral (CountOf ty) where
     toInteger (CountOf i) = toInteger i
@@ -212,7 +209,7 @@ instance IntegralCast Int (CountOf ty) where
 instance IntegralCast Word (CountOf ty) where
     integralCast (W# w) = CountOf (I# (word2Int# w))
 
-sizeOfE :: Size8 -> CountOf ty -> Size8
+sizeOfE :: CountOf Word8 -> CountOf ty -> CountOf Word8
 sizeOfE (CountOf sz) (CountOf ty) = CountOf (ty * sz)
 
 -- | alignment need to be a power of 2
@@ -223,7 +220,7 @@ countOfRoundUp alignment (CountOf n) = CountOf ((n + (alignment-1)) .&. compleme
 -- instead of using FromIntegral and being silently wrong
 -- explicit pattern match to sort it out.
 
-csizeOfSize :: Size8 -> CSize
+csizeOfSize :: CountOf Word8 -> CSize
 #if WORD_SIZE_IN_BITS < 64
 csizeOfSize (CountOf (I# sz)) = CSize (W32# (int2Word# sz))
 #else
@@ -237,7 +234,7 @@ csizeOfOffset (Offset (I# sz)) = CSize (W32# (int2Word# sz))
 csizeOfOffset (Offset (I# sz)) = CSize (W64# (int2Word# sz))
 #endif
 
-sizeOfCSSize :: CSsize -> Size8
+sizeOfCSSize :: CSsize -> CountOf Word8
 sizeOfCSSize (CSsize (-1))      = error "invalid size: CSSize is -1"
 #if WORD_SIZE_IN_BITS < 64
 sizeOfCSSize (CSsize (I32# sz)) = CountOf (I# sz)
@@ -245,7 +242,7 @@ sizeOfCSSize (CSsize (I32# sz)) = CountOf (I# sz)
 sizeOfCSSize (CSsize (I64# sz)) = CountOf (I# sz)
 #endif
 
-sizeOfCSize :: CSize -> Size8
+sizeOfCSize :: CSize -> CountOf Word8
 #if WORD_SIZE_IN_BITS < 64
 sizeOfCSize (CSize (W32# sz)) = CountOf (I# (word2Int# sz))
 #else

@@ -7,7 +7,7 @@ module Foundation.Internal.ExtList
     ) where
 
 import Foundation.Internal.Base
-import Foundation.Numerical.Additive
+import Foundation.Primitive.Numerical.Additive
 import qualified GHC.List as List
 
 -- | Compute the size of the list

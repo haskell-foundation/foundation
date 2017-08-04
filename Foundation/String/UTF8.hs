@@ -540,7 +540,7 @@ intersperse sep src = case length src - 1 of
         where
           lastSrcI :: Offset Char
           lastSrcI = 0 `offsetPlusE` gaps
-          dstBytes = (size src :: Size8) + (gaps `scale` charToBytes (fromEnum sep))
+          dstBytes = (size src :: CountOf Word8) + (gaps `scale` charToBytes (fromEnum sep))
           
           go :: String -> Offset Char -> Offset8 -> MutableString s -> Offset8 -> ST s (Offset8, Offset8)
           go src' srcI srcIdx dst dstIdx
@@ -557,7 +557,7 @@ intersperse sep src = case length src - 1 of
 -- | Allocate a new @String@ with a fill function that has access to the characters of
 --   the source @String@.
 unsafeCopyFrom :: String -- ^ Source string
-               -> Size8  -- ^ Length of the destination string in bytes
+               -> CountOf Word8  -- ^ Length of the destination string in bytes
                -> (String -> Offset Char -> Offset8 -> MutableString s -> Offset8 -> ST s (Offset8, Offset8))
                -- ^ Function called for each character in the source String
                -> ST s String -- ^ Returns the filled new string
@@ -640,10 +640,10 @@ charMap f src
     !srcSz = size src
     srcEnd = azero `offsetPlusE` srcSz
 
-    allocateAndFill :: [(String, Size8)]
+    allocateAndFill :: [(String, CountOf Word8)]
                     -> Offset8
-                    -> Size8
-                    -> ([(String,Size8)], Size8)
+                    -> CountOf Word8
+                    -> ([(String,CountOf Word8)], CountOf Word8)
     allocateAndFill acc idx bytesWritten
         | idx == srcEnd = (acc, bytesWritten)
         | otherwise     =
@@ -661,9 +661,9 @@ charMap f src
 
     fill :: PrimMonad prim
          => MutableString (PrimState prim)
-         -> Size8
+         -> CountOf Word8
          -> Offset8
-         -> prim (Size8, Offset8)
+         -> prim (CountOf Word8, Offset8)
     fill mba dsz srcIdxOrig =
         loop (Offset 0) srcIdxOrig
       where

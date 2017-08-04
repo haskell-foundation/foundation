@@ -15,7 +15,7 @@ module Foundation.Hashing.Hashable
 import Foundation.Internal.Base
 import Foundation.Internal.Natural
 import Foundation.Primitive.IntegralConv
-import Foundation.Numerical.Multiplicative
+import Foundation.Primitive.Numerical.Multiplicative
 import Foundation.Array
 import Foundation.Tuple
 import Foundation.String

@@ -31,10 +31,10 @@ module Foundation.Numerical
     ) where
 
 import           Foundation.Internal.Base
-import           Foundation.Numerical.Number
-import           Foundation.Numerical.Additive
-import           Foundation.Numerical.Subtractive
-import           Foundation.Numerical.Multiplicative
+import           Foundation.Primitive.Numerical.Number
+import           Foundation.Primitive.Numerical.Additive
+import           Foundation.Primitive.Numerical.Subtractive
+import           Foundation.Primitive.Numerical.Multiplicative
 import           Foundation.Numerical.Floating
 import qualified Prelude
 

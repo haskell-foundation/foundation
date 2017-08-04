@@ -24,7 +24,7 @@ import           Text.Read        (readMaybe)
 -- Order violated the Galactic Concordance!).
 --
 -- TODO The default value of 1024 bytes is arbitrarily chosen for now.
-unsafeUArrayUnpinnedMaxSize :: Size8
+unsafeUArrayUnpinnedMaxSize :: CountOf Word8
 unsafeUArrayUnpinnedMaxSize = unsafePerformIO $ do
     maxSize <- (>>= readMaybe) <$> lookupEnv "HS_FOUNDATION_UARRAY_UNPINNED_MAX"
     pure $ maybe (CountOf 1024) CountOf maxSize

@@ -63,7 +63,7 @@ import           Data.Proxy
 import           Foundation.Primitive.Exception
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
-import           Foundation.Numerical.Additive
+import           Foundation.Primitive.Numerical.Additive
 import           Foundation.Primitive.Types
 import           Foundation.Primitive.Block.Base
 

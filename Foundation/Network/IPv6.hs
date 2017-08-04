@@ -29,7 +29,7 @@ import Control.Monad (when)
 
 import Foundation.Class.Storable
 import Foundation.Hashing.Hashable
-import Foundation.Numerical.Additive (scale)
+import Foundation.Primitive.Numerical.Additive (scale)
 import Foundation.Internal.Base
 import Data.Proxy
 import Foundation.Primitive

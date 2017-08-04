@@ -38,7 +38,7 @@ import           Foundation.Primitive.Bindings.Memory (sysHsMemcmpBaBa)
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.NormalForm
-import           Foundation.Numerical.Additive
+import           Foundation.Primitive.Numerical.Additive
 import           Foundation.Primitive.Types
 
 -- | A block of memory containing unpacked bytes representing values of type 'ty'

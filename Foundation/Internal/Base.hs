@@ -49,7 +49,7 @@ module Foundation.Internal.Base
     , Prelude.IO
     , Foundation.Internal.IsList.IsList (..)
     , GHC.Exts.IsString (..)
-    , GHC.Generics.Generic (..)
+    , GHC.Generics.Generic
     , Prelude.Either (..)
     , Data.Data.Data (..)
     , Data.Data.mkNoRepType

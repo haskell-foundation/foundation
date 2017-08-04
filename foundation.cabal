@@ -74,7 +74,6 @@ library
                      Foundation.Class.Storable
                      Foundation.Conduit
                      Foundation.Conduit.Textual
-                     Foundation.Convertible
                      Foundation.String
                      Foundation.String.Read
                      Foundation.String.Builder
@@ -158,10 +157,6 @@ library
                      Foundation.Internal.Natural
                      Foundation.Internal.NumLiteral
                      Foundation.Internal.Typeable
-                     Foundation.Numerical.Number
-                     Foundation.Numerical.Additive
-                     Foundation.Numerical.Subtractive
-                     Foundation.Numerical.Multiplicative
                      Foundation.Numerical.Floating
                      Foundation.IO.File
                      Foundation.Primitive.Error
@@ -174,6 +169,7 @@ library
                      Foundation.Primitive.Endianness
                      Foundation.Primitive.Environment
                      Foundation.Primitive.Exception
+                     Foundation.Primitive.From
                      Foundation.Primitive.Types
                      Foundation.Primitive.Types.OffsetSize
                      Foundation.Primitive.Types.Ptr
@@ -182,6 +178,10 @@ library
                      Foundation.Primitive.MutableBuilder
                      Foundation.Primitive.NonEmpty
                      Foundation.Primitive.NormalForm
+                     Foundation.Primitive.Numerical.Number
+                     Foundation.Primitive.Numerical.Additive
+                     Foundation.Primitive.Numerical.Subtractive
+                     Foundation.Primitive.Numerical.Multiplicative
                      Foundation.Primitive.Utils
                      Foundation.Primitive.IntegralConv
                      Foundation.Primitive.Floating
