@@ -34,7 +34,6 @@ import qualified Foundation.Primitive.UTF8.Addr     as PrimAddr
 import           Foundation.Array.Unboxed           (UArray)
 import qualified Foundation.Array.Unboxed           as Vec
 import qualified Foundation.Array.Unboxed           as C
-import           Foundation.Array.Unboxed.ByteArray (MutableByteArray)
 import qualified Foundation.Array.Unboxed.Mutable   as MVec
 import           Foundation.Primitive.UArray.Base   as Vec (offset, pureST, onBackend)
 import           GHC.CString                        (unpackCString#, unpackCStringUtf8#)
@@ -51,7 +50,7 @@ newtype String = String (UArray Word8)
 -- Use as an *append* buffer, as UTF8 variable encoding
 -- doesn't really allow to change previously written
 -- character without potentially shifting bytes.
-newtype MutableString st = MutableString (MutableByteArray st)
+newtype MutableString st = MutableString (MVec.MUArray Word8 st)
     deriving (Typeable)
 
 instance Show String where
