@@ -97,7 +97,7 @@ import qualified Foundation.Array.Unboxed           as Vec
 import qualified Foundation.Array.Unboxed           as C
 import           Foundation.Array.Unboxed.ByteArray (MutableByteArray)
 import qualified Foundation.Array.Unboxed.Mutable   as MVec
-import           Foundation.Class.Bifunctor
+import           Foundation.Internal.Bifunctor
 import           Foundation.Internal.Base
 import           Foundation.Internal.Natural
 import           Foundation.Internal.MonadTrans

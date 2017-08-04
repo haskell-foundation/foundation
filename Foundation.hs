@@ -53,7 +53,7 @@ module Foundation
     , Integral (..)
     , Fractional (..)
     , HasNegation (..)
-    , Foundation.Class.Bifunctor.Bifunctor (..)
+    , Foundation.Internal.Bifunctor.Bifunctor (..)
     , Control.Applicative.Applicative (..)
     , Prelude.Monad (..)
     , (Control.Monad.=<<)
@@ -175,7 +175,7 @@ import qualified Foundation.Numerical
 import qualified Foundation.Partial
 import           Foundation.Tuple
 
-import qualified Foundation.Class.Bifunctor
+import qualified Foundation.Internal.Bifunctor
 import           Foundation.Primitive.Types.OffsetSize (CountOf(..), Offset(..))
 import qualified Foundation.Primitive
 import           Foundation.Primitive.Show

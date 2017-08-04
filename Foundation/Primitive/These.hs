@@ -13,7 +13,7 @@ module Foundation.Primitive.These
 
 import Foundation.Internal.Base
 import Foundation.Primitive.NormalForm
-import Foundation.Class.Bifunctor
+import Foundation.Internal.Bifunctor
 
 -- | Either a or b or both.
 data These a b

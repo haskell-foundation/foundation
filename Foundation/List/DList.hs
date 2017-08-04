@@ -13,7 +13,7 @@ module Foundation.List.DList
 
 import Foundation.Internal.Base
 import Foundation.Collection
-import Foundation.Class.Bifunctor
+import Foundation.Internal.Bifunctor
 
 newtype DList a = DList { unDList :: [a] -> [a] }
   deriving (Typeable)

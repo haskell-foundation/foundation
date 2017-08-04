@@ -24,7 +24,7 @@ import           Foundation.Numerical
 import           Foundation.Bits
 import           Foundation.Random.Class
 import           Foundation.Random.DRG
-import           Foundation.Class.Bifunctor
+import           Foundation.Internal.Bifunctor
 import           Foundation.Boot.List (reverse)
 import qualified Foundation.Array.Unboxed as A
 import qualified Prelude

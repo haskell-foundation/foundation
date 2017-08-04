@@ -32,7 +32,7 @@ module Foundation.Array.Bitmap
 import           Foundation.Array.Unboxed (UArray)
 import qualified Foundation.Array.Unboxed as A
 import           Foundation.Array.Unboxed.Mutable (MUArray)
-import           Foundation.Class.Bifunctor (first, second)
+import           Foundation.Internal.Bifunctor (first, second)
 import           Foundation.Primitive.Exception
 import           Foundation.Internal.Base
 import           Foundation.Primitive.Types.OffsetSize

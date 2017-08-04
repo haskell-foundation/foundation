@@ -10,7 +10,7 @@ module Foundation.Monad.State
     , runStateT
     ) where
 
-import Foundation.Class.Bifunctor (first)
+import Foundation.Internal.Bifunctor (first)
 import Foundation.Internal.Base (($), (.), const)
 import Foundation.Monad.Base
 import Control.Monad ((>=>))

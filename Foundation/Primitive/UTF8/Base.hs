@@ -21,7 +21,7 @@ import           GHC.Word
 import           GHC.Prim
 import           Foundation.Internal.Base
 import           Foundation.Numerical.Additive
-import           Foundation.Class.Bifunctor
+import           Foundation.Internal.Bifunctor
 import           Foundation.Primitive.NormalForm
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Types

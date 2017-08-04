@@ -17,7 +17,7 @@ module Foundation.Tuple
     ) where
 
 import Foundation.Internal.Base
-import Foundation.Class.Bifunctor
+import Foundation.Internal.Bifunctor
 import Foundation.Primitive
 
 -- | Strict tuple (a,b)

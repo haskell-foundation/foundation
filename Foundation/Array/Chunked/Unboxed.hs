@@ -23,7 +23,7 @@ import qualified Foundation.Array.Boxed as A
 import           Foundation.Primitive.Exception
 import           Foundation.Array.Unboxed (UArray)
 import qualified Foundation.Array.Unboxed as U
-import           Foundation.Class.Bifunctor
+import           Foundation.Internal.Bifunctor
 import qualified Foundation.Collection as C
 import           Foundation.Internal.Base
 import           Foundation.Primitive.Types.OffsetSize
