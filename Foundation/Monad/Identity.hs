@@ -9,6 +9,7 @@ module Foundation.Monad.Identity
     ) where
 
 import Foundation.Internal.Base hiding (throw)
+import Foundation.Primitive.Monad (MonadFailure(..))
 import Foundation.Monad.MonadIO
 import Foundation.Monad.Exception
 import Foundation.Monad.Transformer

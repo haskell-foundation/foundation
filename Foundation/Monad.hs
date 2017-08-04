@@ -15,6 +15,7 @@ module Foundation.Monad
 
 import Foundation.Primitive.Imports
 import Foundation.Primitive.Types.OffsetSize
+import Foundation.Primitive.Monad (MonadFailure(..))
 import Foundation.Monad.MonadIO
 import Foundation.Monad.Exception
 import Foundation.Monad.Transformer

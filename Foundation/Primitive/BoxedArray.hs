@@ -70,7 +70,8 @@ module Foundation.Primitive.BoxedArray
 import           GHC.Prim
 import           GHC.Types
 import           GHC.ST
-import           Foundation.Numerical
+import           Foundation.Numerical.Additive
+import           Foundation.Numerical.Subtractive
 import           Foundation.Primitive.NonEmpty
 import           Foundation.Internal.Base
 import           Data.Proxy

@@ -18,6 +18,7 @@
 {-# LANGUAGE ExistentialQuantification #-}
 module Foundation.Primitive.Monad
     ( PrimMonad(..)
+    , MonadFailure(..)
     , unPrimMonad_
     , unsafePrimCast
     , unsafePrimToST
@@ -115,3 +116,21 @@ unsafePrimFromIO = unsafePrimCast
 primTouch :: PrimMonad m => a -> m ()
 primTouch x = unsafePrimFromIO $ primitive $ \s -> case touch# x s of { s2 -> (# s2, () #) }
 {-# INLINE primTouch #-}
+
+-- | Monad that can represent failure
+--
+-- Similar to MonadFail but with a parametrized Failure linked to the Monad
+class Prelude.Monad m => MonadFailure m where
+    -- | The associated type with the MonadFailure, representing what
+    -- failure can be encoded in this monad
+    type Failure m
+
+    -- | Raise a Failure through a monad.
+    mFail :: Failure m -> m ()
+
+instance MonadFailure Prelude.Maybe where
+    type Failure Prelude.Maybe = ()
+    mFail _ = Prelude.Nothing
+instance MonadFailure (Prelude.Either a) where
+    type Failure (Prelude.Either a) = a
+    mFail a = Prelude.Left a

@@ -1,24 +1,12 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Foundation.Monad.Exception
-    ( MonadFailure(..)
-    , MonadThrow(..)
+    ( MonadThrow(..)
     , MonadCatch(..)
     , MonadBracket(..)
     ) where
 
 import           Foundation.Internal.Base
 import qualified Control.Exception as E
-
--- | Monad that can represent failure
---
--- Similar to MonadFail but with a parametrized Failure linked to the Monad
-class Monad m => MonadFailure m where
-    -- | The associated type with the MonadFailure, representing what
-    -- failure can be encoded in this monad
-    type Failure m
-
-    -- | Raise a Failure through a monad.
-    mFail :: Failure m -> m ()
 
 -- | Monad that can throw exception
 class Monad m => MonadThrow m where
@@ -46,13 +34,6 @@ class MonadCatch m => MonadBracket m where
         -> (a -> m b)
         -- ^ inner action to perform with the resource
         -> m b
-
-instance MonadFailure Maybe where
-    type Failure Maybe = ()
-    mFail _ = Nothing
-instance MonadFailure (Either a) where
-    type Failure (Either a) = a
-    mFail a = Left a
 
 instance MonadThrow IO where
     throw = E.throwIO

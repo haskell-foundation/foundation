@@ -11,6 +11,7 @@ module Foundation.Monad.Base
     ) where
 
 import Foundation.Internal.Base (Functor(..), Applicative(..), Monad(..))
+import Foundation.Primitive.Monad
 import Foundation.Monad.MonadIO
 import Foundation.Monad.Exception
 import Foundation.Monad.Transformer

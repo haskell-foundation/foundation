@@ -22,7 +22,6 @@ import           Foundation.Numerical
 import           Foundation.Primitive.UArray (UArray)
 import           Foundation.Primitive.UArray.Mutable (MUArray)
 import qualified Foundation.Primitive.UArray as Vec
-import           Foundation.Monad.Exception
 
 class Encoding encoding where
     -- | the unit element use for the encoding.

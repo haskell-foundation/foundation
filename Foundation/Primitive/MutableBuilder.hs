@@ -6,12 +6,11 @@ module Foundation.Primitive.MutableBuilder
 
 import           Foundation.Internal.Base
 import           Foundation.Internal.MonadTrans
-import           Foundation.Monad.Exception
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
 
 newtype Builder collection mutCollection step state err a = Builder
-  { runBuilder :: State (Offset step, BuildingState collection mutCollection step (PrimState state), Maybe err) state a }
+    { runBuilder :: State (Offset step, BuildingState collection mutCollection step (PrimState state), Maybe err) state a }
     deriving (Functor, Applicative, Monad)
 
 -- | The in-progress state of a building operation.
@@ -27,6 +26,6 @@ data BuildingState collection mutCollection step state = BuildingState
     }
 
 instance Monad state => MonadFailure (Builder collection mutCollection step state err) where
-  type Failure (Builder collection mutCollection step state err) = err
-  mFail builderError = Builder $ State $ \(offset, bs, _)  ->
-    return ((), (offset, bs, Just builderError))
+    type Failure (Builder collection mutCollection step state err) = err
+    mFail builderError = Builder $ State $ \(offset, bs, _)  ->
+        return ((), (offset, bs, Just builderError))
