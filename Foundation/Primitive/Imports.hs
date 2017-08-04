@@ -40,7 +40,7 @@ module Foundation.Primitive.Imports
     , Prelude.Bool (..)
     , Prelude.Int
     , Prelude.Integer
-    , Foundation.Internal.Natural.Natural
+    , Foundation.Primitive.Compat.Natural.Natural
     , Foundation.Primitive.Types.OffsetSize.Offset
     , Foundation.Primitive.Types.OffsetSize.CountOf
     , Prelude.Char
@@ -49,16 +49,16 @@ module Foundation.Primitive.Imports
     , Foundation.Primitive.UTF8.Base.String
     , Foundation.Primitive.UArray.UArray
     , Foundation.Primitive.BoxedArray.Array
-    , Foundation.Internal.NumLiteral.Integral (..)
-    , Foundation.Internal.NumLiteral.Fractional (..)
-    , Foundation.Internal.NumLiteral.HasNegation (..)
+    , Foundation.Primitive.Compat.NumLiteral.Integral (..)
+    , Foundation.Primitive.Compat.NumLiteral.Fractional (..)
+    , Foundation.Primitive.Compat.NumLiteral.HasNegation (..)
     , Data.Int.Int8, Data.Int.Int16, Data.Int.Int32, Data.Int.Int64
     , Data.Word.Word8, Data.Word.Word16, Data.Word.Word32, Data.Word.Word64, Data.Word.Word
     , Prelude.Double, Prelude.Float
     , Prelude.IO
     , FP32
     , FP64
-    , Foundation.Internal.IsList.IsList (..)
+    , Foundation.Primitive.Compat.IsList.IsList (..)
     , GHC.Exts.IsString (..)
     , GHC.Generics.Generic (..)
     , Prelude.Either (..)
@@ -84,9 +84,9 @@ import qualified Data.Data
 import qualified Data.Typeable
 import qualified Data.Word
 import qualified Data.Int
-import qualified Foundation.Internal.IsList
-import qualified Foundation.Internal.Natural
-import qualified Foundation.Internal.NumLiteral
+import qualified Foundation.Primitive.Compat.IsList
+import qualified Foundation.Primitive.Compat.Natural
+import qualified Foundation.Primitive.Compat.NumLiteral
 import qualified Foundation.Primitive.UArray
 import qualified Foundation.Primitive.BoxedArray
 import qualified Foundation.Primitive.UTF8.Base

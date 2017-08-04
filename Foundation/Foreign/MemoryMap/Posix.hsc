@@ -41,7 +41,7 @@ module Foundation.Foreign.MemoryMap.Posix
     , fileMapRead
     ) where
 
-import Foundation.Internal.Base
+import Foundation.Primitive.Compat.Base
 import Foundation.Primitive.Types.OffsetSize
 import System.Posix.Types
 import Foreign.Ptr

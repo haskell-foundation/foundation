@@ -11,7 +11,7 @@ module Foundation.Monad.Reader
     , runReaderT
     ) where
 
-import Foundation.Internal.Base (($), (.), const)
+import Foundation.Primitive.Compat.Base (($), (.), const)
 import Foundation.Monad.Base
 
 class Monad m => MonadReader m where

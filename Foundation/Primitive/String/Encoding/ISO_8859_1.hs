@@ -13,7 +13,7 @@ module Foundation.Primitive.String.Encoding.ISO_8859_1
     , ISO_8859_1_Invalid(..)
     ) where
 
-import Foundation.Internal.Base
+import Foundation.Primitive.Compat.Base
 import Foundation.Primitive.Types.OffsetSize
 import Foundation.Primitive.Numerical.Additive
 import Foundation.Primitive.Monad

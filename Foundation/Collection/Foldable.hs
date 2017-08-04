@@ -12,7 +12,7 @@ module Foundation.Collection.Foldable
     , Fold1able(..)
     ) where
 
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Foundation.Collection.Element
 import           Foundation.Primitive.NonEmpty
 import qualified Data.List

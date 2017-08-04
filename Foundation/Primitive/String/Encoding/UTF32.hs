@@ -14,7 +14,7 @@ module Foundation.Primitive.String.Encoding.UTF32
 import GHC.Prim
 import GHC.Word
 import GHC.Types
-import Foundation.Internal.Base
+import Foundation.Primitive.Compat.Base
 import Foundation.Primitive.Types.OffsetSize
 import Foundation.Primitive.Monad
 import Foundation.Primitive.Numerical.Additive

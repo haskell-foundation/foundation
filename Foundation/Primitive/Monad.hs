@@ -33,7 +33,7 @@ import           GHC.STRef
 import           GHC.IORef
 import           GHC.IO
 import           GHC.Prim
-import           Foundation.Internal.Base (Exception, (.), ($), Applicative)
+import           Foundation.Primitive.Compat.Base (Exception, (.), ($), Applicative)
 
 -- | Primitive monad that can handle mutation.
 --

@@ -10,7 +10,7 @@ module Foundation.Collection.Indexed
     ( IndexedCollection(..)
     ) where
 
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Collection.Element
 import qualified Data.List

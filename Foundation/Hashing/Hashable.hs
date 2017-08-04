@@ -12,8 +12,8 @@ module Foundation.Hashing.Hashable
     ( Hashable(..)
     ) where
 
-import Foundation.Internal.Base
-import Foundation.Internal.Natural
+import Foundation.Primitive.Compat.Base
+import Foundation.Primitive.Compat.Natural
 import Foundation.Primitive.IntegralConv
 import Foundation.Primitive.Numerical.Multiplicative
 import Foundation.Array

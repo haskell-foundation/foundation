@@ -108,11 +108,11 @@ import           GHC.ST
 import           GHC.Ptr
 import           GHC.ForeignPtr (ForeignPtr)
 import           Foreign.Marshal.Utils (copyBytes)
-import           Foundation.Internal.Base
-import           Foundation.Internal.Primitive
+import           Foundation.Primitive.Compat.Base
+import           Foundation.Primitive.Compat.Primitive
 import           Data.Proxy
 import           Foundation.Primitive.Types.OffsetSize
-import           Foundation.Internal.MonadTrans
+import           Foundation.Primitive.Compat.MonadTrans
 import           Foundation.Primitive.NonEmpty
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
@@ -127,7 +127,7 @@ import           Foundation.Primitive.Numerical.Subtractive
 import           Foundation.Primitive.Numerical.Multiplicative
 import           Foundation.Primitive.MutableBuilder
 import           Foundation.Primitive.Bindings.Memory (sysHsMemFindByteBa, sysHsMemFindByteAddr)
-import qualified Foundation.Internal.ExtList as List
+import qualified Foundation.Primitive.Compat.ExtList as List
 import qualified Foundation.Primitive.Base16 as Base16
 import qualified Foundation.Primitive.UArray.BA as PrimBA
 import qualified Foundation.Primitive.UArray.Addr as PrimAddr

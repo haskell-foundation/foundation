@@ -6,8 +6,8 @@ module Foundation.Primitive.Numerical.Additive
 
 #include "MachDeps.h"
 
-import           Foundation.Internal.Base
-import           Foundation.Internal.Natural
+import           Foundation.Primitive.Compat.Base
+import           Foundation.Primitive.Compat.Natural
 import           Foundation.Primitive.Numerical.Number
 import qualified Prelude
 import           GHC.Types

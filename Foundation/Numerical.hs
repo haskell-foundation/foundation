@@ -30,7 +30,7 @@ module Foundation.Numerical
     , FloatingPoint(..)
     ) where
 
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Foundation.Primitive.Numerical.Number
 import           Foundation.Primitive.Numerical.Additive
 import           Foundation.Primitive.Numerical.Subtractive

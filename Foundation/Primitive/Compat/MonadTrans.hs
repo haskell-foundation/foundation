@@ -1,5 +1,5 @@
 -- |
--- Module      : Foundation.Internal.MonadTrans
+-- Module      : Foundation.Primitive.Compat.MonadTrans
 -- License     : BSD-style
 -- Maintainer  : Psychohistorians
 -- Stability   : experimental
@@ -7,12 +7,12 @@
 --
 -- An internal and really simple monad transformers,
 -- without any bells and whistse.
-module Foundation.Internal.MonadTrans
+module Foundation.Primitive.Compat.MonadTrans
     ( State(..)
     , Reader(..)
     ) where
 
-import Foundation.Internal.Base
+import Foundation.Primitive.Compat.Base
 import Control.Monad ((>=>))
 
 -- | Simple State monad

@@ -1,6 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module Foundation.Internal.Natural
+module Foundation.Primitive.Compat.Natural
     ( Natural
     , integerToNatural
     ) where

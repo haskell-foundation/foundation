@@ -18,7 +18,7 @@ module Foundation.Primitive.UArray.BA
 
 import           GHC.Types
 import           GHC.Prim
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Foundation.Primitive.Numerical.Additive
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Types

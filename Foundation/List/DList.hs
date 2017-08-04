@@ -11,9 +11,9 @@ module Foundation.List.DList
     ( DList
     ) where
 
-import Foundation.Internal.Base
+import Foundation.Primitive.Compat.Base
 import Foundation.Collection
-import Foundation.Internal.Bifunctor
+import Foundation.Primitive.Compat.Bifunctor
 
 newtype DList a = DList { unDList :: [a] -> [a] }
   deriving (Typeable)

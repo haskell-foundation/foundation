@@ -63,7 +63,7 @@ module Foundation.Parser
 import           Control.Applicative (Alternative, empty, (<|>), many, some, optional)
 import           Control.Monad (MonadPlus, mzero, mplus)
 
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Numerical
 import           Foundation.Collection hiding (take, takeWhile)

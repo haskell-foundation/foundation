@@ -11,7 +11,7 @@ module Foundation.Primitive.From
     , tryInto
     ) where
 
-import Foundation.Internal.Base
+import Foundation.Primitive.Compat.Base
 import Foundation.Primitive.IntegralConv
 
 -- | Class of things that can be converted from a to b

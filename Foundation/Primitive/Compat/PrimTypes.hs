@@ -1,12 +1,12 @@
 -- |
--- Module      : Foundation.Internal.PrimTypes
+-- Module      : Foundation.Primitive.Compat.PrimTypes
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
 -- Portability : portable
 --
 {-# LANGUAGE MagicHash #-}
-module Foundation.Internal.PrimTypes
+module Foundation.Primitive.Compat.PrimTypes
     ( FileSize#
     , Offset#
     , CountOf#

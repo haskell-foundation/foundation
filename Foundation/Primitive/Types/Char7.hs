@@ -31,8 +31,8 @@ import GHC.Word
 import GHC.Types
 import Data.Bits
 import Data.Maybe
-import Foundation.Internal.Base
-import Foundation.Internal.Primitive (bool#)
+import Foundation.Primitive.Compat.Base
+import Foundation.Primitive.Compat.Primitive (bool#)
 
 -- | ASCII value between 0x0 and 0x7f
 newtype Char7 = Char7 { toByte :: Word8 }

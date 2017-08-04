@@ -23,9 +23,9 @@ import qualified Foundation.Primitive.BoxedArray as A
 import           Foundation.Primitive.Exception
 import           Foundation.Primitive.UArray (UArray)
 import qualified Foundation.Primitive.UArray as U
-import           Foundation.Internal.Bifunctor
+import           Foundation.Primitive.Compat.Bifunctor
 import qualified Foundation.Collection as C
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Numerical
 import           Foundation.Primitive.Types

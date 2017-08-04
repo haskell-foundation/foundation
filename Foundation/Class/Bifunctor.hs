@@ -16,7 +16,7 @@
 --
 {-# LANGUAGE CPP #-}
 module Foundation.Class.Bifunctor
-  ( module Foundation.Internal.Bifunctor
+  ( module Foundation.Primitive.Compat.Bifunctor
   ) where
 
-import Foundation.Internal.Bifunctor
+import Foundation.Primitive.Compat.Bifunctor

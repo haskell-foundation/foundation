@@ -9,7 +9,7 @@ module Foundation.Collection.Element
     ( Element
     ) where
 
-import Foundation.Internal.Base
+import Foundation.Primitive.Compat.Base
 import Foundation.Primitive.Block (Block)
 import Foundation.Primitive.UArray (UArray)
 import Foundation.Primitive.BoxedArray (Array)

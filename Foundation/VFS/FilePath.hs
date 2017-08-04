@@ -34,7 +34,7 @@ module Foundation.VFS.FilePath
     , extension
     ) where
 
-import Foundation.Internal.Base
+import Foundation.Primitive.Compat.Base
 import Foundation.Collection
 import Foundation.Array
 import Foundation.String (Encoding(..), ValidationFailure, toBytes, fromBytes, String)

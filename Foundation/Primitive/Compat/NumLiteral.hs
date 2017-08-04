@@ -1,12 +1,12 @@
 -- |
--- Module      : Foundation.Internal.NumLiteral
+-- Module      : Foundation.Primitive.Compat.NumLiteral
 -- License     : BSD-style
 -- Maintainer  : Foundation
 --
 -- Literal support for Integral and Fractional
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
-module Foundation.Internal.NumLiteral
+module Foundation.Primitive.Compat.NumLiteral
     ( Integral(..)
     , Fractional(..)
     , HasNegation(..)
@@ -16,7 +16,7 @@ import           Prelude (Int, Integer, Rational, Float, Double)
 import           Data.Word (Word8, Word16, Word32, Word64, Word)
 import           Data.Int (Int8, Int16, Int32, Int64)
 import qualified Prelude
-import           Foundation.Internal.Natural
+import           Foundation.Primitive.Compat.Natural
 import           Foreign.C.Types
 import           System.Posix.Types
 

@@ -11,7 +11,7 @@ module Foundation.Primitive.Types.Ptr
     , castPtr
     ) where
 
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Foundation.Primitive.Types.OffsetSize
 import           GHC.Ptr
 import           GHC.Prim

@@ -96,11 +96,11 @@ import           Foundation.Primitive.UArray           (UArray)
 import qualified Foundation.Primitive.UArray           as Vec
 import qualified Foundation.Primitive.UArray           as C
 import qualified Foundation.Primitive.UArray.Mutable   as MVec
-import           Foundation.Internal.Bifunctor
-import           Foundation.Internal.Base
-import           Foundation.Internal.Natural
-import           Foundation.Internal.MonadTrans
-import           Foundation.Internal.Primitive
+import           Foundation.Primitive.Compat.Bifunctor
+import           Foundation.Primitive.Compat.Base
+import           Foundation.Primitive.Compat.Natural
+import           Foundation.Primitive.Compat.MonadTrans
+import           Foundation.Primitive.Compat.Primitive
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Numerical
 import           Foundation.Primitive.Monad

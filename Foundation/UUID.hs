@@ -13,7 +13,7 @@ module Foundation.UUID
 import Control.Monad (unless)
 import Data.Maybe (fromMaybe)
 
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Foundation.Collection (Element, Sequential, foldl')
 import           Foundation.Class.Storable
 import           Foundation.Hashing.Hashable

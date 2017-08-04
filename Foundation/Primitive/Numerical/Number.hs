@@ -3,8 +3,8 @@ module Foundation.Primitive.Numerical.Number
     , IsNatural(..)
     ) where
 
-import           Foundation.Internal.Base
-import           Foundation.Internal.Natural
+import           Foundation.Primitive.Compat.Base
+import           Foundation.Primitive.Compat.Natural
 import qualified Prelude
 import           Foreign.C.Types
 

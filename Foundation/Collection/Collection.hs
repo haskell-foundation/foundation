@@ -32,7 +32,7 @@ module Foundation.Collection.Collection
     , or
     ) where
 
-import           Foundation.Internal.Base hiding (and)
+import           Foundation.Primitive.Compat.Base hiding (and)
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Types.AsciiString
 import           Foundation.Primitive.Exception (NonEmptyCollectionIsEmpty(..))

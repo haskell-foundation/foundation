@@ -17,7 +17,7 @@ module Foundation.Primitive.UTF8.Table
 import           GHC.Prim
 import           GHC.Types
 import           GHC.Word
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 
 -- | Check if the byte is a continuation byte
 isContinuation :: Word8 -> Bool

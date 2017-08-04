@@ -7,8 +7,8 @@ module Foundation.Primitive.Floating
     ) where
 
 import           GHC.Types
-import           Foundation.Internal.Base
-import           Foundation.Internal.Natural
+import           Foundation.Primitive.Compat.Base
+import           Foundation.Primitive.Compat.Natural
 import qualified Prelude (fromInteger, toInteger, (^^))
 
 integerToDouble :: Integer -> Double

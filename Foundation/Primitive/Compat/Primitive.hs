@@ -1,5 +1,5 @@
 -- |
--- Module      : Foundation.Internal.Primitive
+-- Module      : Foundation.Primitive.Compat.Primitive
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
@@ -9,7 +9,7 @@
 {-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE UnliftedFFITypes #-}
-module Foundation.Internal.Primitive
+module Foundation.Primitive.Compat.Primitive
     ( bool#
     , PinnedStatus(..), toPinnedStatus#
     , compatAndI#
@@ -32,7 +32,7 @@ import           GHC.Word
 import           GHC.IO
 #endif
 
-import           Foundation.Internal.PrimTypes
+import           Foundation.Primitive.Compat.PrimTypes
 
 --  GHC 8.0  | Base 4.9
 --  GHC 7.10 | Base 4.8

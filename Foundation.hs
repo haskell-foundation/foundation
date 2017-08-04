@@ -53,7 +53,7 @@ module Foundation
     , Integral (..)
     , Fractional (..)
     , HasNegation (..)
-    , Foundation.Internal.Bifunctor.Bifunctor (..)
+    , Foundation.Primitive.Compat.Bifunctor.Bifunctor (..)
     , Control.Applicative.Applicative (..)
     , Prelude.Monad (..)
     , (Control.Monad.=<<)
@@ -142,7 +142,7 @@ module Foundation
     , Foundation.Partial.partial
     , Foundation.Partial.PartialError
     , Foundation.Partial.fromPartial
-    , Foundation.Internal.Base.ifThenElse
+    , Foundation.Primitive.Compat.Base.ifThenElse
       -- ** Old Prelude Strings as [Char] with bridge back and forth
     , LString
     ) where
@@ -166,8 +166,8 @@ import           Foundation.Collection (Collection(..), and, or, Sequential(..)
 import qualified Foundation.IO.Terminal
 
 import           GHC.Exts (IsString(..))
-import           Foundation.Internal.IsList
-import qualified Foundation.Internal.Base (ifThenElse)
+import           Foundation.Primitive.Compat.IsList
+import qualified Foundation.Primitive.Compat.Base (ifThenElse)
 import qualified Data.Proxy
 import qualified Foundation.Primitive.Error
 
@@ -175,13 +175,13 @@ import qualified Foundation.Numerical
 import qualified Foundation.Partial
 import           Foundation.Tuple
 
-import qualified Foundation.Internal.Bifunctor
+import qualified Foundation.Primitive.Compat.Bifunctor
 import           Foundation.Primitive.Types.OffsetSize (CountOf(..), Offset(..))
 import qualified Foundation.Primitive
 import           Foundation.Primitive.Show
 import           Foundation.Primitive.Environment (getArgs)
-import           Foundation.Internal.NumLiteral
-import           Foundation.Internal.Natural
+import           Foundation.Primitive.Compat.NumLiteral
+import           Foundation.Primitive.Compat.Natural
 
 import qualified Data.Maybe
 import qualified Data.Either

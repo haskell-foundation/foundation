@@ -32,9 +32,9 @@ module Foundation.Array.Bitmap
 import           Foundation.Primitive.UArray (UArray)
 import qualified Foundation.Primitive.UArray as A
 import           Foundation.Primitive.UArray.Mutable (MUArray)
-import           Foundation.Internal.Bifunctor (first, second)
+import           Foundation.Primitive.Compat.Bifunctor (first, second)
 import           Foundation.Primitive.Exception
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
 import qualified Foundation.Collection as C

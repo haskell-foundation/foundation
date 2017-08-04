@@ -15,7 +15,7 @@ module Foundation.System.Bindings.Network
     , herr_TryAgain
     ) where
 
-import Foundation.Internal.Base
+import Foundation.Primitive.Compat.Base
 import Foreign.C.Types
 
 #ifdef mingw32_HOST_OS

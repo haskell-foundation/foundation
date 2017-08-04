@@ -13,7 +13,7 @@ module Foundation.Primitive.String.Encoding.Encoding
     , convertFromTo
     ) where
 
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types

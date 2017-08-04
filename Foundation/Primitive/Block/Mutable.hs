@@ -58,7 +58,7 @@ module Foundation.Primitive.Block.Mutable
 
 import           GHC.Prim
 import           GHC.Types
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Data.Proxy
 import           Foundation.Primitive.Exception
 import           Foundation.Primitive.Types.OffsetSize

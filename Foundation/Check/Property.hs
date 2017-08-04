@@ -18,7 +18,7 @@ module Foundation.Check.Property
 
 import Foundation.Primitive.Imports hiding (Typeable)
 import Data.Proxy (Proxy(..))
-import Foundation.Internal.Typeable
+import Foundation.Primitive.Compat.Typeable
 import Foundation.Check.Gen
 import Foundation.Check.Arbitrary
 

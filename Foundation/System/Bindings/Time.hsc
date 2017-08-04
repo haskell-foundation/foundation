@@ -5,7 +5,7 @@
 
 module Foundation.System.Bindings.Time where
 
-import Foundation.Internal.Base
+import Foundation.Primitive.Compat.Base
 import Foundation.Primitive.Types.OffsetSize
 import Foreign.C.Types
 

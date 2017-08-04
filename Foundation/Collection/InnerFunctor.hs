@@ -3,7 +3,7 @@ module Foundation.Collection.InnerFunctor
     ( InnerFunctor(..)
     ) where
 
-import Foundation.Internal.Base
+import Foundation.Primitive.Compat.Base
 import Foundation.Collection.Element
 import qualified Foundation.Primitive.String as S
 import qualified Foundation.Primitive.UArray as UV

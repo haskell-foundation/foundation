@@ -7,7 +7,7 @@
 module Foundation.Primitive.Runtime
     where
 
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Foundation.Primitive.Types.OffsetSize
 import           System.Environment
 import           System.IO.Unsafe (unsafePerformIO)

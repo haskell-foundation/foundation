@@ -4,8 +4,8 @@ module Foundation.Primitive.MutableBuilder
     , BuildingState(..)
     ) where
 
-import           Foundation.Internal.Base
-import           Foundation.Internal.MonadTrans
+import           Foundation.Primitive.Compat.Base
+import           Foundation.Primitive.Compat.MonadTrans
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
 

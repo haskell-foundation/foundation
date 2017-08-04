@@ -29,7 +29,7 @@ import qualified System.Info
 import qualified Data.Version
 import           Data.Data
 import qualified GHC.Conc
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Foundation.Primitive.Endianness (Endianness(..), endianness)
 import           Foundation.String
 

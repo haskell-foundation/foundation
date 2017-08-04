@@ -1,5 +1,5 @@
 -- |
--- Module      : Foundation.Internal.Bifunctor
+-- Module      : Foundation.Primitive.Compat.Bifunctor
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
@@ -15,7 +15,7 @@
 -- defining both 'first' and 'second'.
 --
 {-# LANGUAGE CPP #-}
-module Foundation.Internal.Bifunctor
+module Foundation.Primitive.Compat.Bifunctor
   ( Bifunctor(..)
   ) where
 

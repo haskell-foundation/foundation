@@ -11,7 +11,7 @@ module Foundation.Primitive.UTF8.Types
     , ValidationFailure(..)
     ) where
 
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Foundation.Primitive.Types.OffsetSize
 
 -- | Step when walking a String

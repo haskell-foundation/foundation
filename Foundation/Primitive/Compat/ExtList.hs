@@ -1,12 +1,12 @@
 {-# LANGUAGE CPP #-}
-module Foundation.Internal.ExtList
+module Foundation.Primitive.Compat.ExtList
     ( length
     , null
     , sum
     , reverse
     ) where
 
-import Foundation.Internal.Base
+import Foundation.Primitive.Compat.Base
 import Foundation.Primitive.Numerical.Additive
 import qualified GHC.List as List
 

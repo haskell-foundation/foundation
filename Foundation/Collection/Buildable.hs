@@ -20,15 +20,15 @@ import           Foundation.Primitive.UArray.Mutable
 import qualified Foundation.Primitive.BoxedArray as BA
 import qualified Foundation.Primitive.String as S
 import           Foundation.Collection.Element
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.MutableBuilder
-import           Foundation.Internal.MonadTrans
+import           Foundation.Primitive.Compat.MonadTrans
 
 -- $setup
 -- >>> import Control.Monad.ST
 -- >>> import Foundation.Primitive.UArray
--- >>> import Foundation.Internal.Base
+-- >>> import Foundation.Primitive.Compat.Base
 -- >>> import Foundation.Primitive.OffsetSize
 
 -- | Collections that can be built chunk by chunk.

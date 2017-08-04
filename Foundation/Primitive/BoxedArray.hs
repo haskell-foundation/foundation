@@ -73,16 +73,16 @@ import           GHC.ST
 import           Foundation.Primitive.Numerical.Additive
 import           Foundation.Primitive.Numerical.Subtractive
 import           Foundation.Primitive.NonEmpty
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Data.Proxy
-import           Foundation.Internal.MonadTrans
+import           Foundation.Primitive.Compat.MonadTrans
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Types
 import           Foundation.Primitive.NormalForm
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Exception
 import           Foundation.Primitive.MutableBuilder
-import qualified Foundation.Internal.ExtList as List
+import qualified Foundation.Primitive.Compat.ExtList as List
 
 -- | Array of a
 data Array a = Array {-# UNPACK #-} !(Offset a)

@@ -16,9 +16,9 @@ module Foundation.Primitive.Utils
     , primMutableByteArraySlideToStart
     ) where
 
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Foundation.Primitive.Types.OffsetSize
-import           Foundation.Internal.Primitive
+import           Foundation.Primitive.Compat.Primitive
 import           Foundation.Primitive.Monad
 import           GHC.Prim
 import           GHC.Types

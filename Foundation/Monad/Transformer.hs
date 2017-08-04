@@ -2,7 +2,7 @@ module Foundation.Monad.Transformer
     ( MonadTrans(..)
     ) where
 
-import Foundation.Internal.Base
+import Foundation.Primitive.Compat.Base
 
 -- | Basic Transformer class
 class MonadTrans trans where

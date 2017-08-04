@@ -17,7 +17,7 @@ module Foundation.Collection.Mappable
     , forM_
     ) where
 
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import qualified Data.Traversable
 import           Foundation.Primitive.BoxedArray (Array)
 

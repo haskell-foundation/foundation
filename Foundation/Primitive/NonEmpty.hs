@@ -12,7 +12,7 @@ module Foundation.Primitive.NonEmpty
     ) where
 
 import           Foundation.Primitive.Exception
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 
 -- | NonEmpty property for any Collection
 newtype NonEmpty a = NonEmpty { getNonEmpty :: a }

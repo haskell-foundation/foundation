@@ -31,8 +31,8 @@ import           GHC.Types
 import           GHC.Word
 import           GHC.Prim
 import           Data.Bits
-import           Foundation.Internal.Base hiding (toList)
-import           Foundation.Internal.Primitive
+import           Foundation.Primitive.Compat.Base hiding (toList)
+import           Foundation.Primitive.Compat.Primitive
 import           Data.Proxy
 import           Foundation.Primitive.Numerical.Additive
 import           Foundation.Primitive.Numerical.Subtractive

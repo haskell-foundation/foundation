@@ -50,13 +50,13 @@ import           GHC.Prim
 import           GHC.Types
 import           GHC.Ptr
 import           GHC.ST
-import           Foundation.Internal.Primitive
+import           Foundation.Primitive.Compat.Primitive
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import qualified Foundation.Primitive.Runtime as Runtime
 import           Data.Proxy
-import qualified Foundation.Internal.ExtList as List
+import qualified Foundation.Primitive.Compat.ExtList as List
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.FinalPtr
 import           Foundation.Primitive.NormalForm

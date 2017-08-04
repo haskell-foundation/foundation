@@ -1,12 +1,12 @@
 -- |
--- Module      : Foundation.Internal.Base
+-- Module      : Foundation.Primitive.Compat.Base
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
 -- Portability : portable
 --
 -- internal re-export of all the good base bits
-module Foundation.Internal.Base
+module Foundation.Primitive.Compat.Base
     ( (Prelude.$)
     , (Prelude.$!)
     , (Prelude.&&)
@@ -40,21 +40,21 @@ module Foundation.Internal.Base
     , Prelude.Int
     , Prelude.Integer
     , Prelude.Char
-    , Foundation.Internal.NumLiteral.Integral (..)
-    , Foundation.Internal.NumLiteral.Fractional (..)
-    , Foundation.Internal.NumLiteral.HasNegation (..)
+    , Foundation.Primitive.Compat.NumLiteral.Integral (..)
+    , Foundation.Primitive.Compat.NumLiteral.Fractional (..)
+    , Foundation.Primitive.Compat.NumLiteral.HasNegation (..)
     , Data.Int.Int8, Data.Int.Int16, Data.Int.Int32, Data.Int.Int64
     , Data.Word.Word8, Data.Word.Word16, Data.Word.Word32, Data.Word.Word64, Data.Word.Word
     , Prelude.Double, Prelude.Float
     , Prelude.IO
-    , Foundation.Internal.IsList.IsList (..)
+    , Foundation.Primitive.Compat.IsList.IsList (..)
     , GHC.Exts.IsString (..)
     , GHC.Generics.Generic
     , Prelude.Either (..)
     , Data.Data.Data (..)
     , Data.Data.mkNoRepType
     , Data.Data.DataType
-    , Foundation.Internal.Typeable.Typeable
+    , Foundation.Primitive.Compat.Typeable.Typeable
     , Data.Monoid.Monoid (..)
     , (Data.Monoid.<>)
     , Control.Exception.Exception
@@ -73,9 +73,9 @@ import qualified Data.Monoid
 import qualified Data.Data
 import qualified Data.Word
 import qualified Data.Int
-import qualified Foundation.Internal.IsList
-import qualified Foundation.Internal.NumLiteral
-import qualified Foundation.Internal.Typeable
+import qualified Foundation.Primitive.Compat.IsList
+import qualified Foundation.Primitive.Compat.NumLiteral
+import qualified Foundation.Primitive.Compat.Typeable
 import qualified GHC.Exts
 import qualified GHC.Generics
 import qualified GHC.Ptr

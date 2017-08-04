@@ -16,7 +16,7 @@ import GHC.Word
 import GHC.Types
 import Data.Bits
 import qualified Prelude
-import Foundation.Internal.Base
+import Foundation.Primitive.Compat.Base
 import Foundation.Primitive.Types.OffsetSize
 import Foundation.Primitive.Monad
 import Foundation.Primitive.Numerical.Additive

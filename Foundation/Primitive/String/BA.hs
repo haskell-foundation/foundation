@@ -11,7 +11,7 @@ module Foundation.Primitive.String.BA
 
 import           GHC.Prim
 import           GHC.ST
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Foundation.Primitive.Numerical.Additive
 import           Foundation.Primitive.Types.OffsetSize
 

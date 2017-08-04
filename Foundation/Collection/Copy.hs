@@ -3,7 +3,7 @@ module Foundation.Collection.Copy
     ) where
 
 import           GHC.ST (runST)
-import           Foundation.Internal.Base ((>>=))
+import           Foundation.Primitive.Compat.Base ((>>=))
 import qualified Foundation.Primitive.Block as BLK
 import qualified Foundation.Primitive.UArray as UA
 import qualified Foundation.Primitive.BoxedArray as BA

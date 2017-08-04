@@ -3,7 +3,7 @@ module Foundation.Primitive.Environment
     , lookupEnv
     ) where
 
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Foundation.Primitive.UTF8.Base (String)
 import qualified System.Environment as Sys (getArgs, lookupEnv)
 

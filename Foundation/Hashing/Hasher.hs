@@ -3,7 +3,7 @@ module Foundation.Hashing.Hasher
     ( Hasher(..)
     ) where
 
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Foundation.Primitive.IntegralConv
 import           Foundation.Array (UArray)
 import qualified Foundation.Primitive.UArray as A

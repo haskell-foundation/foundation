@@ -14,7 +14,7 @@ import           Foundation.Check.Property
 import           Foundation.Check.Types
 import           Foundation.Primitive.Imports
 import           Foundation.Collection
-import           Foundation.Internal.Bifunctor (bimap)
+import           Foundation.Primitive.Compat.Bifunctor (bimap)
 import           Foundation.Numerical
 
 propertyToResult :: PropertyTestArg -> (PropertyResult, Bool)

@@ -28,8 +28,8 @@ import GHC.Ptr
 import GHC.ForeignPtr
 import GHC.IO
 import Foundation.Primitive.Monad
-import Foundation.Internal.Primitive
-import Foundation.Internal.Base
+import Foundation.Primitive.Compat.Primitive
+import Foundation.Primitive.Compat.Base
 
 import Control.Monad.ST (runST)
 

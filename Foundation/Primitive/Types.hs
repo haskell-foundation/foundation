@@ -41,7 +41,7 @@ import           GHC.Word
 import           Data.Bits
 import           Foreign.C.Types
 import           Data.Proxy
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Foundation.Primitive.Numerical.Subtractive
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Endianness

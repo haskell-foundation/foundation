@@ -10,7 +10,7 @@ module Foundation.Collection.Keyed
     ( KeyedCollection(..)
     ) where
 
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import qualified Data.List
 
 -- | Collection of things that can be looked up by Key

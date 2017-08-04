@@ -1,7 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE ConstraintKinds #-}
-module Foundation.Internal.CallStack
+module Foundation.Primitive.Compat.CallStack
     ( HasCallStack
     ) where
 

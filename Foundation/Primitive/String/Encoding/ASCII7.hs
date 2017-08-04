@@ -13,7 +13,7 @@ module Foundation.Primitive.String.Encoding.ASCII7
     , ASCII7_Invalid(..)
     ) where
 
-import Foundation.Internal.Base
+import Foundation.Primitive.Compat.Base
 import Foundation.Primitive.Types.OffsetSize
 import Foundation.Primitive.Numerical.Additive
 import Foundation.Primitive.Monad

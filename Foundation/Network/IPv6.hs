@@ -30,7 +30,7 @@ import Control.Monad (when)
 import Foundation.Class.Storable
 import Foundation.Hashing.Hashable
 import Foundation.Primitive.Numerical.Additive (scale)
-import Foundation.Internal.Base
+import Foundation.Primitive.Compat.Base
 import Data.Proxy
 import Foundation.Primitive
 import Foundation.Primitive.Types.OffsetSize

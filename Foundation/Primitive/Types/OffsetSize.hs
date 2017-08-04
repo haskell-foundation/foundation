@@ -46,7 +46,7 @@ import GHC.Prim
 import Foreign.C.Types
 import System.Posix.Types (CSsize (..))
 import Data.Bits
-import Foundation.Internal.Base
+import Foundation.Primitive.Compat.Base
 import Data.Proxy
 import Foundation.Primitive.From
 import Foundation.Primitive.Numerical.Number

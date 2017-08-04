@@ -137,18 +137,6 @@ library
                      Foundation.Collection.Zippable
                      Foundation.Collection.Mappable
                      Foundation.Conduit.Internal
-                     Foundation.Internal.Base
-                     Foundation.Internal.Bifunctor
-                     Foundation.Internal.CallStack
-                     Foundation.Internal.ExtList
-                     Foundation.Internal.IsList
-                     Foundation.Internal.Identity
-                     Foundation.Internal.Primitive
-                     Foundation.Internal.PrimTypes
-                     Foundation.Internal.MonadTrans
-                     Foundation.Internal.Natural
-                     Foundation.Internal.NumLiteral
-                     Foundation.Internal.Typeable
                      Foundation.Numerical.Floating
                      Foundation.IO.File
                      Foundation.Primitive.Error
@@ -201,6 +189,18 @@ library
                      Foundation.Primitive.UArray
                      Foundation.Primitive.Runtime
                      Foundation.Primitive.Imports
+                     Foundation.Primitive.Compat.Base
+                     Foundation.Primitive.Compat.Bifunctor
+                     Foundation.Primitive.Compat.CallStack
+                     Foundation.Primitive.Compat.ExtList
+                     Foundation.Primitive.Compat.IsList
+                     Foundation.Primitive.Compat.Identity
+                     Foundation.Primitive.Compat.Primitive
+                     Foundation.Primitive.Compat.PrimTypes
+                     Foundation.Primitive.Compat.MonadTrans
+                     Foundation.Primitive.Compat.Natural
+                     Foundation.Primitive.Compat.NumLiteral
+                     Foundation.Primitive.Compat.Typeable
                      Foundation.Monad.MonadIO
                      Foundation.Monad.Exception
                      Foundation.Monad.Transformer

@@ -44,7 +44,7 @@ module Foundation.List.ListN
     ) where
 
 import           Data.Proxy
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Foundation.Primitive.Nat
 import           Foundation.Numerical
 import qualified Prelude

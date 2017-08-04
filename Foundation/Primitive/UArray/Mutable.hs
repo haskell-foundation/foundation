@@ -41,8 +41,8 @@ module Foundation.Primitive.UArray.Mutable
 import           GHC.Prim
 import           GHC.Types
 import           GHC.Ptr
-import           Foundation.Internal.Base
-import           Foundation.Internal.Primitive
+import           Foundation.Primitive.Compat.Base
+import           Foundation.Primitive.Compat.Primitive
 import           Data.Proxy
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad

@@ -25,8 +25,8 @@ import GHC.Prim
 import GHC.Int
 import GHC.Word
 import Prelude (Integer, fromIntegral)
-import Foundation.Internal.Base
-import Foundation.Internal.Natural
+import Foundation.Primitive.Compat.Base
+import Foundation.Primitive.Compat.Natural
 
 #if WORD_SIZE_IN_BITS < 64
 import GHC.IntWord64

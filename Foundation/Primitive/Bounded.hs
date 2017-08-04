@@ -23,8 +23,8 @@ module Foundation.Primitive.Bounded
 
 import           GHC.TypeLits
 import           Data.Word
-import           Foundation.Internal.Base
-import           Foundation.Internal.Natural
+import           Foundation.Primitive.Compat.Base
+import           Foundation.Primitive.Compat.Natural
 import           Data.Proxy
 import           Foundation.Primitive.Nat
 import qualified Prelude

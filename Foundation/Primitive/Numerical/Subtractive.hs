@@ -2,8 +2,8 @@ module Foundation.Primitive.Numerical.Subtractive
     ( Subtractive(..)
     ) where
 
-import           Foundation.Internal.Base
-import           Foundation.Internal.Natural
+import           Foundation.Primitive.Compat.Base
+import           Foundation.Primitive.Compat.Natural
 import           Foundation.Primitive.IntegralConv
 import qualified Prelude
 

@@ -11,9 +11,9 @@ module Foundation.Primitive.These
     ( These(..)
     ) where
 
-import Foundation.Internal.Base
+import Foundation.Primitive.Compat.Base
 import Foundation.Primitive.NormalForm
-import Foundation.Internal.Bifunctor
+import Foundation.Primitive.Compat.Bifunctor
 
 -- | Either a or b or both.
 data These a b

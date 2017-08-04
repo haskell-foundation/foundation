@@ -11,7 +11,7 @@ module Foundation.System.Entropy
     ) where
 
 
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Foundation.Primitive.Types.OffsetSize
 import qualified Foundation.Primitive.UArray.Mutable as A
 import qualified Foundation.Primitive.UArray as A

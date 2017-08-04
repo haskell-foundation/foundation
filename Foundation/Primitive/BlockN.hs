@@ -41,7 +41,7 @@ module Foundation.Primitive.BlockN
 where
 
 import           Data.Proxy (Proxy(..))
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Foundation.Primitive.Block (Block, MutableBlock(..), unsafeIndex)
 import qualified Foundation.Primitive.Block as B
 import           Foundation.Primitive.Monad (PrimMonad, PrimState)

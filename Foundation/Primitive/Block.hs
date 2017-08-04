@@ -64,9 +64,9 @@ import           GHC.Prim
 import           GHC.Types
 import           GHC.ST
 import qualified Data.List
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Data.Proxy
-import           Foundation.Internal.Primitive
+import           Foundation.Primitive.Compat.Primitive
 import           Foundation.Primitive.NonEmpty
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad

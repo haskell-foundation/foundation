@@ -20,7 +20,7 @@ module Foundation.Primitive.Exception
     , NonEmptyCollectionIsEmpty(..)
     ) where
 
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
 

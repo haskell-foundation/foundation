@@ -1,5 +1,5 @@
 -- |
--- Module      : Foundation.Internal.IsList
+-- Module      : Foundation.Primitive.Compat.IsList
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
@@ -8,7 +8,7 @@
 -- compat friendly version of IsList
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE CPP #-}
-module Foundation.Internal.IsList
+module Foundation.Primitive.Compat.IsList
     ( IsList(..)
     ) where
 

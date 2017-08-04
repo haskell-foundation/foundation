@@ -1,5 +1,5 @@
 -- |
--- Module      : Foundation.Internal.Identity
+-- Module      : Foundation.Primitive.Compat.Identity
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
@@ -8,7 +8,7 @@
 -- Identity re-export, with a compat wrapper for older version of base that
 -- do not have Data.Functor.Identity
 {-# LANGUAGE CPP #-}
-module Foundation.Internal.Identity
+module Foundation.Primitive.Compat.Identity
     ( Identity(..)
     ) where
 
@@ -18,7 +18,7 @@ import Data.Functor.Identity
 
 #else
 
-import Foundation.Internal.Base
+import Foundation.Primitive.Compat.Base
 
 newtype Identity a = Identity { runIdentity :: a }
     deriving (Eq, Ord)

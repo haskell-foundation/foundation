@@ -1,5 +1,5 @@
 -- |
--- Module      : Foundation.Internal.Typeable
+-- Module      : Foundation.Primitive.Compat.Typeable
 -- License     : BSD-style
 -- Maintainer  : Nicolas Di Prima <nicolas@primetype.co.uk>
 -- Stability   : statble
@@ -10,7 +10,7 @@
 
 {-# LANGUAGE CPP #-}
 
-module Foundation.Internal.Typeable
+module Foundation.Primitive.Compat.Typeable
     (
 #if MIN_VERSION_base(4,7,0)
       Typeable

@@ -19,9 +19,9 @@ import           GHC.ST (ST, runST)
 import           GHC.Types
 import           GHC.Word
 import           GHC.Prim
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Foundation.Primitive.Numerical.Additive
-import           Foundation.Internal.Bifunctor
+import           Foundation.Primitive.Compat.Bifunctor
 import           Foundation.Primitive.NormalForm
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Types
@@ -39,7 +39,7 @@ import           Foundation.Primitive.UArray.Base   as Vec (offset, pureST, onBa
 import           GHC.CString                        (unpackCString#, unpackCStringUtf8#)
 
 import           Data.Data
-import           Foundation.Internal.ExtList as List
+import           Foundation.Primitive.Compat.ExtList as List
 
 -- | Opaque packed array of characters in the UTF8 encoding
 newtype String = String (UArray Word8)

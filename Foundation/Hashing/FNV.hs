@@ -21,7 +21,7 @@ module Foundation.Hashing.FNV
     , FNV1a_64
     ) where
 
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import qualified Foundation.Primitive.UArray as A
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Types

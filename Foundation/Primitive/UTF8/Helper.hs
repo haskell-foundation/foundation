@@ -16,8 +16,8 @@
 module Foundation.Primitive.UTF8.Helper
     where
 
-import           Foundation.Internal.Base
-import           Foundation.Internal.Primitive
+import           Foundation.Primitive.Compat.Base
+import           Foundation.Primitive.Compat.Primitive
 import           Foundation.Primitive.Types.OffsetSize
 import           GHC.Prim
 import           GHC.Types

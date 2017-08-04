@@ -24,7 +24,7 @@ module Foundation.Primitive.Endianness
     , endianness
     ) where
 
-import Foundation.Internal.Base
+import Foundation.Primitive.Compat.Base
 import Data.Word (byteSwap16, byteSwap32, byteSwap64)
 
 #if defined(ARCH_IS_LITTLE_ENDIAN) || defined(ARCH_IS_BIG_ENDIAN)

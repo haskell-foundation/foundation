@@ -4,8 +4,8 @@ module Foundation.Primitive.NormalForm
     , force
     ) where
 
-import Foundation.Internal.Base
-import Foundation.Internal.Natural
+import Foundation.Primitive.Compat.Base
+import Foundation.Primitive.Compat.Natural
 import Foundation.Primitive.Types.OffsetSize
 import Foundation.Primitive.Types.Char7
 import Foundation.Primitive.Endianness

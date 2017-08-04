@@ -2,7 +2,7 @@ module Foundation.Primitive.Show
     where
 
 import qualified Prelude
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Foundation.Primitive.UTF8.Base (String)
 
 -- | Use the Show class to create a String.

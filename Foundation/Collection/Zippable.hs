@@ -22,7 +22,7 @@ import qualified Foundation.Primitive.BoxedArray as BA
 import qualified Foundation.Primitive.String as S
 import           Foundation.Collection.Element
 import           Foundation.Collection.Sequential
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Foundation.Primitive.Types.AsciiString(AsciiString(..))
 import qualified Prelude
 import           GHC.ST

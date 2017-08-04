@@ -2,7 +2,7 @@
 module Foundation.System.Bindings.Macos
     where
 
-import Foundation.Internal.Base
+import Foundation.Primitive.Compat.Base
 import Foreign.C.Types
 import Foundation.System.Bindings.PosixDef
 import Foundation.Primitive.Types.OffsetSize

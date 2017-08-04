@@ -21,7 +21,7 @@ module Foundation.Primitive.Types.AsciiString
     , fromBytes
     ) where
 
-import           Foundation.Internal.Base
+import           Foundation.Primitive.Compat.Base
 import           Foundation.Primitive.Types.Char7
 import           Foundation.Primitive.UArray.Base
 import qualified Foundation.Primitive.Types.Char7 as Char7

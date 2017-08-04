@@ -29,7 +29,7 @@ import Data.Functor.Identity
 
 import Control.Monad.Fix
 import Control.Monad.Zip
-import Foundation.Internal.Base
+import Foundation.Primitive.Compat.Base
 
 import GHC.Generics (Generic1)
 

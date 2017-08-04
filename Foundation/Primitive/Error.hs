@@ -9,7 +9,7 @@ module Foundation.Primitive.Error
 
 import           GHC.Prim
 import           Foundation.Primitive.UTF8.Base
-import           Foundation.Internal.CallStack
+import           Foundation.Primitive.Compat.CallStack
 
 #if MIN_VERSION_base(4,9,0)
 

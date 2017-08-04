@@ -28,7 +28,7 @@ import Foreign.Storable (peek)
 import System.Win32.Types (getLastError)
 import Control.Exception
 import Foundation.System.Entropy.Common
-import Foundation.Internal.Base
+import Foundation.Primitive.Compat.Base
 import qualified Prelude
 
 newtype EntropyCtx = EntropyCtx CryptCtx

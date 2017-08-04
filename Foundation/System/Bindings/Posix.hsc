@@ -15,7 +15,7 @@
 module Foundation.System.Bindings.Posix
    where
 
-import Foundation.Internal.Base
+import Foundation.Primitive.Compat.Base
 import Foreign.C.Types
 import Data.Bits
 import Foundation.System.Bindings.PosixDef

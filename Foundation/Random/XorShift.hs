@@ -24,8 +24,8 @@ import           Foundation.Numerical
 import           Foundation.Bits
 import           Foundation.Random.Class
 import           Foundation.Random.DRG
-import           Foundation.Internal.Bifunctor
-import           Foundation.Internal.ExtList (reverse)
+import           Foundation.Primitive.Compat.Bifunctor
+import           Foundation.Primitive.Compat.ExtList (reverse)
 import qualified Foundation.Primitive.UArray as A
 import qualified Prelude
 import           GHC.Prim

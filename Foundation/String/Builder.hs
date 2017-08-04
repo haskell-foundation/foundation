@@ -16,8 +16,8 @@ module Foundation.String.Builder
     , toString
     ) where
 
-import           Foundation.Internal.Base
---import           Foundation.Internal.Semigroup
+import           Foundation.Primitive.Compat.Base
+--import           Foundation.Primitive.Compat.Semigroup
 import           Foundation.Primitive.String                (String)
 import qualified Foundation.Primitive.String as S
 
