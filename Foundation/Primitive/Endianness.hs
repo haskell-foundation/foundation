@@ -25,7 +25,7 @@ module Foundation.Primitive.Endianness
     ) where
 
 import Foundation.Internal.Base
-import Foundation.Internal.ByteSwap
+import Data.Word (byteSwap16, byteSwap32, byteSwap64)
 
 #if defined(ARCH_IS_LITTLE_ENDIAN) || defined(ARCH_IS_BIG_ENDIAN)
 #else
@@ -127,3 +127,15 @@ bytesToEndianness :: Word8 -> Endianness
 bytesToEndianness 1 = BigEndian
 bytesToEndianness _ = LittleEndian
 #endif
+
+-- | Class of types that can be byte-swapped.
+--
+-- e.g. Word16, Word32, Word64
+class ByteSwap a where
+    byteSwap :: a -> a
+instance ByteSwap Word16 where
+    byteSwap = byteSwap16
+instance ByteSwap Word32 where
+    byteSwap = byteSwap32
+instance ByteSwap Word64 where
+    byteSwap = byteSwap64

@@ -149,7 +149,6 @@ library
                      Foundation.Collection.Mappable
                      Foundation.Conduit.Internal
                      Foundation.Internal.Base
-                     Foundation.Internal.ByteSwap
                      Foundation.Internal.CallStack
                      Foundation.Internal.Primitive
                      Foundation.Internal.IsList
