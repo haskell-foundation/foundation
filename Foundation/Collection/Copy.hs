@@ -6,7 +6,7 @@ import           GHC.ST (runST)
 import           Foundation.Internal.Base ((>>=))
 import qualified Foundation.Primitive.Block as BLK
 import qualified Foundation.Array.Unboxed as UA
-import qualified Foundation.Array.Boxed as BA
+import qualified Foundation.Primitive.BoxedArray as BA
 import qualified Foundation.String.UTF8 as S
 
 class Copy a where

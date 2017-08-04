@@ -48,7 +48,7 @@ module Foundation.Primitive.Imports
     , Foundation.Primitive.Types.AsciiString.AsciiString
     , Foundation.Primitive.UTF8.Base.String
     , Foundation.Array.Unboxed.UArray
-    , Foundation.Array.Boxed.Array
+    , Foundation.Primitive.BoxedArray.Array
     , Foundation.Internal.NumLiteral.Integral (..)
     , Foundation.Internal.NumLiteral.Fractional (..)
     , Foundation.Internal.NumLiteral.HasNegation (..)
@@ -88,7 +88,7 @@ import qualified Foundation.Internal.IsList
 import qualified Foundation.Internal.Natural
 import qualified Foundation.Internal.NumLiteral
 import qualified Foundation.Array.Unboxed
-import qualified Foundation.Array.Boxed
+import qualified Foundation.Primitive.BoxedArray
 import qualified Foundation.Primitive.UTF8.Base
 import qualified Foundation.Primitive.Error
 import qualified Foundation.Primitive.Show

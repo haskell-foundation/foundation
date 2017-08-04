@@ -28,7 +28,7 @@ import qualified Foundation.Collection.List as ListExtra
 import qualified Data.List
 import qualified Foundation.Array.Unboxed as UV
 import qualified Foundation.Primitive.Block as BLK
-import qualified Foundation.Array.Boxed as BA
+import qualified Foundation.Primitive.BoxedArray as BA
 import qualified Foundation.String.UTF8 as S
 
 -- | A set of methods for ordered colection

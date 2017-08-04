@@ -1,5 +1,5 @@
 -- |
--- Module      : Foundation.Array.Boxed
+-- Module      : Foundation.Primitive.BoxedArray
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
@@ -11,7 +11,7 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Foundation.Array.Boxed
+module Foundation.Primitive.BoxedArray
     ( Array
     , MArray
     , empty
@@ -548,7 +548,7 @@ uncons vec
     !len = length vec
 
 unsnoc :: Array ty -> Maybe (Array ty, ty)
-unsnoc vec = case len - 1 of 
+unsnoc vec = case len - 1 of
     Nothing -> Nothing
     Just newLen -> Just (take newLen vec, unsafeIndex vec (sizeLastOffset len))
   where

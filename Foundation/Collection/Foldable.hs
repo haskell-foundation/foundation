@@ -18,7 +18,7 @@ import           Foundation.Primitive.NonEmpty
 import qualified Data.List
 import qualified Foundation.Array.Unboxed as UV
 import qualified Foundation.Primitive.Block as BLK
-import qualified Foundation.Array.Boxed as BA
+import qualified Foundation.Primitive.BoxedArray as BA
 
 -- | Give the ability to fold a collection on itself
 class Foldable collection where

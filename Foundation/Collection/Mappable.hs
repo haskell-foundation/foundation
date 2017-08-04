@@ -19,7 +19,7 @@ module Foundation.Collection.Mappable
 
 import           Foundation.Internal.Base
 import qualified Data.Traversable
-import           Foundation.Array.Boxed (Array)
+import           Foundation.Primitive.BoxedArray (Array)
 
 -- | Functors representing data structures that can be traversed from
 -- left to right.

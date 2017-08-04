@@ -16,7 +16,7 @@ import           Foundation.Collection.Element
 import qualified Data.List
 import qualified Foundation.Primitive.Block as BLK
 import qualified Foundation.Array.Unboxed as UV
-import qualified Foundation.Array.Boxed as BA
+import qualified Foundation.Primitive.BoxedArray as BA
 import qualified Foundation.Primitive.Exception as A
 import qualified Foundation.String.UTF8 as S
 

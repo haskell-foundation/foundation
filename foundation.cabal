@@ -171,6 +171,7 @@ library
                      Foundation.Primitive.Bindings.Memory
                      Foundation.Primitive.Block.Base
                      Foundation.Primitive.Block.Mutable
+                     Foundation.Primitive.BoxedArray
                      Foundation.Primitive.Endianness
                      Foundation.Primitive.Environment
                      Foundation.Primitive.Exception
@@ -211,7 +212,6 @@ library
                      Foundation.Array.Unboxed
                      Foundation.Array.Unboxed.Mutable
                      Foundation.Array.Unboxed.ByteArray
-                     Foundation.Array.Boxed
                      Foundation.Array.Bitmap
                      Foundation.Foreign.Alloc
                      Foundation.Foreign.MemoryMap

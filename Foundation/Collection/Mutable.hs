@@ -16,7 +16,7 @@ import qualified Foundation.Primitive.Block.Mutable as BLK
 
 import qualified Foundation.Array.Unboxed.Mutable as MUV
 import qualified Foundation.Array.Unboxed as UV
-import qualified Foundation.Array.Boxed as BA
+import qualified Foundation.Primitive.BoxedArray as BA
 
 -- | Collection of things that can be made mutable, modified and then freezed into an MutableFreezed collection
 class MutableCollection c where

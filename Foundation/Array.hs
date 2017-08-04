@@ -24,7 +24,7 @@ module Foundation.Array
     ) where
 
 import           Foundation.Primitive.Exception
-import           Foundation.Array.Boxed
+import           Foundation.Primitive.BoxedArray
 import           Foundation.Array.Unboxed
 import           Foundation.Array.Unboxed.Mutable
 import           Foundation.Array.Bitmap

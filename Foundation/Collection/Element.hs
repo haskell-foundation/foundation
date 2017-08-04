@@ -12,7 +12,7 @@ module Foundation.Collection.Element
 import Foundation.Internal.Base
 import Foundation.Primitive.Block (Block)
 import Foundation.Array.Unboxed (UArray)
-import Foundation.Array.Boxed (Array)
+import Foundation.Primitive.BoxedArray (Array)
 import Foundation.String.UTF8 (String)
 import Foundation.Primitive.Types.AsciiString (AsciiString)
 import Foundation.Primitive.Types.Char7 (Char7)

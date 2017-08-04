@@ -18,8 +18,8 @@ module Foundation.Array.Chunked.Unboxed
 
 import           Data.Typeable
 import           Control.Arrow ((***))
-import           Foundation.Array.Boxed (Array)
-import qualified Foundation.Array.Boxed as A
+import           Foundation.Primitive.BoxedArray (Array)
+import qualified Foundation.Primitive.BoxedArray as A
 import           Foundation.Primitive.Exception
 import           Foundation.Array.Unboxed (UArray)
 import qualified Foundation.Array.Unboxed as U
