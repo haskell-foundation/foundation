@@ -34,7 +34,8 @@ import           Data.Bits
 import           Foundation.Internal.Base hiding (toList)
 import           Foundation.Internal.Primitive
 import           Data.Proxy
-import           Foundation.Numerical
+import           Foundation.Numerical.Additive
+import           Foundation.Numerical.Subtractive
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Monad
 import           Foundation.Primitive.Types

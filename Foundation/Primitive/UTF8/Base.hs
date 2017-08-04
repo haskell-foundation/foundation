@@ -20,7 +20,7 @@ import           GHC.Types
 import           GHC.Word
 import           GHC.Prim
 import           Foundation.Internal.Base
-import           Foundation.Numerical
+import           Foundation.Numerical.Additive
 import           Foundation.Class.Bifunctor
 import           Foundation.Primitive.NormalForm
 import           Foundation.Primitive.Types.OffsetSize

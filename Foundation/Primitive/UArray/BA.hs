@@ -19,7 +19,7 @@ module Foundation.Primitive.UArray.BA
 import           GHC.Types
 import           GHC.Prim
 import           Foundation.Internal.Base
-import           Foundation.Numerical
+import           Foundation.Numerical.Additive
 import           Foundation.Primitive.Types.OffsetSize
 import           Foundation.Primitive.Types
 import           Foundation.Primitive.Monad

@@ -75,7 +75,8 @@ import           Foundation.Primitive.Types
 import qualified Foundation.Primitive.Block.Mutable as M
 import           Foundation.Primitive.Block.Mutable (Block(..), MutableBlock(..), new, unsafeThaw, unsafeFreeze)
 import           Foundation.Primitive.Block.Base
-import           Foundation.Numerical
+import           Foundation.Numerical.Additive
+import           Foundation.Numerical.Subtractive
 
 -- | Copy all the block content to the memory starting at the destination address
 unsafeCopyToPtr :: forall ty prim . PrimMonad prim
