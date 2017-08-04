@@ -111,8 +111,7 @@ library
                      Foundation.UUID
                      Foundation.System.Entropy
                      Foundation.System.Bindings
-  other-modules:     Foundation.String.Internal
-                     Foundation.String.UTF8
+  other-modules:     Foundation.String.UTF8
                      Foundation.String.UTF8.BA
                      Foundation.String.UTF8.Addr
                      Foundation.String.Encoding.Encoding
