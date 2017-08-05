@@ -27,7 +27,7 @@ module Foundation
     , Prelude.either
     , Prelude.flip
     , Prelude.const
-    , Basement.Error.error
+    , Basement.Imports.error
     , Foundation.IO.Terminal.putStr
     , Foundation.IO.Terminal.putStrLn
     --, print
@@ -44,7 +44,7 @@ module Foundation
     , Foundation.Primitive.force
       -- ** Type classes
     , Prelude.Show
-    , show
+    , Basement.Imports.show
     , Prelude.Ord (..)
     , Prelude.Eq (..)
     , Prelude.Bounded (..)
@@ -169,7 +169,6 @@ import           GHC.Exts (IsString(..))
 import           Basement.Compat.IsList
 import qualified Basement.Compat.Base (ifThenElse)
 import qualified Data.Proxy
-import qualified Basement.Error
 
 import qualified Foundation.Numerical
 import qualified Foundation.Partial
@@ -178,7 +177,7 @@ import           Foundation.Tuple
 import qualified Basement.Compat.Bifunctor
 import           Basement.Types.OffsetSize (CountOf(..), Offset(..))
 import qualified Foundation.Primitive
-import           Basement.Show
+import qualified Basement.Imports
 import           Basement.Environment (getArgs)
 import           Basement.Compat.NumLiteral
 import           Basement.Compat.Natural

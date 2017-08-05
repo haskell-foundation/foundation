@@ -24,13 +24,14 @@ import           Basement.Exception
 import           Basement.UArray (UArray)
 import qualified Basement.UArray as U
 import           Basement.Compat.Bifunctor
-import qualified Foundation.Collection as C
 import           Basement.Compat.Base
 import           Basement.Types.OffsetSize
-import           Foundation.Numerical
-import           Basement.Types
-import           Foundation.Primitive
+import           Basement.PrimType
 import           GHC.ST
+
+import           Foundation.Numerical
+import           Foundation.Primitive
+import qualified Foundation.Collection as C
 
 
 newtype ChunkedUArray ty = ChunkedUArray (Array (UArray ty))

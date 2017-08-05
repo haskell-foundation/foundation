@@ -47,7 +47,7 @@ import qualified Basement.Block as B
 import           Basement.Monad (PrimMonad, PrimState)
 import           Basement.Nat
 import           Basement.NormalForm
-import           Basement.Types (PrimType)
+import           Basement.PrimType (PrimType)
 import           Basement.Types.OffsetSize (CountOf(..), Offset(..))
 
 newtype BlockN (n :: Nat) a = BlockN { unBlock :: Block a } deriving (NormalForm, Eq, Show)

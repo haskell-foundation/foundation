@@ -44,6 +44,7 @@ module Basement.Imports
     , Basement.Types.OffsetSize.Offset
     , Basement.Types.OffsetSize.CountOf
     , Prelude.Char
+    , Basement.PrimType.PrimType
     , Basement.Types.Char7.Char7
     , Basement.Types.AsciiString.AsciiString
     , Basement.UTF8.Base.String
@@ -92,6 +93,7 @@ import qualified Basement.BoxedArray
 import qualified Basement.UTF8.Base
 import qualified Basement.Error
 import qualified Basement.Show
+import qualified Basement.PrimType
 import qualified Basement.Types.OffsetSize
 import qualified Basement.Types.AsciiString
 import qualified Basement.Types.Char7
@@ -105,5 +107,8 @@ ifThenElse :: Prelude.Bool -> a -> a -> a
 ifThenElse Prelude.True  e1 _  = e1
 ifThenElse Prelude.False _  e2 = e2
 
+-- | IEEE754 Floating point Binary32, simple precision (Also known as Float)
 type FP32 = Prelude.Float
+
+-- | IEEE754 Floating point Binary64, double precision (Also known as Double)
 type FP64 = Prelude.Double

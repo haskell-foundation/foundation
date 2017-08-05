@@ -21,7 +21,7 @@ module Foundation.Hashing.SipHash
 import           Data.Bits
 import           Basement.Compat.Base
 import           Basement.Types.OffsetSize
-import           Basement.Types
+import           Basement.PrimType
 import           Basement.IntegralConv
 import           Foundation.Hashing.Hasher
 import qualified Basement.UArray as A

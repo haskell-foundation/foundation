@@ -18,7 +18,7 @@ module Foundation.Random.XorShift
     ) where
 
 import           Basement.Imports
-import           Basement.Types
+import           Basement.PrimType
 import           Basement.Types.OffsetSize
 import           Foundation.Numerical
 import           Foundation.Bits

@@ -71,7 +71,7 @@ import           Basement.NonEmpty
 import           Basement.Types.OffsetSize
 import           Basement.Monad
 import           Basement.Exception
-import           Basement.Types
+import           Basement.PrimType
 import qualified Basement.Block.Mutable as M
 import           Basement.Block.Mutable (Block(..), MutableBlock(..), new, unsafeThaw, unsafeFreeze)
 import           Basement.Block.Base

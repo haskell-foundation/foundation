@@ -38,7 +38,7 @@ module Foundation.Primitive
     , AsciiString(..)
     ) where
 
-import Basement.Types
+import Basement.PrimType
 import Basement.Types.Char7
 import Basement.Types.AsciiString
 import Basement.Monad

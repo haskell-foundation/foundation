@@ -22,7 +22,7 @@ import           GHC.Prim
 import           Basement.Compat.Base
 import           Basement.Numerical.Additive
 import           Basement.Types.OffsetSize
-import           Basement.Types
+import           Basement.PrimType
 import           Basement.Monad
 
 type Immutable = Addr#

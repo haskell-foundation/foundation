@@ -23,59 +23,51 @@ source-repository head
 
 library
   hs-source-dirs:    .
-  exposed-modules:   Basement.Error
-                     Basement.Bounded
+  exposed-modules:   
+                     Basement.Imports
+
                      Basement.Base16
                      Basement.Bindings.Memory
-                     Basement.Block.Base
-                     Basement.Block.Mutable
-                     Basement.BoxedArray
                      Basement.Endianness
                      Basement.Environment
+                     Basement.PrimType
+
                      Basement.Exception
                      Basement.From
-                     Basement.Types
+
                      Basement.Types.Char7
                      Basement.Types.OffsetSize
                      Basement.Types.Ptr
                      Basement.Types.AsciiString
-                     Basement.Block
                      Basement.Monad
                      Basement.MutableBuilder
+                     Basement.FinalPtr
+
                      Basement.Nat
+
+                     -- Extended Types
+                     Basement.BoxedArray
+                     Basement.Block
+                     Basement.Block.Mutable
+                     Basement.UArray
+                     Basement.UArray.Mutable
+                     Basement.String
                      Basement.NonEmpty
+                     
+                     -- Utils
                      Basement.NormalForm
+                     Basement.These
+
+                     -- numeric stuff
+                     Basement.IntegralConv
+                     Basement.Floating
                      Basement.Numerical.Number
                      Basement.Numerical.Additive
                      Basement.Numerical.Subtractive
                      Basement.Numerical.Multiplicative
-                     Basement.Utils
-                     Basement.IntegralConv
-                     Basement.Floating
-                     Basement.FinalPtr
-                     Basement.These
-                     Basement.Show
-                     Basement.UTF8.Table
-                     Basement.UTF8.Helper
-                     Basement.UTF8.Base
-                     Basement.UTF8.BA
-                     Basement.UTF8.Addr
-                     Basement.UTF8.Types
-                     Basement.String
-                     Basement.String.BA
-                     Basement.String.Addr
-                     Basement.String.Encoding.Encoding
-                     Basement.String.Encoding.UTF16
-                     Basement.String.Encoding.UTF32
-                     Basement.String.Encoding.ASCII7
-                     Basement.String.Encoding.ISO_8859_1
-                     Basement.UArray.Base
-                     Basement.UArray.BA
-                     Basement.UArray.Addr
-                     Basement.UArray.Mutable
-                     Basement.UArray
-                     Basement.Runtime
-                     Basement.Imports
+                     Basement.Bounded
+
+                     -- compat / base redefinition
                      Basement.Compat.Base
                      Basement.Compat.Bifunctor
                      Basement.Compat.CallStack
@@ -90,6 +82,36 @@ library
                      Basement.Compat.Typeable
   if impl(ghc >= 8.0)
     exposed-modules: Basement.BlockN
+
+  other-modules:
+                     Basement.Error
+                     Basement.Show
+                     Basement.Runtime
+
+                     Basement.Utils
+
+                     Basement.Block.Base
+
+                     Basement.UTF8.Addr
+                     Basement.UTF8.BA
+                     Basement.UTF8.Base
+                     Basement.UTF8.Helper
+                     Basement.UTF8.Table
+                     Basement.UTF8.Types
+
+                     Basement.UArray.Addr
+                     Basement.UArray.BA
+                     Basement.UArray.Base
+
+                     Basement.String.BA
+                     Basement.String.Addr
+                     Basement.String.Encoding.Encoding
+                     Basement.String.Encoding.UTF16
+                     Basement.String.Encoding.UTF32
+                     Basement.String.Encoding.ASCII7
+                     Basement.String.Encoding.ISO_8859_1
+
+
   build-depends:       base >= 4.7 && < 5
                      , ghc-prim
   default-language:    Haskell2010

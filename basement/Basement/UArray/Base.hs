@@ -52,7 +52,7 @@ import           GHC.Ptr
 import           GHC.ST
 import           Basement.Compat.Primitive
 import           Basement.Monad
-import           Basement.Types
+import           Basement.PrimType
 import           Basement.Compat.Base
 import qualified Basement.Runtime as Runtime
 import           Data.Proxy

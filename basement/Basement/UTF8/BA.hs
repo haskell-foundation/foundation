@@ -38,7 +38,7 @@ import           Basement.Numerical.Additive
 import           Basement.Numerical.Subtractive
 import           Basement.Types.OffsetSize
 import           Basement.Monad
-import           Basement.Types
+import           Basement.PrimType
 import           Basement.UTF8.Helper
 import           Basement.UTF8.Table
 import           Basement.UTF8.Types

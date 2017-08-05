@@ -77,7 +77,7 @@ import           Basement.Compat.Base
 import           Data.Proxy
 import           Basement.Compat.MonadTrans
 import           Basement.Types.OffsetSize
-import           Basement.Types
+import           Basement.PrimType
 import           Basement.NormalForm
 import           Basement.Monad
 import           Basement.Exception

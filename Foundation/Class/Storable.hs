@@ -41,7 +41,7 @@ import Basement.Compat.Base
 import Basement.Types.OffsetSize
 import Foundation.Collection
 import Foundation.Collection.Buildable (builderLift, build_)
-import Basement.Types
+import Basement.PrimType
 import Basement.Endianness
 import Foundation.Numerical
 

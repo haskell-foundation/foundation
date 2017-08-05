@@ -1,4 +1,4 @@
--- Module      : Basement.Types
+-- Module      : Basement.PrimType
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
@@ -9,7 +9,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE CPP #-}
-module Basement.Types
+module Basement.PrimType
     ( PrimType(..)
     , PrimMemoryComparable
     , primBaIndex
@@ -44,9 +44,9 @@ import           Data.Proxy
 import           Basement.Compat.Base
 import           Basement.Numerical.Subtractive
 import           Basement.Types.OffsetSize
+import           Basement.Types.Char7 (Char7(..))
 import           Basement.Endianness
 import           Basement.Monad
-import           Basement.Types.Char7 (Char7(..))
 import qualified Prelude (quot)
 
 #if WORD_SIZE_IN_BITS < 64

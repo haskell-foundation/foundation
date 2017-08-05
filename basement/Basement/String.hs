@@ -107,7 +107,7 @@ import           Basement.Numerical.Subtractive
 import           Basement.Numerical.Multiplicative
 import           Basement.Numerical.Number
 import           Basement.Monad
-import           Basement.Types
+import           Basement.PrimType
 import           Basement.FinalPtr
 import           Basement.IntegralConv
 import           Basement.Floating
@@ -544,7 +544,7 @@ intersperse sep src = case length src - 1 of
           lastSrcI :: Offset Char
           lastSrcI = 0 `offsetPlusE` gaps
           dstBytes = (size src :: CountOf Word8) + (gaps `scale` charToBytes (fromEnum sep))
-          
+
           go :: String -> Offset Char -> Offset8 -> MutableString s -> Offset8 -> ST s (Offset8, Offset8)
           go src' srcI srcIdx dst dstIdx
               | srcI == lastSrcI = do
@@ -1342,9 +1342,9 @@ isSuffixOf (String needle) (String haystack)
 --
 -- TODO: implemented the naive way and thus terribly inefficient, reimplement properly
 isInfixOf :: String -> String -> Bool
-isInfixOf (String needle) (String haystack) 
+isInfixOf (String needle) (String haystack)
     = loop (hayLen - needleLen) haystack
-    where 
+    where
       needleLen = C.length needle
       hayLen    = C.length haystack
       loop Nothing    _         = False

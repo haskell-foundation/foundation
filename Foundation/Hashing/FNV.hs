@@ -24,7 +24,7 @@ module Foundation.Hashing.FNV
 import           Basement.Compat.Base
 import qualified Basement.UArray as A
 import           Basement.Types.OffsetSize
-import           Basement.Types
+import           Basement.PrimType
 import           Basement.IntegralConv
 import           Foundation.Numerical
 import           Foundation.Hashing.Hasher

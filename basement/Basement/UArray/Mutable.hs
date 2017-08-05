@@ -46,7 +46,7 @@ import           Basement.Compat.Primitive
 import           Data.Proxy
 import           Basement.Types.OffsetSize
 import           Basement.Monad
-import           Basement.Types
+import           Basement.PrimType
 import           Basement.FinalPtr
 import           Basement.Exception
 import qualified Basement.Block.Mutable as MBLK

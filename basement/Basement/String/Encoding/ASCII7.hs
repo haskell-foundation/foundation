@@ -35,10 +35,6 @@ isAscii :: Word8 -> Bool
 isAscii (W8# w) = W8# (and# w 0x80## ) == 0
 {-# INLINE isAscii #-}
 
--- offset of size one
-aone :: Offset Word8
-aone = Offset 1
-
 data ASCII7_Invalid
     = ByteOutOfBound Word8
     | CharNotAscii   Char
@@ -64,7 +60,7 @@ next :: (Offset Word8 -> Word8)
           -- ^ either successfully validated the ASCII char and returned the
           -- next index or fail with an error
 next getter off
-    | isAscii w8 = Right (toChar w, off + aone)
+    | isAscii w8 = Right (toChar w, off + 1)
     | otherwise  = Left $ ByteOutOfBound w8
   where
     !w8@(W8# w) = getter off

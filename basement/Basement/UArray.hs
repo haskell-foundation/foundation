@@ -115,10 +115,10 @@ import           Basement.Types.OffsetSize
 import           Basement.Compat.MonadTrans
 import           Basement.NonEmpty
 import           Basement.Monad
-import           Basement.Types
+import           Basement.PrimType
 import           Basement.FinalPtr
-import           Basement.Utils
 import           Basement.Exception
+import           Basement.Utils
 import           Basement.UArray.Base
 import           Basement.Block (Block(..), MutableBlock(..))
 import           Basement.UArray.Mutable hiding (sub, copyToPtr)
@@ -538,8 +538,8 @@ elem !ty arr = onBackend goBa (\_ -> pure . goAddr) arr /= end
 {-# SPECIALIZE [2] elem :: Word8 -> UArray Word8 -> Bool #-}
 
 intersperse :: forall ty . PrimType ty => ty -> UArray ty -> UArray ty
-intersperse sep v = case len - 1 of 
-    Nothing -> v 
+intersperse sep v = case len - 1 of
+    Nothing -> v
     Just 0 -> v
     Just gaps -> runST $ unsafeCopyFrom v (len + gaps) go
   where

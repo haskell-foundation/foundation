@@ -24,7 +24,7 @@ import           Basement.Numerical.Additive
 import           Basement.Compat.Bifunctor
 import           Basement.NormalForm
 import           Basement.Types.OffsetSize
-import           Basement.Types
+import           Basement.PrimType
 import           Basement.Monad
 import           Basement.FinalPtr
 import           Basement.UTF8.Helper

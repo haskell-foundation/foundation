@@ -39,7 +39,7 @@ import           Basement.Types.OffsetSize
 import           Basement.Monad
 import           Basement.NormalForm
 import           Basement.Numerical.Additive
-import           Basement.Types
+import           Basement.PrimType
 
 -- | A block of memory containing unpacked bytes representing values of type 'ty'
 data Block ty = Block ByteArray#

@@ -13,7 +13,7 @@ module Foundation.Time.Types
 
 import           Data.Proxy
 import           Basement.Imports
-import           Basement.Types
+import           Basement.PrimType
 import           Foundation.Numerical
 import           Data.Coerce
 

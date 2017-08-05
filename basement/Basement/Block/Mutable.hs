@@ -64,7 +64,7 @@ import           Basement.Exception
 import           Basement.Types.OffsetSize
 import           Basement.Monad
 import           Basement.Numerical.Additive
-import           Basement.Types
+import           Basement.PrimType
 import           Basement.Block.Base
 
 -- | Return the length of a Mutable Block
