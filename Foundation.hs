@@ -27,7 +27,7 @@ module Foundation
     , Prelude.either
     , Prelude.flip
     , Prelude.const
-    , Foundation.Primitive.Error.error
+    , Basement.Imports.error
     , Foundation.IO.Terminal.putStr
     , Foundation.IO.Terminal.putStrLn
     --, print
@@ -44,7 +44,7 @@ module Foundation
     , Foundation.Primitive.force
       -- ** Type classes
     , Prelude.Show
-    , show
+    , Basement.Imports.show
     , Prelude.Ord (..)
     , Prelude.Eq (..)
     , Prelude.Bounded (..)
@@ -53,7 +53,7 @@ module Foundation
     , Integral (..)
     , Fractional (..)
     , HasNegation (..)
-    , Foundation.Class.Bifunctor.Bifunctor (..)
+    , Basement.Compat.Bifunctor.Bifunctor (..)
     , Control.Applicative.Applicative (..)
     , Prelude.Monad (..)
     , (Control.Monad.=<<)
@@ -135,14 +135,14 @@ module Foundation
     , Control.Exception.SomeException
     , Control.Exception.IOException
       -- ** Proxy
-    , Foundation.Internal.Proxy.Proxy(..)
-    , Foundation.Internal.Proxy.asProxyTypeOf
+    , Data.Proxy.Proxy(..)
+    , Data.Proxy.asProxyTypeOf
       -- ** Partial
     , Foundation.Partial.Partial
     , Foundation.Partial.partial
     , Foundation.Partial.PartialError
     , Foundation.Partial.fromPartial
-    , Foundation.Internal.Base.ifThenElse
+    , Basement.Compat.Base.ifThenElse
       -- ** Old Prelude Strings as [Char] with bridge back and forth
     , LString
     ) where
@@ -166,39 +166,31 @@ import           Foundation.Collection (Collection(..), and, or, Sequential(..)
 import qualified Foundation.IO.Terminal
 
 import           GHC.Exts (IsString(..))
-import           Foundation.Internal.IsList
-import qualified Foundation.Internal.Base (ifThenElse)
-import qualified Foundation.Internal.Proxy
-import qualified Foundation.Primitive.Error
+import           Basement.Compat.IsList
+import qualified Basement.Compat.Base (ifThenElse)
+import qualified Data.Proxy
 
 import qualified Foundation.Numerical
 import qualified Foundation.Partial
 import           Foundation.Tuple
 
-import qualified Foundation.Class.Bifunctor
-import           Foundation.Primitive.Types.OffsetSize (CountOf(..), Offset(..))
+import qualified Basement.Compat.Bifunctor
+import           Basement.Types.OffsetSize (CountOf(..), Offset(..))
 import qualified Foundation.Primitive
-import           Foundation.Primitive.Show
-import           Foundation.Internal.NumLiteral
-import           Foundation.Internal.Natural
+import qualified Basement.Imports
+import           Basement.Environment (getArgs)
+import           Basement.Compat.NumLiteral
+import           Basement.Compat.Natural
 
 import qualified Data.Maybe
 import qualified Data.Either
 import qualified Data.Function
 import qualified Data.Tuple
 
-import qualified System.Environment
-import qualified Data.List
-
-
 default (Prelude.Integer, Prelude.Double)
 
 -- | Alias to Prelude String ([Char]) for compatibility purpose
 type LString = Prelude.String
-
--- | Returns a list of the program's command line arguments (not including the program name).
-getArgs :: Prelude.IO [String]
-getArgs = (Data.List.map fromList <$> System.Environment.getArgs)
 
 fromCount :: CountOf ty -> Prelude.Int
 fromCount (CountOf n) = n

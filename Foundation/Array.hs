@@ -23,9 +23,9 @@ module Foundation.Array
     , OutOfBound
     ) where
 
-import           Foundation.Primitive.Exception
-import           Foundation.Array.Boxed
-import           Foundation.Array.Unboxed
-import           Foundation.Array.Unboxed.Mutable
+import           Basement.Exception
+import           Basement.BoxedArray
+import           Basement.UArray
+import           Basement.UArray.Mutable
 import           Foundation.Array.Bitmap
 import           Foundation.Array.Chunked.Unboxed

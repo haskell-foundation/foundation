@@ -1,6 +1,7 @@
 resolver: lts-2.22
 packages:
 - '.'
+- basement/
 extra-deps: []
 flags: {}
 extra-package-dbs: []

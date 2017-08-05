@@ -16,9 +16,9 @@ module Foundation.Check.Property
     , propertyFail
     ) where
 
-import Foundation.Primitive.Imports hiding (Typeable)
-import Foundation.Internal.Proxy (Proxy(..))
-import Foundation.Internal.Typeable
+import Basement.Imports hiding (Typeable)
+import Data.Proxy (Proxy(..))
+import Basement.Compat.Typeable
 import Foundation.Check.Gen
 import Foundation.Check.Arbitrary
 

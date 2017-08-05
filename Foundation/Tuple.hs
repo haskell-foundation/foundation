@@ -16,8 +16,8 @@ module Foundation.Tuple
     , Thdable(..)
     ) where
 
-import Foundation.Internal.Base
-import Foundation.Class.Bifunctor
+import Basement.Compat.Base
+import Basement.Compat.Bifunctor
 import Foundation.Primitive
 
 -- | Strict tuple (a,b)

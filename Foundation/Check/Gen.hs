@@ -12,7 +12,7 @@ module Foundation.Check.Gen
     , genWithParams
     ) where
 
-import           Foundation.Primitive.Imports
+import           Basement.Imports
 import           Foundation.Collection
 import           Foundation.Random
 import qualified Foundation.Random.XorShift as XorShift

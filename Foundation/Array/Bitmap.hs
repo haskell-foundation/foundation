@@ -29,14 +29,14 @@ module Foundation.Array.Bitmap
     , cons
     ) where
 
-import           Foundation.Array.Unboxed (UArray)
-import qualified Foundation.Array.Unboxed as A
-import           Foundation.Array.Unboxed.Mutable (MUArray)
-import           Foundation.Class.Bifunctor (first, second)
-import           Foundation.Primitive.Exception
-import           Foundation.Internal.Base
-import           Foundation.Primitive.Types.OffsetSize
-import           Foundation.Primitive.Monad
+import           Basement.UArray (UArray)
+import qualified Basement.UArray as A
+import           Basement.UArray.Mutable (MUArray)
+import           Basement.Compat.Bifunctor (first, second)
+import           Basement.Exception
+import           Basement.Compat.Base
+import           Basement.Types.OffsetSize
+import           Basement.Monad
 import qualified Foundation.Collection as C
 import           Foundation.Numerical
 import           Data.Bits

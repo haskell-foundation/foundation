@@ -11,10 +11,10 @@ module Foundation.System.Entropy
     ) where
 
 
-import           Foundation.Internal.Base
-import           Foundation.Primitive.Types.OffsetSize
-import qualified Foundation.Array.Unboxed.Mutable as A
-import qualified Foundation.Array.Unboxed as A
+import           Basement.Compat.Base
+import           Basement.Types.OffsetSize
+import qualified Basement.UArray.Mutable as A
+import qualified Basement.UArray as A
 import           Control.Exception
 import           Foreign.Ptr
 import           Foundation.Numerical

@@ -19,12 +19,12 @@ module Foundation.Hashing.SipHash
     ) where
 
 import           Data.Bits
-import           Foundation.Internal.Base
-import           Foundation.Primitive.Types.OffsetSize
-import           Foundation.Primitive.Types
-import           Foundation.Primitive.IntegralConv
+import           Basement.Compat.Base
+import           Basement.Types.OffsetSize
+import           Basement.PrimType
+import           Basement.IntegralConv
 import           Foundation.Hashing.Hasher
-import qualified Foundation.Array.Unboxed as A
+import qualified Basement.UArray as A
 import           Foundation.Array
 import           Foundation.Numerical
 import           Foundation.Bits

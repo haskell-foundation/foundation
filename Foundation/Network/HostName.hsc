@@ -23,8 +23,8 @@ module Foundation.Network.HostName
     ) where
 
 import Foundation.Class.Storable
-import Foundation.Internal.Base
-import Foundation.Internal.Proxy
+import Basement.Compat.Base
+import Basement.Compat.Proxy
 import Foundation.Hashing (Hashable)
 import Foundation.String
 import Foundation.Array

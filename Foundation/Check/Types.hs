@@ -24,7 +24,7 @@ module Foundation.Check.Types
     , HasFailures
     ) where
 
-import           Foundation.Primitive.Imports
+import           Basement.Imports
 import           Foundation.Collection
 import           Foundation.Monad.State
 import           Foundation.Check.Property

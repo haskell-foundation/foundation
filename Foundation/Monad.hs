@@ -13,8 +13,9 @@ module Foundation.Monad
     , replicateM
     ) where
 
-import Foundation.Primitive.Imports
-import Foundation.Primitive.Types.OffsetSize
+import Basement.Imports
+import Basement.Types.OffsetSize
+import Basement.Monad (MonadFailure(..))
 import Foundation.Monad.MonadIO
 import Foundation.Monad.Exception
 import Foundation.Monad.Transformer
@@ -28,21 +29,15 @@ import Data.Functor.Identity
 
 import Control.Monad.Fix
 import Control.Monad.Zip
-import Foundation.Internal.Base
+import Basement.Compat.Base
 
-#if MIN_VERSION_base(4,6,0)
 import GHC.Generics (Generic1)
-#endif
 
 -- | Identity functor and monad. (a non-strict monad)
 --
 -- @since 4.8.0.0
 newtype Identity a = Identity { runIdentity :: a }
-    deriving (Eq, Ord, Data, Generic, Typeable)
-
-#if MIN_VERSION_base(4,6,0)
-deriving instance Generic1 Identity
-#endif
+    deriving (Eq, Ord, Data, Generic, Generic1, Typeable)
 
 instance Functor Identity where
     fmap f (Identity x) = Identity (f x)

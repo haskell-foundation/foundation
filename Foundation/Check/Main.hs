@@ -15,9 +15,9 @@ module Foundation.Check.Main
     ( defaultMain
     ) where
 
-import           Foundation.Primitive.Imports
-import           Foundation.Primitive.IntegralConv
-import           Foundation.Primitive.Types.OffsetSize
+import           Basement.Imports
+import           Basement.IntegralConv
+import           Basement.Types.OffsetSize
 import           Foundation.System.Info (os, OS(..))
 import           Foundation.Collection
 import           Foundation.Numerical

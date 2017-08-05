@@ -36,9 +36,9 @@ module Foundation.Check
     , iterateProperty
     ) where
 
-import           Foundation.Primitive.Imports
-import           Foundation.Primitive.IntegralConv
-import           Foundation.Primitive.Types.OffsetSize
+import           Basement.Imports
+import           Basement.IntegralConv
+import           Basement.Types.OffsetSize
 import           Foundation.Check.Gen
 import           Foundation.Check.Arbitrary
 import           Foundation.Check.Property

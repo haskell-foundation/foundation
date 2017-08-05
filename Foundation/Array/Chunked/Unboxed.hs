@@ -18,19 +18,20 @@ module Foundation.Array.Chunked.Unboxed
 
 import           Data.Typeable
 import           Control.Arrow ((***))
-import           Foundation.Array.Boxed (Array)
-import qualified Foundation.Array.Boxed as A
-import           Foundation.Primitive.Exception
-import           Foundation.Array.Unboxed (UArray)
-import qualified Foundation.Array.Unboxed as U
-import           Foundation.Class.Bifunctor
-import qualified Foundation.Collection as C
-import           Foundation.Internal.Base
-import           Foundation.Primitive.Types.OffsetSize
-import           Foundation.Numerical
-import           Foundation.Primitive.Types
-import           Foundation.Primitive
+import           Basement.BoxedArray (Array)
+import qualified Basement.BoxedArray as A
+import           Basement.Exception
+import           Basement.UArray (UArray)
+import qualified Basement.UArray as U
+import           Basement.Compat.Bifunctor
+import           Basement.Compat.Base
+import           Basement.Types.OffsetSize
+import           Basement.PrimType
 import           GHC.ST
+
+import           Foundation.Numerical
+import           Foundation.Primitive
+import qualified Foundation.Collection as C
 
 
 newtype ChunkedUArray ty = ChunkedUArray (Array (UArray ty))

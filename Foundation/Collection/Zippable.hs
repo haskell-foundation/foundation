@@ -17,13 +17,13 @@ module Foundation.Collection.Zippable
     , Zippable(..)
     ) where
 
-import qualified Foundation.Array.Unboxed as UV
-import qualified Foundation.Array.Boxed as BA
-import qualified Foundation.String.UTF8 as S
+import qualified Basement.UArray as UV
+import qualified Basement.BoxedArray as BA
+import qualified Basement.String as S
 import           Foundation.Collection.Element
 import           Foundation.Collection.Sequential
-import           Foundation.Internal.Base
-import           Foundation.Primitive.Types.AsciiString(AsciiString(..))
+import           Basement.Compat.Base
+import           Basement.Types.AsciiString(AsciiString(..))
 import qualified Prelude
 import           GHC.ST
 

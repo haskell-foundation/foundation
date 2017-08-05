@@ -3,8 +3,8 @@ module Foundation.Numerical.Floating
     ( FloatingPoint(..)
     ) where
 
-import           Foundation.Internal.Base
-import           Foundation.Internal.Proxy
+import           Basement.Compat.Base
+import           Data.Proxy
 import qualified Prelude
 
 -- | IEEE754 Floating Point

@@ -51,6 +51,14 @@ testStringCases =
                 (remainingBa, allErrs, chunkS) = foldl' reconstruct (mempty, [], []) $ chunks randomInts wholeBA
              in (catMaybes allErrs === []) `propertyAnd` (remainingBa === mempty) `propertyAnd` (mconcat (reverse chunkS) === wholeS)
         ]
+    , Group "ModifiedUTF8"
+        [ propertyModifiedUTF8 "The foundation Serie" "基地系列" "基地系列"
+        , propertyModifiedUTF8 "has null bytes" "let's\0 do \0 it" "let's\0 do \0 it"
+        , propertyModifiedUTF8 "Vincent's special" "abc\0안, 蠀\0, ☃" "abc\0안, 蠀\0, ☃"
+        , propertyModifiedUTF8 "Long string"
+              "this is only a simple string but quite longer than the 64 bytes used in the modified UTF8 parser"
+              "this is only a simple string but quite longer than the 64 bytes used in the modified UTF8 parser"
+        ]
     {-
     , testGroup "replace" [
           testCase "indices '' 'bb' should raise an error" $ do
@@ -144,6 +152,9 @@ expectFromBytesErr enc (expectedString,expectedErr,positionErr) ba = do
     assertEqual "remaining" (drop positionErr ba) ba'
     assertEqual "string" expectedString (toList s')
 -}
+
+propertyModifiedUTF8 :: String -> [Char] -> String -> Test
+propertyModifiedUTF8 name chars str = Property name $ chars === toList str
 
 chunks :: Sequential c => RandomList -> c -> [c]
 chunks (RandomList randomInts) = loop (randomInts <> [1..])

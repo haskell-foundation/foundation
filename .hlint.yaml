@@ -59,12 +59,12 @@
 - ignore: {name: Redundant do}
 - ignore: {name: Reduce duplication}
 - ignore: {name: Redundant lambda}
-- ignore: {name: Unused LANGUAGE pragma, within: Foundation.Internal.CallStack}
-- ignore: {name: Unused LANGUAGE pragma, within: Foundation.Primitive.Error}
+- ignore: {name: Unused LANGUAGE pragma, within: Basement.Compat.CallStack}
+- ignore: {name: Unused LANGUAGE pragma, within: Basement.Error}
 - ignore: {name: Unused LANGUAGE pragma, within: Foundation.Monad}
 - ignore: {name: Use break}
 - ignore: {name: Use camelCase}
-- ignore: {name: Use fewer imports, within: Foundation.Internal.ByteSwap}
+- ignore: {name: Use fewer imports, within: Basement.Compat.ByteSwap}
 - ignore: {name: Use fmap, within: Foundation.Conduit.Internal}
 - ignore: {name: Use fmap, within: Foundation.Monad.State}
 - ignore: {name: Use fromMaybe, within: Foundation.Partial}

@@ -12,9 +12,9 @@ module Foundation.Foreign.MemoryMap.Types
     ) where
 
 import GHC.Ptr
-import Foundation.Primitive.FinalPtr
-import Foundation.Primitive.Types.OffsetSize
-import Foundation.Internal.Base
+import Basement.FinalPtr
+import Basement.Types.OffsetSize
+import Basement.Compat.Base
 import Foundation.VFS (FilePath)
 
 -- | Contains all the information related to a file mapping,

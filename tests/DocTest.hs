@@ -19,7 +19,7 @@ extensions =
 flags :: [String]
 flags = ["-fobject-code"]
 
--- Would be nice to just use "src" here, but both Foundation.String.UTF8 and
+-- Would be nice to just use "src" here, but both Basement.String and
 -- Foundation.String.UTF8LL share the same module name, and doctest breaks.
 files :: [String]
 files =

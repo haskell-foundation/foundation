@@ -4,9 +4,9 @@ module Foundation.Time.Bindings
     , getMonotonicTime
     ) where
 
-import Foundation.Primitive.Imports
-import Foundation.Primitive.Types.OffsetSize
-import Foundation.Primitive.Types.Ptr
+import Basement.Imports
+import Basement.Types.OffsetSize
+import Basement.Types.Ptr
 import Foundation.System.Bindings.Time
 import Foundation.Time.Types
 import Foundation.Foreign.Alloc

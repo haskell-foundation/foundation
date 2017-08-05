@@ -6,27 +6,27 @@ module Foundation.Time.StopWatch
     , stopPrecise
     ) where
 
-import Foundation.Primitive.Imports
-import Foundation.Primitive.Types.Ptr
+import Basement.Imports
+import Basement.Types.Ptr
 import Foundation.Time.Types
-import Foundation.Primitive.Block.Mutable
+import Basement.Block.Mutable
 import Foundation.Numerical
 import Foreign.Storable
 
 #if defined(mingw32_HOST_OS)
 import System.Win32.Time
-import Foundation.Primitive.Monad
-import Foundation.Primitive.IntegralConv
+import Basement.Monad
+import Basement.IntegralConv
 import System.IO.Unsafe
 #elif defined(darwin_HOST_OS)
 import Foundation.System.Bindings.Macos
-import Foundation.Primitive.IntegralConv
+import Basement.IntegralConv
 import System.IO.Unsafe
-import Foundation.Primitive.Types.OffsetSize
+import Basement.Types.OffsetSize
 #else
 import Foundation.System.Bindings.Time
-import Foundation.Primitive.Monad
-import Foundation.Primitive.Types.OffsetSize
+import Basement.Monad
+import Basement.Types.OffsetSize
 #endif
 
 -- | A precise stop watch

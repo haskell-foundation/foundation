@@ -7,7 +7,7 @@ module Foundation.Bits
     , alignRoundDown
     ) where
 
-import Foundation.Internal.Base
+import Basement.Compat.Base
 import Foundation.Numerical
 import Data.Bits
 

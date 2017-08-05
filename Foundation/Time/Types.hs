@@ -11,9 +11,9 @@ module Foundation.Time.Types
     , Seconds(..)
     ) where
 
-import           Foundation.Internal.Proxy
-import           Foundation.Primitive.Imports
-import           Foundation.Primitive.Types
+import           Data.Proxy
+import           Basement.Imports
+import           Basement.PrimType
 import           Foundation.Numerical
 import           Data.Coerce
 

@@ -23,8 +23,8 @@ module Foundation.Partial
     , fromRight
     ) where
 
-import Foundation.Internal.Base
-import Foundation.Internal.Identity
+import Basement.Compat.Base
+import Basement.Compat.Identity
 
 -- | Partialiality wrapper.
 newtype Partial a = Partial (Identity a)

@@ -4,13 +4,13 @@ module Foundation.Random.ChaChaDRG
     ) where
 
 import           Foundation.Class.Storable (peek)
-import           Foundation.Primitive.Imports
-import           Foundation.Primitive.Types.OffsetSize
-import           Foundation.Primitive.Monad
+import           Basement.Imports
+import           Basement.Types.OffsetSize
+import           Basement.Monad
 import           Foundation.Random.Class
 import           Foundation.Random.DRG
-import qualified Foundation.Array.Unboxed as A
-import qualified Foundation.Array.Unboxed.Mutable as A
+import qualified Basement.UArray as A
+import qualified Basement.UArray.Mutable as A
 import           GHC.ST
 import qualified Foreign.Marshal.Alloc (alloca)
 

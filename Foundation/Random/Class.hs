@@ -2,10 +2,10 @@ module Foundation.Random.Class
     ( MonadRandom(..)
     ) where
 
-import           Foundation.Internal.Proxy
-import           Foundation.Primitive.Imports
+import           Data.Proxy
+import           Basement.Imports
 import           Foundation.System.Entropy
-import qualified Foundation.Array.Unboxed as A
+import qualified Basement.UArray as A
 
 -- | A monad constraint that allows to generate random bytes
 class (Functor m, Applicative m, Monad m) => MonadRandom m where
@@ -22,4 +22,3 @@ instance MonadRandom IO where
                   <$> getRandomBytes (A.primSizeInBytes (Proxy :: Proxy Word64))
     getRandomF64 = flip A.index 0 . A.unsafeRecast
                   <$> getRandomBytes (A.primSizeInBytes (Proxy :: Proxy Word64))
-

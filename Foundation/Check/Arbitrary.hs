@@ -10,13 +10,13 @@ module Foundation.Check.Arbitrary
     , between
     ) where
 
-import           Foundation.Primitive.Imports
+import           Basement.Imports
 import           Foundation.Primitive
-import           Foundation.Primitive.Nat
-import           Foundation.Primitive.IntegralConv
-import           Foundation.Primitive.Bounded
-import           Foundation.Primitive.Types.OffsetSize
-import qualified Foundation.Primitive.Types.Char7 as Char7
+import           Basement.Nat
+import           Basement.IntegralConv
+import           Basement.Bounded
+import           Basement.Types.OffsetSize
+import qualified Basement.Types.Char7 as Char7
 import           Foundation.Check.Gen
 import           Foundation.Random
 import           Foundation.Bits

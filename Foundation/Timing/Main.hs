@@ -11,7 +11,7 @@ module Foundation.Timing.Main
     ( defaultMain
     ) where
 
-import           Foundation.Primitive.Imports
+import           Basement.Imports
 import           Foundation.IO.Terminal
 import           Foundation.Collection
 import           Control.Monad (when)

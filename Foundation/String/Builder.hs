@@ -16,10 +16,10 @@ module Foundation.String.Builder
     , toString
     ) where
 
-import           Foundation.Internal.Base
---import           Foundation.Internal.Semigroup
-import           Foundation.String.UTF8                (String)
-import qualified Foundation.String.UTF8 as S
+import           Basement.Compat.Base
+--import           Basement.Compat.Semigroup
+import           Basement.String                (String)
+import qualified Basement.String as S
 
 data Builder = E String | T [Builder]
 

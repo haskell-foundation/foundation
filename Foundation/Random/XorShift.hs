@@ -17,16 +17,16 @@ module Foundation.Random.XorShift
     , nextDouble
     ) where
 
-import           Foundation.Primitive.Imports
-import           Foundation.Primitive.Types
-import           Foundation.Primitive.Types.OffsetSize
+import           Basement.Imports
+import           Basement.PrimType
+import           Basement.Types.OffsetSize
 import           Foundation.Numerical
 import           Foundation.Bits
 import           Foundation.Random.Class
 import           Foundation.Random.DRG
-import           Foundation.Class.Bifunctor
-import           Foundation.Boot.List (reverse)
-import qualified Foundation.Array.Unboxed as A
+import           Basement.Compat.Bifunctor
+import           Basement.Compat.ExtList (reverse)
+import qualified Basement.UArray as A
 import qualified Prelude
 import           GHC.Prim
 import           GHC.Float

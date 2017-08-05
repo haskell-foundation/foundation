@@ -30,10 +30,10 @@ module Foundation.Conduit.Internal
     , bracketConduit
     ) where
 
-import Foundation.Primitive.Imports hiding (throw)
+import Basement.Imports hiding (throw)
 import Foundation.Monad
 import Foundation.Numerical
-import Foundation.Primitive.Monad
+import Basement.Monad
 import Control.Monad ((>=>), liftM, void, mapM_, join)
 import Control.Exception (SomeException, mask_)
 import Data.IORef (atomicModifyIORef)

@@ -29,11 +29,11 @@ import Control.Monad (when)
 
 import Foundation.Class.Storable
 import Foundation.Hashing.Hashable
-import Foundation.Numerical.Additive (scale)
-import Foundation.Internal.Base
-import Foundation.Internal.Proxy
+import Basement.Numerical.Additive (scale)
+import Basement.Compat.Base
+import Data.Proxy
 import Foundation.Primitive
-import Foundation.Primitive.Types.OffsetSize
+import Basement.Types.OffsetSize
 import Foundation.Numerical
 import Foundation.Collection (Element, length, intercalate, replicate, null)
 import Foundation.Parser

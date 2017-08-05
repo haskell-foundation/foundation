@@ -5,8 +5,6 @@
 -- Stability   : experimental
 -- Portability : portable
 --
--- Different collections (list, vector, string, ..) unified under 1 API.
--- an API to rules them all, and in the darkness bind them.
 --
 {-# LANGUAGE FlexibleInstances #-}
 module Foundation.Primitive
@@ -40,12 +38,12 @@ module Foundation.Primitive
     , AsciiString(..)
     ) where
 
-import Foundation.Primitive.Types
-import Foundation.Primitive.Types.Char7
-import Foundation.Primitive.Types.AsciiString
-import Foundation.Primitive.Monad
-import Foundation.Primitive.Endianness
-import Foundation.Primitive.IntegralConv
-import Foundation.Primitive.NormalForm
-import Foundation.Primitive.These
-import Foundation.Primitive.Block
+import Basement.PrimType
+import Basement.Types.Char7
+import Basement.Types.AsciiString
+import Basement.Monad
+import Basement.Endianness
+import Basement.IntegralConv
+import Basement.NormalForm
+import Basement.These
+import Basement.Block

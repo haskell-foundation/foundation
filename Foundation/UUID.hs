@@ -13,7 +13,7 @@ module Foundation.UUID
 import Control.Monad (unless)
 import Data.Maybe (fromMaybe)
 
-import           Foundation.Internal.Base
+import           Basement.Compat.Base
 import           Foundation.Collection (Element, Sequential, foldl')
 import           Foundation.Class.Storable
 import           Foundation.Hashing.Hashable
@@ -21,10 +21,10 @@ import           Foundation.Bits
 import           Foundation.Parser
 import           Foundation.Numerical
 import           Foundation.Primitive
-import           Foundation.Primitive.Base16
-import           Foundation.Primitive.IntegralConv
-import           Foundation.Primitive.Types.OffsetSize
-import qualified Foundation.Array.Unboxed as UA
+import           Basement.Base16
+import           Basement.IntegralConv
+import           Basement.Types.OffsetSize
+import qualified Basement.UArray as UA
 import           Foundation.Random (MonadRandom, getRandomBytes)
 
 data UUID = UUID {-# UNPACK #-} !Word64 {-# UNPACK #-} !Word64

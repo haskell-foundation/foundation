@@ -8,7 +8,7 @@ import GHC.ST
 
 import Foundation
 import Foundation.Collection
-import Foundation.Primitive.Block (Block)
+import Basement.Block (Block)
 import Foundation.String.Read
 import Foundation.String
 import BenchUtil.Common

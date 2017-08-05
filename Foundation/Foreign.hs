@@ -6,14 +6,14 @@
 -- Portability : portable
 --
 module Foundation.Foreign
-    ( module Foundation.Primitive.FinalPtr
+    ( module Basement.FinalPtr
     , V.foreignMem
     , V.mutableForeignMem
     , module Foreign.C.Types
     ) where
 
-import           Foundation.Primitive.FinalPtr
-import qualified Foundation.Array.Unboxed as V
-import qualified Foundation.Array.Unboxed.Mutable as V
+import           Basement.FinalPtr
+import qualified Basement.UArray as V
+import qualified Basement.UArray.Mutable as V
 
 import           Foreign.C.Types

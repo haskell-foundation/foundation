@@ -25,13 +25,13 @@ import           System.IO.Error
 import qualified System.IO as S
 import           Foundation.Collection
 import           Foundation.VFS
-import           Foundation.Primitive.Types.OffsetSize
-import           Foundation.Primitive.Imports
+import           Basement.Types.OffsetSize
+import           Basement.Imports
 import           Foundation.Array.Internal
 import           Foundation.Numerical
-import qualified Foundation.Array.Unboxed.Mutable as V
-import qualified Foundation.Array.Unboxed as V
-import qualified Foundation.String.UTF8 as S
+import qualified Basement.UArray.Mutable as V
+import qualified Basement.UArray as V
+import qualified Basement.String as S
 import           Control.Exception (bracket)
 import           Foreign.Ptr (plusPtr)
 

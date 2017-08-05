@@ -3,11 +3,11 @@ module Foundation.Collection.InnerFunctor
     ( InnerFunctor(..)
     ) where
 
-import Foundation.Internal.Base
+import Basement.Compat.Base
 import Foundation.Collection.Element
-import qualified Foundation.String.UTF8 as S
-import qualified Foundation.Array.Unboxed as UV
-import           Foundation.Array.Boxed (Array)
+import qualified Basement.String as S
+import qualified Basement.UArray as UV
+import           Basement.BoxedArray (Array)
 
 -- | A monomorphic functor that maps the inner values to values of the same type
 class InnerFunctor c where
