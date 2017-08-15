@@ -11,6 +11,7 @@ module Basement.UTF8.BA
     , nextAsciiDigit
     , expectAscii
     , next
+    , nextSkip
     , prev
     , prevSkip
     , write
@@ -87,6 +88,10 @@ next ba n =
   where
     !h = primIndex ba n
 {-# INLINE next #-}
+
+nextSkip :: Immutable -> Offset Word8 -> Offset Word8
+nextSkip ba n = n + 1 + Offset (getNbBytes (primIndex ba n))
+{-# INLINE nextSkip #-}
 
 -- Given a non null offset, give the previous character and the offset of this character
 -- will fail bad if apply at the beginning of string or an empty string.

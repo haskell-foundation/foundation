@@ -47,6 +47,7 @@ module Basement.Block
     , revSplitAt
     , splitOn
     , break
+    , breakEnd
     , span
     , elem
     , all
@@ -72,6 +73,7 @@ import           Basement.Types.OffsetSize
 import           Basement.Monad
 import           Basement.Exception
 import           Basement.PrimType
+import qualified Basement.UArray.BA as PrimAlg
 import qualified Basement.Block.Mutable as M
 import           Basement.Block.Mutable (Block(..), MutableBlock(..), new, unsafeThaw, unsafeFreeze)
 import           Basement.Block.Base
@@ -257,6 +259,16 @@ break predicate blk = findBreak 0
         | otherwise                     = findBreak (i + 1)
     {-# INLINE findBreak #-}
 {-# SPECIALIZE [2] break :: (Word8 -> Bool) -> Block Word8 -> (Block Word8, Block Word8) #-}
+
+breakEnd :: PrimType ty => (ty -> Bool) -> Block ty -> (Block ty, Block ty)
+breakEnd predicate blk@(Block ba)
+    | k == end  = (blk, mempty)
+    | otherwise = splitAt (offsetAsSize (k+1)) blk
+  where
+    k = PrimAlg.revFindIndexPredicate predicate ba 0 end
+    end = 0 `offsetPlusE` len
+    !len = length blk
+{-# SPECIALIZE [2] breakEnd :: (Word8 -> Bool) -> Block Word8 -> (Block Word8, Block Word8) #-}
 
 span :: PrimType ty => (ty -> Bool) -> Block ty -> (Block ty, Block ty)
 span p = break (not . p)

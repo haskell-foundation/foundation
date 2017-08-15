@@ -37,6 +37,7 @@ class (IsList c, Item c ~ Element c, Monoid c, Collection c) => Sequential c whe
               , ((revTake, revDrop) | revSplitAt)
               , splitOn
               , (break | span)
+              , (breakEnd | spanEnd)
               , intersperse
               , filter, reverse
               , uncons, unsnoc, snoc, cons
@@ -76,6 +77,10 @@ class (IsList c, Item c ~ Element c, Monoid c, Collection c) => Sequential c whe
     break predicate = span (not . predicate)
 
     -- | Split a collection when the predicate return true
+    breakEnd :: (Element c -> Bool) -> c -> (c,c)
+    breakEnd predicate = spanEnd (not . predicate)
+
+    -- | Split a collection when the predicate return true starting from the end of the collection
     breakElem :: Eq (Element c) => Element c -> c -> (c,c)
     breakElem c = break (== c)
 
@@ -103,6 +108,10 @@ class (IsList c, Item c ~ Element c, Monoid c, Collection c) => Sequential c whe
     -- | Split a collection while the predicate return true
     span :: (Element c -> Bool) -> c -> (c,c)
     span predicate = break (not . predicate)
+
+    -- | Split a collection while the predicate return true starting from the end of the collection
+    spanEnd :: (Element c -> Bool) -> c -> (c,c)
+    spanEnd predicate = breakEnd (not . predicate)
 
     -- | Filter all the elements that satisfy the predicate
     filter :: (Element c -> Bool) -> c -> c
@@ -212,6 +221,7 @@ instance Sequential [a] where
     revSplitAt (CountOf n) = ListExtra.revSplitAt n
     splitOn = ListExtra.wordsWhen
     break = Data.List.break
+    breakEnd = ListExtra.breakEnd
     intersperse = Data.List.intersperse
     span = Data.List.span
     dropWhile = Data.List.dropWhile
@@ -235,6 +245,7 @@ instance UV.PrimType ty => Sequential (BLK.Block ty) where
     revSplitAt n = BLK.revSplitAt n
     splitOn = BLK.splitOn
     break = BLK.break
+    breakEnd = BLK.breakEnd
     intersperse = BLK.intersperse
     span = BLK.span
     filter = BLK.filter
@@ -257,6 +268,7 @@ instance UV.PrimType ty => Sequential (UV.UArray ty) where
     revSplitAt = UV.revSplitAt
     splitOn = UV.splitOn
     break = UV.break
+    breakEnd = UV.breakEnd
     breakElem = UV.breakElem
     intersperse = UV.intersperse
     span = UV.span
@@ -282,6 +294,7 @@ instance Sequential (BA.Array ty) where
     revSplitAt = BA.revSplitAt
     splitOn = BA.splitOn
     break = BA.break
+    breakEnd = BA.breakEnd
     intersperse = BA.intersperse
     span = BA.span
     reverse = BA.reverse
@@ -306,6 +319,7 @@ instance Sequential S.String where
     revSplitAt = S.revSplitAt
     splitOn = S.splitOn
     break = S.break
+    breakEnd = S.breakEnd
     breakElem = S.breakElem
     intersperse = S.intersperse
     span = S.span

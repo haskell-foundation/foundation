@@ -224,8 +224,10 @@ testSequentialProperties proxy genElement = Group "Sequential"
     , Property "revDrop" $ withElements2 $ \(l, n) -> toList (revDrop n $ fromListP proxy l) === (revDrop n) l
     , Property "revSplitAt" $ withElements2 $ \(l, n) -> toList2 (revSplitAt n $ fromListP proxy l) === (revSplitAt n) l
     , Property "break" $ withElements2E $ \(l, c) -> toList2 (break (== c) $ fromListP proxy l) === (break (== c)) l
+    , Property "breakEnd" $ withElements2E $ \(l, c) -> toList2 (breakEnd (== c) $ fromListP proxy l) === (breakEnd (== c)) l
     , Property "breakElem" $ withElements2E $ \(l, c) -> toList2 (breakElem c $ fromListP proxy l) === (breakElem c) l
     , Property "span" $ withElements2E $ \(l, c) -> toList2 (span (== c) $ fromListP proxy l) === (span (== c)) l
+    , Property "spanEnd" $ withElements2E $ \(l, c) -> toList2 (spanEnd (== c) $ fromListP proxy l) === (spanEnd (== c)) l
     , Property "filter" $ withElements2E $ \(l, c) -> toList (filter (== c) $ fromListP proxy l) === (filter (== c)) l
     , Property "partition" $ withElements2E $ \(l, c) -> toList2 (partition (== c) $ fromListP proxy l) === (partition (== c)) l
     , Property "snoc" $ withElements2E $ \(l, c) -> toList (snoc (fromListP proxy l) c) === (l <> [c])

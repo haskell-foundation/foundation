@@ -70,10 +70,12 @@ instance Sequential (DList a) where
     splitAt n = bimap fromList fromList . splitAt n . toList
     splitOn f = fmap fromList . splitOn f . toList
     break f = bimap fromList fromList . break f . toList
+    breakEnd f = bimap fromList fromList . breakEnd f . toList
     breakElem e = bimap fromList fromList . breakElem e . toList
     intersperse e = fromList . intersperse e . toList
     intercalate e = intercalate e . toList
     span f = bimap fromList fromList . span f . toList
+    spanEnd f = bimap fromList fromList . spanEnd f . toList
     filter f = fromList . filter f . toList
     partition f = bimap fromList fromList . partition f . toList
     reverse = fromList . reverse . toList
@@ -85,3 +87,5 @@ instance Sequential (DList a) where
     sortBy comp = fromList . sortBy comp . toList
     singleton = DList . (:)
     replicate n e = fromList $ replicate n e
+
+biswap (a,b) = (b,a)

@@ -68,12 +68,14 @@ module Basement.UArray
     , revSplitAt
     , splitOn
     , break
+    , breakEnd
     , breakElem
     , breakLine
     , elem
     , indices
     , intersperse
     , span
+    , spanEnd
     , cons
     , snoc
     , uncons
@@ -377,6 +379,7 @@ splitAt nbElems arr@(UArray start len backend)
                                                    ,UArray (start `offsetPlusE` nbElems) nbTails backend)
     | otherwise                                  = (arr, empty)
 
+
 breakElem :: PrimType ty => ty -> UArray ty -> (UArray ty, UArray ty)
 breakElem !ty arr@(UArray start len backend)
     | k == end   = (arr, empty)
@@ -505,7 +508,18 @@ revFindIndex ty arr
 {-# SPECIALIZE [3] revFindIndex :: Word8 -> UArray Word8 -> Maybe (Offset Word8) #-}
 
 break :: forall ty . PrimType ty => (ty -> Bool) -> UArray ty -> (UArray ty, UArray ty)
-break xpredicate xv
+break predicate arr
+    | k == end  = (arr, mempty)
+    | otherwise = splitAt (offsetAsSize (k `offsetSub` start)) arr
+  where
+    !k = onBackend goBa (\_ -> pure . goAddr) arr
+    !start = offset arr
+    !end = start `offsetPlusE` length arr
+    goBa ba = PrimBA.findIndexPredicate predicate ba start end
+    goAddr (Ptr addr) = PrimAddr.findIndexPredicate predicate addr start end
+
+{-
+{-# SPECIALIZE [3] findIndex :: Word8 -> UArray Word8 -> Maybe (Offset Word8) #-}
     | len == 0  = (mempty, mempty)
     | otherwise = runST $ unsafeIndexer xv (go xv xpredicate)
   where
@@ -519,6 +533,7 @@ break xpredicate xv
             | otherwise            = findBreak (i + Offset 1)
         {-# INLINE findBreak #-}
     {-# INLINE go #-}
+    -}
 {-# NOINLINE [2] break #-}
 {-# SPECIALIZE [2] break :: (Word8 -> Bool) -> UArray Word8 -> (UArray Word8, UArray Word8) #-}
 
@@ -527,6 +542,22 @@ break xpredicate xv
 {-# RULES "break (ty ==)" [3] forall (x :: forall ty . PrimType ty => ty) . break (x ==) = breakElem x #-}
 {-# RULES "break (== ty)" [3] forall (x :: Word8) . break (== x) = breakElem x #-}
 -}
+
+-- | Similar to break but start the search of the breakpoint from the end
+--
+-- > breakEnd (> 0) [1,2,3,0,0,0]
+-- ([1,2,3], [0,0,0])
+breakEnd :: forall ty . PrimType ty => (ty -> Bool) -> UArray ty -> (UArray ty, UArray ty)
+breakEnd predicate arr
+    | k == end  = (arr, mempty)
+    | otherwise = splitAt (offsetAsSize (k+1) `sizeSub` offsetAsSize start) arr
+  where
+    !k = onBackend goBa (\_ -> pure . goAddr) arr
+    !start = offset arr
+    !end   = start `offsetPlusE` length arr
+    goBa ba = PrimBA.revFindIndexPredicate predicate ba start end
+    goAddr (Ptr addr) = PrimAddr.revFindIndexPredicate predicate addr start end
+{-# SPECIALIZE [3] breakEnd :: (Word8 -> Bool) -> UArray Word8 -> (UArray Word8, UArray Word8) #-}
 
 elem :: PrimType ty => ty -> UArray ty -> Bool
 elem !ty arr = onBackend goBa (\_ -> pure . goAddr) arr /= end
@@ -557,6 +588,9 @@ intersperse sep v = case len - 1 of
 
 span :: PrimType ty => (ty -> Bool) -> UArray ty -> (UArray ty, UArray ty)
 span p = break (not . p)
+
+spanEnd :: PrimType ty => (ty -> Bool) -> UArray ty -> (UArray ty, UArray ty)
+spanEnd p = breakEnd (not . p)
 
 map :: (PrimType a, PrimType b) => (a -> b) -> UArray a -> UArray b
 map f a = create lenB (\i -> f $ unsafeIndex a (offsetCast Proxy i))

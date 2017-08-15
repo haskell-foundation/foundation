@@ -7,6 +7,7 @@ module Basement.UArray.BA
     ( findIndexElem
     , revFindIndexElem
     , findIndexPredicate
+    , revFindIndexPredicate
     , foldl
     , foldr
     , foldl1
@@ -58,6 +59,18 @@ findIndexPredicate predicate ba !startIndex !endIndex = loop startIndex
         | otherwise                 = i
       where found = predicate (primIndex ba i)
 {-# INLINE findIndexPredicate #-}
+
+revFindIndexPredicate :: PrimType ty => (ty -> Bool) -> Immutable -> Offset ty -> Offset ty -> Offset ty
+revFindIndexPredicate predicate ba startIndex endIndex
+    | endIndex > startIndex = loop (endIndex `offsetMinusE` 1)
+    | otherwise             = endIndex
+  where
+    loop !i
+        | found          = i
+        | i > startIndex = loop (i `offsetMinusE` 1)
+        | otherwise      = endIndex
+      where found = predicate (primIndex ba i)
+{-# INLINE revFindIndexPredicate #-}
 
 foldl :: PrimType ty => (a -> ty -> a) -> a -> Immutable -> Offset ty -> Offset ty -> a
 foldl f !initialAcc ba !startIndex !endIndex = loop startIndex initialAcc

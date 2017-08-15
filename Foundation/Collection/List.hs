@@ -10,6 +10,7 @@ module Foundation.Collection.List
     , revTake
     , revDrop
     , revSplitAt
+    , breakEnd
     , uncons
     , unsnoc
     ) where
@@ -44,6 +45,11 @@ revSplitAt :: Int -> [a] -> ([a],[a])
 revSplitAt n l = swap $ Data.List.splitAt (len - n) l
   where
     len = Data.List.length l
+
+breakEnd :: (a -> Bool) -> [a] -> ([a], [a])
+breakEnd predicate l =
+    let (l1,l2) = Data.List.break predicate (Data.List.reverse l)
+     in if Data.List.null l2 then (l, []) else (Data.List.reverse l2, Data.List.reverse l1)
 
 uncons :: [a] -> Maybe (a, [a])
 uncons []     = Nothing
