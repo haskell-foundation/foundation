@@ -3,6 +3,9 @@
 {-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 800
+{-# LANGUAGE TypeInType #-}
+#endif
 module Basement.Error
     ( error
     ) where
