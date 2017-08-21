@@ -627,28 +627,36 @@ sortBy xford vec
                 qsort (p+1) hi
         partition lo hi = do
             pivot <- unsafeRead ma hi
-            let loop i j
-                    | j == hi   = pure i
-                    | otherwise = do
-                        aj <- unsafeRead ma j
-                        i' <- if ford aj pivot == GT
-                                then pure i
-                                else do 
-                                    if i == j 
-                                        then pure ()
-                                        else do
-                                            ai <- unsafeRead ma i
-                                            unsafeWrite ma j ai
-                                            unsafeWrite ma i aj
-                                    pure $ i + 1
-                        loop i' (j+1)
-
-            i <- loop lo lo
-            ai  <- unsafeRead ma i
-            ahi <- unsafeRead ma hi
-            unsafeWrite ma hi ai
-            unsafeWrite ma i ahi
-            pure i
+            -- RETURN: index of pivot with [<pivot | pivot | >=pivot]
+            -- INVARIANT: i & j are valid array indices
+            let go i j = do
+                    -- INVARIANT: k <= pivotpos == hi
+                    let fw k = do ak <- unsafeRead ma k
+                                  if ford ak pivot == LT
+                                    then fw (k+1)
+                                    else pure (k, ak)
+                    (i, ai) <- fw i -- POST: ai >= pivot
+                    -- INVARIANT: k >= i
+                    let bw k | k==i = pure (i, ai)
+                             | otherwise = do ak <- unsafeRead ma k
+                                              if ford ak pivot /= LT
+                                                then bw (pred k)
+                                                else pure (k, ak)
+                    (j, aj) <- bw j -- POST: i==j OR (aj<pivot AND j<pivotpos)
+                    -- POST: ai>=pivot AND (i==j OR (aj<pivot AND j<pivotpos))
+                    if i < j
+                        then do -- (ai>=p AND aj<p) AND (i<j<pivotpos)
+                            -- swap two non-pivot elements and proceed
+                            unsafeWrite ma i aj
+                            unsafeWrite ma j ai
+                            -- POST: (ai < pivot <= aj)
+                            go (i+1) (pred j)
+                        else do -- ai >= pivot 
+                            -- complete partitioning by swapping pivot to the center
+                            unsafeWrite ma hi ai 
+                            unsafeWrite ma i pivot
+                            pure i
+            go lo hi
 
 filter :: forall ty . PrimType ty => (ty -> Bool) -> UArray ty -> UArray ty
 filter predicate arr = runST $ do
