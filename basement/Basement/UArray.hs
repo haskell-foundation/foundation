@@ -625,9 +625,10 @@ sortBy xford vec
                 p <- partition lo hi
                 qsort lo (pred p)
                 qsort (p+1) hi
-        pivotStrategy lo hi = do
-            pivot <- unsafeRead ma hi
-            pure (hi, pivot)
+        pivotStrategy (Offset low) (Offset high) = do
+            let mid = Offset $ (low + high) `div` 2
+            pivot <- unsafeRead ma mid
+            pure (mid, pivot)
         partition lo hi = do
             (p, pivot) <- pivotStrategy lo hi
             -- RETURN: index of pivot with [<pivot | pivot | >=pivot]
