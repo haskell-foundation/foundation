@@ -633,10 +633,13 @@ sortBy xford vec
                         aj <- unsafeRead ma j
                         i' <- if ford aj pivot == GT
                                 then pure i
-                                else do
-                                    ai <- unsafeRead ma i
-                                    unsafeWrite ma j ai
-                                    unsafeWrite ma i aj
+                                else do 
+                                    if i == j 
+                                        then pure ()
+                                        else do
+                                            ai <- unsafeRead ma i
+                                            unsafeWrite ma j ai
+                                            unsafeWrite ma i aj
                                     pure $ i + 1
                         loop i' (j+1)
 
