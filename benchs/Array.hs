@@ -7,7 +7,7 @@ import Criterion.Main
 import qualified Prelude as P
 
 main = do
-    rndInput <- getRandomBytes 10000
+    rndInput <- getRandomBytes (CountOf n)
     defaultMain [ bgroup "Uarray"
         [ bench "fromList [Word8]" $ whnf (fromList :: [Word8] -> UArray Word8) [1..255]
         , bench "fromList [Word16]" $ whnf (fromList :: [Word16] -> UArray Word16) [1..1024]
@@ -19,8 +19,9 @@ main = do
         ]
       ]
   where
+    n = 100000
     input, inputLong :: UArray Word8
     input = fromList ([1..255] <> [1..255])
-    inputLong = fromList . P.take 10000 . P.cycle $ [1..255]
+    inputLong = fromList . P.take n . P.cycle $ [1..255]
 
     sort = F.sortBy compare

@@ -625,15 +625,17 @@ sortBy xford vec
                 p <- partition lo hi
                 qsort lo (pred p)
                 qsort (p+1) hi
-        pivotStrategy (Offset low) (Offset high) = do
+        pivotStrategy (Offset low) hi@(Offset high) = do
             let mid = Offset $ (low + high) `div` 2
             pivot <- unsafeRead ma mid
-            pure (mid, pivot)
+            unsafeRead ma hi >>= unsafeWrite ma mid
+            unsafeWrite ma hi pivot -- move pivot @ pivotpos := hi
+            pure pivot
         partition lo hi = do
-            (p, pivot) <- pivotStrategy lo hi
+            pivot <- pivotStrategy lo hi
             -- RETURN: index of pivot with [<pivot | pivot | >=pivot]
-            -- INVARIANT: i & j are valid array indices
-            let go i j pivotpos = do
+            -- INVARIANT: i & j are valid array indices; pivotpos==hi
+            let go i j = do
                     -- INVARIANT: k <= pivotpos
                     let fw k = do ak <- unsafeRead ma k
                                   if ford ak pivot == LT
@@ -646,21 +648,21 @@ sortBy xford vec
                                               if ford ak pivot /= LT
                                                 then bw (pred k)
                                                 else pure (k, ak)
-                    (j, aj) <- bw j -- POST: i==j OR aj<pivot
-                    -- POST: ai>=pivot AND (i==j OR aj<pivot)
+                    (j, aj) <- bw j -- POST: i==j OR (aj<pivot AND j<pivotpos)
+                    -- POST: ai>=pivot AND (i==j OR aj<pivot AND (j<pivotpos))
                     if i < j
-                        then do -- (ai>=pivot AND aj<pivot) AND (i maybe pivotpos)
-                            -- swap elements; adjust pivotpos if necessary
+                        then do -- (ai>=p AND aj<p) AND (i<j<pivotpos)
+                            -- swap two non-pivot elements and proceed
                             unsafeWrite ma i aj
                             unsafeWrite ma j ai
                             -- POST: (ai < pivot <= aj)
-                            go (i+1) (pred j) (if i==pivotpos then j else pivotpos)
+                            go (i+1) (pred j)
                         else do -- ai >= pivot 
                             -- complete partitioning by swapping pivot to the center
-                            unsafeWrite ma pivotpos ai 
+                            unsafeWrite ma hi ai 
                             unsafeWrite ma i pivot
                             pure i
-            go lo hi p
+            go lo hi
 
 filter :: forall ty . PrimType ty => (ty -> Bool) -> UArray ty -> UArray ty
 filter predicate arr = runST $ do
