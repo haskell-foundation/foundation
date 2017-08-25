@@ -77,6 +77,7 @@ import           Basement.Block.Mutable (Block(..), MutableBlock(..), new, unsaf
 import           Basement.Block.Base
 import           Basement.Numerical.Additive
 import           Basement.Numerical.Subtractive
+import qualified Basement.UArray.BA as Alg
 
 -- | Copy all the block content to the memory starting at the destination address
 unsafeCopyToPtr :: forall ty prim . PrimMonad prim
@@ -338,42 +339,15 @@ reverse blk
             | otherwise  = unsafeWrite mb o' (unsafeIndex blk i) >> loop o' (i+1)
           where o' = pred o
 
-sortBy :: forall ty . PrimType ty => (ty -> ty -> Ordering) -> Block ty -> Block ty
-sortBy xford vec
+sortBy :: PrimType ty => (ty -> ty -> Ordering) -> Block ty -> Block ty
+sortBy ford vec
     | len == 0  = mempty
-    | otherwise = runST (thaw vec >>= doSort xford)
-  where
-    len = length vec
-    doSort :: (PrimType ty, PrimMonad prim) => (ty -> ty -> Ordering) -> MutableBlock ty (PrimState prim) -> prim (Block ty)
-    doSort ford ma = qsort 0 (sizeLastOffset len) >> unsafeFreeze ma
-      where
-        qsort lo hi
-            | lo >= hi  = pure ()
-            | otherwise = do
-                p <- partition lo hi
-                qsort lo (pred p)
-                qsort (p+1) hi
-        partition lo hi = do
-            pivot <- unsafeRead ma hi
-            let loop i j
-                    | j == hi   = pure i
-                    | otherwise = do
-                        aj <- unsafeRead ma j
-                        i' <- if ford aj pivot == GT
-                                then pure i
-                                else do
-                                    ai <- unsafeRead ma i
-                                    unsafeWrite ma j ai
-                                    unsafeWrite ma i aj
-                                    pure $ i + 1
-                        loop i' (j+1)
-
-            i <- loop lo lo
-            ai  <- unsafeRead ma i
-            ahi <- unsafeRead ma hi
-            unsafeWrite ma hi ai
-            unsafeWrite ma i ahi
-            pure i
+    | otherwise = runST $ do
+        mblock@(MutableBlock mba) <- thaw vec
+        Alg.inplaceSortBy ford mba 0 (sizeAsOffset len)
+        unsafeFreeze mblock
+  where len = length vec
+{-# SPECIALIZE [2] sortBy :: (Word8 -> Word8 -> Ordering) -> Block Word8 -> Block Word8 #-}
 
 intersperse :: forall ty . PrimType ty => ty -> Block ty -> Block ty
 intersperse sep blk = case len - 1 of

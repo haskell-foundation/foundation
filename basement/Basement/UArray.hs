@@ -611,58 +611,20 @@ find predicate vec = loop 0
              in if predicate e then Just e else loop (i+1)
 
 sortBy :: forall ty . PrimType ty => (ty -> ty -> Ordering) -> UArray ty -> UArray ty
-sortBy xford vec
-    | len == 0  = mempty
-    | otherwise = runST (thaw vec >>= doSort xford)
+sortBy ford vec = runST $ do
+    mvec <- thaw vec
+    onMutableBackend goNative (\fptr -> withFinalPtr fptr goAddr) mvec
+    unsafeFreeze mvec
   where
-    len = length vec
-    doSort :: (PrimType ty, PrimMonad prim) => (ty -> ty -> Ordering) -> MUArray ty (PrimState prim) -> prim (UArray ty)
-    doSort ford ma = qsort 0 (sizeLastOffset len) >> unsafeFreeze ma
-      where
-        qsort lo hi
-            | lo >= hi  = pure ()
-            | otherwise = do
-                p <- partition lo hi
-                qsort lo (pred p)
-                qsort (p+1) hi
-        pivotStrategy (Offset low) hi@(Offset high) = do
-            let mid = Offset $ (low + high) `div` 2
-            pivot <- unsafeRead ma mid
-            unsafeRead ma hi >>= unsafeWrite ma mid
-            unsafeWrite ma hi pivot -- move pivot @ pivotpos := hi
-            pure pivot
-        partition lo hi = do
-            pivot <- pivotStrategy lo hi
-            -- RETURN: index of pivot with [<pivot | pivot | >=pivot]
-            -- INVARIANT: i & j are valid array indices; pivotpos==hi
-            let go i j = do
-                    -- INVARIANT: k <= pivotpos
-                    let fw k = do ak <- unsafeRead ma k
-                                  if ford ak pivot == LT
-                                    then fw (k+1)
-                                    else pure (k, ak)
-                    (i, ai) <- fw i -- POST: ai >= pivot
-                    -- INVARIANT: k >= i
-                    let bw k | k==i = pure (i, ai)
-                             | otherwise = do ak <- unsafeRead ma k
-                                              if ford ak pivot /= LT
-                                                then bw (pred k)
-                                                else pure (k, ak)
-                    (j, aj) <- bw j -- POST: i==j OR (aj<pivot AND j<pivotpos)
-                    -- POST: ai>=pivot AND (i==j OR aj<pivot AND (j<pivotpos))
-                    if i < j
-                        then do -- (ai>=p AND aj<p) AND (i<j<pivotpos)
-                            -- swap two non-pivot elements and proceed
-                            unsafeWrite ma i aj
-                            unsafeWrite ma j ai
-                            -- POST: (ai < pivot <= aj)
-                            go (i+1) (pred j)
-                        else do -- ai >= pivot 
-                            -- complete partitioning by swapping pivot to the center
-                            unsafeWrite ma hi ai 
-                            unsafeWrite ma i pivot
-                            pure i
-            go lo hi
+    !len = length vec
+    !end = 0 `offsetPlusE` len
+    !start = offset vec
+
+    goNative :: MutableByteArray# (PrimState (ST s)) -> ST s ()
+    goNative mba = PrimBA.inplaceSortBy ford mba start end
+    goAddr :: Ptr ty -> ST s ()
+    goAddr (Ptr addr) = PrimAddr.inplaceSortBy ford addr start end
+{-# SPECIALIZE [3] sortBy :: (Word8 -> Word8 -> Ordering) -> UArray Word8 -> UArray Word8 #-}
 
 filter :: forall ty . PrimType ty => (ty -> Bool) -> UArray ty -> UArray ty
 filter predicate arr = runST $ do
