@@ -15,7 +15,6 @@ module Basement.Alg.Native.PrimArray
     , any
     , filter
     , primIndex
-    , inplaceSortBy
     ) where
 
 import           GHC.Types
@@ -123,57 +122,3 @@ any predicate ba start end = loop start
         | predicate (primIndex ba i) = True
         | otherwise                  = loop (i+1)
 {-# INLINE any #-}
-
-inplaceSortBy :: (PrimType ty, PrimMonad prim)
-              => (ty -> ty -> Ordering)
-              -> Mutable (PrimState prim)
-              -> Offset ty
-              -> Offset ty
-              -> prim ()
-inplaceSortBy ford ma start end = qsort start (end `offsetSub` 1)
-  where
-    qsort lo hi
-        | lo >= hi  = pure ()
-        | otherwise = do
-            p <- partition lo hi
-            qsort lo (pred p)
-            qsort (p+1) hi
-    pivotStrategy (Offset low) hi@(Offset high) = do
-        let mid = Offset $ (low + high) `div` 2
-        pivot <- primRead ma mid
-        primRead ma hi >>= primWrite ma mid
-        primWrite ma hi pivot -- move pivot @ pivotpos := hi
-        pure pivot
-    partition lo hi = do
-        pivot <- pivotStrategy lo hi
-        -- RETURN: index of pivot with [<pivot | pivot | >=pivot]
-        -- INVARIANT: i & j are valid array indices; pivotpos==hi
-        let go i j = do
-                -- INVARIANT: k <= pivotpos
-                let fw k = do ak <- primRead ma k
-                              if ford ak pivot == LT
-                                then fw (k+1)
-                                else pure (k, ak)
-                (i, ai) <- fw i -- POST: ai >= pivot
-                -- INVARIANT: k >= i
-                let bw k | k==i = pure (i, ai)
-                         | otherwise = do ak <- primRead ma k
-                                          if ford ak pivot /= LT
-                                            then bw (pred k)
-                                            else pure (k, ak)
-                (j, aj) <- bw j -- POST: i==j OR (aj<pivot AND j<pivotpos)
-                -- POST: ai>=pivot AND (i==j OR aj<pivot AND (j<pivotpos))
-                if i < j
-                    then do -- (ai>=p AND aj<p) AND (i<j<pivotpos)
-                        -- swap two non-pivot elements and proceed
-                        primWrite ma i aj
-                        primWrite ma j ai
-                        -- POST: (ai < pivot <= aj)
-                        go (i+1) (pred j)
-                    else do -- ai >= pivot
-                        -- complete partitioning by swapping pivot to the center
-                        primWrite ma hi ai
-                        primWrite ma i pivot
-                        pure i
-        go lo hi
-{-# INLINE inplaceSortBy #-}

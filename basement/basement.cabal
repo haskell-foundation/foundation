@@ -90,6 +90,8 @@ library
 
                      Basement.Utils
 
+                     Basement.Algorithm
+
                      Basement.Alg.Native.Prim
                      Basement.Alg.Native.UTF8
                      Basement.Alg.Native.String
