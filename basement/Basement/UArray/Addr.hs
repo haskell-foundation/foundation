@@ -2,7 +2,6 @@
 {-# LANGUAGE MagicHash                  #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE ExistentialQuantification  #-}
 {-# LANGUAGE CPP                        #-}
 module Basement.UArray.Addr
     ( findIndexElem
