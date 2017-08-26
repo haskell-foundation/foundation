@@ -35,6 +35,6 @@ primWrite :: (PrimMonad prim, PrimType ty) => Mutable (PrimState prim) -> Offset
 primWrite = primAddrWrite
 {-# INLINE primWrite #-}
 
-primReadWrite :: (PrimMonad prim, PrimType ty) => Mutable (primState prim) -> ((Offset ty -> prim ty), (Offset ty -> ty -> prim ()))
+primReadWrite :: (PrimMonad prim, PrimType ty) => Mutable (PrimState prim) -> ((Offset ty -> prim ty), (Offset ty -> ty -> prim ()))
 primReadWrite addr = (primAddrRead addr, primAddrWrite addr)
 {-# INLINE primReadWrite #-}
