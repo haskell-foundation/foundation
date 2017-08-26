@@ -14,6 +14,8 @@
 {-# LANGUAGE MagicHash           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UnboxedTuples       #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Basement.Block
     ( Block(..)
     , MutableBlock(..)
@@ -79,6 +81,13 @@ import           Basement.Block.Base
 import           Basement.Numerical.Additive
 import           Basement.Numerical.Subtractive
 import qualified Basement.Alg.Native.PrimArray as Alg
+import qualified Basement.Alg.Native.Prim as Prim
+import qualified Basement.Algorithm as Algorithm
+
+instance (PrimMonad prim, st ~ PrimState prim, PrimType ty) 
+         => Algorithm.RandomAccess (MutableBlock ty st) prim ty where
+    read (MutableBlock mba) = primMbaRead mba
+    write (MutableBlock mba) = primMbaWrite mba
 
 -- | Copy all the block content to the memory starting at the destination address
 unsafeCopyToPtr :: forall ty prim . PrimMonad prim
@@ -355,7 +364,7 @@ sortBy ford vec
     | len == 0  = mempty
     | otherwise = runST $ do
         mblock@(MutableBlock mba) <- thaw vec
-        Alg.inplaceSortBy ford mba 0 (sizeAsOffset len)
+        Algorithm.inplaceSortBy ford 0 len mblock
         unsafeFreeze mblock
   where len = length vec
 {-# SPECIALIZE [2] sortBy :: (Word8 -> Word8 -> Ordering) -> Block Word8 -> Block Word8 #-}
