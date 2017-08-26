@@ -7,6 +7,8 @@
 module Basement.String.BA
     ( copyFilter
     , validate
+    , findIndexPredicate
+    , revFindIndexPredicate
     ) where
 
 import           GHC.Prim
@@ -84,3 +86,34 @@ validate end ba ofsStart = loop ofsStart
                             then (pos + Offset 4, Nothing)
                             else (pos, Just InvalidContinuation)
                 CountOf _ -> error "internal error"
+
+findIndexPredicate :: (Char -> Bool)
+                   -> PrimBackend.Immutable
+                   -> Offset Word8
+                   -> Offset Word8
+                   -> Offset Word8
+findIndexPredicate predicate ba !startIndex !endIndex = loop startIndex
+  where
+    loop !i
+        | i < endIndex && not (predicate c) = loop (i')
+        | otherwise                         = i
+      where
+        Step c i' = PrimBackend.next ba i
+{-# INLINE findIndexPredicate #-}
+
+revFindIndexPredicate :: (Char -> Bool)
+                      -> PrimBackend.Immutable
+                      -> Offset Word8
+                      -> Offset Word8
+                      -> Offset Word8
+revFindIndexPredicate predicate ba startIndex endIndex
+    | endIndex > startIndex = loop endIndex
+    | otherwise             = endIndex
+  where
+    loop !i
+        | predicate c     = i'
+        | i' > startIndex = loop i'
+        | otherwise       = endIndex
+      where 
+        StepBack c i' = PrimBackend.prev ba i
+{-# INLINE revFindIndexPredicate #-}

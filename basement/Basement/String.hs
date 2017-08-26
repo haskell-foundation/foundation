@@ -50,7 +50,9 @@ module Basement.String
     , indices
     , intersperse
     , span
+    , spanEnd
     , break
+    , breakEnd
     , breakElem
     , breakLine
     , dropWhile
@@ -461,6 +463,20 @@ break predicate s@(String ba) = runST $ Vec.unsafeIndexer ba go
         {-# INLINE loop #-}
 {-# INLINE [2] break #-}
 
+breakEnd :: (Char -> Bool) -> String -> (String, String)
+breakEnd predicate s@(String arr)
+    | k == end  = (s, mempty)
+    | otherwise = splitIndex k s
+  where
+    k = C.onBackend goVec (\_ -> pure . goAddr) arr
+    (C.ValidRange !start !end) = offsetsValidRange arr
+    goVec ba = let k = BackendBA.revFindIndexPredicate predicate ba start end
+                in if k == end then end else PrimBA.nextSkip ba k
+    goAddr (Ptr addr) =
+        let k = BackendAddr.revFindIndexPredicate predicate addr start end
+         in if k == end then end else PrimAddr.nextSkip addr k
+{-# INLINE [2] breakEnd #-}
+
 #if MIN_VERSION_base(4,9,0)
 {-# RULES "break (== 'c')" [3] forall c . break (eqChar c) = breakElem c #-}
 #else
@@ -504,6 +520,11 @@ breakLine (String arr) = bimap String String <$> Vec.breakLine arr
 -- the remaining
 span :: (Char -> Bool) -> String -> (String, String)
 span predicate s = break (not . predicate) s
+
+-- | Apply a @predicate@ to the string to return the longest suffix that satisfy the predicate and
+-- the remaining
+spanEnd :: (Char -> Bool) -> String -> (String, String)
+spanEnd predicate s = breakEnd (not . predicate) s
 
 -- | Drop character from the beginning while the predicate is true
 dropWhile :: (Char -> Bool) -> String -> String

@@ -43,7 +43,9 @@ module Basement.BoxedArray
     , sub
     , intersperse
     , span
+    , spanEnd
     , break
+    , breakEnd
     , cons
     , snoc
     , uncons
@@ -481,6 +483,18 @@ break predicate v = findBreak 0
                 then splitAt (offsetAsSize i) v
                 else findBreak (i+1)
 
+breakEnd ::  (ty -> Bool) -> Array ty -> (Array ty, Array ty)
+breakEnd predicate v = findBreak (sizeAsOffset len)
+  where
+    !len = length v
+    findBreak !i
+        | i == 0      = (v, empty)
+        | predicate e = splitAt (offsetAsSize i) v
+        | otherwise   = findBreak i'
+      where
+        e = unsafeIndex v i'
+        i' = i `offsetSub` 1
+
 intersperse :: ty -> Array ty -> Array ty
 intersperse sep v = case len - 1 of
     Nothing -> v
@@ -501,6 +515,9 @@ intersperse sep v = case len - 1 of
 
 span ::  (ty -> Bool) -> Array ty -> (Array ty, Array ty)
 span p = break (not . p)
+
+spanEnd ::  (ty -> Bool) -> Array ty -> (Array ty, Array ty)
+spanEnd p = breakEnd (not . p)
 
 map :: (a -> b) -> Array a -> Array b
 map f a = create (sizeCast Proxy $ length a) (\i -> f $ unsafeIndex a (offsetCast Proxy i))

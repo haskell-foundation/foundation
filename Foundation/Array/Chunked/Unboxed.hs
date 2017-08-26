@@ -76,6 +76,7 @@ instance PrimType ty => C.Sequential (ChunkedUArray ty) where
     revDrop = revDrop
     splitOn = splitOn
     break = break
+    breakEnd = breakEnd
     intersperse = intersperse
     filter = filter
     reverse = reverse
@@ -248,6 +249,10 @@ splitOn p = fmap fromList . C.splitOn p . toList
 -- TODO: Improve implementation.
 break :: PrimType ty => (ty -> Bool) -> ChunkedUArray ty -> (ChunkedUArray ty, ChunkedUArray ty)
 break p = bimap fromList fromList . C.break p . toList
+
+-- TODO: Improve implementation.
+breakEnd :: PrimType ty => (ty -> Bool) -> ChunkedUArray ty -> (ChunkedUArray ty, ChunkedUArray ty)
+breakEnd p = bimap fromList fromList . C.breakEnd p . toList
 
 -- TODO: Improve implementation.
 intersperse :: PrimType ty => ty -> ChunkedUArray ty -> ChunkedUArray ty

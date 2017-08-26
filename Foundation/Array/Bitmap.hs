@@ -32,7 +32,7 @@ module Foundation.Array.Bitmap
 import           Basement.UArray (UArray)
 import qualified Basement.UArray as A
 import           Basement.UArray.Mutable (MUArray)
-import           Basement.Compat.Bifunctor (first, second)
+import           Basement.Compat.Bifunctor (first, second, bimap)
 import           Basement.Exception
 import           Basement.Compat.Base
 import           Basement.Types.OffsetSize
@@ -100,6 +100,7 @@ instance C.Sequential Bitmap where
     revDrop n = unoptimised (C.revDrop n)
     splitOn = splitOn
     break = break
+    breakEnd = breakEnd
     span = span
     filter = filter
     reverse = reverse
@@ -371,6 +372,9 @@ break predicate v = findBreak 0
             if predicate (unsafeIndex v i)
                 then splitAt (offsetAsSize i) v
                 else findBreak (i+1)
+
+breakEnd :: (Bool -> Bool) -> Bitmap -> (Bitmap, Bitmap)
+breakEnd predicate = bimap fromList fromList . C.breakEnd predicate . toList
 
 span :: (Bool -> Bool) -> Bitmap -> (Bitmap, Bitmap)
 span p = break (not . p)
