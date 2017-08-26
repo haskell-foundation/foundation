@@ -24,7 +24,7 @@ module Foundation.Network.HostName
 
 import Foundation.Class.Storable
 import Basement.Compat.Base
-import Basement.Compat.Proxy
+import Data.Proxy
 import Foundation.Hashing (Hashable)
 import Foundation.String
 import Foundation.Array
