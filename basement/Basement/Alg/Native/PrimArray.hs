@@ -3,7 +3,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE CPP                        #-}
-module Basement.UArray.BA
+module Basement.Alg.Native.PrimArray
     ( findIndexElem
     , revFindIndexElem
     , findIndexPredicate

@@ -91,23 +91,24 @@ library
                      Basement.Utils
 
                      Basement.Alg.Native.Prim
+                     Basement.Alg.Native.UTF8
+                     Basement.Alg.Native.String
+                     Basement.Alg.Native.PrimArray
+
                      Basement.Alg.Foreign.Prim
+                     Basement.Alg.Foreign.UTF8
+                     Basement.Alg.Foreign.String
+                     Basement.Alg.Foreign.PrimArray
 
                      Basement.Block.Base
 
-                     Basement.UTF8.Addr
-                     Basement.UTF8.BA
                      Basement.UTF8.Base
                      Basement.UTF8.Helper
                      Basement.UTF8.Table
                      Basement.UTF8.Types
 
-                     Basement.UArray.Addr
-                     Basement.UArray.BA
                      Basement.UArray.Base
 
-                     Basement.String.BA
-                     Basement.String.Addr
                      Basement.String.Encoding.Encoding
                      Basement.String.Encoding.UTF16
                      Basement.String.Encoding.UTF32

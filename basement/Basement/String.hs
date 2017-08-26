@@ -119,10 +119,10 @@ import           Basement.UTF8.Helper
 import           Basement.UTF8.Base
 import           Basement.UTF8.Types
 import           Basement.UArray.Base as C (onBackendPrim, onBackend, offset, ValidRange(..), offsetsValidRange)
-import qualified Basement.UTF8.BA as PrimBA
-import qualified Basement.UTF8.Addr as PrimAddr
-import qualified Basement.String.BA as BackendBA
-import qualified Basement.String.Addr as BackendAddr
+import qualified Basement.Alg.Native.UTF8 as PrimBA
+import qualified Basement.Alg.Foreign.UTF8 as PrimAddr
+import qualified Basement.Alg.Native.String as BackendBA
+import qualified Basement.Alg.Foreign.String as BackendAddr
 import           GHC.Prim
 import           GHC.ST
 import           GHC.Types

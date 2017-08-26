@@ -3,7 +3,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE CPP                        #-}
-module Basement.UTF8.Addr
+module Basement.Alg.Foreign.UTF8
     ( Immutable
     , Mutable
     -- * functions
@@ -21,10 +21,9 @@ module Basement.UTF8.Addr
     , foldr
     , length
     -- temporary
-    , primIndex
     , primIndex64
-    , primRead
-    , primWrite
+    , primRead8
+    , primWrite8
     ) where
 
 import           GHC.Int
@@ -34,6 +33,7 @@ import           GHC.Prim
 import           Data.Bits
 import           Basement.Compat.Base hiding (toList)
 import           Basement.Compat.Primitive
+import           Basement.Alg.Foreign.Prim
 import           Data.Proxy
 import           Basement.Numerical.Additive
 import           Basement.Numerical.Subtractive
@@ -44,20 +44,17 @@ import           Basement.UTF8.Helper
 import           Basement.UTF8.Table
 import           Basement.UTF8.Types
 
-type Immutable = Addr#
-type Mutable (prim :: * -> *) = Addr#
+primWrite8 :: PrimMonad prim => Mutable (PrimState prim) -> Offset Word8 -> Word8 -> prim ()
+primWrite8 = primWrite
+{-# INLINE primWrite8 #-}
 
-primWrite :: PrimMonad prim => Mutable prim -> Offset Word8 -> Word8 -> prim ()
-primWrite = primAddrWrite
+primRead8 :: PrimMonad prim => Mutable (PrimState prim) -> Offset Word8 -> prim Word8
+primRead8 = primRead
+{-# INLINE primRead8 #-}
 
-primRead :: PrimMonad prim => Mutable prim -> Offset Word8 -> prim Word8
-primRead = primAddrRead
-
-primIndex :: Immutable -> Offset Word8 -> Word8
-primIndex = primAddrIndex
-
-primIndex64 :: Immutable -> Offset Word64 -> Word64
-primIndex64 = primAddrIndex
+primIndex8 :: Immutable -> Offset Word8 -> Word8
+primIndex8 = primIndex
+{-# INLINE primIndex8 #-}
 
 nextAscii :: Immutable -> Offset Word8 -> StepASCII
 nextAscii ba n = StepASCII w
@@ -67,37 +64,37 @@ nextAscii ba n = StepASCII w
 
 -- | nextAsciiBa specialized to get a digit between 0 and 9 (included)
 nextAsciiDigit :: Immutable -> Offset Word8 -> StepDigit
-nextAsciiDigit ba n = StepDigit (primIndex ba n - 0x30)
+nextAsciiDigit ba n = StepDigit (primIndex8 ba n - 0x30)
 {-# INLINE nextAsciiDigit #-}
 
 expectAscii :: Immutable -> Offset Word8 -> Word8 -> Bool
-expectAscii ba n v = primIndex ba n == v
+expectAscii ba n v = primIndex8 ba n == v
 {-# INLINE expectAscii #-}
 
 next :: Immutable -> Offset8 -> Step
 next ba n =
     case getNbBytes h of
         0 -> Step (toChar1 h) (n + Offset 1)
-        1 -> Step (toChar2 h (primIndex ba (n + Offset 1))) (n + Offset 2)
-        2 -> Step (toChar3 h (primIndex ba (n + Offset 1))
-                             (primIndex ba (n + Offset 2))) (n + Offset 3)
-        3 -> Step (toChar4 h (primIndex ba (n + Offset 1))
-                             (primIndex ba (n + Offset 2))
-                             (primIndex ba (n + Offset 3))) (n + Offset 4)
+        1 -> Step (toChar2 h (primIndex8 ba (n + Offset 1))) (n + Offset 2)
+        2 -> Step (toChar3 h (primIndex8 ba (n + Offset 1))
+                             (primIndex8 ba (n + Offset 2))) (n + Offset 3)
+        3 -> Step (toChar4 h (primIndex8 ba (n + Offset 1))
+                             (primIndex8 ba (n + Offset 2))
+                             (primIndex8 ba (n + Offset 3))) (n + Offset 4)
         r -> error ("next: internal error: invalid input: offset=" <> show n <> " table=" <> show r <> " h=" <> show h)
   where
-    !h = primIndex ba n
+    !h = primIndex8 ba n
 {-# INLINE next #-}
 
 nextSkip :: Immutable -> Offset Word8 -> Offset Word8
-nextSkip ba n = n + 1 + Offset (getNbBytes (primIndex ba n))
+nextSkip ba n = n + 1 + Offset (getNbBytes (primIndex8 ba n))
 {-# INLINE nextSkip #-}
 
 -- Given a non null offset, give the previous character and the offset of this character
 -- will fail bad if apply at the beginning of string or an empty string.
 prev :: Immutable -> Offset Word8 -> StepBack
 prev ba offset =
-    case primIndex ba prevOfs1 of
+    case primIndex8 ba prevOfs1 of
         (W8# v1) | isContinuation# v1 -> atLeast2 (maskContinuation# v1)
                  | otherwise          -> StepBack (toChar# v1) prevOfs1
   where
@@ -107,15 +104,15 @@ prev ba offset =
     prevOfs3 = prevOfs2 `offsetMinusE` sz1
     prevOfs4 = prevOfs3 `offsetMinusE` sz1
     atLeast2 !v  =
-        case primIndex ba prevOfs2 of
+        case primIndex8 ba prevOfs2 of
             (W8# v2) | isContinuation# v2 -> atLeast3 (or# (uncheckedShiftL# (maskContinuation# v2) 6#) v)
                      | otherwise          -> StepBack (toChar# (or# (uncheckedShiftL# (maskHeader2# v2) 6#) v)) prevOfs2
     atLeast3 !v =
-        case primIndex ba prevOfs3 of
+        case primIndex8 ba prevOfs3 of
             (W8# v3) | isContinuation# v3 -> atLeast4 (or# (uncheckedShiftL# (maskContinuation# v3) 12#) v)
                      | otherwise          -> StepBack (toChar# (or# (uncheckedShiftL# (maskHeader3# v3) 12#) v)) prevOfs3
     atLeast4 !v =
-        case primIndex ba prevOfs4 of
+        case primIndex8 ba prevOfs4 of
             (W8# v4) -> StepBack (toChar# (or# (uncheckedShiftL# (maskHeader4# v4) 18#) v)) prevOfs4
 
 prevSkip :: Immutable -> Offset Word8 -> Offset Word8
@@ -123,10 +120,10 @@ prevSkip ba offset = loop (offset `offsetMinusE` sz1)
   where
     sz1 = CountOf 1
     loop o
-        | isContinuation (primIndex ba o) = loop (o `offsetMinusE` sz1)
+        | isContinuation (primIndex8 ba o) = loop (o `offsetMinusE` sz1)
         | otherwise                       = o
 
-write :: PrimMonad prim => Mutable prim -> Offset8 -> Char -> prim Offset8
+write :: PrimMonad prim => Mutable (PrimState prim) -> Offset8 -> Char -> prim Offset8
 write mba !i !c
     | bool# (ltWord# x 0x80##   ) = encode1
     | bool# (ltWord# x 0x800##  ) = encode2
@@ -136,21 +133,21 @@ write mba !i !c
     !(I# xi) = fromEnum c
     !x       = int2Word# xi
 
-    encode1 = primWrite mba i (W8# x) >> pure (i + Offset 1)
+    encode1 = primWrite8 mba i (W8# x) >> pure (i + Offset 1)
     encode2 = do
         let x1  = or# (uncheckedShiftRL# x 6#) 0xc0##
             x2  = toContinuation x
-        primWrite mba i     (W8# x1)
-        primWrite mba (i+1) (W8# x2)
+        primWrite8 mba i     (W8# x1)
+        primWrite8 mba (i+1) (W8# x2)
         pure (i + Offset 2)
 
     encode3 = do
         let x1  = or# (uncheckedShiftRL# x 12#) 0xe0##
             x2  = toContinuation (uncheckedShiftRL# x 6#)
             x3  = toContinuation x
-        primWrite mba i            (W8# x1)
-        primWrite mba (i+Offset 1) (W8# x2)
-        primWrite mba (i+Offset 2) (W8# x3)
+        primWrite8 mba i            (W8# x1)
+        primWrite8 mba (i+Offset 1) (W8# x2)
+        primWrite8 mba (i+Offset 2) (W8# x3)
         pure (i + Offset 3)
 
     encode4 = do
@@ -158,10 +155,10 @@ write mba !i !c
             x2  = toContinuation (uncheckedShiftRL# x 12#)
             x3  = toContinuation (uncheckedShiftRL# x 6#)
             x4  = toContinuation x
-        primWrite mba i            (W8# x1)
-        primWrite mba (i+Offset 1) (W8# x2)
-        primWrite mba (i+Offset 2) (W8# x3)
-        primWrite mba (i+Offset 3) (W8# x4)
+        primWrite8 mba i            (W8# x1)
+        primWrite8 mba (i+Offset 1) (W8# x2)
+        primWrite8 mba (i+Offset 2) (W8# x3)
+        primWrite8 mba (i+Offset 3) (W8# x4)
         pure (i + Offset 4)
 
     toContinuation :: Word# -> Word#
@@ -225,7 +222,7 @@ length dat start end
         | i == end                = c
         | offsetIsAligned prx64 i = processAligned c (offsetInElements i)
         | otherwise               =
-            let h    = primIndex dat i
+            let h    = primIndex8 dat i
                 cont = (h .&. 0xc0) == 0x80
                 c'   = if cont then c else c+1
              in processStart c' (i+1)
@@ -243,7 +240,7 @@ length dat start end
     processEnd !c !i
         | i == end  = c
         | otherwise =
-            let h    = primIndex dat i
+            let h    = primIndex8 dat i
                 cont = (h .&. 0xc0) == 0x80
                 c'   = if cont then c else c+1
              in processStart c' (i+1)

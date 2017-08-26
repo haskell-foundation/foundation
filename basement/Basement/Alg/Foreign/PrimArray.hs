@@ -3,7 +3,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE CPP                        #-}
-module Basement.UArray.Addr
+module Basement.Alg.Foreign.PrimArray
     ( findIndexElem
     , revFindIndexElem
     , findIndexPredicate
