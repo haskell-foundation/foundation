@@ -3,7 +3,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE CPP                        #-}
-module Basement.UArray.BA
+module Basement.Alg.Native.PrimArray
     ( findIndexElem
     , revFindIndexElem
     , findIndexPredicate
@@ -27,17 +27,7 @@ import           Basement.Types.OffsetSize
 import           Basement.PrimType
 import           Basement.Monad
 
-type Immutable = ByteArray#
-type Mutable st = MutableByteArray# st
-
-primIndex :: PrimType ty => Immutable -> Offset ty -> ty
-primIndex = primBaIndex
-
-primRead :: (PrimMonad prim, PrimType ty) => Mutable (PrimState prim) -> Offset ty -> prim ty
-primRead = primMbaRead
-
-primWrite :: (PrimMonad prim, PrimType ty) => Mutable (PrimState prim) -> Offset ty -> ty -> prim ()
-primWrite = primMbaWrite
+import           Basement.Alg.Native.Prim
 
 findIndexElem :: PrimType ty => ty -> Immutable -> Offset ty -> Offset ty -> Offset ty
 findIndexElem ty ba startIndex endIndex = loop startIndex

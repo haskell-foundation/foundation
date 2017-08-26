@@ -4,7 +4,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE CPP                        #-}
-module Basement.String.Addr
+module Basement.Alg.Native.String
     ( copyFilter
     , validate
     , findIndexPredicate
@@ -17,8 +17,10 @@ import           Basement.Compat.Base
 import           Basement.Numerical.Additive
 import           Basement.Types.OffsetSize
 
-import qualified Basement.UTF8.BA   as PrimBA
-import qualified Basement.UTF8.Addr as PrimBackend
+import qualified Basement.Alg.Native.Prim as PrimNative -- NO SUBST
+import qualified Basement.Alg.Native.UTF8 as UTF8Native -- NO SUBST
+import qualified Basement.Alg.Native.Prim as PrimBackend
+import qualified Basement.Alg.Native.UTF8 as UTF8Backend
 import           Basement.UTF8.Helper
 import           Basement.UTF8.Table
 import           Basement.UTF8.Types
@@ -37,11 +39,11 @@ copyFilter predicate !sz dst src start = loop (Offset 0) start
         | otherwise =
             let !h = PrimBackend.primIndex src s
              in case headerIsAscii h of
-                    True | predicate (toChar1 h) -> PrimBA.primWrite dst d h >> loop (d + Offset 1) (s + Offset 1)
+                    True | predicate (toChar1 h) -> PrimNative.primWrite dst d h >> loop (d + Offset 1) (s + Offset 1)
                          | otherwise             -> loop d (s + Offset 1)
                     False ->
-                        case PrimBackend.next src s of
-                            Step c s' | predicate c -> PrimBA.write dst d c >>= \d' -> loop d' s'
+                        case UTF8Backend.next src s of
+                            Step c s' | predicate c -> UTF8Native.write dst d c >>= \d' -> loop d' s'
                                       | otherwise   -> loop d s'
 
 validate :: Offset Word8
@@ -98,7 +100,7 @@ findIndexPredicate predicate ba !startIndex !endIndex = loop startIndex
         | i < endIndex && not (predicate c) = loop (i')
         | otherwise                         = i
       where
-        Step c i' = PrimBackend.next ba i
+        Step c i' = UTF8Backend.next ba i
 {-# INLINE findIndexPredicate #-}
 
 revFindIndexPredicate :: (Char -> Bool)
@@ -115,5 +117,5 @@ revFindIndexPredicate predicate ba startIndex endIndex
         | i' > startIndex = loop i'
         | otherwise       = endIndex
       where 
-        StepBack c i' = PrimBackend.prev ba i
+        StepBack c i' = UTF8Backend.prev ba i
 {-# INLINE revFindIndexPredicate #-}

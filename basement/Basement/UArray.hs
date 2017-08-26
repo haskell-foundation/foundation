@@ -131,8 +131,8 @@ import           Basement.MutableBuilder
 import           Basement.Bindings.Memory (sysHsMemFindByteBa, sysHsMemFindByteAddr)
 import qualified Basement.Compat.ExtList as List
 import qualified Basement.Base16 as Base16
-import qualified Basement.UArray.BA as PrimBA
-import qualified Basement.UArray.Addr as PrimAddr
+import qualified Basement.Alg.Native.PrimArray as PrimBA
+import qualified Basement.Alg.Foreign.PrimArray as PrimAddr
 
 -- | Copy every cells of an existing array to a new array
 copy :: PrimType ty => UArray ty -> UArray ty

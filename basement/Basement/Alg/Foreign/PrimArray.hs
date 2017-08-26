@@ -2,9 +2,8 @@
 {-# LANGUAGE MagicHash                  #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE ExistentialQuantification  #-}
 {-# LANGUAGE CPP                        #-}
-module Basement.UArray.Addr
+module Basement.Alg.Foreign.PrimArray
     ( findIndexElem
     , revFindIndexElem
     , findIndexPredicate
@@ -28,17 +27,7 @@ import           Basement.Types.OffsetSize
 import           Basement.PrimType
 import           Basement.Monad
 
-type Immutable = Addr#
-type Mutable st = Addr#
-
-primIndex :: PrimType ty => Immutable -> Offset ty -> ty
-primIndex = primAddrIndex
-
-primRead :: (PrimMonad prim, PrimType ty) => Mutable (PrimState prim) -> Offset ty -> prim ty
-primRead = primAddrRead
-
-primWrite :: (PrimMonad prim, PrimType ty) => Mutable (PrimState prim) -> Offset ty -> ty -> prim ()
-primWrite = primAddrWrite
+import           Basement.Alg.Foreign.Prim
 
 findIndexElem :: PrimType ty => ty -> Immutable -> Offset ty -> Offset ty -> Offset ty
 findIndexElem ty ba startIndex endIndex = loop startIndex

@@ -29,8 +29,8 @@ import           Basement.Monad
 import           Basement.FinalPtr
 import           Basement.UTF8.Helper
 import           Basement.UTF8.Types
-import qualified Basement.UTF8.BA       as PrimBA
-import qualified Basement.UTF8.Addr     as PrimAddr
+import qualified Basement.Alg.Native.UTF8      as PrimBA
+import qualified Basement.Alg.Foreign.UTF8     as PrimAddr
 import           Basement.UArray           (UArray)
 import qualified Basement.UArray           as Vec
 import qualified Basement.UArray           as C

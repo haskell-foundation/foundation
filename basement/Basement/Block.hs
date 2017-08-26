@@ -73,13 +73,12 @@ import           Basement.Types.OffsetSize
 import           Basement.Monad
 import           Basement.Exception
 import           Basement.PrimType
-import qualified Basement.UArray.BA as PrimAlg
 import qualified Basement.Block.Mutable as M
 import           Basement.Block.Mutable (Block(..), MutableBlock(..), new, unsafeThaw, unsafeFreeze)
 import           Basement.Block.Base
 import           Basement.Numerical.Additive
 import           Basement.Numerical.Subtractive
-import qualified Basement.UArray.BA as Alg
+import qualified Basement.Alg.Native.PrimArray as Alg
 
 -- | Copy all the block content to the memory starting at the destination address
 unsafeCopyToPtr :: forall ty prim . PrimMonad prim
@@ -266,7 +265,7 @@ breakEnd predicate blk@(Block ba)
     | k == end  = (blk, mempty)
     | otherwise = splitAt (offsetAsSize (k+1)) blk
   where
-    k = PrimAlg.revFindIndexPredicate predicate ba 0 end
+    k = Alg.revFindIndexPredicate predicate ba 0 end
     end = 0 `offsetPlusE` len
     !len = length blk
 {-# SPECIALIZE [2] breakEnd :: (Word8 -> Bool) -> Block Word8 -> (Block Word8, Block Word8) #-}
