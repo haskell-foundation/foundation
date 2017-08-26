@@ -90,6 +90,9 @@ library
 
                      Basement.Utils
 
+                     Basement.Alg.Native.Prim
+                     Basement.Alg.Foreign.Prim
+
                      Basement.Block.Base
 
                      Basement.UTF8.Addr
