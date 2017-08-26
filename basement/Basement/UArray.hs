@@ -645,41 +645,20 @@ find predicate vec = loop 0
              in if predicate e then Just e else loop (i+1)
 
 sortBy :: forall ty . PrimType ty => (ty -> ty -> Ordering) -> UArray ty -> UArray ty
-sortBy xford vec
-    | len == 0  = mempty
-    | otherwise = runST (thaw vec >>= doSort xford)
+sortBy ford vec = runST $ do
+    mvec <- thaw vec
+    onMutableBackend goNative (\fptr -> withFinalPtr fptr goAddr) mvec
+    unsafeFreeze mvec
   where
-    len = length vec
-    doSort :: (PrimType ty, PrimMonad prim) => (ty -> ty -> Ordering) -> MUArray ty (PrimState prim) -> prim (UArray ty)
-    doSort ford ma = qsort 0 (sizeLastOffset len) >> unsafeFreeze ma
-      where
-        qsort lo hi
-            | lo >= hi  = pure ()
-            | otherwise = do
-                p <- partition lo hi
-                qsort lo (pred p)
-                qsort (p+1) hi
-        partition lo hi = do
-            pivot <- unsafeRead ma hi
-            let loop i j
-                    | j == hi   = pure i
-                    | otherwise = do
-                        aj <- unsafeRead ma j
-                        i' <- if ford aj pivot == GT
-                                then pure i
-                                else do
-                                    ai <- unsafeRead ma i
-                                    unsafeWrite ma j ai
-                                    unsafeWrite ma i aj
-                                    pure $ i + 1
-                        loop i' (j+1)
+    !len = length vec
+    !end = 0 `offsetPlusE` len
+    !start = offset vec
 
-            i <- loop lo lo
-            ai  <- unsafeRead ma i
-            ahi <- unsafeRead ma hi
-            unsafeWrite ma hi ai
-            unsafeWrite ma i ahi
-            pure i
+    goNative :: MutableByteArray# (PrimState (ST s)) -> ST s ()
+    goNative mba = PrimBA.inplaceSortBy ford mba start end
+    goAddr :: Ptr ty -> ST s ()
+    goAddr (Ptr addr) = PrimAddr.inplaceSortBy ford addr start end
+{-# SPECIALIZE [3] sortBy :: (Word8 -> Word8 -> Ordering) -> UArray Word8 -> UArray Word8 #-}
 
 filter :: forall ty . PrimType ty => (ty -> Bool) -> UArray ty -> UArray ty
 filter predicate arr = runST $ do

@@ -176,6 +176,7 @@ benchsByteArray = bgroup "ByteArray"
     , benchReverse
     , benchFilter
     , benchAll
+    , benchSort
     ]
   where
     diffByteArray :: (UArray Word8 -> a)
@@ -263,6 +264,17 @@ benchsByteArray = bgroup "ByteArray"
         fmap (\(n, dat) -> bgroup n $ diffByteArray (filter (> 100)) (filter (> 100))
                                                     (ByteString.filter (> 100))
                                                     (Vector.filter (> 100)) dat) allDat
+
+    benchSort = bgroup "Sort" $ fmap (\(n, dat) ->
+        bgroup n $
+            [ bench "UArray_W8" $ whnf uarrayBench (fromList dat)
+            , bench "Block_W8" $ whnf blockBench (fromList dat)
+            ]) allDat
+      where
+            blockBench :: Block Word8 -> Block Word8
+            blockBench dat = sortBy compare dat
+            uarrayBench :: UArray Word8 -> UArray Word8
+            uarrayBench dat = sortBy compare dat
 
 --------------------------------------------------------------------------
 
