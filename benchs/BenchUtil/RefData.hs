@@ -11,10 +11,11 @@ module BenchUtil.RefData
     , rdBytes20
     , rdBytes200
     , rdBytes2000
+    , rdWord32
     ) where
 
-import Prelude (Char, cycle, take, ($))
-import Data.Word (Word8)
+import Prelude (Int, Char, cycle, take, ($))
+import Data.Word (Word8, Word32)
 
 rdLoremIpsum1 :: [Char]
 rdLoremIpsum1 = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam ornare dui vitae porta varius. In quis diam sed felis elementum ultricies non sit amet lorem. Nullam ut erat varius lectus scelerisque iaculis sed eu leo. Vivamus gravida interdum elit suscipit tempus. Quisque at mauris ac sapien consequat feugiat. In varius interdum rhoncus. Etiam hendrerit pharetra consectetur. Pellentesque laoreet, nisi quis feugiat rhoncus, nisi ipsum tincidunt nulla, vel fermentum mauris nisl sed felis. Sed ac convallis nibh. Donec rutrum finibus odio et rhoncus. Suspendisse pulvinar ex ac fermentum fermentum. Nam dui dui, lobortis sit amet sapien sed, gravida sagittis magna. Vestibulum nec egestas dui, non efficitur lectus. Fusce vitae mattis sem, nec dignissim nibh. Sed ac tincidunt metus."
@@ -42,3 +43,6 @@ rdBytes200 = take 200 $ cycle [1..255]
 
 rdBytes2000 :: [Word8]
 rdBytes2000 = take 2000 $ cycle [1..255]
+
+rdWord32 :: Int -> [Word32]
+rdWord32 n = Prelude.take n $ Prelude.cycle [1..255]

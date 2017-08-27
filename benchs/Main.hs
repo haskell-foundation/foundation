@@ -177,6 +177,7 @@ benchsByteArray = bgroup "ByteArray"
     , benchFilter
     , benchAll
     , benchSort
+    , benchSort32
     ]
   where
     diffByteArray :: (UArray Word8 -> a)
@@ -275,6 +276,21 @@ benchsByteArray = bgroup "ByteArray"
             blockBench dat = sortBy compare dat
             uarrayBench :: UArray Word8 -> UArray Word8
             uarrayBench dat = sortBy compare dat
+    
+    benchSort32 = bgroup "Sort32" $ fmap (\n ->
+        bgroup (show n) $ 
+            [ bench "Array_W32" $ whnf arrayBench (fromList $ rdWord32 n)
+            , bench "UArray_W32" $ whnf uarrayBench (fromList $ rdWord32 n)
+            , bench "Block_W32" $ whnf blockBench (fromList $ rdWord32 n)
+            ]) [20, 200, 2000]
+      where
+            blockBench :: Block Word32 -> Block Word32
+            blockBench dat = sortBy compare dat
+            uarrayBench :: UArray Word32 -> UArray Word32
+            uarrayBench dat = sortBy compare dat
+            arrayBench :: Array Word32 -> Array Word32
+            arrayBench dat = sortBy compare dat
+
 
 --------------------------------------------------------------------------
 
