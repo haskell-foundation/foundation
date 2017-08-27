@@ -13,16 +13,16 @@ import           Basement.Types.OffsetSize
 import           Basement.PrimType
 import           Basement.Monad
 
-class RandomAccess a ty where
-    read  :: PrimMonad prim => a ty (PrimState prim) -> (Offset ty)       -> prim ty
-    write :: PrimMonad prim => a ty (PrimState prim) -> (Offset ty) -> ty -> prim ()
+class RandomAccess container prim ty where
+    read  :: container -> (Offset ty)       -> prim ty
+    write :: container -> (Offset ty) -> ty -> prim ()
 
-inplaceSortBy :: (PrimMonad prim, RandomAccess a ty) 
+inplaceSortBy :: (PrimMonad prim, RandomAccess container prim ty) 
               => (ty -> ty -> Ordering)
               -- ^ Function defining the ordering relationship
               -> (Offset ty) -- ^ Offset to first element to sort
               -> (CountOf ty) -- ^ Number of elements to sort
-              -> a ty (PrimState prim) -- ^ Data to be sorted
+              -> container -- ^ Data to be sorted
               -> prim ()
 inplaceSortBy ford start len mvec
     = qsort start (start `offsetPlusE` len `offsetSub` 1)

@@ -84,7 +84,8 @@ import qualified Basement.Alg.Native.PrimArray as Alg
 import qualified Basement.Alg.Native.Prim as Prim
 import qualified Basement.Algorithm as Algorithm
 
-instance PrimType ty => Algorithm.RandomAccess MutableBlock ty where
+instance (PrimMonad prim, st ~ PrimState prim, PrimType ty) 
+         => Algorithm.RandomAccess (MutableBlock ty st) prim ty where
     read (MutableBlock mba) = primMbaRead mba
     write (MutableBlock mba) = primMbaWrite mba
 

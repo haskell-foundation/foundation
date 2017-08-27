@@ -594,7 +594,8 @@ find predicate vec = loop 0
             let e = unsafeIndex vec i
              in if predicate e then Just e else loop (i+1)
 
-instance Algorithm.RandomAccess MArray ty where
+instance (PrimMonad prim, st ~ PrimState prim) 
+         => Algorithm.RandomAccess (MArray ty st) prim ty where
     read (MArray _ _ mba) = primMutableArrayRead mba
     write (MArray _ _ mba) = primMutableArrayWrite mba
 
