@@ -82,6 +82,10 @@ import qualified Basement.Alg.Native.PrimArray as Alg
 import qualified Basement.Alg.Native.Prim as Prim
 import qualified Basement.Algorithm as Algorithm
 
+instance Algorithm.RandomAccess (MutableBlock ty) where
+    read (MutableBlock mba) = primMbaRead mba
+    write (MutableBlock mba) = primMbaWrite mba
+
 -- | Copy all the block content to the memory starting at the destination address
 unsafeCopyToPtr :: forall ty prim . PrimMonad prim
                 => Block ty -- ^ the source block to copy
@@ -357,7 +361,7 @@ sortBy ford vec
     | len == 0  = mempty
     | otherwise = runST $ do
         mblock@(MutableBlock mba) <- thaw vec
-        Algorithm.inplaceSortBy ford 0 len (Prim.primReadWrite mba)
+        Algorithm.inplaceSortBy ford 0 len mblock
         unsafeFreeze mblock
   where len = length vec
 {-# SPECIALIZE [2] sortBy :: (Word8 -> Word8 -> Ordering) -> Block Word8 -> Block Word8 #-}

@@ -137,6 +137,12 @@ import qualified Basement.Alg.Foreign.Prim as PrimAddr
 import qualified Basement.Alg.Foreign.PrimArray as PrimAddr
 import qualified Basement.Algorithm as Algorithm
 
+data PtrSt ty st = PtrSt Addr#
+
+instance Algorithm.RandomAccess (PtrSt ty) where
+    read (PtrSt addr) = PrimAddr.primRead addr
+    write (PtrSt addr) = PrimAddr.primWrite addr
+
 -- | Copy every cells of an existing array to a new array
 copy :: PrimType ty => UArray ty -> UArray ty
 copy array = runST (thaw array >>= unsafeFreeze)
@@ -657,9 +663,9 @@ sortBy ford vec = runST $ do
     !start = offset vec
 
     goNative :: MutableByteArray# (PrimState (ST s)) -> ST s ()
-    goNative mba = Algorithm.inplaceSortBy ford start len (PrimBA.primReadWrite mba)
+    goNative mba = Algorithm.inplaceSortBy ford start len (MutableBlock mba)
     goAddr :: Ptr ty -> ST s ()
-    goAddr (Ptr addr) = Algorithm.inplaceSortBy ford start len (PrimAddr.primReadWrite addr)
+    goAddr (Ptr addr) = Algorithm.inplaceSortBy ford start len (PtrSt addr)
 {-# SPECIALIZE [3] sortBy :: (Word8 -> Word8 -> Ordering) -> UArray Word8 -> UArray Word8 #-}
 
 filter :: forall ty . PrimType ty => (ty -> Bool) -> UArray ty -> UArray ty

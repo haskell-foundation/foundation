@@ -6,7 +6,6 @@ module Basement.Alg.Foreign.Prim
     , primIndex64
     , primRead
     , primWrite
-    , primReadWrite
     ) where
 
 import           GHC.Types
@@ -34,7 +33,3 @@ primRead = primAddrRead
 primWrite :: (PrimMonad prim, PrimType ty) => Mutable (PrimState prim) -> Offset ty -> ty -> prim ()
 primWrite = primAddrWrite
 {-# INLINE primWrite #-}
-
-primReadWrite :: (PrimMonad prim, PrimType ty) => Mutable (PrimState prim) -> ((Offset ty -> prim ty), (Offset ty -> ty -> prim ()))
-primReadWrite addr = (primAddrRead addr, primAddrWrite addr)
-{-# INLINE primReadWrite #-}

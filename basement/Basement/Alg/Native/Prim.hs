@@ -6,7 +6,6 @@ module Basement.Alg.Native.Prim
     , primIndex64
     , primRead
     , primWrite
-    , primReadWrite
     ) where
 
 import           GHC.Types
@@ -34,7 +33,3 @@ primRead = primMbaRead
 primWrite :: (PrimMonad prim, PrimType ty) => Mutable (PrimState prim) -> Offset ty -> ty -> prim ()
 primWrite = primMbaWrite
 {-# INLINE primWrite #-}
-
-primReadWrite :: (PrimMonad prim, PrimType ty) => MutableByteArray# (PrimState prim) -> ((Offset ty -> prim ty), (Offset ty -> ty -> prim ()))
-primReadWrite mba = (primMbaRead mba, primMbaWrite mba)
-{-# INLINE primReadWrite #-}
