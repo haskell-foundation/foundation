@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Basement.Algorithm
     ( RandomAccess, read, write
     , inplaceSortBy
@@ -12,16 +13,16 @@ import           Basement.Types.OffsetSize
 import           Basement.PrimType
 import           Basement.Monad
 
-class RandomAccess a where
-    read  :: (PrimType ty, PrimMonad prim) => a (PrimState prim) -> (Offset ty) -> prim ty
-    write :: (PrimType ty, PrimMonad prim) => a (PrimState prim) -> (Offset ty) -> ty -> prim ()
+class RandomAccess a ty where
+    read  :: PrimMonad prim => a ty (PrimState prim) -> (Offset ty)       -> prim ty
+    write :: PrimMonad prim => a ty (PrimState prim) -> (Offset ty) -> ty -> prim ()
 
-inplaceSortBy :: (PrimType ty, PrimMonad prim, RandomAccess a) 
+inplaceSortBy :: (PrimMonad prim, RandomAccess a ty) 
               => (ty -> ty -> Ordering)
               -- ^ Function defining the ordering relationship
               -> (Offset ty) -- ^ Offset to first element to sort
               -> (CountOf ty) -- ^ Number of elements to sort
-              -> a (PrimState prim) -- ^ Data to be sorted
+              -> a ty (PrimState prim) -- ^ Data to be sorted
               -> prim ()
 inplaceSortBy ford start len mvec
     = qsort start (start `offsetPlusE` len `offsetSub` 1)

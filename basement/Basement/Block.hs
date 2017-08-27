@@ -14,6 +14,8 @@
 {-# LANGUAGE MagicHash           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UnboxedTuples       #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Basement.Block
     ( Block(..)
     , MutableBlock(..)
@@ -82,7 +84,7 @@ import qualified Basement.Alg.Native.PrimArray as Alg
 import qualified Basement.Alg.Native.Prim as Prim
 import qualified Basement.Algorithm as Algorithm
 
-instance Algorithm.RandomAccess (MutableBlock ty) where
+instance PrimType ty => Algorithm.RandomAccess MutableBlock ty where
     read (MutableBlock mba) = primMbaRead mba
     write (MutableBlock mba) = primMbaWrite mba
 

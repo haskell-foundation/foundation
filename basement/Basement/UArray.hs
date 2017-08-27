@@ -13,6 +13,8 @@
 {-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Basement.UArray
     ( UArray(..)
     , PrimType(..)
@@ -139,7 +141,7 @@ import qualified Basement.Algorithm as Algorithm
 
 data PtrSt ty st = PtrSt Addr#
 
-instance Algorithm.RandomAccess (PtrSt ty) where
+instance PrimType ty => Algorithm.RandomAccess PtrSt ty where
     read (PtrSt addr) = PrimAddr.primRead addr
     write (PtrSt addr) = PrimAddr.primWrite addr
 
