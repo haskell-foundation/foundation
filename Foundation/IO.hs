@@ -21,7 +21,6 @@ module Foundation.IO
     , Foundation.IO.File.hGet
     , Foundation.IO.File.hPut
     , Foundation.IO.File.readFile
-    , Foundation.IO.File.foldTextFile
     ) where
 
 import qualified Foundation.IO.Terminal

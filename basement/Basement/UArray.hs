@@ -40,7 +40,6 @@ module Basement.UArray
     , withMutablePtr
     , unsafeFreezeShrink
     , freezeShrink
-    , unsafeSlide
     , fromBlock
     , toBlock
     -- * accessors
@@ -123,7 +122,6 @@ import           Basement.Monad
 import           Basement.PrimType
 import           Basement.FinalPtr
 import           Basement.Exception
-import           Basement.Utils
 import           Basement.UArray.Base
 import           Basement.Block (Block(..), MutableBlock(..))
 import qualified Basement.Block as BLK
@@ -196,15 +194,6 @@ freezeShrink ma n = do
     ma' <- new n
     copyAt ma' (Offset 0) ma (Offset 0) n
     unsafeFreeze ma'
-
-unsafeSlide :: (PrimType ty, PrimMonad prim) => MUArray ty (PrimState prim) -> Offset ty -> Offset ty -> prim ()
-unsafeSlide mua s e = doSlide mua s e
-  where
-    doSlide :: (PrimType ty, PrimMonad prim) => MUArray ty (PrimState prim) -> Offset ty -> Offset ty -> prim ()
-    doSlide (MUArray mbStart _ (MUArrayMBA (MutableBlock mba))) start end  =
-        primMutableByteArraySlideToStart mba (offsetInBytes $ mbStart+start) (offsetInBytes end)
-    doSlide (MUArray mbStart _ (MUArrayAddr fptr)) start end = withFinalPtr fptr $ \(Ptr addr) ->
-        primMutableAddrSlideToStart addr (offsetInBytes $ mbStart+start) (offsetInBytes end)
 
 -- | Create a new array of size @n by settings each cells through the
 -- function @f.

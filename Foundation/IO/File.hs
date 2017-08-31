@@ -17,7 +17,6 @@ module Foundation.IO.File
     , hGetSome
     , hPut
     , readFile
-    , foldTextFile
     ) where
 
 import           System.IO (Handle, IOMode)
@@ -31,7 +30,6 @@ import           Foundation.Array.Internal
 import           Foundation.Numerical
 import qualified Basement.UArray.Mutable as V
 import qualified Basement.UArray as V
-import qualified Basement.String as S
 import           Control.Exception (bracket)
 import           Foreign.Ptr (plusPtr)
 
@@ -118,36 +116,6 @@ readFile fp = withFile fp S.ReadMode $ \h -> do
             if r > 0 && r <= toRead
                 then loop h (left - r) (dst `plusPtr` r)
                 else error "readFile: " -- turn into proper error
-
--- | Fold over chunks file calling the callback function for each chunks
--- read from the file, until the end of file.
-foldTextFile :: (String -> a -> IO a) -- ^ Fold callback function
-             -> a                     -- ^ initial accumulator
-             -> FilePath              -- ^ File to read
-             -> IO a
-foldTextFile chunkf ini fp = do
-    buf <- V.newPinned (CountOf blockSize)
-    V.withMutablePtr buf $ \ptr ->
-        withFile fp S.ReadMode $ doFold buf ptr
-  where
-    doFold mv ptr handle = loop 0 ini
-      where
-        loop absPos acc = do
-            r <- S.hGetBuf handle ptr blockSize
-            if r > 0 && r <= blockSize
-                then do
-                    (pos, validateRet) <- S.mutableValidate mv 0 (CountOf r)
-                    s <- case validateRet of
-                        Nothing -> S.fromBytesUnsafe `fmap` V.freezeShrink mv (CountOf r)
-                        Just S.MissingByte -> do
-                            sRet <- S.fromBytesUnsafe `fmap` V.freezeShrink mv (pos - 0)
-                            V.unsafeSlide mv pos (Offset r)
-                            return sRet
-                        Just _ ->
-                            error ("foldTextFile: invalid UTF8 sequence: byte position: " <> show (absPos + pos))
-                    chunkf s acc >>= loop (absPos + Offset r)
-                else error "foldTextFile: read failed" -- FIXME
-{-# DEPRECATED foldTextFile "use conduit instead" #-}
 
 blockSize :: Int
 blockSize = 4096
