@@ -116,7 +116,9 @@ uncons b = (index @0 b, BlockN (B.sub (unBlock b) 1 (toOffset @n)))
 unsnoc :: forall n ty . (CmpNat 0 n ~ 'LT, KnownNat n, PrimType ty, Offsetable ty n)
        => BlockN n ty
        -> (BlockN (n-1) ty, ty)
-unsnoc b = (BlockN (B.sub (unBlock b) 0 (toOffset @n)), undefined)
+unsnoc b =
+    ( BlockN (B.sub (unBlock b) 0 (toOffset @n `offsetSub` 1))
+    , unsafeIndex (unBlock b) (toOffset @n `offsetSub` 1))
 
 splitAt :: forall i n ty . (CmpNat i n ~ 'LT, PrimType ty, KnownNat i, Countable ty i) => BlockN n ty -> (BlockN i ty, BlockN (n-i) ty)
 splitAt b =
