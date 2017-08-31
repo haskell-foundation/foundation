@@ -18,6 +18,7 @@ module Basement.Nat
     , CmpNat
     -- * Nat convertion
     , natValNatural
+    , natValCountOf
     , natValInt
     , natValInt8
     , natValInt16
@@ -98,6 +99,8 @@ type family NatNumMaxBound ty where
     NatNumMaxBound Int    = NatNumMaxBound Int32
     NatNumMaxBound Word   = NatNumMaxBound Word32
 #endif
+    NatNumMaxBound (CountOf x) = NatNumMaxBound Int
+    NatNumMaxBound (Offset x) = NatNumMaxBound Int
 
 -- | Check if a Nat is in bounds of another integral / natural types
 type family NatInBoundOf ty n where
