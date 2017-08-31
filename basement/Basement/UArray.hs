@@ -29,6 +29,7 @@ module Basement.UArray
     , thaw
     , unsafeThaw
     -- * Creation
+    , vFromListN
     , new
     , create
     , createFromIO
