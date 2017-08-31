@@ -45,6 +45,7 @@ module Basement.UArray.Base
     , copyAt
     , unsafeCopyAtRO
     , touch
+    , toBlock
     -- * temporary
     , pureST
     ) where
@@ -594,3 +595,14 @@ concat l  =
 touch :: PrimMonad prim => UArray ty -> prim ()
 touch (UArray _ _ (UArrayBA blk))    = BLK.touch blk
 touch (UArray _ _ (UArrayAddr fptr)) = touchFinalPtr fptr
+
+-- | Create a Block from a UArray.
+--
+-- Note that because of the slice, the destination block
+-- is re-allocated and copied, unless the slice point
+-- at the whole array
+toBlock :: PrimType ty => UArray ty -> Block ty
+toBlock arr@(UArray start len (UArrayBA blk))
+    | start == 0 && BLK.length blk == len = blk
+    | otherwise                           = toBlock $ copy arr
+toBlock arr = toBlock $ copy arr

@@ -41,6 +41,8 @@ module Basement.UArray
     , unsafeFreezeShrink
     , freezeShrink
     , unsafeSlide
+    , fromBlock
+    , toBlock
     -- * accessors
     , update
     , unsafeUpdate
@@ -124,6 +126,7 @@ import           Basement.Exception
 import           Basement.Utils
 import           Basement.UArray.Base
 import           Basement.Block (Block(..), MutableBlock(..))
+import qualified Basement.Block as BLK
 import           Basement.UArray.Mutable hiding (sub, copyToPtr)
 import           Basement.Numerical.Additive
 import           Basement.Numerical.Subtractive
@@ -157,6 +160,14 @@ fromForeignPtr :: PrimType ty
                -> UArray ty
 fromForeignPtr (fptr, ofs, len) = UArray (Offset ofs) (CountOf len) (UArrayAddr $ toFinalPtrForeign fptr)
 
+
+-- | Create a UArray from a Block
+--
+-- The block is still used by the uarray
+fromBlock :: PrimType ty
+          => Block ty
+          -> UArray ty
+fromBlock blk = UArray 0 (BLK.length blk) (UArrayBA blk)
 
 -- | Allocate a new array with a fill function that has access to the elements of
 --   the source array.
