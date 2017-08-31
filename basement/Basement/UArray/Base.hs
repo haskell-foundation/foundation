@@ -33,6 +33,7 @@ module Basement.UArray.Base
     , unsafeDewrap
     , unsafeDewrap2
     -- * Basic lowlevel functions
+    , vFromListN
     , empty
     , length
     , offset
@@ -120,6 +121,7 @@ instance PrimType ty => Monoid (UArray ty) where
 instance PrimType ty => IsList (UArray ty) where
     type Item (UArray ty) = ty
     fromList = vFromList
+    fromListN len = vFromListN (CountOf len)
     toList = vToList
 
 length :: UArray ty -> CountOf ty
@@ -322,6 +324,28 @@ vFromList l = runST $ do
         loop _  []     = pure ()
         loop !i (x:xs) = MBLK.unsafeWrite mb i x >> loop (i+1) xs
 
+-- | Make an array from a list of elements with a size hint.
+--
+-- The list should be of the same size as the hint, as otherwise:
+--
+-- * The length of the list is smaller than the hint:
+--    the array allocated is of the size of the hint, but is sliced
+--    to only represent the valid bits
+-- * The length of the list is bigger than the hint:
+--    The allocated array is the size of the hint, and the list is truncated to
+--    fit.
+vFromListN :: forall ty . PrimType ty => CountOf ty -> [ty] -> UArray ty
+vFromListN len l = runST $ do
+    (sz, ma) <- newNative len (\mba -> copyList (MBLK.MutableBlock mba))
+    unsafeFreezeShrink ma sz
+  where
+    copyList :: MutableBlock ty s -> ST s (CountOf ty)
+    copyList mb = loop 0 l
+      where
+        loop !i  []     = pure (offsetAsSize i)
+        loop !i (x:xs)
+            | i .==# len = pure (offsetAsSize i)
+            | otherwise  = MBLK.unsafeWrite mb i x >> loop (i+1) xs
 
 -- | transform an array to a list.
 vToList :: forall ty . PrimType ty => UArray ty -> [ty]
