@@ -44,11 +44,14 @@ import qualified Basement.Types.AsciiString as AsciiString
 import           Basement.These
 import           Basement.PrimType (PrimType)
 import           Basement.Types.OffsetSize
+import           Basement.Compat.Natural
+import qualified Prelude (fromIntegral)
 
 -- nat instances
 #if __GLASGOW_HASKELL__ >= 800
 import           Basement.Nat
 import qualified Basement.BlockN as BlockN
+import           Basement.Bounded
 #endif
 
 -- | Class of things that can be converted from a to b.
@@ -89,6 +92,17 @@ instance From Int Word where
     from (I# i) = W# (int2Word# i)
 instance From Word Int where
     from (W# w) = I# (word2Int# w)
+
+instance From Word8 Natural where
+    from = Prelude.fromIntegral
+instance From Word16 Natural where
+    from = Prelude.fromIntegral
+instance From Word32 Natural where
+    from = Prelude.fromIntegral
+instance From Word64 Natural where
+    from = Prelude.fromIntegral
+instance From Word Natural where
+    from = Prelude.fromIntegral
 
 -- Simple prelude types
 instance From (Maybe a) (Either () a) where
@@ -154,4 +168,11 @@ instance (NatWithinBound (CountOf ty) n, KnownNat n, PrimType ty)
 instance (NatWithinBound (CountOf ty) n, KnownNat n, PrimType ty)
       => TryFrom (BoxArray.Array ty) (BlockN.BlockN n ty) where
     tryFrom = BlockN.toBlockN . UArray.toBlock . BoxArray.mapToUnboxed id
+
+instance From (Zn64 n) Word64 where
+    from = unZn64
+instance (KnownNat n, NatWithinBound Word64 n) => From (Zn n) (Zn64 n) where
+    from = zn64 . Prelude.fromIntegral . unZn
+instance KnownNat n => From (Zn64 n) (Zn n) where
+    from = zn . from . unZn64
 #endif
