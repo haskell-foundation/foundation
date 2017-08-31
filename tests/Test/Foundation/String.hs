@@ -7,7 +7,7 @@ module Test.Foundation.String
     ( testStringRefs
     ) where
 
-import Control.Monad (replicateM)
+-- import Control.Monad (replicateM)
 
 import Foundation
 import Foundation.Check
