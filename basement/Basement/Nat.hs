@@ -19,6 +19,7 @@ module Basement.Nat
     -- * Nat convertion
     , natValNatural
     , natValCountOf
+    , natValOffset
     , natValInt
     , natValInt8
     , natValInt16
@@ -41,6 +42,7 @@ module Basement.Nat
 import           GHC.TypeLits
 import           Basement.Compat.Base
 import           Basement.Compat.Natural
+import           Basement.Types.OffsetSize
 import           Data.Int (Int8, Int16, Int32, Int64)
 import           Data.Word (Word8, Word16, Word32, Word64)
 import qualified Prelude (fromIntegral)
@@ -51,6 +53,12 @@ import           Data.Type.Bool
 
 natValNatural :: forall n proxy . KnownNat n => proxy n -> Natural
 natValNatural n = Prelude.fromIntegral (natVal n)
+
+natValCountOf :: forall n ty proxy . (KnownNat n, NatWithinBound (CountOf ty) n) => proxy n -> CountOf ty
+natValCountOf n = CountOf $ Prelude.fromIntegral (natVal n)
+
+natValOffset :: forall n ty proxy . (KnownNat n, NatWithinBound (Offset ty) n) => proxy n -> Offset ty
+natValOffset n = Offset $ Prelude.fromIntegral (natVal n)
 
 natValInt :: forall n proxy . (KnownNat n, NatWithinBound Int n) => proxy n -> Int
 natValInt n = Prelude.fromIntegral (natVal n)
