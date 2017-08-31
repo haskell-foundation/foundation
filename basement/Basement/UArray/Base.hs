@@ -22,6 +22,8 @@ module Basement.UArray.Base
     , unsafeFreezeShrink
     , unsafeFreeze
     , unsafeThaw
+    , thaw
+    , copy
     -- * Array accessor
     , unsafeIndex
     , unsafeIndexer
@@ -237,6 +239,22 @@ unsafeThaw :: (PrimType ty, PrimMonad prim) => UArray ty -> prim (MUArray ty (Pr
 unsafeThaw (UArray start len (UArrayBA blk)) = MUArray start len . MUArrayMBA <$> BLK.unsafeThaw blk
 unsafeThaw (UArray start len (UArrayAddr fptr)) = pure $ MUArray start len (MUArrayAddr fptr)
 {-# INLINE unsafeThaw #-}
+
+-- | Thaw an array to a mutable array.
+--
+-- the array is not modified, instead a new mutable array is created
+-- and every values is copied, before returning the mutable array.
+thaw :: (PrimMonad prim, PrimType ty) => UArray ty -> prim (MUArray ty (PrimState prim))
+thaw array = do
+    ma <- new (length array)
+    unsafeCopyAtRO ma azero array (Offset 0) (length array)
+    pure ma
+{-# INLINE thaw #-}
+
+-- | Copy every cells of an existing array to a new array
+copy :: PrimType ty => UArray ty -> UArray ty
+copy array = runST (thaw array >>= unsafeFreeze)
+
 
 onBackend :: (ByteArray# -> a)
           -> (FinalPtr ty -> Ptr ty -> ST s a)

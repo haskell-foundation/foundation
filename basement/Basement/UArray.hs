@@ -134,21 +134,6 @@ import qualified Basement.Base16 as Base16
 import qualified Basement.Alg.Native.PrimArray as PrimBA
 import qualified Basement.Alg.Foreign.PrimArray as PrimAddr
 
--- | Copy every cells of an existing array to a new array
-copy :: PrimType ty => UArray ty -> UArray ty
-copy array = runST (thaw array >>= unsafeFreeze)
-
--- | Thaw an array to a mutable array.
---
--- the array is not modified, instead a new mutable array is created
--- and every values is copied, before returning the mutable array.
-thaw :: (PrimMonad prim, PrimType ty) => UArray ty -> prim (MUArray ty (PrimState prim))
-thaw array = do
-    ma <- new (length array)
-    unsafeCopyAtRO ma azero array (Offset 0) (length array)
-    pure ma
-{-# INLINE thaw #-}
-
 -- | Return the element at a specific index from an array.
 --
 -- If the index @n is out of bounds, an error is raised.
