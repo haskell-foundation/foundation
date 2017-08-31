@@ -32,6 +32,7 @@ module Basement.From
 import Basement.Compat.Base
 
 -- basic instances
+import           GHC.Types
 import           GHC.Prim
 import           GHC.Int
 import           GHC.Word
