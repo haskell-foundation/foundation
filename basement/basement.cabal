@@ -98,6 +98,8 @@ library
                      Basement.Alg.Foreign.String
                      Basement.Alg.Foreign.PrimArray
 
+                     Basement.Numerical.Conversion
+
                      Basement.Block.Base
 
                      Basement.UTF8.Base

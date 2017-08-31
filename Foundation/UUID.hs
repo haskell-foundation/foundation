@@ -67,7 +67,7 @@ toLString uuid = withComponent uuid $ \x1 x2 x3 x4 x5 ->
     hexWord_4 w l = case hexWord32 w of
                     (c1,c2,c3,c4,c5,c6,c7,c8) -> c1:c2:c3:c4:c5:c6:c7:c8:l
     hexWord64_6 w l = case word64ToWord32s w of
-                        (# wHigh, wLow #) -> hexWord_2 (integralDownsize wHigh) $ hexWord_4 wLow l
+                        Word32x2 wHigh wLow -> hexWord_2 (integralDownsize wHigh) $ hexWord_4 wLow l
 
 nil :: UUID
 nil = UUID 0 0

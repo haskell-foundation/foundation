@@ -29,13 +29,15 @@ module Basement.From
     , tryInto
     ) where
 
-import Basement.Compat.Base
+import           Basement.Compat.Base
 
 -- basic instances
 import           GHC.Types
 import           GHC.Prim
 import           GHC.Int
 import           GHC.Word
+import           Basement.Numerical.Number
+import           Basement.Numerical.Conversion
 import qualified Basement.Block as Block
 import qualified Basement.BoxedArray as BoxArray
 import qualified Basement.UArray as UArray
@@ -93,16 +95,66 @@ instance From Int Word where
 instance From Word Int where
     from (W# w) = I# (word2Int# w)
 
-instance From Word8 Natural where
-    from = Prelude.fromIntegral
-instance From Word16 Natural where
-    from = Prelude.fromIntegral
-instance From Word32 Natural where
-    from = Prelude.fromIntegral
-instance From Word64 Natural where
-    from = Prelude.fromIntegral
-instance From Word Natural where
-    from = Prelude.fromIntegral
+instance IsNatural n => From n Natural where
+    from = toNatural
+instance IsIntegral n => From n Integer where
+    from = toInteger
+
+instance From Int8 Int16 where
+    from (I8# i) = I16# i
+instance From Int8 Int32 where
+    from (I8# i) = I32# i
+instance From Int8 Int64 where
+    from (I8# i) = intToInt64 (I# i)
+instance From Int8 Int where
+    from (I8# i) = I# i
+
+instance From Int16 Int32 where
+    from (I16# i) = I32# i
+instance From Int16 Int64 where
+    from (I16# i) = intToInt64 (I# i)
+instance From Int16 Int where
+    from (I16# i) = I# i
+
+instance From Int32 Int64 where
+    from (I32# i) = intToInt64 (I# i)
+instance From Int32 Int where
+    from (I32# i) = I# i
+
+instance From Int Int64 where
+    from = intToInt64
+
+instance From Word8 Word16 where
+    from (W8# i) = W16# i
+instance From Word8 Word32 where
+    from (W8# i) = W32# i
+instance From Word8 Word64 where
+    from (W8# i) = wordToWord64 (W# i)
+instance From Word8 Word where
+    from (W8# i) = W# i
+instance From Word8 Int16 where
+    from (W8# w) = I16# (word2Int# w)
+instance From Word8 Int32 where
+    from (W8# w) = I32# (word2Int# w)
+instance From Word8 Int64 where
+    from (W8# w) = intToInt64 (I# (word2Int# w))
+instance From Word8 Int where
+    from (W8# w) = I# (word2Int# w)
+
+instance From Word16 Word32 where
+    from (W16# i) = W32# i
+instance From Word16 Word64 where
+    from (W16# i) = wordToWord64 (W# i)
+instance From Word16 Word where
+    from (W16# i) = W# i
+
+instance From Word32 Word64 where
+    from (W32# i) = wordToWord64 (W# i)
+instance From Word32 Word where
+    from (W32# i) = W# i
+
+instance From Word Word64 where
+    from = wordToWord64
 
 -- Simple prelude types
 instance From (Maybe a) (Either () a) where
