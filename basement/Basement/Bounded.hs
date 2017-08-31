@@ -41,7 +41,9 @@ zn64 :: forall n . (KnownNat n, NatWithinBound Word64 n) => Word64 -> Zn64 n
 zn64 v = Zn64 (v `Prelude.mod` natValWord64 (Proxy :: Proxy n))
 
 -- | Create an element of ℤ/nℤ from a type level Nat
-zn64Nat :: forall m n . (KnownNat m, KnownNat n, NatWithinBound Word64 m, NatWithinBound Word64 n, CmpNat m n ~ 'LT) => Proxy m -> Zn64 n
+zn64Nat :: forall m n . (KnownNat m, KnownNat n, NatWithinBound Word64 m, NatWithinBound Word64 n, CmpNat m n ~ 'LT)
+        => Proxy m
+        -> Zn64 n
 zn64Nat p = Zn64 (natValWord64 p)
 
 -- | A type level bounded natural
