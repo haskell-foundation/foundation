@@ -87,5 +87,3 @@ instance Sequential (DList a) where
     sortBy comp = fromList . sortBy comp . toList
     singleton = DList . (:)
     replicate n e = fromList $ replicate n e
-
-biswap (a,b) = (b,a)
