@@ -310,14 +310,18 @@ pureST :: a -> ST s a
 pureST = pure
 
 -- | make an array from a list of elements.
-vFromList :: PrimType ty => [ty] -> UArray ty
+vFromList :: forall ty . PrimType ty => [ty] -> UArray ty
 vFromList l = runST $ do
-    ma <- new (CountOf len)
-    iter azero l $ \i x -> unsafeWrite ma i x
+    ((), ma) <- newNative (CountOf len) (\mba -> copyList (MutableBlock mba))
     unsafeFreeze ma
-  where len = List.length l
-        iter _  []     _ = return ()
-        iter !i (x:xs) z = z i x >> iter (i+1) xs z
+  where
+    len = List.length l
+    copyList :: MutableBlock ty s -> ST s ()
+    copyList mb = loop 0 l
+      where
+        loop _  []     = pure ()
+        loop !i (x:xs) = MBLK.unsafeWrite mb i x >> loop (i+1) xs
+
 
 -- | transform an array to a list.
 vToList :: forall ty . PrimType ty => UArray ty -> [ty]
