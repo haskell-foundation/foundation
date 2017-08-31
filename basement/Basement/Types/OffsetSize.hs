@@ -48,7 +48,6 @@ import System.Posix.Types (CSsize (..))
 import Data.Bits
 import Basement.Compat.Base
 import Data.Proxy
-import Basement.From
 import Basement.Numerical.Number
 import Basement.Numerical.Additive
 import Basement.Numerical.Subtractive
@@ -179,11 +178,6 @@ instance Prelude.Num (CountOf ty) where
     abs a = a
     negate _ = error "cannot negate CountOf: use Foundation Numerical hierarchy for this function to not be exposed to CountOf"
     signum (CountOf a) = CountOf (Prelude.signum a)
-
-instance From (CountOf ty) Int where
-    from (CountOf n) = n
-instance From (CountOf ty) Word where
-    from (CountOf n) = from n
 
 instance IsIntegral (CountOf ty) where
     toInteger (CountOf i) = toInteger i
