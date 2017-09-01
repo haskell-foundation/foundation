@@ -21,15 +21,13 @@ import           GHC.Types
 import           GHC.Word
 import           Foundation.Numerical
 import           Foundation.Bits
-import           Foundation.Primitive.Imports
-import           Foundation.Primitive.IntegralConv
+import           Basement.Imports
+import           Basement.IntegralConv
 import           Foundation.JSON.Parse.Types
 import           Foundation.JSON.Types
 import           Data.List (reverse)
-import           Foundation.String.UTF8 (String)
-import qualified Foundation.String.UTF8 as S
-import           Foundation.Array.Unboxed (UArray)
-import qualified Foundation.Array.Unboxed as A
+import qualified Foundation.Collection as C
+import qualified Basement.String as S
 
 -- from 8.0 we'll be able to use PatternSynonym, sadly for now stuck with GHC
 #define CH_BS     0x08
@@ -201,7 +199,7 @@ pStringVal toEvent = loop []
   where
     loop acc = nextByte >>= \c ->
         case c of
-            CH_QUOTE -> yield (toEvent $ S.fromBytesUnsafe $ A.reverse $ fromList $ acc)
+            CH_QUOTE -> yield (toEvent $ S.fromBytesUnsafe $ C.reverse $ fromList $ acc)
             CH_BACKS -> escape acc
             v        -> loop (v:acc)
 
@@ -369,8 +367,8 @@ pFloatingExponant integralAcc floatingAcc = nextByte >>= \c ->
 
 skipSpaces :: Parser ()
 skipSpaces = Parser $ \pcs s evs next ->
-    let s' = snd $ A.span isWhite s
-     in if A.null s'
+    let s' = snd $ C.span isWhite s
+     in if C.null s'
             then doMore evs (\x -> runParser skipSpaces pcs x [] next)
             else next pcs s' evs ()
 
@@ -379,15 +377,15 @@ skipUntilNewline = skipUntil CH_LF
 
 skipUntil :: Word8 -> Parser ()
 skipUntil v = Parser $ \pcs s evs next ->
-    let s' = snd $ A.span (\x -> x /= v) s
-     in if A.null s'
+    let s' = snd $ C.span (\x -> x /= v) s
+     in if C.null s'
             then doMore evs (\x -> runParser skipUntilNewline pcs x [] next)
-            else next pcs (A.drop 1 s') evs ()
+            else next pcs (C.drop 1 s') evs ()
 
 
 nextByte :: Parser Word8
 nextByte = Parser $ \pcs s evs next ->
-    case A.uncons s of
+    case C.uncons s of
         Nothing     -> doMore evs (\x -> runParser nextByte pcs x [] next)
         Just (c,s') -> next pcs s' evs c
 
@@ -405,7 +403,7 @@ getDigits0 initAcc f = loop [initAcc]
         if isDigit c
             then loop (c : acc)
             else f (reverseAsciiString acc) c
-    reverseAsciiString l = S.fromBytesUnsafe $ A.reverse $ fromList l
+    reverseAsciiString l = S.fromBytesUnsafe $ C.reverse $ fromList l
 
 expect :: [Word8] -> Parser ()
 expect l = loop l

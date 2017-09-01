@@ -16,7 +16,7 @@ module Foundation.JSON.Parse.Types
     , Context(..)
     ) where
 
-import Foundation.Primitive.Imports
+import Basement.Imports
 
 data JsonParseError =
       BadChar Word8
@@ -37,8 +37,8 @@ data JsonParseError =
 data JsonParseNesting
 
 data JsonParseConfiguration = JsonParseConfiguration
-    { maxNesting       :: Size JsonParseNesting -- ^ maximum level of nesting
-    , maxData          :: Size Word8            -- ^ size of data in bytes
+    { maxNesting       :: CountOf JsonParseNesting -- ^ maximum level of nesting
+    , maxData          :: CountOf Word8            -- ^ size of data in bytes
     , allowCommentC    :: Bool                  -- ^ allow C style comment
     , allowCommentYaml :: Bool                  -- ^ allow Yaml/Python style comment
     } deriving (Show,Eq)
@@ -58,7 +58,7 @@ data Context =
 
 data JsonParseContext = JsonParseContext
     { contextStack     :: Context
-    , contextStackSize :: !(Size JsonParseNesting)
+    , contextStackSize :: !(CountOf JsonParseNesting)
     , contextConfig    :: JsonParseConfiguration
     }
 

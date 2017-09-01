@@ -13,7 +13,7 @@ module Foundation.JSON.Types
     , JString(..)
     ) where
 
-import Foundation.Primitive.Imports
+import Basement.Imports
 
 -- | JSON Key
 newtype JKey = JKey String

@@ -18,10 +18,10 @@ module Foundation.JSON.Parse
     , Result(..)
     ) where
 
-import           Foundation.Primitive.Imports
+import           Basement.Imports
+import           Basement.String (toBytes, Encoding(..))
 import           Foundation.JSON.Parse.Types
 import           Foundation.JSON.Parse.Internal
-import           Foundation.String.UTF8
 import qualified Data.List as L (reverse)
 
 jsonParse :: JsonParseContext -> String -> Result ()
