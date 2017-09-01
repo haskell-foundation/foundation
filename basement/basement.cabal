@@ -88,8 +88,6 @@ library
                      Basement.Show
                      Basement.Runtime
 
-                     Basement.Utils
-
                      Basement.Alg.Native.Prim
                      Basement.Alg.Native.UTF8
                      Basement.Alg.Native.String
@@ -99,6 +97,8 @@ library
                      Basement.Alg.Foreign.UTF8
                      Basement.Alg.Foreign.String
                      Basement.Alg.Foreign.PrimArray
+
+                     Basement.Numerical.Conversion
 
                      Basement.Block.Base
 

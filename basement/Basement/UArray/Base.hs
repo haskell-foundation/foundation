@@ -22,6 +22,8 @@ module Basement.UArray.Base
     , unsafeFreezeShrink
     , unsafeFreeze
     , unsafeThaw
+    , thaw
+    , copy
     -- * Array accessor
     , unsafeIndex
     , unsafeIndexer
@@ -31,6 +33,7 @@ module Basement.UArray.Base
     , unsafeDewrap
     , unsafeDewrap2
     -- * Basic lowlevel functions
+    , vFromListN
     , empty
     , length
     , offset
@@ -42,6 +45,7 @@ module Basement.UArray.Base
     , copyAt
     , unsafeCopyAtRO
     , touch
+    , toBlock
     -- * temporary
     , pureST
     ) where
@@ -118,6 +122,7 @@ instance PrimType ty => Monoid (UArray ty) where
 instance PrimType ty => IsList (UArray ty) where
     type Item (UArray ty) = ty
     fromList = vFromList
+    fromListN len = vFromListN (CountOf len)
     toList = vToList
 
 length :: UArray ty -> CountOf ty
@@ -238,6 +243,22 @@ unsafeThaw (UArray start len (UArrayBA blk)) = MUArray start len . MUArrayMBA <$
 unsafeThaw (UArray start len (UArrayAddr fptr)) = pure $ MUArray start len (MUArrayAddr fptr)
 {-# INLINE unsafeThaw #-}
 
+-- | Thaw an array to a mutable array.
+--
+-- the array is not modified, instead a new mutable array is created
+-- and every values is copied, before returning the mutable array.
+thaw :: (PrimMonad prim, PrimType ty) => UArray ty -> prim (MUArray ty (PrimState prim))
+thaw array = do
+    ma <- new (length array)
+    unsafeCopyAtRO ma azero array (Offset 0) (length array)
+    pure ma
+{-# INLINE thaw #-}
+
+-- | Copy every cells of an existing array to a new array
+copy :: PrimType ty => UArray ty -> UArray ty
+copy array = runST (thaw array >>= unsafeFreeze)
+
+
 onBackend :: (ByteArray# -> a)
           -> (FinalPtr ty -> Ptr ty -> ST s a)
           -> UArray ty
@@ -292,14 +313,40 @@ pureST :: a -> ST s a
 pureST = pure
 
 -- | make an array from a list of elements.
-vFromList :: PrimType ty => [ty] -> UArray ty
+vFromList :: forall ty . PrimType ty => [ty] -> UArray ty
 vFromList l = runST $ do
-    ma <- new (CountOf len)
-    iter azero l $ \i x -> unsafeWrite ma i x
+    ((), ma) <- newNative (CountOf len) (\mba -> copyList (MutableBlock mba))
     unsafeFreeze ma
-  where len = List.length l
-        iter _  []     _ = return ()
-        iter !i (x:xs) z = z i x >> iter (i+1) xs z
+  where
+    len = List.length l
+    copyList :: MutableBlock ty s -> ST s ()
+    copyList mb = loop 0 l
+      where
+        loop _  []     = pure ()
+        loop !i (x:xs) = MBLK.unsafeWrite mb i x >> loop (i+1) xs
+
+-- | Make an array from a list of elements with a size hint.
+--
+-- The list should be of the same size as the hint, as otherwise:
+--
+-- * The length of the list is smaller than the hint:
+--    the array allocated is of the size of the hint, but is sliced
+--    to only represent the valid bits
+-- * The length of the list is bigger than the hint:
+--    The allocated array is the size of the hint, and the list is truncated to
+--    fit.
+vFromListN :: forall ty . PrimType ty => CountOf ty -> [ty] -> UArray ty
+vFromListN len l = runST $ do
+    (sz, ma) <- newNative len (\mba -> copyList (MBLK.MutableBlock mba))
+    unsafeFreezeShrink ma sz
+  where
+    copyList :: MutableBlock ty s -> ST s (CountOf ty)
+    copyList mb = loop 0 l
+      where
+        loop !i  []     = pure (offsetAsSize i)
+        loop !i (x:xs)
+            | i .==# len = pure (offsetAsSize i)
+            | otherwise  = MBLK.unsafeWrite mb i x >> loop (i+1) xs
 
 -- | transform an array to a list.
 vToList :: forall ty . PrimType ty => UArray ty -> [ty]
@@ -548,3 +595,14 @@ concat l  =
 touch :: PrimMonad prim => UArray ty -> prim ()
 touch (UArray _ _ (UArrayBA blk))    = BLK.touch blk
 touch (UArray _ _ (UArrayAddr fptr)) = touchFinalPtr fptr
+
+-- | Create a Block from a UArray.
+--
+-- Note that because of the slice, the destination block
+-- is re-allocated and copied, unless the slice point
+-- at the whole array
+toBlock :: PrimType ty => UArray ty -> Block ty
+toBlock arr@(UArray start len (UArrayBA blk))
+    | start == 0 && BLK.length blk == len = blk
+    | otherwise                           = toBlock $ copy arr
+toBlock arr = toBlock $ copy arr

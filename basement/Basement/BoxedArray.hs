@@ -46,6 +46,8 @@ module Basement.BoxedArray
     , spanEnd
     , break
     , breakEnd
+    , mapFromUnboxed
+    , mapToUnboxed
     , cons
     , snoc
     , uncons
@@ -72,16 +74,18 @@ module Basement.BoxedArray
 import           GHC.Prim
 import           GHC.Types
 import           GHC.ST
+import           Data.Proxy
 import           Basement.Numerical.Additive
 import           Basement.Numerical.Subtractive
 import           Basement.NonEmpty
 import           Basement.Compat.Base
-import           Data.Proxy
 import           Basement.Compat.MonadTrans
 import           Basement.Types.OffsetSize
 import           Basement.PrimType
 import           Basement.NormalForm
 import           Basement.Monad
+import           Basement.UArray.Base (UArray)
+import qualified Basement.UArray.Base as UArray
 import           Basement.Exception
 import           Basement.MutableBuilder
 import qualified Basement.Compat.ExtList as List
@@ -133,6 +137,7 @@ instance Ord a => Ord (Array a) where
 instance IsList (Array ty) where
     type Item (Array ty) = ty
     fromList = vFromList
+    fromListN len = vFromListN (CountOf len)
     toList = vToList
 
 -- | return the numbers of elements in a mutable array
@@ -351,6 +356,27 @@ vFromList l = runST (new len >>= loop 0 l)
     loop _ []     ma = unsafeFreeze ma
     loop i (x:xs) ma = unsafeWrite ma i x >> loop (i+1) xs ma
 
+-- | just like vFromList but with a length hint.
+--
+-- The resulting array is guarantee to have been allocated to the length
+-- specified, but the slice might point to the initialized cells only in
+-- case the length is bigger than the list.
+--
+-- If the length is too small, then the list is truncated.
+--
+vFromListN :: forall a . CountOf a -> [a] -> Array a
+vFromListN len l = runST $ do
+    ma <- new len
+    sz <- loop 0 l ma
+    unsafeFreezeShrink ma sz
+  where
+    -- TODO rewrite without ma as parameter
+    loop :: Offset a -> [a] -> MArray a s -> ST s (CountOf a)
+    loop i []     _  = return (offsetAsSize i)
+    loop i (x:xs) ma
+        | i .==# len = return (offsetAsSize i)
+        | otherwise  = unsafeWrite ma i x >> loop (i+1) xs ma
+
 vToList :: Array a -> [a]
 vToList v
     | len == 0  = []
@@ -521,6 +547,12 @@ spanEnd p = breakEnd (not . p)
 
 map :: (a -> b) -> Array a -> Array b
 map f a = create (sizeCast Proxy $ length a) (\i -> f $ unsafeIndex a (offsetCast Proxy i))
+
+mapFromUnboxed :: PrimType a => (a -> b) -> UArray a -> Array b
+mapFromUnboxed f arr = vFromListN (sizeCast Proxy $ UArray.length arr) . fmap f . toList $ arr
+
+mapToUnboxed :: PrimType b => (a -> b) -> Array a -> UArray b
+mapToUnboxed f arr = UArray.vFromListN (sizeCast Proxy $ length arr) . fmap f . toList $ arr
 
 {-
 mapIndex :: (Int -> a -> b) -> Array a -> Array b

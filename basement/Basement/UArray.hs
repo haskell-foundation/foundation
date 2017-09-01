@@ -29,6 +29,7 @@ module Basement.UArray
     , thaw
     , unsafeThaw
     -- * Creation
+    , vFromListN
     , new
     , create
     , createFromIO
@@ -39,7 +40,8 @@ module Basement.UArray
     , withMutablePtr
     , unsafeFreezeShrink
     , freezeShrink
-    , unsafeSlide
+    , fromBlock
+    , toBlock
     -- * accessors
     , update
     , unsafeUpdate
@@ -120,9 +122,9 @@ import           Basement.Monad
 import           Basement.PrimType
 import           Basement.FinalPtr
 import           Basement.Exception
-import           Basement.Utils
 import           Basement.UArray.Base
 import           Basement.Block (Block(..), MutableBlock(..))
+import qualified Basement.Block as BLK
 import           Basement.UArray.Mutable hiding (sub, copyToPtr)
 import           Basement.Numerical.Additive
 import           Basement.Numerical.Subtractive
@@ -133,21 +135,6 @@ import qualified Basement.Compat.ExtList as List
 import qualified Basement.Base16 as Base16
 import qualified Basement.Alg.Native.PrimArray as PrimBA
 import qualified Basement.Alg.Foreign.PrimArray as PrimAddr
-
--- | Copy every cells of an existing array to a new array
-copy :: PrimType ty => UArray ty -> UArray ty
-copy array = runST (thaw array >>= unsafeFreeze)
-
--- | Thaw an array to a mutable array.
---
--- the array is not modified, instead a new mutable array is created
--- and every values is copied, before returning the mutable array.
-thaw :: (PrimMonad prim, PrimType ty) => UArray ty -> prim (MUArray ty (PrimState prim))
-thaw array = do
-    ma <- new (length array)
-    unsafeCopyAtRO ma azero array (Offset 0) (length array)
-    pure ma
-{-# INLINE thaw #-}
 
 -- | Return the element at a specific index from an array.
 --
@@ -171,6 +158,14 @@ fromForeignPtr :: PrimType ty
                -> UArray ty
 fromForeignPtr (fptr, ofs, len) = UArray (Offset ofs) (CountOf len) (UArrayAddr $ toFinalPtrForeign fptr)
 
+
+-- | Create a UArray from a Block
+--
+-- The block is still used by the uarray
+fromBlock :: PrimType ty
+          => Block ty
+          -> UArray ty
+fromBlock blk = UArray 0 (BLK.length blk) (UArrayBA blk)
 
 -- | Allocate a new array with a fill function that has access to the elements of
 --   the source array.
@@ -199,15 +194,6 @@ freezeShrink ma n = do
     ma' <- new n
     copyAt ma' (Offset 0) ma (Offset 0) n
     unsafeFreeze ma'
-
-unsafeSlide :: (PrimType ty, PrimMonad prim) => MUArray ty (PrimState prim) -> Offset ty -> Offset ty -> prim ()
-unsafeSlide mua s e = doSlide mua s e
-  where
-    doSlide :: (PrimType ty, PrimMonad prim) => MUArray ty (PrimState prim) -> Offset ty -> Offset ty -> prim ()
-    doSlide (MUArray mbStart _ (MUArrayMBA (MutableBlock mba))) start end  =
-        primMutableByteArraySlideToStart mba (offsetInBytes $ mbStart+start) (offsetInBytes end)
-    doSlide (MUArray mbStart _ (MUArrayAddr fptr)) start end = withFinalPtr fptr $ \(Ptr addr) ->
-        primMutableAddrSlideToStart addr (offsetInBytes $ mbStart+start) (offsetInBytes end)
 
 -- | Create a new array of size @n by settings each cells through the
 -- function @f.
