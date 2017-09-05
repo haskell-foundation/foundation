@@ -125,6 +125,7 @@ import           Basement.Exception
 import           Basement.UArray.Base
 import           Basement.Block (Block(..), MutableBlock(..))
 import qualified Basement.Block as BLK
+import qualified Basement.Block.Base as BLK (touch)
 import           Basement.UArray.Mutable hiding (sub, copyToPtr)
 import           Basement.Numerical.Additive
 import           Basement.Numerical.Subtractive
@@ -292,7 +293,7 @@ withPtr :: forall ty prim a . (PrimMonad prim, PrimType ty)
         -> prim a
 withPtr a f
     | isPinned a == Pinned =
-        onBackendPrim (\ba -> f (Ptr (byteArrayContents# ba) `plusPtr` os))
+        onBackendPrim (\ba -> f (Ptr (byteArrayContents# ba) `plusPtr` os) <* BLK.touch (Block ba))
                       (\fptr -> withFinalPtr fptr $ \ptr -> f (ptr `plusPtr` os))
                       a
     | otherwise = do
@@ -300,9 +301,7 @@ withPtr a f
             trampoline <- newPinned (length a)
             unsafeCopyAtRO trampoline 0 a 0 (length a)
             unsafeFreeze trampoline
-        r <- withPtr arr f
-        touch arr
-        pure r
+        withPtr arr f
   where
     !sz          = primSizeInBytes (Proxy :: Proxy ty)
     !(Offset os) = offsetOfE sz $ offset a
