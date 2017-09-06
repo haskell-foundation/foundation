@@ -125,7 +125,7 @@ import           Basement.Exception
 import           Basement.UArray.Base
 import           Basement.Block (Block(..), MutableBlock(..))
 import qualified Basement.Block as BLK
-import qualified Basement.Block.Base as BLK (touch)
+import qualified Basement.Block.Base as BLK (touch, unsafeWrite)
 import           Basement.UArray.Mutable hiding (sub, copyToPtr)
 import           Basement.Numerical.Additive
 import           Basement.Numerical.Subtractive
@@ -647,7 +647,7 @@ sortBy ford vec = runST $ do
 
 filter :: forall ty . PrimType ty => (ty -> Bool) -> UArray ty -> UArray ty
 filter predicate arr = runST $ do
-    (newLen, ma) <- newNative (length arr) $ \mba ->
+    (newLen, ma) <- newNative (length arr) $ \(MutableBlock mba) ->
             onBackendPrim (\ba -> PrimBA.filter predicate mba ba start end)
                           (\fptr -> withFinalPtr fptr $ \(Ptr addr) ->
                                         PrimAddr.filter predicate mba addr start end)
@@ -658,7 +658,7 @@ filter predicate arr = runST $ do
     !start = offset arr
     !end   = start `offsetPlusE` len
 
-reverse :: PrimType ty => UArray ty -> UArray ty
+reverse :: forall ty . PrimType ty => UArray ty -> UArray ty
 reverse a
     | len == 0  = mempty
     | otherwise = runST $ do
@@ -672,18 +672,18 @@ reverse a
     !start = offset a
     !endI = sizeAsOffset ((start + end) - Offset 1)
 
-    goNative :: MutableByteArray# s -> ByteArray# -> ST s ()
+    goNative :: MutableBlock ty s -> ByteArray# -> ST s ()
     goNative !ma !ba = loop 0
       where
         loop !i
             | i == end  = pure ()
-            | otherwise = primMbaWrite ma i (primBaIndex ba (sizeAsOffset (endI - i))) >> loop (i+1)
-    goAddr :: MutableByteArray# s -> Ptr ty -> ST s ()
+            | otherwise = BLK.unsafeWrite ma i (primBaIndex ba (sizeAsOffset (endI - i))) >> loop (i+1)
+    goAddr :: MutableBlock ty s -> Ptr ty -> ST s ()
     goAddr !ma (Ptr addr) = loop 0
       where
         loop !i
             | i == end  = pure ()
-            | otherwise = primMbaWrite ma i (primAddrIndex addr (sizeAsOffset (endI - i))) >> loop (i+1)
+            | otherwise = BLK.unsafeWrite ma i (primAddrIndex addr (sizeAsOffset (endI - i))) >> loop (i+1)
 {-# SPECIALIZE [3] reverse :: UArray Word8 -> UArray Word8 #-}
 
 -- Finds where are the insertion points when we search for a `needle`

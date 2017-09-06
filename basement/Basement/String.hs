@@ -98,6 +98,7 @@ import           Basement.UArray           (UArray)
 import qualified Basement.UArray           as Vec
 import qualified Basement.UArray           as C
 import qualified Basement.UArray.Mutable   as MVec
+import           Basement.Block.Mutable (MutableBlock(..))
 import           Basement.Compat.Bifunctor
 import           Basement.Compat.Base
 import           Basement.Compat.Natural
@@ -783,7 +784,7 @@ sortBy sortF s = fromList $ Data.List.sortBy sortF $ toList s -- FIXME for tests
 -- | Filter characters of a string using the predicate
 filter :: (Char -> Bool) -> String -> String
 filter predicate (String arr) = runST $ do
-    (finalSize, dst) <- newNative sz $ \mba ->
+    (finalSize, dst) <- newNative sz $ \(MutableBlock mba) ->
         C.onBackendPrim (\ba -> BackendBA.copyFilter predicate sz mba ba start)
                         (\fptr -> withFinalPtr fptr $ \(Ptr addr) -> BackendAddr.copyFilter predicate sz mba addr start)
                         arr
