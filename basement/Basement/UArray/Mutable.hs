@@ -49,6 +49,7 @@ import           Basement.Monad
 import           Basement.PrimType
 import           Basement.FinalPtr
 import           Basement.Exception
+import qualified Basement.Block         as BLK
 import qualified Basement.Block.Mutable as MBLK
 import           Basement.Block         (MutableBlock(..))
 import           Basement.UArray.Base hiding (empty)
@@ -123,9 +124,9 @@ withMutablePtrHint _ _ (MUArray start _ (MUArrayAddr fptr))  f =
   where
     sz           = primSizeInBytes (Proxy :: Proxy ty)
     !(Offset os) = offsetOfE sz start
-withMutablePtrHint skipCopy skipCopyBack vec@(MUArray start vecSz (MUArrayMBA (MutableBlock a))) f
-    | isMutablePinned vec == Pinned = mutableByteArrayContent a >>= \ptr -> f (ptr `plusPtr` os)
-    | otherwise                     = do
+withMutablePtrHint skipCopy skipCopyBack vec@(MUArray start vecSz (MUArrayMBA mb)) f
+    | BLK.isMutablePinned mb == Pinned = MBLK.mutableWithAddr mb (\ptr -> f (ptr `plusPtr` os))
+    | otherwise                        = do
         trampoline <- newPinned vecSz
         if not skipCopy
             then copyAt trampoline 0 vec 0 vecSz
@@ -138,11 +139,6 @@ withMutablePtrHint skipCopy skipCopyBack vec@(MUArray start vecSz (MUArrayMBA (M
   where
     !(Offset os) = offsetOfE sz start
     sz           = primSizeInBytes (Proxy :: Proxy ty)
-
-    mutableByteArrayContent :: PrimMonad prim => MutableByteArray# (PrimState prim) -> prim (Ptr ty)
-    mutableByteArrayContent mba = primitive $ \s1 ->
-        case unsafeFreezeByteArray# mba s1 of
-            (# s2, ba #) -> (# s2, Ptr (byteArrayContents# ba) #)
 
 -- | Create a pointer on the beginning of the mutable array
 -- and call a function 'f'.

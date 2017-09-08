@@ -58,7 +58,7 @@ initPrecise = unsafePerformIO $ do
     let p32 = castPtr p :: Ptr Word32
     !n <- peek (p32 `ptrPlus` ofs_MachTimebaseInfo_numer)
     !d <- peek (p32 `ptrPlus` ofs_MachTimebaseInfo_denom)
-    -- touch mti ..
+    mutableTouch mti
     pure (integralUpsize n, integralUpsize d)
 {-# NOINLINE initPrecise #-}
 #endif
@@ -91,6 +91,7 @@ stopPrecise (StopWatchPrecise blk) = do
     let p64 = castPtr p :: Ptr Word64
     end   <- peek p64
     start <- peek (p64 `ptrPlus` 8)
+    mutableTouch blk
     pure $ NanoSeconds ((end - start) * secondInNano `div` initPrecise)
 #elif defined(darwin_HOST_OS)
     end <- sysMacos_absolute_time
@@ -105,6 +106,7 @@ stopPrecise (StopWatchPrecise blk) = do
     startSec  <- peek (p64 `ptrPlusCSz` size_CTimeSpec)
     endNSec   <- peek (p64 `ptrPlus` ofs_CTimeSpec_NanoSeconds)
     startNSec <- peek (p64 `ptrPlus` (sizeAsOffset (sizeOfCSize size_CTimeSpec) + ofs_CTimeSpec_NanoSeconds))
+    mutableTouch blk
     pure $ NanoSeconds $ (endSec * secondInNano + endNSec) - (startSec * secondInNano + startNSec)
 #endif
 

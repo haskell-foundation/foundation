@@ -32,6 +32,8 @@ import           Basement.UTF8.Types
 import qualified Basement.Alg.Native.UTF8      as PrimBA
 import qualified Basement.Alg.Foreign.UTF8     as PrimAddr
 import           Basement.UArray           (UArray)
+import           Basement.Block            (MutableBlock)
+import qualified Basement.Block.Mutable    as BLK
 import qualified Basement.UArray           as Vec
 import qualified Basement.UArray           as C
 import qualified Basement.UArray.Mutable   as MVec
@@ -115,16 +117,16 @@ fromModified addr = countAndCopy 0 0
                         _    -> countAndCopy (count+2) (ofs+2)
             _    -> countAndCopy (count+1) (ofs+1)
 
-    copy :: CountOf Word8 -> MutableByteArray# st -> ST st ()
+    copy :: CountOf Word8 -> MutableBlock Word8 st -> ST st ()
     copy count mba = loop 0 0
       where loop o i
                 | o .==# count = pure ()
                 | otherwise    =
                     case primAddrIndex addr i of
                         0xC0 -> case primAddrIndex addr (i+1) of
-                                    0x80 -> primMbaUWrite mba o 0x00 >> loop (o+1) (i+2)
-                                    b2   -> primMbaUWrite mba o 0xC0 >> primMbaUWrite mba (o+1) b2 >> loop (o+2) (i+2)
-                        b1   -> primMbaUWrite mba o b1 >> loop (o+1) (i+1)
+                                    0x80 -> BLK.unsafeWrite mba o 0x00 >> loop (o+1) (i+2)
+                                    b2   -> BLK.unsafeWrite mba o 0xC0 >> BLK.unsafeWrite mba (o+1) b2 >> loop (o+2) (i+2)
+                        b1   -> BLK.unsafeWrite mba o b1 >> loop (o+1) (i+1)
 
 
 -- | Create a new String from a list of characters
@@ -187,7 +189,7 @@ new n = MutableString `fmap` MVec.new n
 
 newNative :: PrimMonad prim
           => CountOf Word8 -- ^ in number of bytes, not of elements.
-          -> (MutableByteArray# (PrimState prim) -> prim a)
+          -> (MutableBlock Word8 (PrimState prim) -> prim a)
           -> prim (a, MutableString (PrimState prim))
 newNative n f = second MutableString `fmap` MVec.newNative n f
 

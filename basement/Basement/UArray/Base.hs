@@ -163,11 +163,11 @@ newUnpinned n = MUArray 0 n . MUArrayMBA <$> MBLK.new n
 
 newNative :: (PrimMonad prim, PrimType ty)
           => CountOf ty
-          -> (MutableByteArray# (PrimState prim) -> prim a) -- ^ move to a MutableBlock
+          -> (MutableBlock ty (PrimState prim) -> prim a)
           -> prim (a, MUArray ty (PrimState prim))
 newNative n f = do
-    mb@(MutableBlock mba) <- MBLK.new n
-    a <- f mba
+    mb <- MBLK.new n
+    a  <- f mb
     pure (a, MUArray 0 n (MUArrayMBA mb))
 
 -- | Create a new mutable array of size @n.
@@ -315,7 +315,7 @@ pureST = pure
 -- | make an array from a list of elements.
 vFromList :: forall ty . PrimType ty => [ty] -> UArray ty
 vFromList l = runST $ do
-    ((), ma) <- newNative (CountOf len) (\mba -> copyList (MutableBlock mba))
+    ((), ma) <- newNative (CountOf len) copyList
     unsafeFreeze ma
   where
     len = List.length l
@@ -337,7 +337,7 @@ vFromList l = runST $ do
 --    fit.
 vFromListN :: forall ty . PrimType ty => CountOf ty -> [ty] -> UArray ty
 vFromListN len l = runST $ do
-    (sz, ma) <- newNative len (\mba -> copyList (MBLK.MutableBlock mba))
+    (sz, ma) <- newNative len copyList
     unsafeFreezeShrink ma sz
   where
     copyList :: MutableBlock ty s -> ST s (CountOf ty)
