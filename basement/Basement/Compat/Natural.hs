@@ -3,16 +3,17 @@
 module Basement.Compat.Natural
     ( Natural
     , integerToNatural
+    , naturalToInteger
     ) where
 
 #if MIN_VERSION_base(4,8,0)
 
 import Numeric.Natural
-import Prelude (Integer, abs, fromInteger)
+import Prelude (Integer, abs, fromInteger, toInteger)
 
 #else
 
-import Prelude (Show(..),Eq,Ord,Enum,Num(..),Real(..),Integral(..),Integer,error,(<), (>), otherwise)
+import Prelude (Show(..),Eq,Ord,Enum,Num(..),Real(..),Integral(..),Integer,error,(<), (>), otherwise, toInteger)
 import Data.Typeable
 
 newtype Natural = Natural Integer
@@ -54,3 +55,6 @@ instance Integral Natural where
 
 integerToNatural :: Integer -> Natural
 integerToNatural i = fromInteger (abs i)
+
+naturalToInteger :: Natural -> Integer
+naturalToInteger n = toInteger n
