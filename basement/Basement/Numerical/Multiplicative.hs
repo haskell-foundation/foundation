@@ -11,6 +11,10 @@ import           Basement.Compat.Base
 import           Basement.Compat.Natural
 import           Basement.Numerical.Number
 import           Basement.Numerical.Additive
+import           Basement.Types.Word128 (Word128)
+import           Basement.Types.Word256 (Word256)
+import qualified Basement.Types.Word128 as Word128
+import qualified Basement.Types.Word256 as Word256
 import qualified Prelude
 
 -- | Represent class of things that can be multiplied together
@@ -92,6 +96,12 @@ instance Multiplicative Word32 where
 instance Multiplicative Word64 where
     midentity = 1
     (*) = (Prelude.*)
+instance Multiplicative Word128 where
+    midentity = 1
+    (*) = (Word128.*)
+instance Multiplicative Word256 where
+    midentity = 1
+    (*) = (Word256.*)
 instance Multiplicative Prelude.Float where
     midentity = 1.0
     (*) = (Prelude.*)
@@ -138,6 +148,12 @@ instance IDivisible Word32 where
 instance IDivisible Word64 where
     div = Prelude.quot
     mod = Prelude.rem
+instance IDivisible Word128 where
+    div = Word128.quot
+    mod = Word128.rem
+instance IDivisible Word256 where
+    div = Word256.quot
+    mod = Word256.rem
 
 instance Divisible Prelude.Rational where
     (/) = (Prelude./)

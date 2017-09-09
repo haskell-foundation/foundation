@@ -5,6 +5,10 @@ module Basement.Numerical.Subtractive
 import           Basement.Compat.Base
 import           Basement.Compat.Natural
 import           Basement.IntegralConv
+import           Basement.Types.Word128 (Word128)
+import           Basement.Types.Word256 (Word256)
+import qualified Basement.Types.Word128 as Word128
+import qualified Basement.Types.Word256 as Word256
 import qualified Prelude
 
 -- | Represent class of things that can be subtracted.
@@ -63,6 +67,12 @@ instance Subtractive Word32 where
 instance Subtractive Word64 where
     type Difference Word64 = Word64
     (-) = (Prelude.-)
+instance Subtractive Word128 where
+    type Difference Word128 = Word128
+    (-) = (Word128.-)
+instance Subtractive Word256 where
+    type Difference Word256 = Word256
+    (-) = (Word256.-)
 instance Subtractive Prelude.Float where
     type Difference Prelude.Float = Prelude.Float
     (-) = (Prelude.-)

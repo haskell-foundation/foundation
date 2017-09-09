@@ -80,6 +80,7 @@ module Foundation
       -- ** Numbers
     , Data.Int.Int8, Data.Int.Int16, Data.Int.Int32, Data.Int.Int64
     , Data.Word.Word8, Data.Word.Word16, Data.Word.Word32, Data.Word.Word64, Data.Word.Word
+    , Word128, Word256
     , Prelude.Int
     , Prelude.Integer
     , Natural
@@ -177,6 +178,8 @@ import           Foundation.Tuple
 
 import qualified Basement.Compat.Bifunctor
 import           Basement.Types.OffsetSize (CountOf(..), Offset(..))
+import           Basement.Types.Word128 (Word128)
+import           Basement.Types.Word256 (Word256)
 import           Basement.Types.Char7 (Char7)
 import qualified Foundation.Primitive
 import qualified Basement.Imports

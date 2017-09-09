@@ -4,6 +4,7 @@
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE CPP                   #-}
 {-# LANGUAGE MagicHash             #-}
+{-# LANGUAGE UndecidableInstances  #-}
 -- |
 -- Module      : Basement.From
 -- License     : BSD-style
@@ -43,6 +44,10 @@ import qualified Basement.BoxedArray as BoxArray
 import qualified Basement.UArray as UArray
 import qualified Basement.String as String
 import qualified Basement.Types.AsciiString as AsciiString
+import           Basement.Types.Word128 (Word128(..))
+import           Basement.Types.Word256 (Word256(..))
+import qualified Basement.Types.Word128 as Word128
+import qualified Basement.Types.Word256 as Word256
 import           Basement.These
 import           Basement.PrimType (PrimType)
 import           Basement.Types.OffsetSize
@@ -130,6 +135,10 @@ instance From Word8 Word32 where
     from (W8# i) = W32# i
 instance From Word8 Word64 where
     from (W8# i) = wordToWord64 (W# i)
+instance From Word8 Word128 where
+    from (W8# i) = Word128 0 (wordToWord64 $ W# i)
+instance From Word8 Word256 where
+    from (W8# i) = Word256 0 0 0 (wordToWord64 $ W# i)
 instance From Word8 Word where
     from (W8# i) = W# i
 instance From Word8 Int16 where
@@ -145,13 +154,26 @@ instance From Word16 Word32 where
     from (W16# i) = W32# i
 instance From Word16 Word64 where
     from (W16# i) = wordToWord64 (W# i)
+instance From Word16 Word128 where
+    from (W16# i) = Word128 0 (wordToWord64 $ W# i)
+instance From Word16 Word256 where
+    from (W16# i) = Word256 0 0 0 (wordToWord64 $ W# i)
 instance From Word16 Word where
     from (W16# i) = W# i
 
 instance From Word32 Word64 where
     from (W32# i) = wordToWord64 (W# i)
+instance From Word32 Word128 where
+    from (W32# i) = Word128 0 (wordToWord64 $ W# i)
+instance From Word32 Word256 where
+    from (W32# i) = Word256 0 0 0 (wordToWord64 $ W# i)
 instance From Word32 Word where
     from (W32# i) = W# i
+
+instance From Word64 Word128 where
+    from w = Word128 0 w
+instance From Word64 Word256 where
+    from w = Word256 0 0 0 w
 
 instance From Word Word64 where
     from = wordToWord64
@@ -221,10 +243,37 @@ instance (NatWithinBound (CountOf ty) n, KnownNat n, PrimType ty)
       => TryFrom (BoxArray.Array ty) (BlockN.BlockN n ty) where
     tryFrom = BlockN.toBlockN . UArray.toBlock . BoxArray.mapToUnboxed id
 
+instance (KnownNat n, NatWithinBound Word8 n) => From (Zn64 n) Word8 where
+    from = narrow . unZn64 where narrow (W64# w) = W8# (narrow8Word# (word64ToWord# w))
+instance (KnownNat n, NatWithinBound Word16 n) => From (Zn64 n) Word16 where
+    from = narrow . unZn64 where narrow (W64# w) = W16# (narrow16Word# (word64ToWord# w))
+instance (KnownNat n, NatWithinBound Word32 n) => From (Zn64 n) Word32 where
+    from = narrow . unZn64 where narrow (W64# w) = W32# (narrow32Word# (word64ToWord# w))
 instance From (Zn64 n) Word64 where
     from = unZn64
+instance From (Zn64 n) Word128 where
+    from = from . unZn64
+instance From (Zn64 n) Word256 where
+    from = from . unZn64
+
+instance (KnownNat n, NatWithinBound Word8 n) => From (Zn n) Word8 where
+    from = narrow . naturalToWord64 . unZn where narrow (W64# w) = W8# (narrow8Word# (word64ToWord# w))
+instance (KnownNat n, NatWithinBound Word16 n) => From (Zn n) Word16 where
+    from = narrow . naturalToWord64 . unZn where narrow (W64# w) = W16# (narrow16Word# (word64ToWord# w))
+instance (KnownNat n, NatWithinBound Word32 n) => From (Zn n) Word32 where
+    from = narrow . naturalToWord64 . unZn where narrow (W64# w) = W32# (narrow32Word# (word64ToWord# w))
+instance (KnownNat n, NatWithinBound Word64 n) => From (Zn n) Word64 where
+    from = naturalToWord64 . unZn
+instance (KnownNat n, NatWithinBound Word128 n) => From (Zn n) Word128 where
+    from = Word128.fromNatural . unZn
+instance (KnownNat n, NatWithinBound Word256 n) => From (Zn n) Word256 where
+    from = Word256.fromNatural . unZn
+
 instance (KnownNat n, NatWithinBound Word64 n) => From (Zn n) (Zn64 n) where
-    from = zn64 . Prelude.fromIntegral . unZn
+    from = zn64 . naturalToWord64 . unZn
 instance KnownNat n => From (Zn64 n) (Zn n) where
     from = zn . from . unZn64
+
+naturalToWord64 :: Natural -> Word64
+naturalToWord64 = Prelude.fromIntegral
 #endif
