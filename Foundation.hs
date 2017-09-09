@@ -74,6 +74,7 @@ module Foundation
     , Prelude.Ordering (..)
     , Prelude.Bool (..)
     , Prelude.Char
+    , Char7
     , Prelude.IO
     , Prelude.Either (..)
       -- ** Numbers
@@ -176,6 +177,7 @@ import           Foundation.Tuple
 
 import qualified Basement.Compat.Bifunctor
 import           Basement.Types.OffsetSize (CountOf(..), Offset(..))
+import           Basement.Types.Char7 (Char7)
 import qualified Foundation.Primitive
 import qualified Basement.Imports
 import           Basement.Environment (getArgs)

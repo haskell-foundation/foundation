@@ -42,7 +42,6 @@ instance NormalForm Natural where toNormalForm !_ = ()
 instance NormalForm Float  where toNormalForm !_ = ()
 instance NormalForm Double where toNormalForm !_ = ()
 
-instance NormalForm Char7 where toNormalForm !_ = ()
 instance NormalForm Char where toNormalForm !_ = ()
 instance NormalForm Bool where toNormalForm !_ = ()
 instance NormalForm ()   where toNormalForm !_ = ()
@@ -72,6 +71,7 @@ instance NormalForm (Ptr a) where toNormalForm !_ = ()
 instance NormalForm (Offset a) where toNormalForm !_ = ()
 instance NormalForm (CountOf a) where toNormalForm !_ = ()
 
+instance NormalForm Char7 where toNormalForm !_ = ()
 -----
 -- composed type
 
