@@ -8,7 +8,8 @@ import Basement.Compat.Base
 import Basement.Compat.Natural
 import Basement.Types.OffsetSize
 import Basement.Types.Char7
-import Basement.Types.Word128
+import Basement.Types.Word128 (Word128)
+import Basement.Types.Word256 (Word256)
 import Basement.Endianness
 import Foreign.C.Types
 
