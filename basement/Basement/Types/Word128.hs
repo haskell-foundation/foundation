@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
 module Basement.Types.Word128
@@ -26,6 +27,8 @@ import           Basement.Compat.Natural
 import           Basement.Compat.Primitive (bool#)
 import           Basement.Numerical.Conversion
 import           Basement.Numerical.Number
+
+#include "MachDeps.h"
 
 -- | 128 bits Word
 data Word128 = Word128 {-# UNPACK #-} !Word64
@@ -86,10 +89,14 @@ instance Prelude.Num Word128 where
 
 -- | Add 2 Word128
 (+) :: Word128 -> Word128 -> Word128
+#if WORD_SIZE_IN_BITS < 64
+(+) = applyBiWordOnNatural (Prelude.+)
+#else
 (+) (Word128 (W64# a1) (W64# a0)) (Word128 (W64# b1) (W64# b0)) = Word128 (W64# s1) (W64# s0)
   where
     !(# carry, s0 #) = plusWord2# a0 b0
     s1               = plusWord# (plusWord# a1 b1) carry
+#endif
 
 -- temporary available until native operation available
 applyBiWordOnNatural :: (Natural -> Natural -> Natural)
