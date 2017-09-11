@@ -91,8 +91,14 @@ instance IsNatural Word256 where
         toNatural a0
 
 instance Prelude.Num Word256 where
+    abs w = w
+    signum w@(Word256 a3 a2 a1 a0)
+        | a3 == 0 && a2 == 0 && a1 == 0 && a0 == 0 = w
+        | otherwise                                = Word256 0 0 0 1
+    fromInteger = literal
     (+) = (+)
     (-) = (-)
+    (*) = (*)
 
 -- | Add 2 Word256
 (+) :: Word256 -> Word256 -> Word256

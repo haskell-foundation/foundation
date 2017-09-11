@@ -75,6 +75,11 @@ instance IsNatural Word128 where
         toNatural a0
 
 instance Prelude.Num Word128 where
+    abs w = w
+    signum w@(Word128 a1 a0)
+        | a1 == 0 && a0 == 0 = w
+        | otherwise          = Word128 0 1
+    fromInteger = literal
     (+) = (+)
     (-) = (-)
     (*) = (*)
