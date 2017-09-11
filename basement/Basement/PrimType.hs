@@ -629,6 +629,8 @@ instance PrimMemoryComparable Word8 where
 instance PrimMemoryComparable Word16 where
 instance PrimMemoryComparable Word32 where
 instance PrimMemoryComparable Word64 where
+instance PrimMemoryComparable Word128 where
+instance PrimMemoryComparable Word256 where
 instance PrimMemoryComparable Int8 where
 instance PrimMemoryComparable Int16 where
 instance PrimMemoryComparable Int32 where
