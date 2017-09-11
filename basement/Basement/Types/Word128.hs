@@ -21,6 +21,9 @@ import qualified Prelude (fromInteger, show, Num(..), quot, rem)
 import           Data.Bits hiding (complement)
 import qualified Data.Bits as Bits
 import           Data.Function (on)
+import           Foreign.C
+import           Foreign.Ptr
+import           Foreign.Storable
 
 import           Basement.Compat.Base
 import           Basement.Compat.Natural
@@ -62,6 +65,14 @@ instance Ord Word128 where
         case compare a1 b1 of
             EQ -> a0 <= b0
             r  -> r == LT
+instance Storable Word128 where
+    sizeOf _ = 16
+    alignment _ = 16
+    peek p = Word128 <$> peek (castPtr p            )
+                     <*> peek (castPtr p `plusPtr` 8)
+    poke p (Word128 a1 a0) = do
+        poke (castPtr p            ) a1
+        poke (castPtr p `plusPtr` 8) a0
 
 instance Integral Word128 where
     fromInteger = literal
