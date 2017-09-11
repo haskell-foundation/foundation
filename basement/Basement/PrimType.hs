@@ -46,6 +46,8 @@ import           Basement.Numerical.Subtractive
 import           Basement.Types.OffsetSize
 import           Basement.Types.Char7 (Char7(..))
 import           Basement.Endianness
+import           Basement.Types.Word128 (Word128(..))
+import           Basement.Types.Word256 (Word256(..))
 import           Basement.Monad
 import qualified Prelude (quot)
 
@@ -329,6 +331,80 @@ instance PrimType Word64 where
     {-# INLINE primAddrRead #-}
     primAddrWrite addr (Offset (I# n)) (W64# w) = primitive $ \s1 -> (# writeWord64OffAddr# addr n w s1, () #)
     {-# INLINE primAddrWrite #-}
+instance PrimType Word128 where
+    primSizeInBytes _ = CountOf 16
+    {-# INLINE primSizeInBytes #-}
+    primShiftToBytes _ = 4
+    {-# INLINE primShiftToBytes #-}
+    primBaUIndex ba n =
+        Word128 (W64# (indexWord64Array# ba n1)) (W64# (indexWord64Array# ba n2))
+      where (# n1, n2 #) = offset128_64 n
+    {-# INLINE primBaUIndex #-}
+    primMbaURead mba n = primitive $ \s1 -> let !(# s2, r1 #) = readWord64Array# mba n1 s1
+                                                !(# s3, r2 #) = readWord64Array# mba n2 s2
+                                             in (# s3, Word128 (W64# r1) (W64# r2) #)
+      where (# n1, n2 #) = offset128_64 n
+    {-# INLINE primMbaURead #-}
+    primMbaUWrite mba n (Word128 (W64# w1) (W64# w2)) = primitive $ \s1 ->
+        let !s2 = writeWord64Array# mba n1 w1 s1
+         in (# writeWord64Array# mba n2 w2 s2, () #)
+      where (# n1, n2 #) = offset128_64 n
+    {-# INLINE primMbaUWrite #-}
+    primAddrIndex addr n = Word128 (W64# (indexWord64OffAddr# addr n1)) (W64# (indexWord64OffAddr# addr n2))
+      where (# n1, n2 #) = offset128_64 n
+    {-# INLINE primAddrIndex #-}
+    primAddrRead addr n = primitive $ \s1 -> let !(# s2, r1 #) = readWord64OffAddr# addr n1 s1
+                                                 !(# s3, r2 #) = readWord64OffAddr# addr n2 s2
+                                              in (# s3, Word128 (W64# r1) (W64# r2) #)
+      where (# n1, n2 #) = offset128_64 n
+    {-# INLINE primAddrRead #-}
+    primAddrWrite addr n (Word128 (W64# w1) (W64# w2)) = primitive $ \s1 ->
+        let !s2 = writeWord64OffAddr# addr n1 w1 s1
+         in (# writeWord64OffAddr# addr n2 w2 s2, () #)
+      where (# n1, n2 #) = offset128_64 n
+    {-# INLINE primAddrWrite #-}
+instance PrimType Word256 where
+    primSizeInBytes _ = CountOf 32
+    {-# INLINE primSizeInBytes #-}
+    primShiftToBytes _ = 5
+    {-# INLINE primShiftToBytes #-}
+    primBaUIndex ba n =
+        Word256 (W64# (indexWord64Array# ba n1)) (W64# (indexWord64Array# ba n2))
+                (W64# (indexWord64Array# ba n3)) (W64# (indexWord64Array# ba n4))
+      where (# n1, n2, n3, n4 #) = offset256_64 n
+    {-# INLINE primBaUIndex #-}
+    primMbaURead mba n = primitive $ \s1 -> let !(# s2, r1 #) = readWord64Array# mba n1 s1
+                                                !(# s3, r2 #) = readWord64Array# mba n2 s2
+                                                !(# s4, r3 #) = readWord64Array# mba n3 s3
+                                                !(# s5, r4 #) = readWord64Array# mba n4 s4
+                                             in (# s5, Word256 (W64# r1) (W64# r2) (W64# r3) (W64# r4) #)
+      where (# n1, n2, n3, n4 #) = offset256_64 n
+    {-# INLINE primMbaURead #-}
+    primMbaUWrite mba n (Word256 (W64# w1) (W64# w2) (W64# w3) (W64# w4)) = primitive $ \s1 ->
+        let !s2 = writeWord64Array# mba n1 w1 s1
+            !s3 = writeWord64Array# mba n2 w2 s2
+            !s4 = writeWord64Array# mba n3 w3 s3
+         in (# writeWord64Array# mba n4 w4 s4, () #)
+      where (# n1, n2, n3, n4 #) = offset256_64 n
+    {-# INLINE primMbaUWrite #-}
+    primAddrIndex addr n = Word256 (W64# (indexWord64OffAddr# addr n1)) (W64# (indexWord64OffAddr# addr n2))
+                                   (W64# (indexWord64OffAddr# addr n3)) (W64# (indexWord64OffAddr# addr n4))
+      where (# n1, n2, n3, n4 #) = offset256_64 n
+    {-# INLINE primAddrIndex #-}
+    primAddrRead addr n = primitive $ \s1 -> let !(# s2, r1 #) = readWord64OffAddr# addr n1 s1
+                                                 !(# s3, r2 #) = readWord64OffAddr# addr n2 s2
+                                                 !(# s4, r3 #) = readWord64OffAddr# addr n3 s3
+                                                 !(# s5, r4 #) = readWord64OffAddr# addr n4 s4
+                                              in (# s5, Word256 (W64# r1) (W64# r2) (W64# r3) (W64# r4) #)
+      where (# n1, n2, n3, n4 #) = offset256_64 n
+    {-# INLINE primAddrRead #-}
+    primAddrWrite addr n (Word256 (W64# w1) (W64# w2) (W64# w3) (W64# w4)) = primitive $ \s1 ->
+        let !s2 = writeWord64OffAddr# addr n1 w1 s1
+            !s3 = writeWord64OffAddr# addr n2 w2 s2
+            !s4 = writeWord64OffAddr# addr n3 w3 s3
+         in (# writeWord64OffAddr# addr n4 w4 s4, () #)
+      where (# n1, n2, n3, n4 #) = offset256_64 n
+    {-# INLINE primAddrWrite #-}
 instance PrimType Int8 where
     primSizeInBytes _ = CountOf 1
     {-# INLINE primSizeInBytes #-}
@@ -562,6 +638,14 @@ instance PrimMemoryComparable CChar where
 instance PrimMemoryComparable CUChar where
 instance PrimMemoryComparable a => PrimMemoryComparable (LE a) where
 instance PrimMemoryComparable a => PrimMemoryComparable (BE a) where
+
+offset128_64 :: Offset Word128 -> (# Int#, Int# #)
+offset128_64 (Offset (I# i)) = (# n , n +# 1# #)
+  where !n = uncheckedIShiftL# i 1#
+
+offset256_64 :: Offset Word256 -> (# Int#, Int#, Int#, Int# #)
+offset256_64 (Offset (I# i)) = (# n , n +# 1#, n +# 2#, n +# 3# #)
+  where !n = uncheckedIShiftL# i 2#
 
 -- | Cast a CountOf linked to type A (CountOf A) to a CountOf linked to type B (CountOf B)
 sizeRecast :: forall a b . (PrimType a, PrimType b) => CountOf a -> CountOf b
