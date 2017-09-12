@@ -1,3 +1,39 @@
+## 0.0.14
+
+Types:
+
+* Add bounded Natural (Zn & Zn64)
+* Add Word128 and Word256
+
+Class:
+
+* Add From/Into type class
+
+Collection:
+
+* Add breakEnd, spanEnd, revFindIndex
+* Improve arrays sorting
+* Add arrays fromListN implementation
+* Add arrays convertion primitive
+
+BlockN:
+
+* Cleanup API
+* Implement unsnoc
+
+Misc:
+
+* Improve random generation with XorShift
+* Improve ghc 8.2 support (warning removals)
+* Remove dependency on QuickCheck
+* Split lowlevel modules into basement package
+* Fix compilation with musl
+* Improve native array safety when using through pointer
+
+File:
+
+* remove foldText
+
 ## 0.0.13
 
 Block:
