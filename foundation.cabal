@@ -1,5 +1,5 @@
 name:                foundation
-version:             0.0.13
+version:             0.0.14
 synopsis:            Alternative prelude with batteries and no dependencies
 description:
     A custom prelude with no dependencies apart from base.
@@ -29,7 +29,7 @@ category:            foundation
 build-type:          Simple
 homepage:            https://github.com/haskell-foundation/foundation
 bug-reports:         https://github.com/haskell-foundation/foundation/issues
-cabal-version:       >=1.10
+cabal-version:       >=1.18
 tested-with:         GHC==8.2.1, GHC==8.0.2, GHC==7.10.3
 extra-source-files:  cbits/*.h
 extra-doc-files:     README.md
@@ -190,7 +190,7 @@ library
                       BangPatterns
                       DeriveDataTypeable
   build-depends:     base >= 4.7 && < 5
-                   , basement
+                   , basement == 0.0.1
                    , ghc-prim
   -- FIXME add suport for armel mipsel
   --  CPP-options: -DARCH_IS_LITTLE_ENDIAN
