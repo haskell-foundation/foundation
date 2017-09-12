@@ -17,6 +17,8 @@ import           Basement.IntegralConv
 import           Basement.Bounded
 import           Basement.Types.OffsetSize
 import qualified Basement.Types.Char7 as Char7
+import           Basement.Types.Word128 (Word128(..))
+import           Basement.Types.Word256 (Word256(..))
 import           Foundation.Check.Gen
 import           Foundation.Random
 import           Foundation.Bits
@@ -43,6 +45,10 @@ instance Arbitrary Int where
     arbitrary = int64ToInt <$> arbitraryInt64
 instance Arbitrary Word where
     arbitrary = word64ToWord <$> arbitraryWord64
+instance Arbitrary Word256 where
+    arbitrary = Word256 <$> arbitraryWord64 <*> arbitraryWord64 <*> arbitraryWord64 <*> arbitraryWord64
+instance Arbitrary Word128 where
+    arbitrary = Word128 <$> arbitraryWord64 <*> arbitraryWord64
 instance Arbitrary Word64 where
     arbitrary = arbitraryWord64
 instance Arbitrary Word32 where

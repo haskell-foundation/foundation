@@ -13,6 +13,26 @@ import Foundation
 import Foundation.Check
 import qualified Prelude
 
+testIntegral :: forall a . (Arbitrary a, Show a, IsIntegral a, Integral a, Typeable a)
+             => Proxy a -> Test
+testIntegral _ = Group "Integral"
+    [ Property "FromIntegral(Integer(a)) == a" $ \(a :: a) -> fromInteger (toInteger a) === a
+    ]
+
+testEqOrd :: forall a . (Arbitrary a, Show a, Eq a, Ord a, IsIntegral a, Typeable a)
+          => Proxy a -> Test
+testEqOrd _ = Group "Property"
+    [ Property "Eq" $ \(a :: a) -> a === a
+    -- , Property "Ne" $ \(a :: a) (b :: a) -> if a === w
+    , Property "Show" $ \(a :: a) -> show a === show (toInteger a)
+    , Property "Ord" $ \(a :: a) (b :: a) -> compare a b === (compare `on` toInteger) a b
+    , Property "<" $ \(a :: a) (b :: a) -> case compare a b of
+                                                LT -> propertyCompare "<" (<) a b
+                                                GT -> propertyCompare "<" (<) b a
+                                                EQ -> propertyCompare "not <" ((not .) . (<)) a b `propertyAnd`
+                                                      propertyCompare "not <" ((not .) . (<)) b a
+    ]
+
 testAdditive :: forall a . (Show a, Eq a, Additive a, Arbitrary a, Typeable a)
              => Proxy a -> Test
 testAdditive _ = Group "Additive"
@@ -21,11 +41,13 @@ testAdditive _ = Group "Additive"
     , Property "a + b == b + a" $ \(a :: a) (b :: a) -> a + b === b + a
     ]
 
-testMultiplicative :: forall a . (Show a, Eq a, Multiplicative a, Arbitrary a, Typeable a)
+testMultiplicative :: forall a . (Show a, Eq a, IsIntegral a, Integral a, Multiplicative a, Arbitrary a, Typeable a)
                    => Proxy a -> Test
 testMultiplicative _ = Group "Multiplicative"
-    [ Property "a * midentity == a" $ \(a :: a) -> a * midentity === a
-    , Property "midentity * a == a" $ \(a :: a) -> midentity * a === a
+    [ Property "a * 1 == a" $ \(a :: a) -> a * midentity === a
+    , Property "1 * a == a" $ \(a :: a) -> midentity * a === a
+    , Property "multiplication commutative" $ \(a :: a) (b :: a) -> a * b == b * a
+    , Property "a * b == Integer(a) * Integer(b)" $ \(a :: a) (b :: a) -> a * b == fromInteger (toInteger a * toInteger b)
     ]
 
 testDividible :: forall a . (Show a, Eq a, IsIntegral a, IDivisible a, Arbitrary a, Typeable a)
@@ -53,7 +75,9 @@ testOperatorPrecedence _ = Group "Precedence"
 testNumber :: (Show a, Eq a, Prelude.Num a, IsIntegral a, Additive a, Multiplicative a, Subtractive a, Difference a ~ a, IDivisible a, Arbitrary a, Typeable a)
            => String -> Proxy a -> Test
 testNumber name proxy = Group name
-    [ testAdditive proxy
+    [ testIntegral proxy
+    , testEqOrd proxy
+    , testAdditive proxy
     , testMultiplicative proxy
     , testDividible proxy
     , testOperatorPrecedence proxy
@@ -72,4 +96,6 @@ testNumberRefs =
     , testNumber "Word16" (Proxy :: Proxy Word16)
     , testNumber "Word32" (Proxy :: Proxy Word32)
     , testNumber "Word64" (Proxy :: Proxy Word64)
+    , testNumber "Word128" (Proxy :: Proxy Word128)
+    , testNumber "Word256" (Proxy :: Proxy Word256)
     ]

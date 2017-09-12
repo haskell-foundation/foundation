@@ -49,6 +49,8 @@ primTypesMatrixArbitrary f =
         , ("W16", f (Proxy :: Proxy Word16) arbitrary)
         , ("W32", f (Proxy :: Proxy Word32) arbitrary)
         , ("W64", f (Proxy :: Proxy Word64) arbitrary)
+        , ("W128", f (Proxy :: Proxy Word128) arbitrary)
+        , ("W256", f (Proxy :: Proxy Word256) arbitrary)
         , ("Word", f (Proxy :: Proxy Word) arbitrary)
         ])
     , ("Ints",

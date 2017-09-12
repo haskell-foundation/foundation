@@ -43,6 +43,9 @@ import           GHC.TypeLits
 import           Basement.Compat.Base
 import           Basement.Compat.Natural
 import           Basement.Types.OffsetSize
+import           Basement.Types.Char7 (Char7)
+import           Basement.Types.Word128 (Word128)
+import           Basement.Types.Word256 (Word256)
 import           Data.Int (Int8, Int16, Int32, Int64)
 import           Data.Word (Word8, Word16, Word32, Word64)
 import qualified Prelude (fromIntegral)
@@ -92,10 +95,14 @@ natValWord8 n = Prelude.fromIntegral (natVal n)
 
 -- | Get Maximum bounds of different Integral / Natural types related to Nat
 type family NatNumMaxBound ty where
+    NatNumMaxBound Char   = 0x10ffff
+    NatNumMaxBound Char7  = 0x7f
     NatNumMaxBound Int64  = 0x7fffffffffffffff
     NatNumMaxBound Int32  = 0x7fffffff
     NatNumMaxBound Int16  = 0x7fff
     NatNumMaxBound Int8   = 0x7f
+    NatNumMaxBound Word256 = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+    NatNumMaxBound Word128 = 0xffffffffffffffffffffffffffffffff
     NatNumMaxBound Word64 = 0xffffffffffffffff
     NatNumMaxBound Word32 = 0xffffffff
     NatNumMaxBound Word16 = 0xffff

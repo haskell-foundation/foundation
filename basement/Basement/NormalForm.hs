@@ -8,6 +8,8 @@ import Basement.Compat.Base
 import Basement.Compat.Natural
 import Basement.Types.OffsetSize
 import Basement.Types.Char7
+import Basement.Types.Word128 (Word128)
+import Basement.Types.Word256 (Word256)
 import Basement.Endianness
 import Foreign.C.Types
 
@@ -42,7 +44,6 @@ instance NormalForm Natural where toNormalForm !_ = ()
 instance NormalForm Float  where toNormalForm !_ = ()
 instance NormalForm Double where toNormalForm !_ = ()
 
-instance NormalForm Char7 where toNormalForm !_ = ()
 instance NormalForm Char where toNormalForm !_ = ()
 instance NormalForm Bool where toNormalForm !_ = ()
 instance NormalForm ()   where toNormalForm !_ = ()
@@ -71,6 +72,10 @@ instance NormalForm (Ptr a) where toNormalForm !_ = ()
 -- Basic Foundation primitive types
 instance NormalForm (Offset a) where toNormalForm !_ = ()
 instance NormalForm (CountOf a) where toNormalForm !_ = ()
+
+instance NormalForm Char7 where toNormalForm !_ = ()
+instance NormalForm Word128 where toNormalForm !_ = ()
+instance NormalForm Word256 where toNormalForm !_ = ()
 
 -----
 -- composed type

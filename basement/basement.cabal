@@ -39,6 +39,8 @@ library
                      Basement.Types.OffsetSize
                      Basement.Types.Ptr
                      Basement.Types.AsciiString
+                     Basement.Types.Word128
+                     Basement.Types.Word256
                      Basement.Monad
                      Basement.MutableBuilder
                      Basement.FinalPtr

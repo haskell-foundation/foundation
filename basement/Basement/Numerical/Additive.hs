@@ -15,6 +15,10 @@ import           GHC.Prim
 import           GHC.Int
 import           GHC.Word
 import           Foreign.C.Types
+import           Basement.Types.Word128 (Word128)
+import           Basement.Types.Word256 (Word256)
+import qualified Basement.Types.Word128 as Word128
+import qualified Basement.Types.Word256 as Word256
 
 #if WORD_SIZE_IN_BITS < 64
 import           GHC.IntWord64
@@ -95,6 +99,14 @@ instance Additive Word64 where
 #else
     (W64# a) + (W64# b) = W64# (int64ToWord64# (word64ToInt64# a `plusInt64#` word64ToInt64# b))
 #endif
+    scale = scaleNum
+instance Additive Word128 where
+    azero = 0
+    (+) = (Word128.+)
+    scale = scaleNum
+instance Additive Word256 where
+    azero = 0
+    (+) = (Word256.+)
     scale = scaleNum
 instance Additive Prelude.Float where
     azero = 0.0

@@ -39,6 +39,8 @@ import           Foreign.C.Types (CChar, CUChar)
 
 import Basement.Compat.Base
 import Basement.Types.OffsetSize
+import Basement.Types.Word128 (Word128(..))
+import Basement.Types.Word256 (Word256(..))
 import Foundation.Collection
 import Foundation.Collection.Buildable (builderLift, build_)
 import Basement.PrimType
@@ -164,6 +166,24 @@ instance Storable (BE Word64) where
 instance Storable (LE Word64) where
     peek (Ptr addr) = LE <$> primAddrRead addr (Offset 0)
     poke (Ptr addr) = primAddrWrite addr (Offset 0) . unLE
+instance Storable Word128 where
+    peek (Ptr addr) = primAddrRead addr (Offset 0)
+    poke (Ptr addr) = primAddrWrite addr (Offset 0)
+instance Storable (BE Word128) where
+    peek (Ptr addr) = BE <$> primAddrRead addr (Offset 0)
+    poke (Ptr addr) = primAddrWrite addr (Offset 0) . unBE
+instance Storable (LE Word128) where
+    peek (Ptr addr) = LE <$> primAddrRead addr (Offset 0)
+    poke (Ptr addr) = primAddrWrite addr (Offset 0) . unLE
+instance Storable Word256 where
+    peek (Ptr addr) = primAddrRead addr (Offset 0)
+    poke (Ptr addr) = primAddrWrite addr (Offset 0)
+instance Storable (BE Word256) where
+    peek (Ptr addr) = BE <$> primAddrRead addr (Offset 0)
+    poke (Ptr addr) = primAddrWrite addr (Offset 0) . unBE
+instance Storable (LE Word256) where
+    peek (Ptr addr) = LE <$> primAddrRead addr (Offset 0)
+    poke (Ptr addr) = primAddrWrite addr (Offset 0) . unLE
 instance Storable (Ptr a) where
     peek = Foreign.Storable.peek
     poke = Foreign.Storable.poke
@@ -225,6 +245,24 @@ instance StorableFixed (BE Word64) where
 instance StorableFixed (LE Word64) where
     size      = const SIZEOF_WORD64
     alignment = const ALIGNMENT_WORD64
+instance StorableFixed Word128 where
+    size      = const 16
+    alignment = const 16
+instance StorableFixed (BE Word128) where
+    size      = const 16
+    alignment = const 16
+instance StorableFixed (LE Word128) where
+    size      = const 16
+    alignment = const 16
+instance StorableFixed Word256 where
+    size      = const 32
+    alignment = const 32
+instance StorableFixed (BE Word256) where
+    size      = const 32
+    alignment = const 32
+instance StorableFixed (LE Word256) where
+    size      = const 32
+    alignment = const 32
 instance StorableFixed (Ptr a) where
     size      = const SIZEOF_HSPTR
     alignment = const ALIGNMENT_HSPTR

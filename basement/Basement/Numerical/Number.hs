@@ -5,6 +5,7 @@ module Basement.Numerical.Number
 
 import           Basement.Compat.Base
 import           Basement.Compat.Natural
+import           Data.Bits
 import qualified Prelude
 import           Foreign.C.Types
 

@@ -45,17 +45,19 @@ benchsString = bgroup "String"
     ]
   where
     diffTextString :: (String -> a)
+                   -> Maybe (UArray Char -> c)
                    -> (Text.Text -> b)
                    -> [Char]
                    -> [Benchmark]
-    diffTextString foundationBench textBench dat =
-        [ bench "String" $ whnf foundationBench s
+    diffTextString foundationBench utf32Bench textBench dat =
+           [ bench "String" $ whnf foundationBench s ]
+        <> maybe [] (\f -> [bench "String-UTF32" $ whnf f ws]) utf32Bench
 #ifdef BENCH_ALL
-        , bench "Text"   $ whnf textBench t
+        <> [ bench "Text"   $ whnf textBench t ]
 #endif
-        ]
       where
         s = fromList dat
+        ws = fromList dat
         t = Text.pack dat
 
     diffToTextString :: (UArray Word8 -> String)
@@ -74,19 +76,21 @@ benchsString = bgroup "String"
 
 
     diffBsTextString :: (String -> a)
+                   -> Maybe (UArray Char -> d)
                    -> (Text.Text -> b)
                    -> (ByteString.ByteString -> c)
                    -> [Char]
                    -> [Benchmark]
-    diffBsTextString foundationBench textBench bytestringBench dat =
-        [ bench "String" $ whnf foundationBench s
+    diffBsTextString foundationBench utf32Bench textBench bytestringBench dat =
+        [ bench "String" $ whnf foundationBench s ]
+        <> maybe [] (\f -> [bench "String-UTF32" $ whnf f ws]) utf32Bench
 #ifdef BENCH_ALL
-        , bench "Text"   $ whnf textBench t
-        , bench "ByteString" $ whnf bytestringBench b
+        <> [ bench "Text"   $ whnf textBench t
+           , bench "ByteString" $ whnf bytestringBench b ]
 #endif
-        ]
       where
         s = fromList dat
+        ws = fromList dat
         t = Text.pack dat
         b = ByteString.pack $ Prelude.map (fromIntegral . fromEnum) dat
 
@@ -99,20 +103,20 @@ benchsString = bgroup "String"
     allDatSuffix s = fmap (first (\x -> x <> "-" <> s)) allDat
 
     benchLength = bgroup "Length" $
-        fmap (\(n, dat) -> bgroup n $ diffTextString length Text.length dat)
+        fmap (\(n, dat) -> bgroup n $ diffTextString length (Just length) Text.length dat)
             allDat
     benchUnpack = bgroup "Unpack" $
-        fmap (\(n, dat) -> bgroup n $ diffTextString (length . toList) (length . Text.unpack) dat)
+        fmap (\(n, dat) -> bgroup n $ diffTextString (length . toList) (Just (length . toList)) (length . Text.unpack) dat)
             allDat
     benchElem = bgroup "Elem" $
-        fmap (\(n, dat) -> bgroup n $ diffTextString (elem '.') (Text.any (== '.')) dat)
+        fmap (\(n, dat) -> bgroup n $ diffTextString (elem '.') (Just (elem '.')) (Text.any (== '.')) dat)
             allDat
     benchTake = bgroup "Take" $ mconcat $ fmap (\p ->
-        fmap (\(n, dat) -> bgroup n $ diffTextString (take (CountOf p)) (Text.take p) dat)
+        fmap (\(n, dat) -> bgroup n $ diffTextString (take (CountOf p)) (Just (take (CountOf p))) (Text.take p) dat)
                 $ allDatSuffix (show p)
             ) [ 10, 100, 800 ]
     benchSplitAt = bgroup "SplitAt" $ mconcat $ fmap (\p ->
-        fmap (\(n, dat) -> bgroup n $ diffTextString (fst . splitAt (CountOf p)) (fst . Text.splitAt p) dat)
+        fmap (\(n, dat) -> bgroup n $ diffTextString (fst . splitAt (CountOf p)) (Just ((fst . splitAt (CountOf p)))) (fst . Text.splitAt p) dat)
                 $ allDatSuffix (show p)
             ) [ 10, 100, 800 ]
 
@@ -121,24 +125,24 @@ benchsString = bgroup "String"
             allDat
 
     benchReverse = bgroup "Reverse" $
-        fmap (\(n, dat) -> bgroup n $ diffTextString reverse Text.reverse dat)
+        fmap (\(n, dat) -> bgroup n $ diffTextString reverse (Just reverse) Text.reverse dat)
             allDat
 
     benchFilter = bgroup "Filter" $
-        fmap (\(n, dat) -> bgroup n $ diffTextString (filter (> 'b')) (Text.filter (> 'b')) dat)
+        fmap (\(n, dat) -> bgroup n $ diffTextString (filter (> 'b')) (Just $ filter (> 'b')) (Text.filter (> 'b')) dat)
             allDat
 
     benchRead = bgroup "Read"
         [ bgroup "Integer"
-            [ bgroup "10000" (diffTextString stringReadInteger textReadInteger (toList $ show 10000))
-            , bgroup "1234567891234567890" (diffTextString stringReadInteger textReadInteger (toList $ show 1234567891234567890))
+            [ bgroup "10000" (diffTextString stringReadInteger Nothing textReadInteger (toList $ show 10000))
+            , bgroup "1234567891234567890" (diffTextString stringReadInteger Nothing textReadInteger (toList $ show 1234567891234567890))
             ]
         , bgroup "Int"
-            [ bgroup "12345" (diffBsTextString stringReadInt textReadInt bsReadInt (toList $ show 12345))
+            [ bgroup "12345" (diffBsTextString stringReadInt Nothing textReadInt bsReadInt (toList $ show 12345))
             ]
         , bgroup "Double"
-            [ bgroup "100.56e23" (diffTextString (maybe undefined id . readDouble) (either undefined fst . Text.double) (toList $ show 100.56e23))
-            , bgroup "-123.1247" (diffTextString (maybe undefined id . readDouble) (either undefined fst . Text.double) (toList $ show (-123.1247)))
+            [ bgroup "100.56e23" (diffTextString (maybe undefined id . readDouble) Nothing (either undefined fst . Text.double) (toList $ show 100.56e23))
+            , bgroup "-123.1247" (diffTextString (maybe undefined id . readDouble) Nothing (either undefined fst . Text.double) (toList $ show (-123.1247)))
             ]
         ]
       where
