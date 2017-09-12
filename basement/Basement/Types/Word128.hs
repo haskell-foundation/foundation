@@ -17,8 +17,9 @@ module Basement.Types.Word128
 import           GHC.Prim
 import           GHC.Word
 import           GHC.Types
-import qualified Prelude (fromInteger, show, Num(..), quot, rem)
-import           Data.Bits hiding (complement)
+import qualified Prelude (fromInteger, show, Num(..), quot, rem, mod)
+import           Data.Bits hiding (complement, popCount, bit, testBit
+                                  , rotateL, rotateR, shiftL, shiftR)
 import qualified Data.Bits as Bits
 import           Data.Function (on)
 import           Foreign.C
@@ -98,6 +99,22 @@ instance Prelude.Num Word128 where
     (-) = (-)
     (*) = (*)
 
+instance Bits.Bits Word128 where
+    (.&.) = bitwiseAnd
+    (.|.) = bitwiseOr
+    xor   = bitwiseXor
+    complement = complement
+    shiftL = shiftL
+    shiftR = shiftR
+    rotateL = rotateL
+    rotateR = rotateR
+    bitSize _ = 128
+    bitSizeMaybe _ = Just 128
+    isSigned _ = False
+    testBit = testBit
+    bit = bit
+    popCount = popCount
+
 -- | Add 2 Word128
 (+) :: Word128 -> Word128 -> Word128
 #if WORD_SIZE_IN_BITS < 64
@@ -147,18 +164,79 @@ bitwiseOr (Word128 a1 a0) (Word128 b1 b0) =
 -- | Bitwise xor
 bitwiseXor :: Word128 -> Word128 -> Word128
 bitwiseXor (Word128 a1 a0) (Word128 b1 b0) =
-    Word128 (a1 `xor` b1) (a0 `xor` b0)
+    Word128 (a1 `Bits.xor` b1) (a0 `Bits.xor` b0)
 
 -- | Bitwise complement
 complement :: Word128 -> Word128
 complement (Word128 a1 a0) = Word128 (Bits.complement a1) (Bits.complement a0)
 
+-- | Population count
+popCount :: Word128 -> Int
+popCount (Word128 a1 a0) = Bits.popCount a1 Prelude.+ Bits.popCount a0
+
+-- | Bitwise Shift Left
+shiftL :: Word128 -> Int -> Word128
+shiftL w@(Word128 a1 a0) n
+    | n < 0 || n > 127 = Word128 0 0
+    | n == 64          = Word128 a0 0
+    | n == 0           = w
+    | n >  64          = Word128 (a0 `Bits.unsafeShiftL` (n Prelude.- 64)) 0
+    | otherwise        = Word128 ((a1 `Bits.unsafeShiftL` n) .|. (a0 `Bits.unsafeShiftR` (64 Prelude.- n)))
+                                 (a0 `Bits.unsafeShiftL` n)
+
+-- | Bitwise Shift Right
+shiftR :: Word128 -> Int -> Word128
+shiftR w@(Word128 a1 a0) n
+    | n < 0 || n > 127 = Word128 0 0
+    | n == 64          = Word128 0 a1
+    | n == 0           = w
+    | n >  64          = Word128 0 (a1 `Bits.unsafeShiftR` (n Prelude.- 64))
+    | otherwise        = Word128 (a1 `Bits.unsafeShiftR` n)
+                                 ((a1 `Bits.unsafeShiftL` (inv64 n)) .|. (a0 `Bits.unsafeShiftR` n))
+
+-- | Bitwise rotate Left
+rotateL :: Word128 -> Int -> Word128
+rotateL (Word128 a1 a0) n'
+    | n == 0    = Word128 a1 a0
+    | n == 64   = Word128 a0 a1
+    | n < 64    = Word128 (comb64 a1 n a0 (inv64 n)) (comb64 a0 n a1 (inv64 n))
+    | otherwise = let n = n Prelude.- 64 in Word128 (comb64 a0 n a1 (inv64 n)) (comb64 a1 n a0 (inv64 n))
+  where
+    n :: Int
+    n | n' >= 0   = n' `Prelude.mod` 128
+      | otherwise = 128 Prelude.- (n' `Prelude.mod` 128)
+
+-- | Bitwise rotate Left
+rotateR :: Word128 -> Int -> Word128
+rotateR w n = rotateL w (128 Prelude.- n)
+
+inv64 :: Int -> Int
+inv64 i = 64 Prelude.- i
+
+comb64 :: Word64 -> Int -> Word64 -> Int -> Word64
+comb64 x i y j =
+    (x `Bits.unsafeShiftL` i) .|. (y `Bits.unsafeShiftR` j)
+
+-- | Test bit
+testBit :: Word128 -> Int -> Bool
+testBit (Word128 a1 a0) n
+    | n < 0 || n > 127 = False
+    | n > 63           = Bits.testBit a1 (n Prelude.- 64)
+    | otherwise        = Bits.testBit a0 n
+
+-- | bit
+bit :: Int -> Word128
+bit n
+    | n < 0 || n > 127 = Word128 0 0
+    | n > 63           = Word128 (Bits.bit (n Prelude.- 64)) 0
+    | otherwise        = Word128 0 (Bits.bit n)
+
 literal :: Integer -> Word128
 literal i = Word128
-    (Prelude.fromInteger (i `unsafeShiftR` 64))
+    (Prelude.fromInteger (i `Bits.unsafeShiftR` 64))
     (Prelude.fromInteger i)
 
 fromNatural :: Natural -> Word128
 fromNatural n = Word128
-    (Prelude.fromInteger (naturalToInteger n `unsafeShiftR` 64))
+    (Prelude.fromInteger (naturalToInteger n `Bits.unsafeShiftR` 64))
     (Prelude.fromInteger $ naturalToInteger n)

@@ -222,6 +222,7 @@ test-suite check-foundation
                      Test.Foundation.Number
                      Test.Foundation.String.Base64
                      Test.Foundation.String
+                     Test.Foundation.Bits
                      Test.Data.Network
                      Test.Data.List
                      Test.Foundation.Network.IPv4
