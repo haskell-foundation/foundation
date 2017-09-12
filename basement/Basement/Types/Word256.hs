@@ -17,8 +17,9 @@ module Basement.Types.Word256
 import           GHC.Prim
 import           GHC.Word
 import           GHC.Types
-import qualified Prelude (fromInteger, show, Num(..), quot, rem)
-import           Data.Bits hiding (complement)
+import qualified Prelude (fromInteger, show, Num(..), quot, rem, mod)
+import           Data.Bits hiding (complement, popCount, bit, testBit
+                                  , rotateL, rotateR, shiftL, shiftR)
 import qualified Data.Bits as Bits
 import           Data.Function (on)
 import           Foreign.C
@@ -118,6 +119,22 @@ instance Prelude.Num Word256 where
     (-) = (-)
     (*) = (*)
 
+instance Bits.Bits Word256 where
+    (.&.) = bitwiseAnd
+    (.|.) = bitwiseOr
+    xor   = bitwiseXor
+    complement = complement
+    shiftL = shiftL
+    shiftR = shiftR
+    rotateL = rotateL
+    rotateR = rotateR
+    bitSize _ = 256
+    bitSizeMaybe _ = Just 256
+    isSigned _ = False
+    testBit = testBit
+    bit = bit
+    popCount = popCount
+
 -- | Add 2 Word256
 (+) :: Word256 -> Word256 -> Word256
 #if WORD_SIZE_IN_BITS < 64
@@ -188,6 +205,102 @@ bitwiseXor (Word256 a3 a2 a1 a0) (Word256 b3 b2 b1 b0) =
 complement :: Word256 -> Word256
 complement (Word256 a3 a2 a1 a0) =
     Word256 (Bits.complement a3) (Bits.complement a2) (Bits.complement a1) (Bits.complement a0)
+
+-- | Population count
+popCount :: Word256 -> Int
+popCount (Word256 a3 a2 a1 a0) =
+    Bits.popCount a3 Prelude.+
+    Bits.popCount a2 Prelude.+
+    Bits.popCount a1 Prelude.+
+    Bits.popCount a0
+
+-- | Bitwise Shift Left
+shiftL :: Word256 -> Int -> Word256
+shiftL w@(Word256 a3 a2 a1 a0) n
+    | n < 0 || n > 255 = Word256 0 0 0 0
+    | n == 0           = w
+    | n == 64          = Word256 a2 a1 a0 0
+    | n == 128         = Word256 a1 a0 0 0
+    | n == 192         = Word256 a0 0 0 0
+    | n < 64           = mkWordShift a3 a2 a1 a0 n
+    | n < 128          = mkWordShift a2 a1 a0 0  (n Prelude.- 64)
+    | n < 192          = mkWordShift a1 a0 0  0  (n Prelude.- 128)
+    | otherwise        = mkWordShift a0 0  0  0  (n Prelude.- 192)
+  where
+    mkWordShift :: Word64 -> Word64 -> Word64 -> Word64 -> Int -> Word256
+    mkWordShift w x y z s =
+        Word256 (comb64 w s x s') (comb64 x s y s') (comb64 y s z s') (z `Bits.unsafeShiftL` s)
+      where s' = inv64 s
+
+-- | Bitwise Shift Right
+shiftR :: Word256 -> Int -> Word256
+shiftR w@(Word256 a3 a2 a1 a0) n
+    | n < 0 || n > 255 = Word256 0 0 0 0
+    | n == 0           = w
+    | n == 64          = Word256 0 a3 a2 a1
+    | n == 128         = Word256 0 0 a3 a2
+    | n == 192         = Word256 0 0 0 a3
+    | n <  64          = mkWordShift a3 a2 a1 a0 n
+    | n < 128          = mkWordShift  0 a3 a2 a1 (n Prelude.- 64)
+    | n < 192          = mkWordShift  0  0 a3 a2 (n Prelude.- 128)
+    | otherwise        = Word256 0 0 0 (a3 `Bits.unsafeShiftR` (n Prelude.- 192))
+  where
+    mkWordShift :: Word64 -> Word64 -> Word64 -> Word64 -> Int -> Word256
+    mkWordShift w x y z s =
+        Word256 (w `Bits.unsafeShiftR` s) (comb64 w s' x s) (comb64 x s' y s) (comb64 y s' z s)
+      where s' = inv64 s
+
+-- | Bitwise rotate Left
+rotateL :: Word256 -> Int -> Word256
+rotateL (Word256 a3 a2 a1 a0) n'
+    | n == 0    = Word256 a3 a2 a1 a0
+    | n == 192  = Word256 a0 a3 a2 a1
+    | n == 128  = Word256 a1 a0 a3 a2
+    | n == 64   = Word256 a2 a1 a0 a3
+    | n < 64    = Word256 (comb64 a3 n a2 (inv64 n)) (comb64 a2 n a1 (inv64 n))
+                          (comb64 a1 n a0 (inv64 n)) (comb64 a0 n a3 (inv64 n))
+    | n < 128   = let n = n Prelude.- 64 in Word256
+                          (comb64 a2 n a1 (inv64 n)) (comb64 a1 n a0 (inv64 n))
+                          (comb64 a0 n a3 (inv64 n)) (comb64 a3 n a2 (inv64 n))
+    | n < 192   = let n = n Prelude.- 128 in Word256
+                          (comb64 a1 n a0 (inv64 n)) (comb64 a0 n a3 (inv64 n))
+                          (comb64 a3 n a2 (inv64 n)) (comb64 a2 n a1 (inv64 n))
+    | otherwise = let n = n Prelude.- 192 in Word256
+                          (comb64 a0 n a3 (inv64 n)) (comb64 a3 n a2 (inv64 n))
+                          (comb64 a2 n a1 (inv64 n)) (comb64 a1 n a0 (inv64 n))
+  where
+    n :: Int
+    n | n' >= 0   = n' `Prelude.mod` 256
+      | otherwise = 256 Prelude.- (n' `Prelude.mod` 256)
+
+-- | Bitwise rotate Left
+rotateR :: Word256 -> Int -> Word256
+rotateR w n = rotateL w (256 Prelude.- n)
+
+inv64 :: Int -> Int
+inv64 i = 64 Prelude.- i
+
+comb64 :: Word64 -> Int -> Word64 -> Int -> Word64
+comb64 x i y j =
+    (x `Bits.unsafeShiftL` i) .|. (y `Bits.unsafeShiftR` j)
+
+-- | Test bit
+testBit :: Word256 -> Int -> Bool
+testBit (Word256 a3 a2 a1 a0) n
+    | n < 0 || n > 255 = False
+    | n > 191          = Bits.testBit a3 (n Prelude.- 192)
+    | n > 127          = Bits.testBit a2 (n Prelude.- 128)
+    | n > 63           = Bits.testBit a1 (n Prelude.- 64)
+    | otherwise        = Bits.testBit a0 n
+
+-- | bit
+bit :: Int -> Word256
+bit n
+    | n < 0 || n > 255 = Word256 0 0 0 0
+    | n > 191          = Word256 (Bits.bit (n Prelude.- 192)) 0 0 0
+    | n > 127          = Word256 0 (Bits.bit (n Prelude.- 128)) 0 0
+    | n > 63           = Word256 0 0 (Bits.bit (n Prelude.- 64)) 0
+    | otherwise        = Word256 0 0 0 (Bits.bit n)
 
 literal :: Integer -> Word256
 literal i = Word256

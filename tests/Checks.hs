@@ -28,6 +28,7 @@ import Test.Foundation.Network.IPv4
 import Test.Foundation.Network.IPv6
 import Test.Foundation.String.Base64
 import Test.Checks.Property.Collection
+import qualified Test.Foundation.Bits as Bits
 
 #if MIN_VERSION_base(4,9,0)
 import Test.Foundation.Primitive.BlockN
@@ -108,6 +109,7 @@ main = defaultMain $ Group "foundation"
             ]
         , Group "Number" testNumberRefs
         ]
+    , Bits.tests
     , Group "String"
         [ Group "reading"
             [ Group "integer"
