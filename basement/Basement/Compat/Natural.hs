@@ -14,10 +14,11 @@ import Prelude (Integer, abs, fromInteger, toInteger)
 #else
 
 import Prelude (Show(..),Eq,Ord,Enum,Num(..),Real(..),Integral(..),Integer,error,(<), (>), otherwise, toInteger)
+import Data.Bits
 import Data.Typeable
 
 newtype Natural = Natural Integer
-    deriving (Eq,Ord,Enum,Typeable)
+    deriving (Eq,Ord,Enum,Typeable,Bits)
 
 instance Show Natural where
     show (Natural i) = show i
