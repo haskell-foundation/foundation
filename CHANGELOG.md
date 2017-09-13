@@ -1,3 +1,7 @@
+## 0.0.15
+
+* Add Bits instance for Natural compat with 7.8
+
 ## 0.0.14
 
 Types:
