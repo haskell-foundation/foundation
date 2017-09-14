@@ -35,7 +35,7 @@ module Foundation.Primitive
 
     -- * Ascii
     , Char7
-    , AsciiString(..)
+    , AsciiString
     ) where
 
 import Basement.PrimType
