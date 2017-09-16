@@ -5,6 +5,7 @@ module Basement.Base16
     ( unsafeConvertByte
     , hexWord16
     , hexWord32
+    , escapeByte
     , Base16Escape(..)
     ) where
 
@@ -28,6 +29,13 @@ unsafeConvertByte b = (# r tableHi b, r tableLo b #)
     r :: Table -> Word# -> Word#
     r (Table !table) index = indexWord8OffAddr# table (word2Int# index)
 {-# INLINE unsafeConvertByte #-}
+
+escapeByte :: Word8 -> Base16Escape
+escapeByte !(W8# b) = Base16Escape (r tableHi b) (r tableLo b)
+  where
+    r :: Table -> Word# -> Char7
+    r (Table !table) index = Char7 (W8# (indexWord8OffAddr# table (word2Int# index)))
+{-# INLINE escapeByte #-}
 
 -- | hex word16
 hexWord16 :: Word16 -> (Char, Char, Char, Char)
