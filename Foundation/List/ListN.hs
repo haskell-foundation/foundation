@@ -54,6 +54,10 @@ impossible :: a
 impossible = error "ListN: internal error: the impossible happened"
 
 newtype ListN (n :: Nat) a = ListN { unListN :: [a] }
+    deriving (Eq,Ord)
+
+instance Show a => Show (ListN n a) where
+    show (ListN l) = show l
 
 toListN :: forall (n :: Nat) a . (KnownNat n, NatWithinBound Int n) => [a] -> Maybe (ListN n a)
 toListN l
