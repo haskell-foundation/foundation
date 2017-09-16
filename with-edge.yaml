@@ -1,0 +1,6 @@
+resolver: lts-9.4
+packages:
+- '.'
+- location: basement/
+  extra-dep: true
+- location: edge/

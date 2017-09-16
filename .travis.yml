@@ -19,6 +19,10 @@ matrix:
     language: generic
     addons: { apt: { packages: [ libgmp-dev ] } }
     compiler: ghc-8.0
+  - env: BUILD=stack RESOLVER=ghc-8.0-edge
+    language: generic
+    addons: { apt: { packages: [ libgmp-dev ] } }
+    compiler: ghc-8.0
   - env: BUILD=stack RESOLVER=ghc-8.2
     language: generic
     compiler: ghc-8.2
