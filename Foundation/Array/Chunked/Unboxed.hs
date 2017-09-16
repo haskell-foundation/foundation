@@ -6,6 +6,7 @@
 --
 -- Simple array-of-arrays abstraction
 --
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ExistentialQuantification #-}
@@ -28,6 +29,9 @@ import           Basement.Compat.Base
 import           Basement.Types.OffsetSize
 import           Basement.PrimType
 import           GHC.ST
+#if MIN_VERSION_base(4,9,0)
+import           Data.Semigroup
+#endif
 
 import           Foundation.Numerical
 import           Foundation.Primitive
@@ -42,10 +46,17 @@ instance PrimType ty => Eq (ChunkedUArray ty) where
 instance NormalForm (ChunkedUArray ty) where
     toNormalForm (ChunkedUArray spine) = toNormalForm spine
 
+#if MIN_VERSION_base(4,9,0)
+instance Semigroup (ChunkedUArray a) where
+    (<>) = append
+    sconcat = concat . toList
+#endif
 instance Monoid (ChunkedUArray a) where
     mempty  = empty
+#if !(MIN_VERSION_base(4,11,0))
     mappend = append
     mconcat = concat
+#endif
 
 type instance C.Element (ChunkedUArray ty) = ty
 

@@ -7,6 +7,7 @@
 --
 -- Simple boxed array abstraction
 --
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE UnboxedTuples #-}
@@ -75,6 +76,9 @@ import           GHC.Prim
 import           GHC.Types
 import           GHC.ST
 import           Data.Proxy
+#if MIN_VERSION_base(4,9,0)
+import           Data.Semigroup
+#endif
 import           Basement.Numerical.Additive
 import           Basement.Numerical.Subtractive
 import           Basement.NonEmpty
@@ -121,10 +125,18 @@ data MArray a st = MArray {-# UNPACK #-} !(Offset a)
 instance Functor Array where
     fmap = map
 
+#if MIN_VERSION_base(4,9,0)
+instance Semigroup (Array a) where
+    (<>) = append
+    sconcat = concat . toList
+#endif
+
 instance Monoid (Array a) where
     mempty  = empty
+#if !(MIN_VERSION_base(4,11,0))
     mappend = append
     mconcat = concat
+#endif
 
 instance Show a => Show (Array a) where
     show v = show (toList v)

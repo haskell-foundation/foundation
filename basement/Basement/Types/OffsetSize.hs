@@ -56,6 +56,9 @@ import Basement.IntegralConv
 import Data.List (foldl')
 import qualified Prelude
 
+#if MIN_VERSION_base(4,9,0)
+import Data.Semigroup
+#endif
 #if WORD_SIZE_IN_BITS < 64
 import GHC.IntWord64
 #endif
@@ -193,10 +196,18 @@ instance Subtractive (CountOf ty) where
     (CountOf a) - (CountOf b) | a >= b    = Just . CountOf $ a - b
                               | otherwise = Nothing
 
+#if MIN_VERSION_base(4,9,0)
+instance Semigroup (CountOf ty) where
+    (<>) = (+)
+    sconcat = foldl' (+) 0
+#endif
+
 instance Monoid (CountOf ty) where
     mempty = azero
+#if !(MIN_VERSION_base(4,11,0))
     mappend = (+)
     mconcat = foldl' (+) 0
+#endif
 
 instance IntegralCast Int (CountOf ty) where
     integralCast i = CountOf i

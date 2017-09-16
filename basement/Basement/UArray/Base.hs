@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -60,6 +61,9 @@ import           Basement.PrimType
 import           Basement.Compat.Base
 import qualified Basement.Runtime as Runtime
 import           Data.Proxy
+#if MIN_VERSION_base(4,9,0)
+import           Data.Semigroup
+#endif
 import qualified Basement.Compat.ExtList as List
 import           Basement.Types.OffsetSize
 import           Basement.FinalPtr
@@ -114,10 +118,18 @@ instance (PrimType ty, Ord ty) => Ord (UArray ty) where
     {-# SPECIALIZE instance Ord (UArray Word8) #-}
     compare = vCompare
 
+#if MIN_VERSION_base(4,9,0)
+instance PrimType ty => Semigroup (UArray ty) where
+    (<>) = append
+    sconcat = concat . toList
+#endif
+
 instance PrimType ty => Monoid (UArray ty) where
     mempty  = empty
+#if !(MIN_VERSION_base(4,11,0))
     mappend = append
     mconcat = concat
+#endif
 
 instance PrimType ty => IsList (UArray ty) where
     type Item (UArray ty) = ty

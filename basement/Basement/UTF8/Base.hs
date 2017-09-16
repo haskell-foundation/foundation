@@ -19,6 +19,9 @@ import           GHC.ST (ST, runST)
 import           GHC.Types
 import           GHC.Word
 import           GHC.Prim
+#if MIN_VERSION_base(4,9,0)
+import           Data.Semigroup
+#endif
 import           Basement.Compat.Base
 import           Basement.Numerical.Additive
 import           Basement.Compat.Bifunctor
@@ -45,7 +48,11 @@ import           Basement.Compat.ExtList as List
 
 -- | Opaque packed array of characters in the UTF8 encoding
 newtype String = String (UArray Word8)
-    deriving (Typeable, Monoid, Eq, Ord)
+    deriving (Typeable, Monoid, Eq, Ord
+#if MIN_VERSION_base(4,9,0)
+             , Semigroup
+#endif
+             )
 
 -- | Mutable String Buffer.
 --

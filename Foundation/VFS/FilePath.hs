@@ -41,6 +41,10 @@ import Foundation.String (Encoding(..), ValidationFailure, toBytes, fromBytes, S
 import Foundation.VFS.Path(Path(..))
 
 import qualified Data.List
+#if MIN_VERSION_base(4,9,0)
+import Data.Semigroup
+#endif
+
 -- ------------------------------------------------------------------------- --
 --                           System related helpers                          --
 -- ------------------------------------------------------------------------- --
@@ -184,9 +188,15 @@ hasContigueSeparators [_] = False
 hasContigueSeparators (x1:x2:xs) =
     (isSeparator x1 && x1 == x2) || hasContigueSeparators xs
 
+#if MIN_VERSION_base(4,9,0)
+instance Semigroup FileName where
+    FileName a <> FileName b = FileName $ a <> b
+#endif
 instance Monoid FileName where
-      mempty = FileName mempty
-      mappend (FileName a) (FileName b) = FileName $ a `mappend` b
+    mempty = FileName mempty
+#if !(MIN_VERSION_base(4,11,0))
+    mappend (FileName a) (FileName b) = FileName $ a `mappend` b
+#endif
 
 instance Path FilePath where
     type PathEnt FilePath = FileName

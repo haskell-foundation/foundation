@@ -12,6 +12,7 @@
 -- to conduct even the most trivial operation, leading to a lots of
 -- unnecessary churn.
 --
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE BangPatterns #-}
 module Foundation.Array.Bitmap
     ( Bitmap
@@ -43,6 +44,9 @@ import           Data.Bits
 import           Foundation.Bits
 import           GHC.ST
 import qualified Data.List
+#if MIN_VERSION_base(4,9,0)
+import           Data.Semigroup
+#endif
 
 data Bitmap = Bitmap (CountOf Bool) (UArray Word32)
 
@@ -63,10 +67,17 @@ instance Eq Bitmap where
     (==) = equal
 instance Ord Bitmap where
     compare = vCompare
+#if MIN_VERSION_base(4,9,0)
+instance Semigroup Bitmap where
+    (<>) = append
+    sconcat = concat . toList
+#endif
 instance Monoid Bitmap where
     mempty  = empty
+#if !(MIN_VERSION_base(4,11,0))
     mappend = append
     mconcat = concat
+#endif
 
 type instance C.Element Bitmap = Bool
 

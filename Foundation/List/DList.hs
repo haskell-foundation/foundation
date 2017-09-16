@@ -7,10 +7,14 @@
 --
 -- Data structure for optimised operations (append, cons, snoc) on list
 --
+{-# LANGUAGE CPP #-}
 module Foundation.List.DList
     ( DList
     ) where
 
+#if MIN_VERSION_base(4,9,0)
+import Data.Semigroup
+#endif
 import Basement.Compat.Base
 import Foundation.Collection
 import Basement.Compat.Bifunctor
@@ -32,9 +36,16 @@ instance IsList (DList a) where
     fromList = DList . (<>)
     toList = flip unDList []
 
+#if MIN_VERSION_base(4,9,0)
+instance Semigroup (DList a) where
+    dl1 <> dl2 = DList $ unDList dl1 . unDList dl2
+#endif
+
 instance Monoid (DList a) where
     mempty = DList id
+#if !(MIN_VERSION_base(4,11,0))
     mappend dl1 dl2 = DList $ unDList dl1 . unDList dl2
+#endif
 
 instance Functor DList where
     fmap f = foldr (cons . f) mempty

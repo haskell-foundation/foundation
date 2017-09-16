@@ -8,6 +8,7 @@
 -- A AsciiString type backed by a `ASCII` encoded byte array and all the necessary
 -- functions to manipulate the string.
 --
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MagicHash                  #-}
@@ -21,6 +22,9 @@ module Basement.Types.AsciiString
     , fromBytes
     ) where
 
+#if MIN_VERSION_base(4,9,0)
+import           Data.Semigroup
+#endif
 import           Basement.Compat.Base
 import           Basement.Types.Char7
 import           Basement.UArray.Base
@@ -29,7 +33,11 @@ import qualified Basement.UArray as A (all, unsafeRecast)
 
 -- | Opaque packed array of characters in the ASCII encoding
 newtype AsciiString = AsciiString { toBytes :: UArray Char7 }
-    deriving (Typeable, Monoid, Eq, Ord)
+    deriving (Typeable, Monoid, Eq, Ord
+#if MIN_VERSION_base(4,9,0)
+             , Semigroup
+#endif
+             )
 
 newtype MutableAsciiString st = MutableAsciiString (MUArray Char7 st)
     deriving (Typeable)
