@@ -5,11 +5,15 @@ module Basement.Base16
     ( unsafeConvertByte
     , hexWord16
     , hexWord32
+    , Base16Escape(..)
     ) where
 
 import GHC.Prim
 import GHC.Types
 import GHC.Word
+import Basement.Types.Char7
+
+data Base16Escape = Base16Escape {-# UNPACK #-} !Char7 {-# UNPACK #-} !Char7
 
 -- | Convert a byte value in Word# to two Word#s containing
 -- the hexadecimal representation of the Word#
