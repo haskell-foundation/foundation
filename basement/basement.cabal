@@ -79,6 +79,7 @@ library
                      Basement.Compat.Primitive
                      Basement.Compat.PrimTypes
                      Basement.Compat.MonadTrans
+                     Basement.Compat.Semigroup
                      Basement.Compat.Natural
                      Basement.Compat.NumLiteral
                      Basement.Compat.Typeable
