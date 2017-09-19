@@ -40,6 +40,7 @@ module Foundation.List.ListN
     , drop
     , zip, zip3, zip4, zip5
     , zipWith, zipWith3, zipWith4, zipWith5
+    , replicate
     , replicateM
     ) where
 
@@ -54,6 +55,10 @@ impossible :: a
 impossible = error "ListN: internal error: the impossible happened"
 
 newtype ListN (n :: Nat) a = ListN { unListN :: [a] }
+    deriving (Eq,Ord)
+
+instance Show a => Show (ListN n a) where
+    show (ListN l) = show l
 
 toListN :: forall (n :: Nat) a . (KnownNat n, NatWithinBound Int n) => [a] -> Maybe (ListN n a)
 toListN l
@@ -62,8 +67,11 @@ toListN l
   where
     expected = natValInt (Proxy :: Proxy n)
 
-replicateM :: forall (n :: Nat) m a . (n <= 0x100000, Monad m, KnownNat n) => m a -> m (ListN n a)
+replicateM :: forall (n :: Nat) m a . (NatWithinBound Int n, Monad m, KnownNat n) => m a -> m (ListN n a)
 replicateM action = ListN <$> M.replicateM (Prelude.fromIntegral $ natVal (Proxy :: Proxy n)) action
+
+replicate :: forall (n :: Nat) a . (NatWithinBound Int n, KnownNat n) => a -> ListN n a
+replicate a = ListN $ Prelude.replicate (Prelude.fromIntegral $ natVal (Proxy :: Proxy n)) a
 
 uncons :: CmpNat n 0 ~ 'GT => ListN n a -> (a, ListN (n-1) a)
 uncons (ListN (x:xs)) = (x, ListN xs)

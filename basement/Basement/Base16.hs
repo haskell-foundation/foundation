@@ -5,11 +5,16 @@ module Basement.Base16
     ( unsafeConvertByte
     , hexWord16
     , hexWord32
+    , escapeByte
+    , Base16Escape(..)
     ) where
 
 import GHC.Prim
 import GHC.Types
 import GHC.Word
+import Basement.Types.Char7
+
+data Base16Escape = Base16Escape {-# UNPACK #-} !Char7 {-# UNPACK #-} !Char7
 
 -- | Convert a byte value in Word# to two Word#s containing
 -- the hexadecimal representation of the Word#
@@ -24,6 +29,13 @@ unsafeConvertByte b = (# r tableHi b, r tableLo b #)
     r :: Table -> Word# -> Word#
     r (Table !table) index = indexWord8OffAddr# table (word2Int# index)
 {-# INLINE unsafeConvertByte #-}
+
+escapeByte :: Word8 -> Base16Escape
+escapeByte !(W8# b) = Base16Escape (r tableHi b) (r tableLo b)
+  where
+    r :: Table -> Word# -> Char7
+    r (Table !table) index = Char7 (W8# (indexWord8OffAddr# table (word2Int# index)))
+{-# INLINE escapeByte #-}
 
 -- | hex word16
 hexWord16 :: Word16 -> (Char, Char, Char, Char)

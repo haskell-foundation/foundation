@@ -2,6 +2,7 @@ resolver: lts-9.4
 packages:
 - '.'
 - basement/
+- edge/
 extra-deps: []
 flags: {}
 extra-package-dbs: []
