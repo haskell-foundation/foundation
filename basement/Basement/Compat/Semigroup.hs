@@ -153,5 +153,8 @@ stimesIdempotent n x
   | n <= 0 = errorWithoutStackTrace "stimesIdempotent: positive multiplier expected"
   | otherwise = x
 
+#if !MIN_VERSION_base(4,9,0)
+errorWithoutStackTrace = error
+#endif
 
 #endif
