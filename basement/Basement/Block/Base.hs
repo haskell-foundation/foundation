@@ -34,6 +34,7 @@ import qualified Data.List
 import           Basement.Compat.Base
 import           Data.Proxy
 import           Basement.Compat.Primitive
+import           Basement.Compat.Semigroup
 import           Basement.Bindings.Memory (sysHsMemcmpBaBa)
 import           Basement.Types.OffsetSize
 import           Basement.Monad
@@ -63,6 +64,8 @@ instance (PrimType ty, Eq ty) => Eq (Block ty) where
 instance (PrimType ty, Ord ty) => Ord (Block ty) where
     compare = internalCompare
 
+instance PrimType ty => Semigroup (Block ty) where
+    (<>) = append
 instance PrimType ty => Monoid (Block ty) where
     mempty  = empty
     mappend = append

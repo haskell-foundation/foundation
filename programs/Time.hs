@@ -28,6 +28,8 @@ data Monotonic = Monotonic
     , notMonotonic :: Sum Word
     } deriving (Show,Eq)
 
+instance Semigroup Monotonic where
+    (<>) =
 instance Monoid Monotonic where
     mempty = Monotonic mempty mempty mempty
     mappend m1 m2 = Monotonic { maxDiff      = maxDiff m1 `mappend` maxDiff m2

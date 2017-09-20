@@ -58,6 +58,7 @@ import           Basement.Compat.Primitive
 import           Basement.Monad
 import           Basement.PrimType
 import           Basement.Compat.Base
+import           Basement.Compat.Semigroup
 import qualified Basement.Runtime as Runtime
 import           Data.Proxy
 import qualified Basement.Compat.ExtList as List
@@ -114,6 +115,8 @@ instance (PrimType ty, Ord ty) => Ord (UArray ty) where
     {-# SPECIALIZE instance Ord (UArray Word8) #-}
     compare = vCompare
 
+instance PrimType ty => Semigroup (UArray ty) where
+    (<>) = append
 instance PrimType ty => Monoid (UArray ty) where
     mempty  = empty
     mappend = append

@@ -17,7 +17,7 @@ module Foundation.String.Builder
     ) where
 
 import           Basement.Compat.Base
---import           Basement.Compat.Semigroup
+import           Basement.Compat.Semigroup
 import           Basement.String                (String)
 import qualified Basement.String as S
 
@@ -26,9 +26,8 @@ data Builder = E String | T [Builder]
 instance IsString Builder where
     fromString = E . fromString
 
---instance Semigroup Builder where
---    (<>) = append
-
+instance Semigroup Builder where
+    (<>) = append
 instance Monoid Builder where
     mempty = empty
     mappend = append

@@ -33,6 +33,7 @@ import           Basement.UArray (UArray)
 import qualified Basement.UArray as A
 import           Basement.UArray.Mutable (MUArray)
 import           Basement.Compat.Bifunctor (first, second, bimap)
+import           Basement.Compat.Semigroup
 import           Basement.Exception
 import           Basement.Compat.Base
 import           Basement.Types.OffsetSize
@@ -63,6 +64,8 @@ instance Eq Bitmap where
     (==) = equal
 instance Ord Bitmap where
     compare = vCompare
+instance Semigroup Bitmap where
+    (<>) = append
 instance Monoid Bitmap where
     mempty  = empty
     mappend = append
