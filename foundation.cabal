@@ -74,6 +74,7 @@ library
                      Foundation.Class.Storable
                      Foundation.Conduit
                      Foundation.Conduit.Textual
+                     Foundation.Exception
                      Foundation.String
                      Foundation.String.Read
                      Foundation.String.Builder
