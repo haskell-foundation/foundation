@@ -1,5 +1,5 @@
 {-# LANGUAGE TypeFamilies #-}
-module Foundation.Monad.ExceptT
+module Foundation.Monad.Except
     ( ExceptT(..)
     ) where
 
