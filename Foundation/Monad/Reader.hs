@@ -13,6 +13,7 @@ module Foundation.Monad.Reader
 
 import Basement.Compat.Base (($), (.), const)
 import Foundation.Monad.Base
+import Foundation.Monad.Exception
 
 class Monad m => MonadReader m where
     type ReaderContext m

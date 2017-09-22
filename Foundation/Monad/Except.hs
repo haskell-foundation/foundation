@@ -3,7 +3,7 @@ module Foundation.Monad.Except
     ( ExceptT(..)
     ) where
 
-import Foundation.Monad
+import Basement.Imports
 import Foundation.Monad.Base
 import Foundation.Monad.Reader
 
