@@ -74,6 +74,7 @@ library
                      Foundation.Class.Storable
                      Foundation.Conduit
                      Foundation.Conduit.Textual
+                     Foundation.Exception
                      Foundation.String
                      Foundation.String.Read
                      Foundation.String.Builder
@@ -91,6 +92,7 @@ library
                      Foundation.Primitive
                      Foundation.List.DList
                      Foundation.Monad
+                     Foundation.Monad.Except
                      Foundation.Monad.Reader
                      Foundation.Monad.State
                      Foundation.Network.IPv4

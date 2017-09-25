@@ -13,6 +13,7 @@ module Foundation.Monad.Reader
 
 import Basement.Compat.Base (($), (.), const)
 import Foundation.Monad.Base
+import Foundation.Monad.Exception
 
 class Monad m => MonadReader m where
     type ReaderContext m
@@ -54,6 +55,14 @@ instance MonadThrow m => MonadThrow (ReaderT r m) where
 
 instance MonadCatch m => MonadCatch (ReaderT r m) where
     catch (ReaderT m) c = ReaderT $ \r -> m r `catch` (\e -> runReaderT (c e) r)
+
+instance MonadBracket m => MonadBracket (ReaderT r m) where
+    generalBracket acq cleanup cleanupExcept innerAction = do
+        c <- ask
+        lift $ generalBracket (runReaderT acq c)
+                              (\a b -> runReaderT (cleanup a b) c)
+                              (\a exn -> runReaderT (cleanupExcept a exn) c)
+                              (\a -> runReaderT (innerAction a) c)
 
 instance Monad m => MonadReader (ReaderT r m) where
     type ReaderContext (ReaderT r m) = r
