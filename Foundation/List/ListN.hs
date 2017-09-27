@@ -47,6 +47,7 @@ module Foundation.List.ListN
     ) where
 
 import           Data.Proxy
+import qualified Data.List
 import           Basement.Compat.Base
 import           Basement.Nat
 import           Foundation.Numerical
