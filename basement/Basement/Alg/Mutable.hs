@@ -1,5 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
-module Basement.Algorithm
+module Basement.Alg.Mutable
     ( RandomAccess, read, write
     , inplaceSortBy
     ) where

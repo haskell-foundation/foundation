@@ -81,7 +81,7 @@ import           Basement.Numerical.Additive
 import           Basement.Numerical.Subtractive
 import           Basement.NonEmpty
 import           Basement.Compat.Base
-import qualified Basement.Algorithm as Algorithm
+import qualified Basement.Alg.Mutable as MutAlg
 import           Basement.Compat.MonadTrans
 import           Basement.Types.OffsetSize
 import           Basement.PrimType
@@ -627,7 +627,7 @@ find predicate vec = loop 0
              in if predicate e then Just e else loop (i+1)
 
 instance (PrimMonad prim, st ~ PrimState prim) 
-         => Algorithm.RandomAccess (MArray ty st) prim ty where
+         => MutAlg.RandomAccess (MArray ty st) prim ty where
     read (MArray _ _ mba) = primMutableArrayRead mba
     write (MArray _ _ mba) = primMutableArrayWrite mba
 
@@ -638,7 +638,7 @@ sortBy xford vec
   where
     len = length vec
     doSort :: PrimMonad prim => (ty -> ty -> Ordering) -> MArray ty (PrimState prim) -> prim (Array ty)
-    doSort ford ma = Algorithm.inplaceSortBy ford 0 len ma >> unsafeFreeze ma
+    doSort ford ma = MutAlg.inplaceSortBy ford 0 len ma >> unsafeFreeze ma
 
 filter :: forall ty . (ty -> Bool) -> Array ty -> Array ty
 filter predicate vec = runST (new len >>= copyFilterFreeze predicate (unsafeIndex vec))

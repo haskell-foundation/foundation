@@ -82,10 +82,10 @@ import           Basement.Numerical.Additive
 import           Basement.Numerical.Subtractive
 import qualified Basement.Alg.Native.PrimArray as Alg
 import qualified Basement.Alg.Native.Prim as Prim
-import qualified Basement.Algorithm as Algorithm
+import qualified Basement.Alg.Mutable as MutAlg
 
 instance (PrimMonad prim, st ~ PrimState prim, PrimType ty) 
-         => Algorithm.RandomAccess (MutableBlock ty st) prim ty where
+         => MutAlg.RandomAccess (MutableBlock ty st) prim ty where
     read (MutableBlock mba) = primMbaRead mba
     write (MutableBlock mba) = primMbaWrite mba
 
@@ -364,7 +364,7 @@ sortBy ford vec
     | len == 0  = mempty
     | otherwise = runST $ do
         mblock@(MutableBlock mba) <- thaw vec
-        Algorithm.inplaceSortBy ford 0 len mblock
+        MutAlg.inplaceSortBy ford 0 len mblock
         unsafeFreeze mblock
   where len = length vec
 {-# SPECIALIZE [2] sortBy :: (Word8 -> Word8 -> Ordering) -> Block Word8 -> Block Word8 #-}

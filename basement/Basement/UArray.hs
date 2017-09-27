@@ -140,9 +140,9 @@ import qualified Basement.Alg.Native.Prim as PrimBA
 import qualified Basement.Alg.Native.PrimArray as PrimBA
 import qualified Basement.Alg.Foreign.Prim as PrimAddr
 import qualified Basement.Alg.Foreign.PrimArray as PrimAddr
-import qualified Basement.Algorithm as Algorithm
+import qualified Basement.Alg.Mutable as MutAlg
 
-instance (PrimMonad prim, PrimType ty) => Algorithm.RandomAccess (Ptr ty) prim ty where
+instance (PrimMonad prim, PrimType ty) => MutAlg.RandomAccess (Ptr ty) prim ty where
     read (Ptr addr) = PrimAddr.primRead addr
     write (Ptr addr) = PrimAddr.primWrite addr
 
@@ -648,9 +648,9 @@ sortBy ford vec = runST $ do
     !start = offset vec
 
     goNative :: forall s . MutableByteArray# (PrimState (ST s)) -> ST s ()
-    goNative mba = Algorithm.inplaceSortBy ford start len (MutableBlock mba :: MutableBlock ty (PrimState (ST s)))
+    goNative mba = MutAlg.inplaceSortBy ford start len (MutableBlock mba :: MutableBlock ty (PrimState (ST s)))
     goAddr :: Ptr ty -> ST s ()
-    goAddr (Ptr addr) = Algorithm.inplaceSortBy ford start len (Ptr addr :: Ptr ty)
+    goAddr (Ptr addr) = MutAlg.inplaceSortBy ford start len (Ptr addr :: Ptr ty)
 {-# SPECIALIZE [3] sortBy :: (Word8 -> Word8 -> Ordering) -> UArray Word8 -> UArray Word8 #-}
 
 filter :: forall ty . PrimType ty => (ty -> Bool) -> UArray ty -> UArray ty
