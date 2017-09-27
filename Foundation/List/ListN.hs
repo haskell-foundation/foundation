@@ -31,6 +31,8 @@ module Foundation.List.ListN
     , map
     , elem
     , foldl
+    , foldl'
+    , foldr
     , append
     , minimum
     , maximum
@@ -134,6 +136,12 @@ map f (ListN l) = ListN (Prelude.map f l)
 
 foldl :: (b -> a -> b) -> b -> ListN n a -> b
 foldl f acc (ListN l) = Prelude.foldl f acc l
+
+foldl' :: (b -> a -> b) -> b -> ListN n a -> b
+foldl' f acc (ListN l) = Data.List.foldl' f acc l
+
+foldr :: (a -> b -> b) -> b -> ListN n a -> b
+foldr f acc (ListN l) = Prelude.foldr f acc l
 
 zip :: ListN n a -> ListN n b -> ListN n (a,b)
 zip (ListN l1) (ListN l2) = ListN (Prelude.zip l1 l2)
