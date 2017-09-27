@@ -40,6 +40,7 @@ module Foundation.List.ListN
     , tail
     , take
     , drop
+    , splitAt
     , zip, zip3, zip4, zip5
     , zipWith, zipWith3, zipWith4, zipWith5
     , replicate
@@ -130,6 +131,10 @@ take (ListN l) = ListN (Prelude.take n l)
 
 drop :: forall a d (m :: Nat) (n :: Nat) . (KnownNat d, NatWithinBound Int d, (n - m) ~ d, m <= n) => ListN n a -> ListN m a
 drop (ListN l) = ListN (Prelude.drop n l)
+  where n = natValInt (Proxy :: Proxy d)
+
+splitAt :: forall a d (m :: Nat) (n :: Nat) . (KnownNat d, NatWithinBound Int d, (n - m) ~ d, m <= n) => ListN n a -> (ListN m a, ListN (n-m) a)
+splitAt (ListN l) = let (l1, l2) = Prelude.splitAt n l in (ListN l1, ListN l2)
   where n = natValInt (Proxy :: Proxy d)
 
 map :: (a -> b) -> ListN n a -> ListN n b
