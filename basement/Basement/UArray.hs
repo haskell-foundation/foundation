@@ -386,7 +386,7 @@ breakElem !ty arr@(UArray start len backend)
     goBa ba = PrimBA.findIndexElem ty ba start end
     goAddr _ (Ptr addr) = PrimAddr.findIndexElem ty addr start end
 {-# NOINLINE [3] breakElem #-}
-{-# RULES "breakElem Word8" [3] breakElem = breakElemByte #-}
+{-# RULES "breakElem Word8" [4] breakElem = breakElemByte #-}
 {-# SPECIALIZE [3] breakElem :: Word32 -> UArray Word32 -> (UArray Word32, UArray Word32) #-}
 
 breakElemByte :: Word8 -> UArray Word8 -> (UArray Word8, UArray Word8)
