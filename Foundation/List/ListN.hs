@@ -54,6 +54,7 @@ import           Data.Proxy
 import qualified Data.List
 import           Basement.Compat.Base
 import           Basement.Nat
+import           Basement.NormalForm
 import           Foundation.Numerical
 import qualified Prelude
 import qualified Control.Monad as M (replicateM, mapM, mapM_)
@@ -66,6 +67,9 @@ newtype ListN (n :: Nat) a = ListN { unListN :: [a] }
 
 instance Show a => Show (ListN n a) where
     show (ListN l) = show l
+
+instance NormalForm a => NormalForm (ListN n a) where
+    toNormalForm (ListN l) = toNormalForm l
 
 toListN :: forall (n :: Nat) a . (KnownNat n, NatWithinBound Int n) => [a] -> Maybe (ListN n a)
 toListN l
