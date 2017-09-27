@@ -44,7 +44,10 @@ module Foundation.List.ListN
     , zip, zip3, zip4, zip5
     , zipWith, zipWith3, zipWith4, zipWith5
     , replicate
+    -- * Applicative And Monadic
     , replicateM
+    , mapM
+    , mapM_
     ) where
 
 import           Data.Proxy
@@ -53,7 +56,7 @@ import           Basement.Compat.Base
 import           Basement.Nat
 import           Foundation.Numerical
 import qualified Prelude
-import qualified Control.Monad as M (replicateM)
+import qualified Control.Monad as M (replicateM, mapM, mapM_)
 
 impossible :: a
 impossible = error "ListN: internal error: the impossible happened"
@@ -73,6 +76,12 @@ toListN l
 
 replicateM :: forall (n :: Nat) m a . (NatWithinBound Int n, Monad m, KnownNat n) => m a -> m (ListN n a)
 replicateM action = ListN <$> M.replicateM (Prelude.fromIntegral $ natVal (Proxy :: Proxy n)) action
+
+mapM :: Monad m => (a -> m b) -> ListN n a -> m (ListN n b)
+mapM f (ListN l) = ListN <$> M.mapM f l
+
+mapM_ :: Monad m => (a -> m b) -> ListN n a -> m ()
+mapM_ f (ListN l) = M.mapM_ f l
 
 replicate :: forall (n :: Nat) a . (NatWithinBound Int n, KnownNat n) => a -> ListN n a
 replicate a = ListN $ Prelude.replicate (Prelude.fromIntegral $ natVal (Proxy :: Proxy n)) a
