@@ -31,6 +31,8 @@ module Foundation.List.ListN
     , map
     , elem
     , foldl
+    , foldl'
+    , foldr
     , append
     , minimum
     , maximum
@@ -38,18 +40,24 @@ module Foundation.List.ListN
     , tail
     , take
     , drop
+    , splitAt
     , zip, zip3, zip4, zip5
     , zipWith, zipWith3, zipWith4, zipWith5
     , replicate
+    -- * Applicative And Monadic
     , replicateM
+    , mapM
+    , mapM_
     ) where
 
 import           Data.Proxy
+import qualified Data.List
 import           Basement.Compat.Base
 import           Basement.Nat
+import           Basement.NormalForm
 import           Foundation.Numerical
 import qualified Prelude
-import qualified Control.Monad as M (replicateM)
+import qualified Control.Monad as M (replicateM, mapM, mapM_)
 
 impossible :: a
 impossible = error "ListN: internal error: the impossible happened"
@@ -60,6 +68,9 @@ newtype ListN (n :: Nat) a = ListN { unListN :: [a] }
 instance Show a => Show (ListN n a) where
     show (ListN l) = show l
 
+instance NormalForm a => NormalForm (ListN n a) where
+    toNormalForm (ListN l) = toNormalForm l
+
 toListN :: forall (n :: Nat) a . (KnownNat n, NatWithinBound Int n) => [a] -> Maybe (ListN n a)
 toListN l
     | expected == Prelude.fromIntegral (Prelude.length l) = Just (ListN l)
@@ -69,6 +80,12 @@ toListN l
 
 replicateM :: forall (n :: Nat) m a . (NatWithinBound Int n, Monad m, KnownNat n) => m a -> m (ListN n a)
 replicateM action = ListN <$> M.replicateM (Prelude.fromIntegral $ natVal (Proxy :: Proxy n)) action
+
+mapM :: Monad m => (a -> m b) -> ListN n a -> m (ListN n b)
+mapM f (ListN l) = ListN <$> M.mapM f l
+
+mapM_ :: Monad m => (a -> m b) -> ListN n a -> m ()
+mapM_ f (ListN l) = M.mapM_ f l
 
 replicate :: forall (n :: Nat) a . (NatWithinBound Int n, KnownNat n) => a -> ListN n a
 replicate a = ListN $ Prelude.replicate (Prelude.fromIntegral $ natVal (Proxy :: Proxy n)) a
@@ -129,11 +146,21 @@ drop :: forall a d (m :: Nat) (n :: Nat) . (KnownNat d, NatWithinBound Int d, (n
 drop (ListN l) = ListN (Prelude.drop n l)
   where n = natValInt (Proxy :: Proxy d)
 
+splitAt :: forall a d (m :: Nat) (n :: Nat) . (KnownNat d, NatWithinBound Int d, (n - m) ~ d, m <= n) => ListN n a -> (ListN m a, ListN (n-m) a)
+splitAt (ListN l) = let (l1, l2) = Prelude.splitAt n l in (ListN l1, ListN l2)
+  where n = natValInt (Proxy :: Proxy d)
+
 map :: (a -> b) -> ListN n a -> ListN n b
 map f (ListN l) = ListN (Prelude.map f l)
 
 foldl :: (b -> a -> b) -> b -> ListN n a -> b
 foldl f acc (ListN l) = Prelude.foldl f acc l
+
+foldl' :: (b -> a -> b) -> b -> ListN n a -> b
+foldl' f acc (ListN l) = Data.List.foldl' f acc l
+
+foldr :: (a -> b -> b) -> b -> ListN n a -> b
+foldr f acc (ListN l) = Prelude.foldr f acc l
 
 zip :: ListN n a -> ListN n b -> ListN n (a,b)
 zip (ListN l1) (ListN l2) = ListN (Prelude.zip l1 l2)
