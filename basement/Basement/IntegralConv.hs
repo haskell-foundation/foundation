@@ -105,10 +105,6 @@ instance IntegralUpsize Word16 Word where
     integralUpsize (W16# i) = W# i
 instance IntegralUpsize Word16 Int where
     integralUpsize (W16# w) = I# (word2Int# w)
-instance IntegralUpsize Word16 Integer where
-    integralUpsize = fromIntegral
-instance IntegralUpsize Word16 Natural where
-    integralUpsize = fromIntegral
 
 instance IntegralUpsize Word32 Word64 where
     integralUpsize (W32# i) = wordToWord64 (W# i)
