@@ -57,7 +57,7 @@ import qualified Prelude (fromIntegral)
 -- nat instances
 #if __GLASGOW_HASKELL__ >= 800
 import           Basement.Nat
-import qualified Basement.BlockN as BlockN
+import qualified Basement.Sized.BlockN as BlockN
 import           Basement.Bounded
 #endif
 
