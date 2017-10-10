@@ -12,7 +12,7 @@ import           Data.Proxy (Proxy(..))
 import           Foundation hiding (singleton, replicate, cons, uncons, elem)
 import           Basement.Nat
 import qualified Basement.Block as B
-import           Basement.BlockN
+import           Basement.Sized.Block
 import           Basement.From
 import           Foundation.Check
 

@@ -85,7 +85,7 @@ library
                      Basement.Compat.Typeable
   if impl(ghc >= 8.0)
     exposed-modules: Basement.BlockN
-                   , Basement.Sized.BlockN
+                   , Basement.Sized.Block
                    , Basement.Sized.UVect
                    , Basement.Sized.Vect
   if impl(ghc >= 7.10)

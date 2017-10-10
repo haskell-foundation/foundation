@@ -12,7 +12,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ConstraintKinds            #-}
 
-module Basement.Sized.BlockN
+module Basement.Sized.Block
     ( BlockN
     , MutableBlockN
     , toBlockN

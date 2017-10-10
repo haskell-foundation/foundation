@@ -7,4 +7,4 @@
 
 module Basement.BlockN (module X) where
 
-import Basement.Sized.BlockN as X
+import Basement.Sized.Block as X
