@@ -47,9 +47,6 @@ import           Data.Proxy
 newtype UVect (n :: Nat) a = UVect { unUVect :: A.UArray a } deriving (NormalForm, Eq, Show)
 newtype MUVect (n :: Nat) ty st = MUVect { unMUVect :: A.MUArray ty st }
 
---toSized = undefined
---fromSized = undefined
-
 toUVect :: forall n ty . (PrimType ty, KnownNat n, Countable ty n) => A.UArray ty -> Maybe (UVect n ty)
 toUVect b
     | expected == A.length b = Just (UVect b)
