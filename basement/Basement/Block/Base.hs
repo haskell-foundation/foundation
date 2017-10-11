@@ -22,7 +22,6 @@ module Basement.Block.Base
     , mutableEmpty
     , new
     , newPinned
-    , touch
     , withPtr
     , mutableWithPtr
     ) where
@@ -347,9 +346,6 @@ withPtr (Block ba) f = do
     res <- f addr
     unsafePrimFromIO $ primitive $ \s -> case touch# ba s of { s2 -> (# s2, () #) }
     return res
-
-touch :: PrimMonad prim => Block ty -> prim ()
-touch (Block ba) = unsafePrimFromIO $ primitive $ \s -> case touch# ba s of { s2 -> (# s2, () #) }
 
 -- | Use the 'Ptr' to a mutable block in a safer construct
 --
