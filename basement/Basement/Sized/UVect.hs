@@ -60,6 +60,11 @@ empty = UVect mempty
 singleton :: PrimType ty => ty -> UVect 1 ty
 singleton a = UVect (A.singleton a)
 
+create :: forall ty (n :: Nat) . (PrimType ty, Countable ty n, KnownNat n) => (Offset ty -> ty) -> UVect n ty
+create f = UVect $ A.create sz f
+  where
+    sz = natValCountOf (Proxy :: Proxy n)
+
 replicate :: forall n ty . (KnownNat n, Countable ty n, PrimType ty) => ty -> UVect n ty
 replicate a = UVect (A.replicate (toCount @n) a)
 
@@ -69,11 +74,11 @@ thaw b = MUVect <$> A.thaw (unUVect b)
 freeze ::  (PrimMonad prim, PrimType ty, Countable ty n) => MUVect n ty (PrimState prim) -> prim (UVect n ty)
 freeze b = UVect <$> A.freeze (unMUVect b)
 
-write :: PrimMonad prim => MUVect n ty (PrimState prim) -> Offset ty -> ty -> prim ()
-write = undefined
+write :: (PrimMonad prim, PrimType ty) => MUVect n ty (PrimState prim) -> Offset ty -> ty -> prim ()
+write (MUVect ma) ofs v = A.write ma ofs v
 
-read :: PrimMonad prim => MUVect n ty (PrimState prim) -> Offset ty -> prim ty
-read = undefined
+read :: (PrimMonad prim, PrimType ty) => MUVect n ty (PrimState prim) -> Offset ty -> prim ty
+read (MUVect ma) ofs = A.read ma ofs
 
 index :: forall i n ty . (KnownNat i, CmpNat i n ~ 'LT, PrimType ty, Offsetable ty i) => UVect n ty -> ty
 index b = A.unsafeIndex (unUVect b) (toOffset @i)

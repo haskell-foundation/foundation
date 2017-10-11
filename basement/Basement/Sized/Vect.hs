@@ -62,6 +62,11 @@ empty = Vect A.empty
 singleton :: ty -> Vect 1 ty
 singleton a = Vect (A.singleton a)
 
+create :: forall a (n :: Nat) . (Countable a n, KnownNat n) => (Offset a -> a) -> Vect n a
+create f = Vect $ A.create sz f
+  where
+    sz = natValCountOf (Proxy :: Proxy n)
+
 replicate :: forall n ty . (KnownNat n, Countable ty n) => ty -> Vect n ty
 replicate a = Vect (A.replicate (toCount @n) a)
 
@@ -72,10 +77,10 @@ freeze ::  (PrimMonad prim, Countable ty n) => MVect n ty (PrimState prim) -> pr
 freeze b = Vect <$> A.freeze (unMVect b)
 
 write :: PrimMonad prim => MVect n ty (PrimState prim) -> Offset ty -> ty -> prim ()
-write = undefined
+write (MVect ma) ofs v = A.write ma ofs v
 
 read :: PrimMonad prim => MVect n ty (PrimState prim) -> Offset ty -> prim ty
-read = undefined
+read (MVect ma) ofs = A.read ma ofs
 
 index :: forall i n ty . (KnownNat i, CmpNat i n ~ 'LT, Offsetable ty i) => Vect n ty -> ty
 index b = A.unsafeIndex (unVect b) (toOffset @i)
