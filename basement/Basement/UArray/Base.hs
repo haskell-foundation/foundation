@@ -44,7 +44,6 @@ module Basement.UArray.Base
     , compare
     , copyAt
     , unsafeCopyAtRO
-    , touch
     , toBlock
     -- * temporary
     , pureST
@@ -66,7 +65,6 @@ import           Basement.FinalPtr
 import           Basement.NormalForm
 import           Basement.Block (MutableBlock(..), Block(..))
 import qualified Basement.Block as BLK
-import qualified Basement.Block.Base as BLK (touch)
 import qualified Basement.Block.Mutable as MBLK
 import           Basement.Numerical.Additive
 import           Basement.Bindings.Memory
@@ -591,10 +589,6 @@ concat l  =
         unsafeCopyAtRO r i x (Offset 0) lx
         doCopy r (i `offsetPlusE` lx) xs
       where lx = length x
-
-touch :: PrimMonad prim => UArray ty -> prim ()
-touch (UArray _ _ (UArrayBA blk))    = BLK.touch blk
-touch (UArray _ _ (UArrayAddr fptr)) = touchFinalPtr fptr
 
 -- | Create a Block from a UArray.
 --
