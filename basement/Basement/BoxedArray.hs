@@ -21,6 +21,7 @@ module Basement.BoxedArray
     , unsafeCopyAtRO
     , thaw
     , new
+    , create
     , unsafeFreeze
     , unsafeThaw
     , freeze
