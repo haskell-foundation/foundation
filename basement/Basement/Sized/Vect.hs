@@ -8,8 +8,9 @@
 module Basement.Sized.Vect
     ( Vect
     , MVect
+    , unVect
     , toVect
-    , toVect
+    , empty
     , singleton
     , replicate
     , thaw
