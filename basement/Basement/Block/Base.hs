@@ -23,6 +23,7 @@ module Basement.Block.Base
     , new
     , newPinned
     , touch
+    , withPtr
     , mutableWithPtr
     ) where
 
@@ -334,9 +335,21 @@ unsafeWrite :: (PrimMonad prim, PrimType ty) => MutableBlock ty (PrimState prim)
 unsafeWrite (MutableBlock mba) i v = primMbaWrite mba i v
 {-# INLINE unsafeWrite #-}
 
+-- | Use the 'Ptr' to a block in a safer construct
+--
+-- If the block is not pinned, this is a _dangerous_ operation
+withPtr :: PrimMonad prim
+        => Block ty
+        -> (Ptr ty -> prim a)
+        -> prim a
+withPtr (Block ba) f = do
+    let addr = Ptr (byteArrayContents# ba)
+    res <- f addr
+    unsafePrimFromIO $ primitive $ \s -> case touch# ba s of { s2 -> (# s2, () #) }
+    return res
+
 touch :: PrimMonad prim => Block ty -> prim ()
 touch (Block ba) = unsafePrimFromIO $ primitive $ \s -> case touch# ba s of { s2 -> (# s2, () #) }
-
 
 -- | Use the 'Ptr' to a mutable block in a safer construct
 --
