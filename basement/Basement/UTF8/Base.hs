@@ -148,20 +148,20 @@ sFromList l = runST (new bytes >>= startCopy)
 {-# INLINE [0] sFromList #-}
 
 next :: String -> Offset8 -> Step
-next (String array) !n = Vec.onBackend nextNative nextAddr array
+next (String array) !n = Vec.onBackend nextBA nextAddr array
   where
     !start = Vec.offset array
     reoffset (Step a ofs) = Step a (ofs `offsetSub` start)
-    nextNative ba        = reoffset (PrimBA.next ba (start + n))
-    nextAddr _ (Ptr ptr) = pureST $ reoffset (PrimAddr.next ptr (start + n))
+    nextBA (BLK.Block ba) = reoffset (PrimBA.next ba (start + n))
+    nextAddr _ (Ptr ptr)  = pureST $ reoffset (PrimAddr.next ptr (start + n))
 
 prev :: String -> Offset8 -> StepBack
-prev (String array) !n = Vec.onBackend prevNative prevAddr array
+prev (String array) !n = Vec.onBackend prevBA prevAddr array
   where
     !start = Vec.offset array
     reoffset (StepBack a ofs) = StepBack a (ofs `offsetSub` start)
-    prevNative ba        = reoffset (PrimBA.prev ba (start + n))
-    prevAddr _ (Ptr ptr) = pureST $ reoffset (PrimAddr.prev ptr (start + n))
+    prevBA (BLK.Block ba) = reoffset (PrimBA.prev ba (start + n))
+    prevAddr _ (Ptr ptr)  = pureST $ reoffset (PrimAddr.prev ptr (start + n))
 
 -- A variant of 'next' when you want the next character
 -- to be ASCII only.

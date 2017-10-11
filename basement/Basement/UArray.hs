@@ -374,7 +374,7 @@ breakElem !ty arr@(UArray start len backend)
   where
     !end = start `offsetPlusE` len
     !k = onBackend goBa (\fptr -> pure . goAddr fptr) arr
-    goBa ba = PrimBA.findIndexElem ty ba start end
+    goBa (Block ba) = PrimBA.findIndexElem ty ba start end
     goAddr _ (Ptr addr) = PrimAddr.findIndexElem ty addr start end
 {-# NOINLINE [3] breakElem #-}
 {-# RULES "breakElem Word8" [3] breakElem = breakElemByte #-}
@@ -389,7 +389,7 @@ breakElemByte !ty arr@(UArray start len backend)
   where
     !end = start `offsetPlusE` len
     !k = onBackend goBa (\fptr -> pure . goAddr fptr) arr
-    goBa ba = sysHsMemFindByteBa ba start end ty
+    goBa (Block ba) = sysHsMemFindByteBa ba start end ty
     goAddr _ (Ptr addr) = sysHsMemFindByteAddr addr start end ty
 
 -- | Similar to breakElem specialized to split on linefeed
@@ -412,7 +412,7 @@ breakLine arr@(UArray start len backend)
     !(k1, k2) = onBackend goBa (\fptr -> pure . goAddr fptr) arr
     lineFeed = 0xa
     carriageReturn = 0xd
-    goBa ba =
+    goBa (Block ba) =
         let k = sysHsMemFindByteBa ba start end lineFeed
             cr = k > start && PrimBA.primIndex ba (k `offsetSub` 1) == carriageReturn
          in (if cr then k `offsetSub` 1 else k, k)
@@ -476,7 +476,7 @@ findIndex ty arr
     !k = onBackend goBa (\_ -> pure . goAddr) arr
     !start = offset arr
     !end = start `offsetPlusE` length arr
-    goBa ba = PrimBA.findIndexElem ty ba start end
+    goBa (Block ba) = PrimBA.findIndexElem ty ba start end
     goAddr (Ptr addr) = PrimAddr.findIndexElem ty addr start end
 {-# SPECIALIZE [3] findIndex :: Word8 -> UArray Word8 -> Maybe (Offset Word8) #-}
 
@@ -488,7 +488,7 @@ revFindIndex ty arr
     !k = onBackend goBa (\_ -> pure . goAddr) arr
     !start = offset arr
     !end = start `offsetPlusE` length arr
-    goBa ba = PrimBA.revFindIndexElem ty ba start end
+    goBa (Block ba) = PrimBA.revFindIndexElem ty ba start end
     goAddr (Ptr addr) = PrimAddr.revFindIndexElem ty addr start end
 {-# SPECIALIZE [3] revFindIndex :: Word8 -> UArray Word8 -> Maybe (Offset Word8) #-}
 
@@ -500,7 +500,7 @@ break predicate arr
     !k = onBackend goBa (\_ -> pure . goAddr) arr
     !start = offset arr
     !end = start `offsetPlusE` length arr
-    goBa ba = PrimBA.findIndexPredicate predicate ba start end
+    goBa (Block ba) = PrimBA.findIndexPredicate predicate ba start end
     goAddr (Ptr addr) = PrimAddr.findIndexPredicate predicate addr start end
 
 {-
@@ -540,7 +540,7 @@ breakEnd predicate arr
     !k = onBackend goBa (\_ -> pure . goAddr) arr
     !start = offset arr
     !end   = start `offsetPlusE` length arr
-    goBa ba = PrimBA.revFindIndexPredicate predicate ba start end
+    goBa (Block ba) = PrimBA.revFindIndexPredicate predicate ba start end
     goAddr (Ptr addr) = PrimAddr.revFindIndexPredicate predicate addr start end
 {-# SPECIALIZE [3] breakEnd :: (Word8 -> Bool) -> UArray Word8 -> (UArray Word8, UArray Word8) #-}
 
@@ -549,7 +549,7 @@ elem !ty arr = onBackend goBa (\_ -> pure . goAddr) arr /= end
   where
     !start = offset arr
     !end = start `offsetPlusE` length arr
-    goBa ba = PrimBA.findIndexElem ty ba start end
+    goBa (Block ba) = PrimBA.findIndexElem ty ba start end
     goAddr (Ptr addr) = PrimAddr.findIndexElem ty addr start end
 {-# SPECIALIZE [2] elem :: Word8 -> UArray Word8 -> Bool #-}
 
@@ -765,22 +765,22 @@ foldr f initialAcc vec = loop 0
         | otherwise  = unsafeIndex vec i `f` loop (i+1)
 
 foldl' :: PrimType ty => (a -> ty -> a) -> a -> UArray ty -> a
-foldl' f initialAcc arr = onBackend goNative (\_ -> pure . goAddr) arr
+foldl' f initialAcc arr = onBackend goBA (\_ -> pure . goAddr) arr
   where
     !len = length arr
     !start = offset arr
     !end = start `offsetPlusE` len
-    goNative ba = PrimBA.foldl f initialAcc ba start end
+    goBA (Block ba) = PrimBA.foldl f initialAcc ba start end
     goAddr (Ptr ptr) = PrimAddr.foldl f initialAcc ptr start end
 {-# SPECIALIZE [3] foldl' :: (a -> Word8 -> a) -> a -> UArray Word8 -> a #-}
 
 foldl1' :: PrimType ty => (ty -> ty -> ty) -> NonEmpty (UArray ty) -> ty
-foldl1' f (NonEmpty arr) = onBackend goNative (\_ -> pure . goAddr) arr
+foldl1' f (NonEmpty arr) = onBackend goBA (\_ -> pure . goAddr) arr
   where
     !len = length arr
     !start = offset arr
     !end = start `offsetPlusE` len
-    goNative ba = PrimBA.foldl1 f ba start end
+    goBA (Block ba) = PrimBA.foldl1 f ba start end
     goAddr (Ptr ptr) = PrimAddr.foldl1 f ptr start end
 {-# SPECIALIZE [3] foldl1' :: (Word8 -> Word8 -> Word8) -> NonEmpty (UArray Word8) -> Word8 #-}
 
@@ -789,7 +789,7 @@ foldr1 f arr = let (initialAcc, rest) = revSplitAt 1 $ getNonEmpty arr
                in foldr f (unsafeIndex initialAcc 0) rest
 
 all :: PrimType ty => (ty -> Bool) -> UArray ty -> Bool
-all predicate arr = onBackend (\ba -> PrimBA.all predicate ba start end)
+all predicate arr = onBackend (\(Block ba) -> PrimBA.all predicate ba start end)
                               (\_ (Ptr ptr) -> pure (PrimAddr.all predicate ptr start end))
                               arr
   where
@@ -798,7 +798,7 @@ all predicate arr = onBackend (\ba -> PrimBA.all predicate ba start end)
 {-# SPECIALIZE [3] all :: (Word8 -> Bool) -> UArray Word8 -> Bool #-}
 
 any :: PrimType ty => (ty -> Bool) -> UArray ty -> Bool
-any predicate arr = onBackend (\ba -> PrimBA.any predicate ba start end)
+any predicate arr = onBackend (\(Block ba) -> PrimBA.any predicate ba start end)
                               (\_ (Ptr ptr) -> pure (PrimAddr.any predicate ptr start end))
                               arr
   where

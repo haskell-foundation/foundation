@@ -257,12 +257,12 @@ copy :: PrimType ty => UArray ty -> UArray ty
 copy array = runST (thaw array >>= unsafeFreeze)
 
 
-onBackend :: (ByteArray# -> a)
+onBackend :: (Block ty -> a)
           -> (FinalPtr ty -> Ptr ty -> ST s a)
           -> UArray ty
           -> a
-onBackend onBa _      (UArray _ _ (UArrayBA (Block ba))) = onBa ba
-onBackend _    onAddr (UArray _ _ (UArrayAddr fptr))     = withUnsafeFinalPtr fptr (onAddr fptr)
+onBackend onBa _      (UArray _ _ (UArrayBA ba))     = onBa ba
+onBackend _    onAddr (UArray _ _ (UArrayAddr fptr)) = withUnsafeFinalPtr fptr (onAddr fptr)
 {-# INLINE onBackend #-}
 
 onBackendPrim :: PrimMonad prim
