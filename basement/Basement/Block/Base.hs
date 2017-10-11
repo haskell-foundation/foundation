@@ -23,7 +23,7 @@ module Basement.Block.Base
     , new
     , newPinned
     , touch
-    , mutableTouch
+    , mutableWithPtr
     ) where
 
 import           GHC.Prim
@@ -340,3 +340,25 @@ touch (Block ba) = unsafePrimFromIO $ primitive $ \s -> case touch# ba s of { s2
 mutableTouch :: PrimMonad prim => MutableBlock ty (PrimState prim) -> prim ()
 mutableTouch (MutableBlock mba) = unsafePrimFromIO $ primitive $ \s -> case touch# mba s of { s2 -> (# s2, () #) }
 
+-- | Get the address of the context of the mutable block.
+--
+-- if the block is not pinned, this is a _dangerous_ operation
+--
+-- Note that if nothing is holding the block, the GC can garbage collect the block
+-- and thus the address is dangling on the memory. use 'mutableWithPtr' to prevent
+-- this problem by construction
+mutableGetAddr :: PrimMonad prim => MutableBlock ty (PrimState prim) -> prim (Ptr ty)
+mutableGetAddr (MutableBlock mba) = primitive $ \s1 ->
+    case unsafeFreezeByteArray# mba s1 of
+        (# s2, ba #) -> (# s2, Ptr (byteArrayContents# ba) #)
+
+-- | Get the address of the mutable block in a safer construct
+--
+-- if the block is not pinned, this is a _dangerous_ operation
+mutableWithPtr :: PrimMonad prim
+                => MutableBlock ty (PrimState prim)
+                -> (Ptr ty -> prim a)
+                -> prim a
+mutableWithPtr mb f = do
+    addr <- mutableGetAddr mb
+    f addr <* mutableTouch mb
