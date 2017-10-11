@@ -250,7 +250,7 @@ copyAt :: PrimMonad prim
        -> Offset ty                  -- ^ offset at destination
        -> MArray ty (PrimState prim) -- ^ source array
        -> Offset ty                  -- ^ offset at source
-       -> CountOf ty                    -- ^ number of elements to copy
+       -> CountOf ty                 -- ^ number of elements to copy
        -> prim ()
 copyAt dst od src os n = loop od os
   where -- !endIndex = os `offsetPlusE` n
