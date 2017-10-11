@@ -639,8 +639,8 @@ sortBy ford vec = runST $ do
     !end = 0 `offsetPlusE` len
     !start = offset vec
 
-    goNative :: MutableByteArray# (PrimState (ST s)) -> ST s ()
-    goNative mba = PrimBA.inplaceSortBy ford mba start end
+    goNative :: MutableBlock ty (PrimState (ST s)) -> ST s ()
+    goNative (MutableBlock mba) = PrimBA.inplaceSortBy ford mba start end
     goAddr :: Ptr ty -> ST s ()
     goAddr (Ptr addr) = PrimAddr.inplaceSortBy ford addr start end
 {-# SPECIALIZE [3] sortBy :: (Word8 -> Word8 -> Ordering) -> UArray Word8 -> UArray Word8 #-}

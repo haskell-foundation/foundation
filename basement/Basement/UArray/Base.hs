@@ -275,11 +275,11 @@ onBackendPrim _    onAddr (UArray _ _ (UArrayAddr fptr)) = onAddr fptr
 {-# INLINE onBackendPrim #-}
 
 onMutableBackend :: PrimMonad prim
-                 => (MutableByteArray# (PrimState prim) -> prim a)
+                 => (MutableBlock ty (PrimState prim) -> prim a)
                  -> (FinalPtr ty -> prim a)
                  -> MUArray ty (PrimState prim)
                  -> prim a
-onMutableBackend onMba _      (MUArray _ _ (MUArrayMBA (MutableBlock mba)))   = onMba mba
+onMutableBackend onMba _      (MUArray _ _ (MUArrayMBA mba))   = onMba mba
 onMutableBackend _     onAddr (MUArray _ _ (MUArrayAddr fptr)) = onAddr fptr
 {-# INLINE onMutableBackend #-}
 

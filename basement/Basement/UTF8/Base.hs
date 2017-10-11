@@ -176,7 +176,7 @@ expectAscii (String ba) n v = Vec.unsafeIndex ba n == v
 
 write :: PrimMonad prim => MutableString (PrimState prim) -> Offset8 -> Char -> prim Offset8
 write (MutableString marray) ofs c =
-    MVec.onMutableBackend (\mba -> PrimBA.write mba (start + ofs) c)
+    MVec.onMutableBackend (\(BLK.MutableBlock mba) -> PrimBA.write mba (start + ofs) c)
                           (\fptr -> withFinalPtr fptr $ \(Ptr ptr) -> PrimAddr.write ptr (start + ofs) c)
                           marray
   where start = MVec.mutableOffset marray

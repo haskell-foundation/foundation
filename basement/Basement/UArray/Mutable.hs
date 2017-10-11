@@ -168,7 +168,7 @@ copyFromPtr src@(Ptr src#) count marr
     !(CountOf bytes@(I# bytes#)) = sizeOfE sz count
     !(Offset od@(I# od#)) = offsetOfE sz ofs
 
-    copyNative mba = primitive $ \st -> (# copyAddrToByteArray# src# mba od# bytes# st, () #)
+    copyNative (MutableBlock mba) = primitive $ \st -> (# copyAddrToByteArray# src# mba od# bytes# st, () #)
     copyPtr fptr = withFinalPtr fptr $ \dst ->
         unsafePrimFromIO $ copyBytes (dst `plusPtr` od) src bytes
 
@@ -179,7 +179,7 @@ copyToPtr :: forall ty prim . (PrimType ty, PrimMonad prim)
           -> prim ()
 copyToPtr marr dst@(Ptr dst#) = onMutableBackend copyNative copyPtr marr
   where
-    copyNative mba = primitive $ \s1 ->
+    copyNative (MutableBlock mba) = primitive $ \s1 ->
         case unsafeFreezeByteArray# mba s1 of
             (# s2, ba #) -> (# compatCopyByteArrayToAddr# ba os# dst# szBytes# s2, () #)
     copyPtr fptr = unsafePrimFromIO $ withFinalPtr fptr $ \ptr ->
