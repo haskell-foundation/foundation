@@ -40,7 +40,6 @@ module Basement.Block.Mutable
     , mutableLengthSize
     , mutableLengthBytes
     , mutableWithPtr
-    , mutableTouch
     , new
     , newPinned
     , mutableEmpty
