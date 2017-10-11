@@ -284,7 +284,7 @@ copyToPtr arr dst@(Ptr dst#) = onBackendPrim copyBa copyPtr arr
   where
     !(Offset os@(I# os#)) = offsetInBytes $ offset arr
     !(CountOf szBytes@(I# szBytes#)) = sizeInBytes $ length arr
-    copyBa ba = primitive $ \s1 -> (# compatCopyByteArrayToAddr# ba os# dst# szBytes# s1, () #)
+    copyBa (Block ba) = primitive $ \s1 -> (# compatCopyByteArrayToAddr# ba os# dst# szBytes# s1, () #)
     copyPtr fptr = unsafePrimFromIO $ withFinalPtr fptr $ \ptr -> copyBytes dst (ptr `plusPtr` os) szBytes
 
 withPtr :: forall ty prim a . (PrimMonad prim, PrimType ty)
@@ -293,7 +293,7 @@ withPtr :: forall ty prim a . (PrimMonad prim, PrimType ty)
         -> prim a
 withPtr a f
     | isPinned a == Pinned =
-        onBackendPrim (\ba -> f (Ptr (byteArrayContents# ba) `plusPtr` os) <* BLK.touch (Block ba))
+        onBackendPrim (\(Block ba) -> f (Ptr (byteArrayContents# ba) `plusPtr` os) <* BLK.touch (Block ba))
                       (\fptr -> withFinalPtr fptr $ \ptr -> f (ptr `plusPtr` os))
                       a
     | otherwise = do
@@ -648,7 +648,7 @@ sortBy ford vec = runST $ do
 filter :: forall ty . PrimType ty => (ty -> Bool) -> UArray ty -> UArray ty
 filter predicate arr = runST $ do
     (newLen, ma) <- newNative (length arr) $ \(MutableBlock mba) ->
-            onBackendPrim (\ba -> PrimBA.filter predicate mba ba start end)
+            onBackendPrim (\(Block ba) -> PrimBA.filter predicate mba ba start end)
                           (\fptr -> withFinalPtr fptr $ \(Ptr addr) ->
                                         PrimAddr.filter predicate mba addr start end)
                           arr
@@ -672,8 +672,8 @@ reverse a
     !start = offset a
     !endI = sizeAsOffset ((start + end) - Offset 1)
 
-    goNative :: MutableBlock ty s -> ByteArray# -> ST s ()
-    goNative !ma !ba = loop 0
+    goNative :: MutableBlock ty s -> Block ty -> ST s ()
+    goNative !ma (Block !ba) = loop 0
       where
         loop !i
             | i == end  = pure ()

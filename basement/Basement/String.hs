@@ -785,7 +785,7 @@ sortBy sortF s = fromList $ Data.List.sortBy sortF $ toList s -- FIXME for tests
 filter :: (Char -> Bool) -> String -> String
 filter predicate (String arr) = runST $ do
     (finalSize, dst) <- newNative sz $ \(MutableBlock mba) ->
-        C.onBackendPrim (\ba -> BackendBA.copyFilter predicate sz mba ba start)
+        C.onBackendPrim (\(Block ba) -> BackendBA.copyFilter predicate sz mba ba start)
                         (\fptr -> withFinalPtr fptr $ \(Ptr addr) -> BackendAddr.copyFilter predicate sz mba addr start)
                         arr
     freezeShrink finalSize dst
