@@ -39,7 +39,6 @@ module Basement.Block.Mutable
     , MutableBlock(..)
     , mutableLengthSize
     , mutableLengthBytes
-    , mutableGetAddr
     , mutableWithAddr
     , mutableTouch
     , new
