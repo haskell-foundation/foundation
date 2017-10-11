@@ -53,7 +53,7 @@ initPrecise = unsafePerformIO $ integralDownsize <$> queryPerformanceFrequency
 initPrecise :: (Word64, Word64)
 initPrecise = unsafePerformIO $ do
     mti <- newPinned (sizeOfCSize size_MachTimebaseInfo)
-    mutableWithAddr mti $ \p -> do
+    mutableWithPtr mti $ \p -> do
         sysMacos_timebase_info (castPtr p)
         let p32 = castPtr p :: Ptr Word32
         !n <- peek (p32 `ptrPlus` ofs_MachTimebaseInfo_numer)
@@ -69,14 +69,14 @@ startPrecise :: IO StopWatchPrecise
 startPrecise = do
 #if defined(mingw32_HOST_OS)
     blk <- newPinned 16
-    _ <- mutableWithAddr blk $ \p ->
+    _ <- mutableWithPtr blk $ \p ->
         c_QueryPerformanceCounter (castPtr p `ptrPlus` 8)
     pure (StopWatchPrecise blk)
 #elif defined(darwin_HOST_OS)
     StopWatchPrecise <$> sysMacos_absolute_time
 #else
     blk <- newPinned (sizeOfCSize (size_CTimeSpec + size_CTimeSpec))
-    _err1 <- mutableWithAddr blk $ \p -> do
+    _err1 <- mutableWithPtr blk $ \p -> do
         sysTimeClockGetTime sysTime_CLOCK_MONOTONIC (castPtr p `ptrPlusCSz` size_CTimeSpec)
     pure (StopWatchPrecise blk)
 #endif
@@ -85,7 +85,7 @@ startPrecise = do
 stopPrecise :: StopWatchPrecise -> IO NanoSeconds
 stopPrecise (StopWatchPrecise blk) = do
 #if defined(mingw32_HOST_OS)
-    mutableWithAddr blk $ \p -> do
+    mutableWithPtr blk $ \p -> do
         _ <- c_QueryPerformanceCounter (castPtr p)
         let p64 = castPtr p :: Ptr Word64
         end   <- peek p64
@@ -97,7 +97,7 @@ stopPrecise (StopWatchPrecise blk) = do
         (1,1)         -> end - blk
         (numer,denom) -> ((end - blk) * numer) `div` denom
 #else
-    mutableWithAddr blk $ \p -> do
+    mutableWithPtr blk $ \p -> do
         _err1 <- sysTimeClockGetTime sysTime_CLOCK_MONOTONIC (castPtr p)
         let p64 = castPtr p :: Ptr Word64
         endSec    <- peek p64

@@ -125,7 +125,7 @@ withMutablePtrHint _ _ (MUArray start _ (MUArrayAddr fptr))  f =
     sz           = primSizeInBytes (Proxy :: Proxy ty)
     !(Offset os) = offsetOfE sz start
 withMutablePtrHint skipCopy skipCopyBack vec@(MUArray start vecSz (MUArrayMBA mb)) f
-    | BLK.isMutablePinned mb == Pinned = MBLK.mutableWithAddr mb (\ptr -> f (ptr `plusPtr` os))
+    | BLK.isMutablePinned mb == Pinned = MBLK.mutableWithPtr mb (\ptr -> f (ptr `plusPtr` os))
     | otherwise                        = do
         trampoline <- newPinned vecSz
         if not skipCopy

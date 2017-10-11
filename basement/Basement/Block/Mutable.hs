@@ -39,7 +39,7 @@ module Basement.Block.Mutable
     , MutableBlock(..)
     , mutableLengthSize
     , mutableLengthBytes
-    , mutableWithAddr
+    , mutableWithPtr
     , mutableTouch
     , new
     , newPinned
@@ -88,7 +88,7 @@ mutableLengthBytes (MutableBlock mba) = CountOf (I# (sizeofMutableByteArray# mba
 -- if the block is not pinned, this is a _dangerous_ operation
 --
 -- Note that if nothing is holding the block, the GC can garbage collect the block
--- and thus the address is dangling on the memory. use 'mutableWithAddr' to prevent
+-- and thus the address is dangling on the memory. use 'mutableWithPtr' to prevent
 -- this problem by construction
 mutableGetAddr :: PrimMonad prim => MutableBlock ty (PrimState prim) -> prim (Ptr ty)
 mutableGetAddr (MutableBlock mba) = primitive $ \s1 ->
@@ -98,11 +98,11 @@ mutableGetAddr (MutableBlock mba) = primitive $ \s1 ->
 -- | Get the address of the mutable block in a safer construct
 --
 -- if the block is not pinned, this is a _dangerous_ operation
-mutableWithAddr :: PrimMonad prim
+mutableWithPtr :: PrimMonad prim
                 => MutableBlock ty (PrimState prim)
                 -> (Ptr ty -> prim a)
                 -> prim a
-mutableWithAddr mb f = do
+mutableWithPtr mb f = do
     addr <- mutableGetAddr mb
     f addr <* mutableTouch mb
 
