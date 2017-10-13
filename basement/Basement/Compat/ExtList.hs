@@ -8,14 +8,15 @@ module Basement.Compat.ExtList
 
 import Basement.Compat.Base
 import Basement.Numerical.Additive
+import Basement.Types.OffsetSize
 import qualified GHC.List as List
 
 -- | Compute the size of the list
-length :: [a] -> Int
+length :: [a] -> CountOf a
 #if MIN_VERSION_base(4,8,0)
-length = List.foldl' (\c _ -> c+1) 0
+length = CountOf . List.foldl' (\c _ -> c+1) 0
 #else
-length = loop 0
+length = CountOf . loop 0
   where loop !acc []     = acc
         loop !acc (_:xs) = loop (1+acc) xs
 #endif

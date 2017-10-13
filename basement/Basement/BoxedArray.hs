@@ -356,7 +356,7 @@ length (Array _ sz _) = sz
 vFromList :: [a] -> Array a
 vFromList l = runST (new len >>= loop 0 l)
   where
-    len = CountOf $ List.length l
+    len = List.length l
     loop _ []     ma = unsafeFreeze ma
     loop i (x:xs) ma = unsafeWrite ma i x >> loop (i+1) xs ma
 
