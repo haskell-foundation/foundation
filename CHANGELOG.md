@@ -1,3 +1,13 @@
+## 0.0.16
+
+* Re-organize type sized structure and add UVect and Vect
+* Cleanup constraint in ListN, and add couple of combinators
+* Add ExceptT
+* Add some exception combinators (try,finally) that works with foundation classes.
+* Tidy mutable algorithm for sorting removing redundant code
+* Add primitive to convert Double/Float to Word64/Word32
+* Cleanup withPtr / getAddr code to be safer
+
 ## 0.0.15
 
 * Add Bits instance for Natural compat with 7.8
