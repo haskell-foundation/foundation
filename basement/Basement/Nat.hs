@@ -7,9 +7,7 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
 {-# LANGUAGE UndecidableInstances      #-}
-#if __GLASGOW_HASKELL__ < 800
 {-# LANGUAGE ConstraintKinds           #-}
-#endif
 module Basement.Nat
     ( Nat
     , KnownNat
@@ -35,6 +33,8 @@ module Basement.Nat
     -- * Constraint
     , NatInBoundOf
     , NatWithinBound
+    , Countable
+    , Offsetable
     ) where
 
 #include "MachDeps.h"
@@ -134,3 +134,6 @@ type family NatWithinBound ty (n :: Nat) where
 #else
 type NatWithinBound ty n = NatInBoundOf ty n ~ 'True
 #endif
+
+type Countable ty n = NatWithinBound (CountOf ty) n
+type Offsetable ty n = NatWithinBound (Offset ty) n
