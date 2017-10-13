@@ -22,6 +22,7 @@ module Basement.Sized.Block
     , thaw
     , freeze
     , index
+    , indexStatic
     , map
     , foldl'
     , foldr
@@ -76,8 +77,11 @@ thaw b = MutableBlockN <$> B.thaw (unBlock b)
 freeze ::  (PrimMonad prim, PrimType ty, Countable ty n) => MutableBlockN n ty (PrimState prim) -> prim (BlockN n ty)
 freeze b = BlockN <$> B.freeze (unMBlock b)
 
-index :: forall i n ty . (KnownNat i, CmpNat i n ~ 'LT, PrimType ty, Offsetable ty i) => BlockN n ty -> ty
-index b = unsafeIndex (unBlock b) (toOffset @i)
+indexStatic :: forall i n ty . (KnownNat i, CmpNat i n ~ 'LT, PrimType ty, Offsetable ty i) => BlockN n ty -> ty
+indexStatic b = unsafeIndex (unBlock b) (toOffset @i)
+
+index :: forall i n ty . PrimType ty => BlockN n ty -> Offset ty -> ty
+index b ofs = B.index (unBlock b) ofs
 
 map :: (PrimType a, PrimType b) => (a -> b) -> BlockN n a -> BlockN n b
 map f b = BlockN (B.map f (unBlock b))
@@ -110,7 +114,7 @@ sub block = BlockN (B.sub (unBlock block) (toOffset @i) (toOffset @j))
 uncons :: forall n ty . (CmpNat 0 n ~ 'LT, PrimType ty, KnownNat n, Offsetable ty n)
        => BlockN n ty
        -> (ty, BlockN (n-1) ty)
-uncons b = (index @0 b, BlockN (B.sub (unBlock b) 1 (toOffset @n)))
+uncons b = (indexStatic @0 b, BlockN (B.sub (unBlock b) 1 (toOffset @n)))
 
 unsnoc :: forall n ty . (CmpNat 0 n ~ 'LT, KnownNat n, PrimType ty, Offsetable ty n)
        => BlockN n ty

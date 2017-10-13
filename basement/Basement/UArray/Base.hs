@@ -313,7 +313,7 @@ pureST = pure
 -- | make an array from a list of elements.
 vFromList :: forall ty . PrimType ty => [ty] -> UArray ty
 vFromList l = runST $ do
-    ((), ma) <- newNative (CountOf len) copyList
+    ((), ma) <- newNative len copyList
     unsafeFreeze ma
   where
     len = List.length l

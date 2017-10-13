@@ -725,7 +725,7 @@ replace (needle :: UArray ty) replacement haystack = runST $ do
       True -> error "Basement.UArray.replace: empty needle"
       False -> do
         let insertionPoints = indices needle haystack
-        let !occs           = List.length insertionPoints
+        let !(CountOf occs) = List.length insertionPoints
         let !newLen         = haystackLen `sizeSub` (multBy needleLen occs) + (multBy replacementLen occs)
         ms <- new newLen
         loop ms (Offset 0) (Offset 0) insertionPoints

@@ -80,8 +80,11 @@ write (MUVect ma) ofs v = A.write ma ofs v
 read :: (PrimMonad prim, PrimType ty) => MUVect n ty (PrimState prim) -> Offset ty -> prim ty
 read (MUVect ma) ofs = A.read ma ofs
 
-index :: forall i n ty . (KnownNat i, CmpNat i n ~ 'LT, PrimType ty, Offsetable ty i) => UVect n ty -> ty
-index b = A.unsafeIndex (unUVect b) (toOffset @i)
+indexStatic :: forall i n ty . (KnownNat i, CmpNat i n ~ 'LT, PrimType ty, Offsetable ty i) => UVect n ty -> ty
+indexStatic b = A.unsafeIndex (unUVect b) (toOffset @i)
+
+index :: forall i n ty . PrimType ty => UVect n ty -> Offset ty -> ty
+index b ofs = A.index (unUVect b) ofs
 
 map :: (PrimType a, PrimType b) => (a -> b) -> UVect n a -> UVect n b
 map f b = UVect (A.map f (unUVect b))
@@ -114,7 +117,7 @@ sub block = UVect (A.sub (unUVect block) (toOffset @i) (toOffset @j))
 uncons :: forall n ty . (CmpNat 0 n ~ 'LT, PrimType ty, KnownNat n, Offsetable ty n)
        => UVect n ty
        -> (ty, UVect (n-1) ty)
-uncons b = (index @0 b, UVect (A.sub (unUVect b) 1 (toOffset @n)))
+uncons b = (indexStatic @0 b, UVect (A.sub (unUVect b) 1 (toOffset @n)))
 
 unsnoc :: forall n ty . (CmpNat 0 n ~ 'LT, KnownNat n, PrimType ty, Offsetable ty n)
        => UVect n ty
