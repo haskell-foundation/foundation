@@ -39,9 +39,7 @@ module Basement.Block.Mutable
     , MutableBlock(..)
     , mutableLengthSize
     , mutableLengthBytes
-    , mutableGetAddr
-    , mutableWithAddr
-    , mutableTouch
+    , mutableWithPtr
     , new
     , newPinned
     , mutableEmpty
@@ -83,29 +81,6 @@ mutableLengthSize (MutableBlock mba) =
 mutableLengthBytes :: MutableBlock ty st -> CountOf Word8
 mutableLengthBytes (MutableBlock mba) = CountOf (I# (sizeofMutableByteArray# mba))
 {-# INLINE[1] mutableLengthBytes #-}
-
--- | Get the address of the context of the mutable block.
---
--- if the block is not pinned, this is a _dangerous_ operation
---
--- Note that if nothing is holding the block, the GC can garbage collect the block
--- and thus the address is dangling on the memory. use 'mutableWithAddr' to prevent
--- this problem by construction
-mutableGetAddr :: PrimMonad prim => MutableBlock ty (PrimState prim) -> prim (Ptr ty)
-mutableGetAddr (MutableBlock mba) = primitive $ \s1 ->
-    case unsafeFreezeByteArray# mba s1 of
-        (# s2, ba #) -> (# s2, Ptr (byteArrayContents# ba) #)
-
--- | Get the address of the mutable block in a safer construct
---
--- if the block is not pinned, this is a _dangerous_ operation
-mutableWithAddr :: PrimMonad prim
-                => MutableBlock ty (PrimState prim)
-                -> (Ptr ty -> prim a)
-                -> prim a
-mutableWithAddr mb f = do
-    addr <- mutableGetAddr mb
-    f addr <* mutableTouch mb
 
 -- | Set all mutable block element to a value
 iterSet :: (PrimType ty, PrimMonad prim)

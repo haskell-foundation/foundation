@@ -44,7 +44,6 @@ module Basement.UArray.Base
     , compare
     , copyAt
     , unsafeCopyAtRO
-    , touch
     , toBlock
     -- * temporary
     , pureST
@@ -66,7 +65,6 @@ import           Basement.FinalPtr
 import           Basement.NormalForm
 import           Basement.Block (MutableBlock(..), Block(..))
 import qualified Basement.Block as BLK
-import qualified Basement.Block.Base as BLK (touch)
 import qualified Basement.Block.Mutable as MBLK
 import           Basement.Numerical.Additive
 import           Basement.Bindings.Memory
@@ -259,29 +257,29 @@ copy :: PrimType ty => UArray ty -> UArray ty
 copy array = runST (thaw array >>= unsafeFreeze)
 
 
-onBackend :: (ByteArray# -> a)
+onBackend :: (Block ty -> a)
           -> (FinalPtr ty -> Ptr ty -> ST s a)
           -> UArray ty
           -> a
-onBackend onBa _      (UArray _ _ (UArrayBA (Block ba))) = onBa ba
-onBackend _    onAddr (UArray _ _ (UArrayAddr fptr))     = withUnsafeFinalPtr fptr (onAddr fptr)
+onBackend onBa _      (UArray _ _ (UArrayBA ba))     = onBa ba
+onBackend _    onAddr (UArray _ _ (UArrayAddr fptr)) = withUnsafeFinalPtr fptr (onAddr fptr)
 {-# INLINE onBackend #-}
 
 onBackendPrim :: PrimMonad prim
-              => (ByteArray# -> prim a)
+              => (Block ty -> prim a)
               -> (FinalPtr ty -> prim a)
               -> UArray ty
               -> prim a
-onBackendPrim onBa _      (UArray _ _ (UArrayBA (Block ba))) = onBa ba
-onBackendPrim _    onAddr (UArray _ _ (UArrayAddr fptr))     = onAddr fptr
+onBackendPrim onBa _      (UArray _ _ (UArrayBA ba))     = onBa ba
+onBackendPrim _    onAddr (UArray _ _ (UArrayAddr fptr)) = onAddr fptr
 {-# INLINE onBackendPrim #-}
 
 onMutableBackend :: PrimMonad prim
-                 => (MutableByteArray# (PrimState prim) -> prim a)
+                 => (MutableBlock ty (PrimState prim) -> prim a)
                  -> (FinalPtr ty -> prim a)
                  -> MUArray ty (PrimState prim)
                  -> prim a
-onMutableBackend onMba _      (MUArray _ _ (MUArrayMBA (MutableBlock mba)))   = onMba mba
+onMutableBackend onMba _      (MUArray _ _ (MUArrayMBA mba))   = onMba mba
 onMutableBackend _     onAddr (MUArray _ _ (MUArrayAddr fptr)) = onAddr fptr
 {-# INLINE onMutableBackend #-}
 
@@ -591,10 +589,6 @@ concat l  =
         unsafeCopyAtRO r i x (Offset 0) lx
         doCopy r (i `offsetPlusE` lx) xs
       where lx = length x
-
-touch :: PrimMonad prim => UArray ty -> prim ()
-touch (UArray _ _ (UArrayBA blk))    = BLK.touch blk
-touch (UArray _ _ (UArrayAddr fptr)) = touchFinalPtr fptr
 
 -- | Create a Block from a UArray.
 --

@@ -125,7 +125,7 @@ withMutablePtrHint _ _ (MUArray start _ (MUArrayAddr fptr))  f =
     sz           = primSizeInBytes (Proxy :: Proxy ty)
     !(Offset os) = offsetOfE sz start
 withMutablePtrHint skipCopy skipCopyBack vec@(MUArray start vecSz (MUArrayMBA mb)) f
-    | BLK.isMutablePinned mb == Pinned = MBLK.mutableWithAddr mb (\ptr -> f (ptr `plusPtr` os))
+    | BLK.isMutablePinned mb == Pinned = MBLK.mutableWithPtr mb (\ptr -> f (ptr `plusPtr` os))
     | otherwise                        = do
         trampoline <- newPinned vecSz
         if not skipCopy
@@ -168,7 +168,7 @@ copyFromPtr src@(Ptr src#) count marr
     !(CountOf bytes@(I# bytes#)) = sizeOfE sz count
     !(Offset od@(I# od#)) = offsetOfE sz ofs
 
-    copyNative mba = primitive $ \st -> (# copyAddrToByteArray# src# mba od# bytes# st, () #)
+    copyNative (MutableBlock mba) = primitive $ \st -> (# copyAddrToByteArray# src# mba od# bytes# st, () #)
     copyPtr fptr = withFinalPtr fptr $ \dst ->
         unsafePrimFromIO $ copyBytes (dst `plusPtr` od) src bytes
 
@@ -179,7 +179,7 @@ copyToPtr :: forall ty prim . (PrimType ty, PrimMonad prim)
           -> prim ()
 copyToPtr marr dst@(Ptr dst#) = onMutableBackend copyNative copyPtr marr
   where
-    copyNative mba = primitive $ \s1 ->
+    copyNative (MutableBlock mba) = primitive $ \s1 ->
         case unsafeFreezeByteArray# mba s1 of
             (# s2, ba #) -> (# compatCopyByteArrayToAddr# ba os# dst# szBytes# s2, () #)
     copyPtr fptr = unsafePrimFromIO $ withFinalPtr fptr $ \ptr ->

@@ -9,7 +9,6 @@ import Control.Exception hiding (handle)
 
 import Basement.Compat.Base
 import Basement.Types.OffsetSize
-import Basement.FinalPtr
 import Foundation.VFS
 import Foundation.Foreign.MemoryMap.Types
 

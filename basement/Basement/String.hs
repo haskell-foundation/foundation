@@ -98,7 +98,7 @@ import           Basement.UArray           (UArray)
 import qualified Basement.UArray           as Vec
 import qualified Basement.UArray           as C
 import qualified Basement.UArray.Mutable   as MVec
-import           Basement.Block.Mutable (MutableBlock(..))
+import           Basement.Block.Mutable (Block(..), MutableBlock(..))
 import           Basement.Compat.Bifunctor
 import           Basement.Compat.Base
 import           Basement.Compat.Natural
@@ -471,8 +471,8 @@ breakEnd predicate s@(String arr)
   where
     k = C.onBackend goVec (\_ -> pure . goAddr) arr
     (C.ValidRange !start !end) = offsetsValidRange arr
-    goVec ba = let k = BackendBA.revFindIndexPredicate predicate ba start end
-                in if k == end then end else PrimBA.nextSkip ba k
+    goVec (Block ba) = let k = BackendBA.revFindIndexPredicate predicate ba start end
+                        in if k == end then end else PrimBA.nextSkip ba k
     goAddr (Ptr addr) =
         let k = BackendAddr.revFindIndexPredicate predicate addr start end
          in if k == end then end else PrimAddr.nextSkip addr k
@@ -604,7 +604,7 @@ length (String arr)
     | otherwise    = C.onBackend goVec (\_ -> pure . goAddr) arr
   where
     (C.ValidRange !start !end) = offsetsValidRange arr
-    goVec ma = PrimBA.length ma start end
+    goVec (Block ma) = PrimBA.length ma start end
     goAddr (Ptr ptr) = PrimAddr.length ptr start end
 
 -- | Replicate a character @c@ @n@ times to create a string of length @n@
@@ -785,7 +785,7 @@ sortBy sortF s = fromList $ Data.List.sortBy sortF $ toList s -- FIXME for tests
 filter :: (Char -> Bool) -> String -> String
 filter predicate (String arr) = runST $ do
     (finalSize, dst) <- newNative sz $ \(MutableBlock mba) ->
-        C.onBackendPrim (\ba -> BackendBA.copyFilter predicate sz mba ba start)
+        C.onBackendPrim (\(Block ba) -> BackendBA.copyFilter predicate sz mba ba start)
                         (\fptr -> withFinalPtr fptr $ \(Ptr addr) -> BackendAddr.copyFilter predicate sz mba addr start)
                         arr
     freezeShrink finalSize dst
@@ -1391,17 +1391,17 @@ stripSuffix (String prefix) (String arr)
     | otherwise               = Nothing
 
 all :: (Char -> Bool) -> String -> Bool
-all predicate (String arr) = C.onBackend goNative (\_ -> pure . goAddr) arr
+all predicate (String arr) = C.onBackend goBA (\_ -> pure . goAddr) arr
   where
     !(C.ValidRange start end) = C.offsetsValidRange arr
-    goNative ba = PrimBA.all predicate ba start end
+    goBA (Block ba)   = PrimBA.all predicate ba start end
     goAddr (Ptr addr) = PrimAddr.all predicate addr start end
 
 any :: (Char -> Bool) -> String -> Bool
-any predicate (String arr) = C.onBackend goNative (\_ -> pure . goAddr) arr
+any predicate (String arr) = C.onBackend goBA (\_ -> pure . goAddr) arr
   where
     !(C.ValidRange start end) = C.offsetsValidRange arr
-    goNative ba = PrimBA.any predicate ba start end
+    goBA (Block ba)   = PrimBA.any predicate ba start end
     goAddr (Ptr addr) = PrimAddr.any predicate addr start end
 
 -- | Transform string @src@ to base64 binary representation.
