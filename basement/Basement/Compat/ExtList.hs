@@ -4,6 +4,7 @@ module Basement.Compat.ExtList
     , null
     , sum
     , reverse
+    , (!!)
     ) where
 
 import Basement.Compat.Base
@@ -39,3 +40,8 @@ reverse l =  go l []
   where
     go []     acc = acc
     go (x:xs) acc = go xs (x:acc)
+
+(!!) :: [a] -> Offset a -> a
+[]    !! _  = error "invalid offset for !!"
+(x:_) !! 0  = x
+(_:xs) !! i = xs !! pred i

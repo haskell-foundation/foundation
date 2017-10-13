@@ -17,6 +17,7 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
 {-# LANGUAGE UndecidableInstances      #-}
+{-# LANGUAGE AllowAmbiguousTypes       #-}
 module Basement.Sized.List
     ( ListN
     , toListN
@@ -28,6 +29,8 @@ module Basement.Sized.List
     , singleton
     , uncons
     , cons
+    , index
+    , indexStatic
     , map
     , elem
     , foldl
@@ -57,6 +60,8 @@ import           Basement.Nat
 import           Basement.NormalForm
 import           Basement.Numerical.Additive
 import           Basement.Numerical.Subtractive
+import           Basement.Types.OffsetSize
+import           Basement.Compat.ExtList ((!!))
 import qualified Prelude
 import qualified Control.Monad as M (replicateM, mapM, mapM_)
 
@@ -150,6 +155,12 @@ drop (ListN l) = ListN (Prelude.drop n l)
 splitAt :: forall a d (m :: Nat) (n :: Nat) . (KnownNat d, NatWithinBound Int d, (n - m) ~ d, m <= n) => ListN n a -> (ListN m a, ListN (n-m) a)
 splitAt (ListN l) = let (l1, l2) = Prelude.splitAt n l in (ListN l1, ListN l2)
   where n = natValInt (Proxy :: Proxy d)
+
+indexStatic :: forall i n a . (KnownNat i, CmpNat i n ~ 'LT, Offsetable a i) => ListN n a -> a
+indexStatic (ListN l) = l !! (natValOffset (Proxy :: Proxy i))
+
+index :: ListN n ty -> Offset ty -> ty
+index (ListN l) ofs = l !! ofs
 
 map :: (a -> b) -> ListN n a -> ListN n b
 map f (ListN l) = ListN (Prelude.map f l)
