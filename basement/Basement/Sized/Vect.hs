@@ -83,8 +83,11 @@ write (MVect ma) ofs v = A.write ma ofs v
 read :: PrimMonad prim => MVect n ty (PrimState prim) -> Offset ty -> prim ty
 read (MVect ma) ofs = A.read ma ofs
 
-index :: forall i n ty . (KnownNat i, CmpNat i n ~ 'LT, Offsetable ty i) => Vect n ty -> ty
-index b = A.unsafeIndex (unVect b) (toOffset @i)
+indexStatic :: forall i n ty . (KnownNat i, CmpNat i n ~ 'LT, Offsetable ty i) => Vect n ty -> ty
+indexStatic b = A.unsafeIndex (unVect b) (toOffset @i)
+
+index :: Vect n ty -> Offset ty -> ty
+index b ofs = A.index (unVect b) ofs
 
 map :: (a -> b) -> Vect n a -> Vect n b
 map f b = Vect (fmap f (unVect b))
@@ -116,7 +119,7 @@ sub block = Vect (A.sub (unVect block) (toOffset @i) (toOffset @j))
 uncons :: forall n ty . (CmpNat 0 n ~ 'LT, KnownNat n, Offsetable ty n)
        => Vect n ty
        -> (ty, Vect (n-1) ty)
-uncons b = (index @0 b, Vect (A.sub (unVect b) 1 (toOffset @n)))
+uncons b = (indexStatic @0 b, Vect (A.sub (unVect b) 1 (toOffset @n)))
 
 unsnoc :: forall n ty . (CmpNat 0 n ~ 'LT, KnownNat n, Offsetable ty n)
        => Vect n ty
