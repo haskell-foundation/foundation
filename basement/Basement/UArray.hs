@@ -13,6 +13,8 @@
 {-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Basement.UArray
     ( UArray(..)
     , PrimType(..)
@@ -134,8 +136,15 @@ import           Basement.MutableBuilder
 import           Basement.Bindings.Memory (sysHsMemFindByteBa, sysHsMemFindByteAddr)
 import qualified Basement.Compat.ExtList as List
 import qualified Basement.Base16 as Base16
+import qualified Basement.Alg.Native.Prim as PrimBA
 import qualified Basement.Alg.Native.PrimArray as PrimBA
+import qualified Basement.Alg.Foreign.Prim as PrimAddr
 import qualified Basement.Alg.Foreign.PrimArray as PrimAddr
+import qualified Basement.Alg.Mutable as MutAlg
+
+instance (PrimMonad prim, PrimType ty) => MutAlg.RandomAccess (Ptr ty) prim ty where
+    read (Ptr addr) = PrimAddr.primRead addr
+    write (Ptr addr) = PrimAddr.primWrite addr
 
 -- | Return the element at a specific index from an array.
 --
@@ -377,7 +386,7 @@ breakElem !ty arr@(UArray start len backend)
     goBa ba = PrimBA.findIndexElem ty ba start end
     goAddr _ (Ptr addr) = PrimAddr.findIndexElem ty addr start end
 {-# NOINLINE [3] breakElem #-}
-{-# RULES "breakElem Word8" [3] breakElem = breakElemByte #-}
+{-# RULES "breakElem Word8" [4] breakElem = breakElemByte #-}
 {-# SPECIALIZE [3] breakElem :: Word32 -> UArray Word32 -> (UArray Word32, UArray Word32) #-}
 
 breakElemByte :: Word8 -> UArray Word8 -> (UArray Word8, UArray Word8)
@@ -636,13 +645,12 @@ sortBy ford vec = runST $ do
     unsafeFreeze mvec
   where
     !len = length vec
-    !end = 0 `offsetPlusE` len
     !start = offset vec
 
-    goNative :: MutableByteArray# (PrimState (ST s)) -> ST s ()
-    goNative mba = PrimBA.inplaceSortBy ford mba start end
+    goNative :: forall s . MutableByteArray# (PrimState (ST s)) -> ST s ()
+    goNative mba = MutAlg.inplaceSortBy ford start len (MutableBlock mba :: MutableBlock ty (PrimState (ST s)))
     goAddr :: Ptr ty -> ST s ()
-    goAddr (Ptr addr) = PrimAddr.inplaceSortBy ford addr start end
+    goAddr (Ptr addr) = MutAlg.inplaceSortBy ford start len (Ptr addr :: Ptr ty)
 {-# SPECIALIZE [3] sortBy :: (Word8 -> Word8 -> Ordering) -> UArray Word8 -> UArray Word8 #-}
 
 filter :: forall ty . PrimType ty => (ty -> Bool) -> UArray ty -> UArray ty

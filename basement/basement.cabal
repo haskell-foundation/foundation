@@ -91,6 +91,8 @@ library
                      Basement.Show
                      Basement.Runtime
 
+                     Basement.Alg.Mutable
+
                      Basement.Alg.Native.Prim
                      Basement.Alg.Native.UTF8
                      Basement.Alg.Native.String

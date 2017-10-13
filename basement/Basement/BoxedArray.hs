@@ -11,6 +11,8 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Basement.BoxedArray
     ( Array
     , MArray
@@ -79,6 +81,7 @@ import           Basement.Numerical.Additive
 import           Basement.Numerical.Subtractive
 import           Basement.NonEmpty
 import           Basement.Compat.Base
+import qualified Basement.Alg.Mutable as MutAlg
 import           Basement.Compat.MonadTrans
 import           Basement.Types.OffsetSize
 import           Basement.PrimType
@@ -623,6 +626,11 @@ find predicate vec = loop 0
             let e = unsafeIndex vec i
              in if predicate e then Just e else loop (i+1)
 
+instance (PrimMonad prim, st ~ PrimState prim) 
+         => MutAlg.RandomAccess (MArray ty st) prim ty where
+    read (MArray _ _ mba) = primMutableArrayRead mba
+    write (MArray _ _ mba) = primMutableArrayWrite mba
+
 sortBy :: forall ty . (ty -> ty -> Ordering) -> Array ty -> Array ty
 sortBy xford vec
     | len == 0  = empty
@@ -630,35 +638,7 @@ sortBy xford vec
   where
     len = length vec
     doSort :: PrimMonad prim => (ty -> ty -> Ordering) -> MArray ty (PrimState prim) -> prim (Array ty)
-    doSort ford ma = qsort 0 (sizeLastOffset len) >> unsafeFreeze ma
-      where
-        qsort lo hi
-            | lo >= hi  = pure ()
-            | otherwise = do
-                p <- partition lo hi
-                qsort lo (pred p)
-                qsort (p+1) hi
-        partition lo hi = do
-            pivot <- unsafeRead ma hi
-            let loop i j
-                    | j == hi   = pure i
-                    | otherwise = do
-                        aj <- unsafeRead ma j
-                        i' <- if ford aj pivot == GT
-                                then pure i
-                                else do
-                                    ai <- unsafeRead ma i
-                                    unsafeWrite ma j ai
-                                    unsafeWrite ma i aj
-                                    pure $ i + 1
-                        loop i' (j+1)
-
-            i <- loop lo lo
-            ai  <- unsafeRead ma i
-            ahi <- unsafeRead ma hi
-            unsafeWrite ma hi ai
-            unsafeWrite ma i ahi
-            pure i
+    doSort ford ma = MutAlg.inplaceSortBy ford 0 len ma >> unsafeFreeze ma
 
 filter :: forall ty . (ty -> Bool) -> Array ty -> Array ty
 filter predicate vec = runST (new len >>= copyFilterFreeze predicate (unsafeIndex vec))
