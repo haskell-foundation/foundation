@@ -341,10 +341,9 @@ withPtr :: PrimMonad prim
         => Block ty
         -> (Ptr ty -> prim a)
         -> prim a
-withPtr (Block ba) f = do
+withPtr x@(Block ba) f = do
     let addr = Ptr (byteArrayContents# ba)
-    res <- f addr
-    return res
+    f addr <* touch x
 
 touch :: PrimMonad prim => Block ty -> prim ()
 touch (Block ba) =
@@ -357,13 +356,6 @@ mutableWithPtr :: PrimMonad prim
                 => MutableBlock ty (PrimState prim)
                 -> (Ptr ty -> prim a)
                 -> prim a
-mutableWithPtr (MutableBlock mba) f = do
-    addr <- primitive $ \s1 ->
-        case unsafeFreezeByteArray# mba s1 of
-            (# s2, ba #) -> (# s2, Ptr (byteArrayContents# ba) #)
-    res <- f addr
-    return res
-
-mutableTouch :: PrimMonad prim => MutableBlock ty (PrimState prim) -> prim ()
-mutableTouch (MutableBlock mba) =
-    unsafePrimFromIO $ primitive $ \s -> case touch# mba s of { s2 -> (# s2, () #) }
+mutableWithPtr mb f = do
+    b <- unsafeFreeze mb
+    withPtr b f
