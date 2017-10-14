@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE MagicHash           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UnboxedTuples       #-}
@@ -31,6 +32,9 @@ import           GHC.Types
 import           GHC.ST
 import           GHC.IO
 import qualified Data.List
+#if MIN_VERSION_base(4,9,0)
+import           Data.Semigroup
+#endif
 import           Basement.Compat.Base
 import           Data.Proxy
 import           Basement.Compat.Primitive
@@ -63,10 +67,18 @@ instance (PrimType ty, Eq ty) => Eq (Block ty) where
 instance (PrimType ty, Ord ty) => Ord (Block ty) where
     compare = internalCompare
 
+#if MIN_VERSION_base(4,9,0)
+instance PrimType ty => Semigroup (Block ty) where
+    (<>) = append
+    sconcat = concat . toList
+#endif
+
 instance PrimType ty => Monoid (Block ty) where
     mempty  = empty
+#if !(MIN_VERSION_base(4,11,0))
     mappend = append
     mconcat = concat
+#endif
 
 instance PrimType ty => IsList (Block ty) where
     type Item (Block ty) = ty
