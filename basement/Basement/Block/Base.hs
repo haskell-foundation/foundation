@@ -344,8 +344,11 @@ withPtr :: PrimMonad prim
 withPtr (Block ba) f = do
     let addr = Ptr (byteArrayContents# ba)
     res <- f addr
-    unsafePrimFromIO $ primitive $ \s -> case touch# ba s of { s2 -> (# s2, () #) }
     return res
+
+touch :: PrimMonad prim => Block ty -> prim ()
+touch (Block ba) =
+    unsafePrimFromIO $ primitive $ \s -> case touch# ba s of { s2 -> (# s2, () #) }
 
 -- | Use the 'Ptr' to a mutable block in a safer construct
 --
@@ -359,5 +362,8 @@ mutableWithPtr (MutableBlock mba) f = do
         case unsafeFreezeByteArray# mba s1 of
             (# s2, ba #) -> (# s2, Ptr (byteArrayContents# ba) #)
     res <- f addr
-    unsafePrimFromIO $ primitive $ \s -> case touch# mba s of { s2 -> (# s2, () #) }
     return res
+
+mutableTouch :: PrimMonad prim => MutableBlock ty (PrimState prim) -> prim ()
+mutableTouch (MutableBlock mba) =
+    unsafePrimFromIO $ primitive $ \s -> case touch# mba s of { s2 -> (# s2, () #) }
