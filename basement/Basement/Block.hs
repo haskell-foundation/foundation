@@ -80,14 +80,19 @@ import           Basement.Block.Mutable (Block(..), MutableBlock(..), new, unsaf
 import           Basement.Block.Base
 import           Basement.Numerical.Additive
 import           Basement.Numerical.Subtractive
-import qualified Basement.Alg.Native.PrimArray as Alg
 import qualified Basement.Alg.Native.Prim as Prim
 import qualified Basement.Alg.Mutable as MutAlg
+import qualified Basement.Alg.Class as Alg
+import qualified Basement.Alg.PrimArray as Alg
 
 instance (PrimMonad prim, st ~ PrimState prim, PrimType ty) 
          => MutAlg.RandomAccess (MutableBlock ty st) prim ty where
     read (MutableBlock mba) = primMbaRead mba
     write (MutableBlock mba) = primMbaWrite mba
+
+instance (PrimType ty) => Alg.Indexable (Block ty) ty where
+    index (Block ba) = primBaIndex ba
+    {-# INLINE index #-}
 
 -- | Copy all the block content to the memory starting at the destination address
 unsafeCopyToPtr :: forall ty prim . PrimMonad prim
@@ -270,11 +275,11 @@ break predicate blk = findBreak 0
 {-# SPECIALIZE [2] break :: (Word8 -> Bool) -> Block Word8 -> (Block Word8, Block Word8) #-}
 
 breakEnd :: PrimType ty => (ty -> Bool) -> Block ty -> (Block ty, Block ty)
-breakEnd predicate blk@(Block ba)
+breakEnd predicate blk
     | k == end  = (blk, mempty)
     | otherwise = splitAt (offsetAsSize (k+1)) blk
   where
-    k = Alg.revFindIndexPredicate predicate ba 0 end
+    k = Alg.revFindIndexPredicate predicate blk 0 end
     end = 0 `offsetPlusE` len
     !len = length blk
 {-# SPECIALIZE [2] breakEnd :: (Word8 -> Bool) -> Block Word8 -> (Block Word8, Block Word8) #-}

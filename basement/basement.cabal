@@ -97,17 +97,17 @@ library
                      Basement.Show
                      Basement.Runtime
 
+                     Basement.Alg.Class
                      Basement.Alg.Mutable
+                     Basement.Alg.PrimArray
 
                      Basement.Alg.Native.Prim
                      Basement.Alg.Native.UTF8
                      Basement.Alg.Native.String
-                     Basement.Alg.Native.PrimArray
 
                      Basement.Alg.Foreign.Prim
                      Basement.Alg.Foreign.UTF8
                      Basement.Alg.Foreign.String
-                     Basement.Alg.Foreign.PrimArray
 
                      Basement.Numerical.Conversion
 
