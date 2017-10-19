@@ -17,6 +17,7 @@ module Foundation.System.Bindings.Posix
 
 import Basement.Compat.Base
 import Foreign.C.Types
+import Foreign.Ptr (nullPtr)
 import Data.Bits
 import Foundation.System.Bindings.PosixDef
 
@@ -349,9 +350,10 @@ foreign import ccall unsafe "close"
     sysPosixClose :: CFd -> IO CInt
 
 foreign import ccall unsafe "fcntl"
-    sysPosixFnctlNoArg :: CFd -> CInt -> IO CInt
-foreign import ccall unsafe "fcntl"
     sysPosixFnctlPtr :: CFd -> CInt -> Ptr a -> IO CInt
+
+sysPosixFnctlNoArg :: CFd -> CInt -> IO CInt
+sysPoxixFnctlNoArg fd cmd = sysPosixFnctlPtr fd cmd nullPtr
 
 foreign import ccall unsafe "ftruncate"
     sysPosixFtruncate :: CFd -> COff -> IO CInt
