@@ -42,10 +42,11 @@ import           GHC.CString                        (unpackCString#, unpackCStri
 
 import           Data.Data
 import           Basement.Compat.ExtList as List
+import           Basement.Compat.Semigroup (Semigroup)
 
 -- | Opaque packed array of characters in the UTF8 encoding
 newtype String = String (UArray Word8)
-    deriving (Typeable, Monoid, Eq, Ord)
+    deriving (Typeable, Semigroup, Monoid, Eq, Ord)
 
 -- | Mutable String Buffer.
 --

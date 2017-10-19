@@ -12,8 +12,9 @@ module Foundation.List.DList
     ) where
 
 import Basement.Compat.Base
-import Foundation.Collection
+import Basement.Compat.Semigroup
 import Basement.Compat.Bifunctor
+import Foundation.Collection
 
 newtype DList a = DList { unDList :: [a] -> [a] }
   deriving (Typeable)
@@ -29,9 +30,11 @@ instance Show a => Show (DList a) where
 
 instance IsList (DList a) where
     type Item (DList a) = a
-    fromList = DList . (<>)
+    fromList = DList . (Basement.Compat.Semigroup.<>)
     toList = flip unDList []
 
+instance Semigroup (DList a) where
+    (<>) dl1 dl2 = DList $ unDList dl1 . unDList dl2
 instance Monoid (DList a) where
     mempty = DList id
     mappend dl1 dl2 = DList $ unDList dl1 . unDList dl2

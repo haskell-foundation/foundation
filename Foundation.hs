@@ -101,6 +101,7 @@ module Foundation
     , Prelude.fromIntegral
     , Prelude.realToFrac
       -- ** Monoids
+    , Basement.Compat.Semigroup.Semigroup
     , Monoid (..)
     , (<>)
       -- ** Collection
@@ -186,6 +187,7 @@ import qualified Basement.Imports
 import           Basement.Environment (getArgs)
 import           Basement.Compat.NumLiteral
 import           Basement.Compat.Natural
+import qualified Basement.Compat.Semigroup
 
 import qualified Data.Maybe
 import qualified Data.Either

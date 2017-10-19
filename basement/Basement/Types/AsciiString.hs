@@ -22,6 +22,7 @@ module Basement.Types.AsciiString
     ) where
 
 import           Basement.Compat.Base
+import           Basement.Compat.Semigroup
 import           Basement.Types.Char7
 import           Basement.UArray.Base
 import qualified Basement.Types.Char7 as Char7
@@ -29,7 +30,7 @@ import qualified Basement.UArray as A (all, unsafeRecast)
 
 -- | Opaque packed array of characters in the ASCII encoding
 newtype AsciiString = AsciiString { toBytes :: UArray Char7 }
-    deriving (Typeable, Monoid, Eq, Ord)
+    deriving (Typeable, Semigroup, Monoid, Eq, Ord)
 
 newtype MutableAsciiString st = MutableAsciiString (MUArray Char7 st)
     deriving (Typeable)

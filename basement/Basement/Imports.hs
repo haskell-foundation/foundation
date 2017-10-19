@@ -6,6 +6,7 @@
 -- Portability : portable
 --
 -- re-export of all the base prelude and basic primitive stuffs
+{-# LANGUAGE CPP #-}
 module Basement.Imports
     ( (Prelude.$)
     , (Prelude.$!)
@@ -68,7 +69,13 @@ module Basement.Imports
     , Data.Data.DataType
     , Data.Typeable.Typeable
     , Data.Monoid.Monoid (..)
+#if MIN_VERSION_base(4,10,0)
+    -- , (Basement.Compat.Semigroup.<>)
+    , Basement.Compat.Semigroup.Semigroup(..)
+#else
     , (Data.Monoid.<>)
+    , Basement.Compat.Semigroup.Semigroup
+#endif
     , Control.Exception.Exception
     , Control.Exception.throw
     , Control.Exception.throwIO
@@ -88,6 +95,7 @@ import qualified Data.Int
 import qualified Basement.Compat.IsList
 import qualified Basement.Compat.Natural
 import qualified Basement.Compat.NumLiteral
+import qualified Basement.Compat.Semigroup
 import qualified Basement.UArray
 import qualified Basement.BoxedArray
 import qualified Basement.UTF8.Base
