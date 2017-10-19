@@ -350,10 +350,9 @@ foreign import ccall unsafe "close"
     sysPosixClose :: CFd -> IO CInt
 
 foreign import capi "fcntl.h fcntl"
-    sysPosixFnctlPtr :: CFd -> CInt -> Ptr a -> IO CInt
-
-foreign import capi "fcntl.h fcntl"
     sysPosixFnctlNoArg :: CFd -> CInt -> IO CInt
+foreign import capi "fcntl.h fcntl"
+    sysPosixFnctlPtr :: CFd -> CInt -> Ptr a -> IO CInt
 
 foreign import ccall unsafe "ftruncate"
     sysPosixFtruncate :: CFd -> COff -> IO CInt
