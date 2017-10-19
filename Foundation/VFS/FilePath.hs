@@ -35,6 +35,7 @@ module Foundation.VFS.FilePath
     ) where
 
 import Basement.Compat.Base
+import Basement.Compat.Semigroup
 import Foundation.Collection
 import Foundation.Array
 import Foundation.String (Encoding(..), ValidationFailure, toBytes, fromBytes, String)
