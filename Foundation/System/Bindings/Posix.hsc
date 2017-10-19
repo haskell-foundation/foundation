@@ -353,7 +353,7 @@ foreign import ccall unsafe "fcntl"
     sysPosixFnctlPtr :: CFd -> CInt -> Ptr a -> IO CInt
 
 sysPosixFnctlNoArg :: CFd -> CInt -> IO CInt
-sysPoxixFnctlNoArg fd cmd = sysPosixFnctlPtr fd cmd nullPtr
+sysPosixFnctlNoArg fd cmd = sysPosixFnctlPtr fd cmd nullPtr
 
 foreign import ccall unsafe "ftruncate"
     sysPosixFtruncate :: CFd -> COff -> IO CInt
