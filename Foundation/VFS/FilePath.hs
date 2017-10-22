@@ -35,6 +35,7 @@ module Foundation.VFS.FilePath
     ) where
 
 import Basement.Compat.Base
+import Basement.Compat.Semigroup
 import Foundation.Collection
 import Foundation.Array
 import Foundation.String (Encoding(..), ValidationFailure, toBytes, fromBytes, String)
@@ -184,9 +185,11 @@ hasContigueSeparators [_] = False
 hasContigueSeparators (x1:x2:xs) =
     (isSeparator x1 && x1 == x2) || hasContigueSeparators xs
 
+instance Semigroup FileName where
+    (<>) (FileName a) (FileName b) = FileName $ a `mappend` b
 instance Monoid FileName where
-      mempty = FileName mempty
-      mappend (FileName a) (FileName b) = FileName $ a `mappend` b
+    mempty = FileName mempty
+    mappend (FileName a) (FileName b) = FileName $ a `mappend` b
 
 instance Path FilePath where
     type PathEnt FilePath = FileName

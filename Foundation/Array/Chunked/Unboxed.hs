@@ -24,6 +24,7 @@ import           Basement.Exception
 import           Basement.UArray (UArray)
 import qualified Basement.UArray as U
 import           Basement.Compat.Bifunctor
+import           Basement.Compat.Semigroup
 import           Basement.Compat.Base
 import           Basement.Types.OffsetSize
 import           Basement.PrimType
@@ -42,6 +43,8 @@ instance PrimType ty => Eq (ChunkedUArray ty) where
 instance NormalForm (ChunkedUArray ty) where
     toNormalForm (ChunkedUArray spine) = toNormalForm spine
 
+instance Semigroup (ChunkedUArray a) where
+    (<>) = append
 instance Monoid (ChunkedUArray a) where
     mempty  = empty
     mappend = append

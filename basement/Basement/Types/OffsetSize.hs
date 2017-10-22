@@ -47,6 +47,7 @@ import Foreign.C.Types
 import System.Posix.Types (CSsize (..))
 import Data.Bits
 import Basement.Compat.Base
+import Basement.Compat.Semigroup
 import Data.Proxy
 import Basement.Numerical.Number
 import Basement.Numerical.Additive
@@ -192,6 +193,9 @@ instance Subtractive (CountOf ty) where
     type Difference (CountOf ty) = Maybe (CountOf ty)
     (CountOf a) - (CountOf b) | a >= b    = Just . CountOf $ a - b
                               | otherwise = Nothing
+
+instance Semigroup (CountOf ty) where
+    (<>) = (+)
 
 instance Monoid (CountOf ty) where
     mempty = azero

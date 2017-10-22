@@ -84,6 +84,7 @@ import           Basement.NonEmpty
 import           Basement.Compat.Base
 import qualified Basement.Alg.Mutable as MutAlg
 import           Basement.Compat.MonadTrans
+import           Basement.Compat.Semigroup
 import           Basement.Types.OffsetSize
 import           Basement.PrimType
 import           Basement.NormalForm
@@ -125,6 +126,8 @@ data MArray a st = MArray {-# UNPACK #-} !(Offset a)
 instance Functor Array where
     fmap = map
 
+instance Semigroup (Array a) where
+    (<>) = append
 instance Monoid (Array a) where
     mempty  = empty
     mappend = append
