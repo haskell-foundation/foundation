@@ -91,6 +91,9 @@ instance Semigroup a => Semigroup (Maybe a) where
     EQ -> Nothing
     GT -> Just (stimes n a)
 
+instance Semigroup [a] where
+    (<>) = (++)
+
 instance Semigroup (Either a b) where
   Left _ <> b = b
   a      <> _ = a
