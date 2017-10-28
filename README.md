@@ -16,6 +16,11 @@ Documentation:
 * [Foundation on stackage](https://www.stackage.org/package/foundation)
 * [Foundation on hackage](https://hackage.haskell.org/package/foundation)
 
+Discuss:
+
+* [FP Chat](https://fpchat-invite.herokuapp.com) `#haskell-foundation` channel
+* [Gitter](https://gitter.im/haskell-foundation/foundation)
+
 Goals
 =====
 
