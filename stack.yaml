@@ -1,4 +1,4 @@
-resolver: nightly-2017-07-31
+resolver: nightly-2017-10-21
 packages:
 - '.'
 - location: basement/
