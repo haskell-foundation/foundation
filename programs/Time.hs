@@ -19,7 +19,7 @@ import Control.Concurrent
 import Control.Exception
 
 #if USE_CRITERION
-import qualified Criterion.Measurement as C
+import qualified Gauge.Measurement as C
 #endif
 
 data Monotonic = Monotonic

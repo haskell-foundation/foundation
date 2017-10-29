@@ -3,6 +3,7 @@ packages:
 - '.'
 - basement/
 - edge/
-extra-deps: []
+extra-deps:
+- gauge-0.1.0
 flags: {}
 extra-package-dbs: []

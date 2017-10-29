@@ -3,7 +3,7 @@ module Main (main) where
 import Foundation
 import Foundation.Random
 import Foundation.Collection as F
-import Criterion.Main
+import Gauge.Main
 import qualified Prelude as P
 
 main = do

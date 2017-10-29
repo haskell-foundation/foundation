@@ -2,3 +2,5 @@ resolver: nightly-2017-10-21
 packages:
 - '.'
 - basement/
+extra-deps:
+- gauge-0.1.0

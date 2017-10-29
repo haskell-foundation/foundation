@@ -2,7 +2,7 @@
 {-# LANGUAGE BangPatterns, OverloadedStrings #-}
 
 import qualified Data.ByteString.Char8 as BS
-import Criterion.Main
+import Gauge.Main
 import Data.ByteString (ByteString, unpack)
 import Data.ByteString.Internal (toForeignPtr, unsafeCreate, memcpy)
 import qualified Foundation as F
