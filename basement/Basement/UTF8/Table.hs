@@ -41,6 +41,16 @@ isContinuation3 (W8# w1) (W8# w2) (W8# w3) =
     mask v = (and# 0xC0## v) `eqWord#` 0x80##
 {-# INLINE isContinuation3 #-}
 
+-- | Number of bytes associated with a specific header byte
+--
+-- If the header byte is invalid then NbBytesInvalid is returned,
+data NbBytesCont = NbBytesInvalid | NbBytesCont0 | NbBytesCont1 | NbBytesCont2 | NbBytesCont3
+
+-- | Identical to 'NbBytesCont' but doesn't allow to represent any failure.
+--
+-- Only use in validated place
+data NbBytesCont_ = NbBytesCont0_ | NbBytesCont1_ | NbBytesCont2_ | NbBytesCont3_
+
 -- | Get the number of following bytes given the first byte of a UTF8 sequence.
 getNbBytes :: Word8 -> Int
 getNbBytes (W8# w) = I# (getNbBytes# w)
