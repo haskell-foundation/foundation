@@ -10,7 +10,6 @@
 --
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE MagicHash #-}
-{-# LANGUAGE UnboxedTuples #-}
 module Foundation.Hashing.SipHash
     ( SipKey(..)
     , SipHash(..)
@@ -93,20 +92,20 @@ newSipState (SipKey k0 k1) = Sip st SipIncremental0 0
                        (k0 `xor` 0x6c7967656e657261)
                        (k1 `xor` 0x7465646279746573)
 
-mix8Prim :: Int -> Word8 -> InternalState -> SipIncremental -> (# InternalState, SipIncremental #)
+mix8Prim :: Int -> Word8 -> InternalState -> SipIncremental -> (InternalState, SipIncremental)
 mix8Prim !c !w !ist !incremental =
     case incremental of
-        SipIncremental7 acc -> (# process c ist ((acc `unsafeShiftL` 8) .|. Prelude.fromIntegral w), SipIncremental0 #)
+        SipIncremental7 acc -> (process c ist ((acc `unsafeShiftL` 8) .|. Prelude.fromIntegral w), SipIncremental0)
         SipIncremental6 acc -> doAcc SipIncremental7 acc
         SipIncremental5 acc -> doAcc SipIncremental6 acc
         SipIncremental4 acc -> doAcc SipIncremental5 acc
         SipIncremental3 acc -> doAcc SipIncremental4 acc
         SipIncremental2 acc -> doAcc SipIncremental3 acc
         SipIncremental1 acc -> doAcc SipIncremental2 acc
-        SipIncremental0     -> (# ist, SipIncremental1 $ Prelude.fromIntegral w #)
+        SipIncremental0     -> (ist, SipIncremental1 $ Prelude.fromIntegral w)
   where
     doAcc constr acc =
-        (# ist , constr ((acc .<<. 8) .|. Prelude.fromIntegral w) #)
+        (ist , constr ((acc .<<. 8) .|. Prelude.fromIntegral w))
 
 mix8 :: Int -> Word8 -> Sip -> Sip
 mix8 !c !w (Sip ist incremental len) =
@@ -205,7 +204,7 @@ mixBa !c !array (Sip initSt initIncr currentLen) =
         loop8 !st !incr !ofs !l = loop1 st incr ofs l
         loop1 !st !incr !ofs !l = case l - 1 of 
             Nothing -> Sip st incr (currentLen + totalLen)
-            Just l1 -> let (# st', incr' #) = mix8Prim c (primBaIndex ba ofs) st incr
+            Just l1 -> let (!st', !incr') = mix8Prim c (primBaIndex ba ofs) st incr
                         in loop1 st' incr' (ofs + Offset 1) l1
 
     to64 :: Int -> Word8 -> Word64
@@ -231,7 +230,7 @@ mixBa !c !array (Sip initSt initIncr currentLen) =
         loop8 !st !incr !ofs !l = loop1 st incr ofs l
         loop1 !st !incr !ofs !l = case l - 1 of
           Nothing -> Sip st incr (currentLen + totalLen)
-          Just l1 -> let (# st', incr' #) = mix8Prim c (primAddrIndex ptr ofs) st incr
+          Just l1 -> let (!st', !incr') = mix8Prim c (primAddrIndex ptr ofs) st incr
                       in loop1 st' incr' (ofs + Offset 1) l1
 
 doRound :: InternalState -> InternalState

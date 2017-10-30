@@ -1,4 +1,3 @@
-{-# LANGUAGE UnboxedTuples #-}
 module Foundation.Hashing.Hasher
     ( Hasher(..)
     ) where
@@ -40,35 +39,26 @@ class Hasher st where
     -- | Mix a Word16 into the state and return the new state
     hashMix16 :: Word16 -> st -> st
     hashMix16 w st = hashMix8 w2 $ hashMix8 w1 st
-      where (# !w1, !w2 #) = unWord16 w
+      where
+        !w1 = integralDownsize (w `unsafeShiftR` 8)
+        !w2 = integralDownsize w
 
     -- | Mix a Word32 into the state and return the new state
     hashMix32 :: Word32 -> st -> st
     hashMix32 w st = hashMix8 w4 $ hashMix8 w3 $ hashMix8 w2 $ hashMix8 w1 st
-      where (# !w1, !w2, !w3, !w4 #) = unWord32 w
+      where
+        !w1 = integralDownsize (w `unsafeShiftR` 24)
+        !w2 = integralDownsize (w `unsafeShiftR` 16)
+        !w3 = integralDownsize (w `unsafeShiftR` 8)
+        !w4 = integralDownsize w
 
     -- | Mix a Word64 into the state and return the new state
     hashMix64 :: Word64 -> st -> st
     hashMix64 w st = hashMix32 w2 $ hashMix32 w1 st
-      where (# !w1, !w2 #) = unWord64_32 w
+      where
+        !w1 = integralDownsize (w `unsafeShiftR` 32)
+        !w2 = integralDownsize w
 
     -- | Mix an arbitrary sized unboxed array and return the new state
     hashMixBytes :: A.PrimType e => UArray e -> st -> st
     hashMixBytes ba st = A.foldl' (flip hashMix8) st (A.unsafeRecast ba)
-
-unWord16 :: Word16 -> (# Word8, Word8 #)
-unWord16 w = (# integralDownsize (w `unsafeShiftR` 8)
-             ,  integralDownsize w #)
-{-# INLINE unWord16 #-}
-
-unWord32 :: Word32 -> (# Word8, Word8, Word8, Word8 #)
-unWord32 w = (# integralDownsize (w `unsafeShiftR` 24)
-             ,  integralDownsize (w `unsafeShiftR` 16)
-             ,  integralDownsize (w `unsafeShiftR` 8)
-             ,  integralDownsize w #)
-{-# INLINE unWord32 #-}
-
-unWord64_32 :: Word64 -> (# Word32, Word32 #)
-unWord64_32 w = (# integralDownsize (w `unsafeShiftR` 32)
-                ,  integralDownsize w #)
-{-# INLINE unWord64_32 #-}

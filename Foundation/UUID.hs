@@ -1,4 +1,3 @@
-{-# LANGUAGE UnboxedTuples    #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 
