@@ -20,6 +20,7 @@ import           GHC.Prim
 import           GHC.Types
 import           GHC.Word
 import           Basement.Compat.Base
+import           Basement.Compat.Primitive
 
 -- | Check if the byte is a continuation byte
 isContinuation :: Word8 -> Bool
