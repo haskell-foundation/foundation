@@ -3,3 +3,5 @@ packages:
 - '.'
 - location: basement/
   extra-dep: true
+extra-deps:
+- gauge-0.1.1

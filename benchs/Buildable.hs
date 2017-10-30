@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeFamilies #-}
 module Main (main) where
 
-import           Criterion.Main
+import           Gauge.Main
 import           Foundation
 import qualified Foundation.Collection as C
 import           GHC.ST

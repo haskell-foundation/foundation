@@ -2,6 +2,7 @@ resolver: lts-9.10
 packages:
 - '.'
 - basement/
-extra-deps: []
+extra-deps:
+- gauge-0.1.1
 flags: {}
 extra-package-dbs: []
