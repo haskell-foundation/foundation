@@ -12,15 +12,17 @@ module Foundation.Hashing.Hashable
     ( Hashable(..)
     ) where
 
-import Basement.Compat.Base
-import Basement.Compat.Natural
-import Basement.IntegralConv
-import Basement.Numerical.Multiplicative
-import Foundation.Array
-import Foundation.Tuple
-import Foundation.String
-import Foundation.Collection.Foldable
-import Foundation.Hashing.Hasher
+import           Basement.Imports
+import           Basement.Compat.Natural
+import           Basement.Types.Word128
+import           Basement.Types.Word256
+import           Basement.IntegralConv
+import           Basement.Numerical.Multiplicative
+import qualified Basement.BoxedArray as A
+import           Foundation.Tuple
+import           Foundation.String
+import           Foundation.Collection.Foldable
+import           Foundation.Hashing.Hasher
 
 -- | Type with the ability to be hashed
 --
@@ -42,6 +44,10 @@ instance Hashable Word32 where
     hashMix w = hashMix32 w
 instance Hashable Word64 where
     hashMix w = hashMix64 w
+instance Hashable Word128 where
+    hashMix (Word128 w1 w2) = hashMix64 w2 . hashMix64 w1
+instance Hashable Word256 where
+    hashMix (Word256 w1 w2 w3 w4) = hashMix64 w4 . hashMix64 w3 . hashMix64 w2 . hashMix64 w1
 instance Hashable Natural where
     hashMix n iacc
         | n == 0    = hashMix8 0 iacc
@@ -77,8 +83,8 @@ instance Hashable String where
 -- collection type instances
 instance PrimType a => Hashable (UArray a) where
     hashMix ba = hashMixBytes ba
---instance Hashable a => Hashable (Array a) where
---    hashMix arr st = foldl' (flip hashMix) st arr
+instance Hashable a => Hashable (A.Array a) where
+    hashMix arr st = A.foldl' (flip hashMix) st arr
 
 -- combined instances
 instance Hashable a => Hashable [a] where
