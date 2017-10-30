@@ -50,8 +50,20 @@ validate :: Offset Word8
          -> PrimBackend.Immutable
          -> Offset Word8
          -> (Offset Word8, Maybe ValidationFailure)
-validate end ba ofsStart = loop ofsStart
+validate end ba ofsStart = loop4 ofsStart
   where
+    loop4 !ofs
+        | ofs4 < end =
+            let h1 = PrimBackend.primIndex ba ofs
+                h2 = PrimBackend.primIndex ba (ofs+1)
+                h3 = PrimBackend.primIndex ba (ofs+2)
+                h4 = PrimBackend.primIndex ba (ofs+3)
+             in if headerIsAscii h1 && headerIsAscii h2 && headerIsAscii h3 && headerIsAscii h4
+                    then loop4 ofs4
+                    else loop ofs
+        | otherwise     = loop ofs
+      where
+        !ofs4 = ofs+4
     loop !ofs
         | ofs == end      = (end, Nothing)
         | headerIsAscii h = loop (ofs + Offset 1)
