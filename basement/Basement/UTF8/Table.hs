@@ -9,6 +9,8 @@
 {-# LANGUAGE MagicHash #-}
 module Basement.UTF8.Table
     ( isContinuation
+    , isContinuation2
+    , isContinuation3
     , getNbBytes
     , isContinuation#
     , getNbBytes#
@@ -23,6 +25,20 @@ import           Basement.Compat.Base
 isContinuation :: Word8 -> Bool
 isContinuation (W8# w) = isContinuation# w
 {-# INLINE isContinuation #-}
+
+isContinuation2 :: Word8 -> Word8 -> Bool
+isContinuation2 (W8# w1) (W8# w2) =
+    bool# (mask w1 `andI#` mask w2)
+  where
+    mask v = (and# 0xC0## v) `eqWord#` 0x80##
+{-# INLINE isContinuation2 #-}
+
+isContinuation3 :: Word8 -> Word8 -> Word8 -> Bool
+isContinuation3 (W8# w1) (W8# w2) (W8# w3) =
+    bool# (mask w1) && bool# (mask w2) && bool# (mask w3)
+  where
+    mask v = (and# 0xC0## v) `eqWord#` 0x80##
+{-# INLINE isContinuation3 #-}
 
 -- | Get the number of following bytes given the first byte of a UTF8 sequence.
 getNbBytes :: Word8 -> Int
