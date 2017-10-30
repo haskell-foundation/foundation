@@ -4,6 +4,6 @@ packages:
 - basement/
 - edge/
 extra-deps:
-- gauge-0.1.0
+- gauge-0.1.1
 flags: {}
 extra-package-dbs: []

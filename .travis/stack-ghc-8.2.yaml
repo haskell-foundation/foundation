@@ -3,4 +3,4 @@ packages:
 - '.'
 - basement/
 extra-deps:
-- gauge-0.1.0
+- gauge-0.1.1
