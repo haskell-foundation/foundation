@@ -12,8 +12,8 @@ module BenchUtil.Common
     , nf
     ) where
 
-import           Criterion.Main hiding (bgroup, bench)
-import qualified Criterion.Main as C
+import           Gauge.Main hiding (bgroup, bench)
+import qualified Gauge.Main as C
 import           Foundation
 
 fbench = bench "foundation"
