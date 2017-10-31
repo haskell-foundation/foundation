@@ -693,6 +693,8 @@ reverse a
             | i == end  = pure ()
             | otherwise = BLK.unsafeWrite ma i (primAddrIndex addr (sizeAsOffset (endI - i))) >> loop (i+1)
 {-# SPECIALIZE [3] reverse :: UArray Word8 -> UArray Word8 #-}
+{-# SPECIALIZE [3] reverse :: UArray Word32 -> UArray Word32 #-}
+{-# SPECIALIZE [3] reverse :: UArray Char -> UArray Char #-}
 
 -- Finds where are the insertion points when we search for a `needle`
 -- within an `haystack`.
