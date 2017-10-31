@@ -101,6 +101,7 @@ filter predicate dst src start end = loop azero start
         | otherwise   = loop d (s+Offset 1)
       where
         v = index src s
+{-# INLINE filter #-}
 
 all :: Indexable container ty => (ty -> Bool) -> container -> Offset ty -> Offset ty -> Bool
 all predicate ba start end = loop start
