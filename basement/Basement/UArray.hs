@@ -660,7 +660,7 @@ filter :: forall ty . PrimType ty => (ty -> Bool) -> UArray ty -> UArray ty
 filter predicate arr = runST $ do
     (newLen, ma) <- newNative (length arr) $ \(MutableBlock mba) ->
             onBackendPrim (\block -> Alg.filter predicate mba block start end)
-                          (\fptr -> withFinalPtr fptr $ \ptr ->
+                          (\fptr -> withFinalPtr fptr $ \ptr@(Ptr !_) ->
                                         Alg.filter predicate mba ptr start end)
                           arr
     unsafeFreezeShrink ma newLen

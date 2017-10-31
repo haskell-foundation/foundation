@@ -265,7 +265,8 @@ onBackend :: (Block ty -> a)
           -> UArray ty
           -> a
 onBackend onBa _      (UArray _ _ (UArrayBA ba))     = onBa ba
-onBackend _    onAddr (UArray _ _ (UArrayAddr fptr)) = withUnsafeFinalPtr fptr (onAddr fptr)
+onBackend _    onAddr (UArray _ _ (UArrayAddr fptr)) = withUnsafeFinalPtr fptr $ \ptr@(Ptr !_) -> 
+                                                           onAddr fptr ptr
 {-# INLINE onBackend #-}
 
 onBackendPrim :: PrimMonad prim
