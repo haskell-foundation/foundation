@@ -144,7 +144,7 @@ csi2 :: Displacement -> Displacement -> String -> String
 csi2 _ _ _ = ""
 
 csi3 :: Displacement -> Displacement -> Displacement -> String -> String
-csi3 _ _ _ = ""
+csi3 _ _ _ _ = ""
 
 #else
 csi0 :: String -> String
