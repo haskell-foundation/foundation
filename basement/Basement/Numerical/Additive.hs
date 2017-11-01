@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP               #-}
 {-# LANGUAGE MagicHash         #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-prof-auto #-}
 module Basement.Numerical.Additive
     ( Additive(..)
@@ -16,6 +17,8 @@ import           GHC.Prim
 import           GHC.Int
 import           GHC.Word
 import           Foreign.C.Types
+import           Basement.Bounded
+import           Basement.Nat
 import           Basement.Types.Word128 (Word128)
 import           Basement.Types.Word256 (Word256)
 import qualified Basement.Types.Word128 as Word128
@@ -119,6 +122,14 @@ instance Additive Prelude.Double where
     scale = scaleNum
 instance Additive CSize where
     azero = 0
+    (+) = (Prelude.+)
+    scale = scaleNum
+instance (KnownNat n, NatWithinBound Word64 n) => Additive (Zn64 n) where
+    azero = zn64 0
+    (+) = (Prelude.+)
+    scale = scaleNum
+instance KnownNat n => Additive (Zn n) where
+    azero = zn 0
     (+) = (Prelude.+)
     scale = scaleNum
 
