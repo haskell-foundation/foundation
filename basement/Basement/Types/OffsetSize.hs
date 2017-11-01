@@ -9,6 +9,7 @@
 {-# LANGUAGE MagicHash                  #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE CPP                        #-}
+{-# OPTIONS_GHC -fno-prof-auto          #-}
 module Basement.Types.OffsetSize
     ( FileSize(..)
     , Offset(..)

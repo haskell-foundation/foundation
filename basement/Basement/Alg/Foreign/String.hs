@@ -50,44 +50,51 @@ validate :: Offset Word8
          -> PrimBackend.Immutable
          -> Offset Word8
          -> (Offset Word8, Maybe ValidationFailure)
-validate end ba ofsStart = loop ofsStart
+validate end ba ofsStart = loop4 ofsStart
   where
+    loop4 !ofs
+        | ofs4 < end =
+            let h1 = PrimBackend.primIndex ba ofs
+                h2 = PrimBackend.primIndex ba (ofs+1)
+                h3 = PrimBackend.primIndex ba (ofs+2)
+                h4 = PrimBackend.primIndex ba (ofs+3)
+             in if headerIsAscii h1 && headerIsAscii h2 && headerIsAscii h3 && headerIsAscii h4
+                    then loop4 ofs4
+                    else loop ofs
+        | otherwise     = loop ofs
+      where
+        !ofs4 = ofs+4
     loop !ofs
-        | ofs > end  = error ("validate: internal error: went pass offset : ofs=" <> show ofs <> " end=" <> show end)
-        | ofs == end = (end, Nothing)
-        | otherwise  =
-            let !h = PrimBackend.primIndex ba ofs in
-            case headerIsAscii h of
-                True  -> loop (ofs + Offset 1)
-                False ->
-                    case one (CountOf $ getNbBytes h) ofs of
-                        (nextOfs, Nothing)  -> loop nextOfs
-                        (pos, Just failure) -> (pos, Just failure)
+        | ofs == end      = (end, Nothing)
+        | headerIsAscii h = loop (ofs + Offset 1)
+        | otherwise       = multi (CountOf $ getNbBytes h) ofs
+      where
+        h = PrimBackend.primIndex ba ofs
 
-    one (CountOf 0xff) pos = (pos, Just InvalidHeader)
-    one nbConts pos
-        | ((pos+Offset 1) `offsetPlusE` nbConts) > end = (pos, Just MissingByte)
+    multi (CountOf 0xff) pos = (pos, Just InvalidHeader)
+    multi nbConts pos
+        | (posNext `offsetPlusE` nbConts) > end = (pos, Just MissingByte)
         | otherwise =
             case nbConts of
                 CountOf 1 ->
-                    let c1 = PrimBackend.primIndex ba (pos + Offset 1)
+                    let c1 = PrimBackend.primIndex ba posNext
                     in if isContinuation c1
-                        then (pos + Offset 2, Nothing)
+                        then loop (pos + Offset 2)
                         else (pos, Just InvalidContinuation)
                 CountOf 2 ->
-                    let c1 = PrimBackend.primIndex ba (pos + Offset 1)
+                    let c1 = PrimBackend.primIndex ba posNext
                         c2 = PrimBackend.primIndex ba (pos + Offset 2)
-                     in if isContinuation c1 && isContinuation c2
-                            then (pos + Offset 3, Nothing)
+                     in if isContinuation2 c1 c2
+                            then loop (pos + Offset 3)
                             else (pos, Just InvalidContinuation)
-                CountOf 3 ->
-                    let c1 = PrimBackend.primIndex ba (pos + Offset 1)
+                CountOf _ ->
+                    let c1 = PrimBackend.primIndex ba posNext
                         c2 = PrimBackend.primIndex ba (pos + Offset 2)
                         c3 = PrimBackend.primIndex ba (pos + Offset 3)
-                     in if isContinuation c1 && isContinuation c2 && isContinuation c3
-                            then (pos + Offset 4, Nothing)
+                     in if isContinuation3 c1 c2 c3
+                            then loop (pos + Offset 4)
                             else (pos, Just InvalidContinuation)
-                CountOf _ -> error "internal error"
+      where posNext = pos + Offset 1
 
 findIndexPredicate :: (Char -> Bool)
                    -> PrimBackend.Immutable

@@ -20,6 +20,7 @@ module Basement.Alg.Foreign.UTF8
     , any
     , foldr
     , length
+    , reverse
     -- temporary
     , primIndex64
     , primRead8
@@ -34,6 +35,7 @@ import           Data.Bits
 import           Basement.Compat.Base hiding (toList)
 import           Basement.Compat.Primitive
 import           Basement.Alg.Foreign.Prim
+import qualified Basement.Alg.Native.Prim as PrimNative -- NO SUBST
 import           Data.Proxy
 import           Basement.Numerical.Additive
 import           Basement.Numerical.Subtractive
@@ -245,3 +247,38 @@ length dat start end
                 c'   = if cont then c else c+1
              in processStart c' (i+1)
 {-# INLINE length #-}
+
+reverse :: PrimMonad prim
+        => MutableByteArray# (PrimState prim) -- ^ Destination buffer
+        -> Offset Word8                       -- ^ Destination start
+        -> Immutable                          -- ^ Source buffer
+        -> Offset Word8                       -- ^ Source start
+        -> Offset Word8                       -- ^ Source end
+        -> prim ()
+reverse dst dstOfs src start end
+    | start == end = pure ()
+    | otherwise    = loop (dstOfs `offsetPlusE` (offsetAsSize (end `offsetSub` start)) `offsetSub` 1) start
+  where
+    loop !d !s
+        | s == end        = pure ()
+        | headerIsAscii h = PrimNative.primWrite dst d h >> loop (d `offsetSub` 1) (s + 1)
+        | otherwise       = do
+            case getNbBytes h of
+                1 -> do
+                    PrimNative.primWrite dst (d `offsetSub` 1) h
+                    PrimNative.primWrite dst d                 (primIndex8 src (s + 1))
+                    loop (d `offsetSub` 2) (s + 2)
+                2 -> do
+                    PrimNative.primWrite dst (d `offsetSub` 2) h
+                    PrimNative.primWrite dst (d `offsetSub` 1) (primIndex8 src (s + 1))
+                    PrimNative.primWrite dst d                 (primIndex8 src (s + 2))
+                    loop (d `offsetSub` 3) (s + 3)
+                3 -> do
+                    PrimNative.primWrite dst (d `offsetSub` 3) h
+                    PrimNative.primWrite dst (d `offsetSub` 2) (primIndex8 src (s + 1))
+                    PrimNative.primWrite dst (d `offsetSub` 1) (primIndex8 src (s + 2))
+                    PrimNative.primWrite dst d                 (primIndex8 src (s + 3))
+                    loop (d `offsetSub` 4) (s + 4)
+                _ -> error "impossible"
+      where h = primIndex8 src s
+{-# INLINE reverse #-}

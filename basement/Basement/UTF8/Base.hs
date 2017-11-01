@@ -19,6 +19,7 @@ import           GHC.ST (ST, runST)
 import           GHC.Types
 import           GHC.Word
 import           GHC.Prim
+import           GHC.Exts (build)
 import           Basement.Compat.Base
 import           Basement.Numerical.Additive
 import           Basement.Compat.Bifunctor
@@ -37,7 +38,7 @@ import qualified Basement.Block.Mutable    as BLK
 import qualified Basement.UArray           as Vec
 import qualified Basement.UArray           as C
 import qualified Basement.UArray.Mutable   as MVec
-import           Basement.UArray.Base   as Vec (offset, pureST, onBackend)
+import           Basement.UArray.Base   as Vec (offset, pureST, onBackend, ValidRange(..), offsetsValidRange)
 import           GHC.CString                        (unpackCString#, unpackCStringUtf8#)
 
 import           Data.Data
@@ -86,13 +87,37 @@ size (String ba) = Vec.length ba
 --
 -- The list is lazily created as evaluation needed
 sToList :: String -> [Char]
-sToList s = loop 0
+sToList (String arr) = Vec.onBackend onBA onAddr arr
   where
-    !nbBytes = size s
-    loop idx
-        | idx .==# nbBytes = []
-        | otherwise        =
-            let !(Step c idx') = next s idx in c : loop idx'
+    (Vec.ValidRange !start !end) = Vec.offsetsValidRange arr
+    onBA (BLK.Block ba) = loop start
+      where
+        loop !idx
+            | idx == end = []
+            | otherwise  = let !(Step c idx') = PrimBA.next ba idx in c : loop idx'
+    onAddr fptr (Ptr ptr) = pureST (loop start)
+      where
+        loop !idx
+            | idx == end = []
+            | otherwise  = let !(Step c idx') = PrimAddr.next ptr idx in c : loop idx'
+{-# NOINLINE sToList #-}
+
+sToListStream (String arr) k z = Vec.onBackend onBA onAddr arr
+  where
+    (Vec.ValidRange !start !end) = Vec.offsetsValidRange arr
+    onBA (BLK.Block ba) = loop start
+      where
+        loop !idx
+            | idx == end = z
+            | otherwise  = let !(Step c idx') = PrimBA.next ba idx in c `k` loop idx'
+    onAddr fptr (Ptr ptr) = pureST (loop start)
+      where
+        loop !idx
+            | idx == end = z
+            | otherwise  = let !(Step c idx') = PrimAddr.next ptr idx in c `k` loop idx'
+
+{-# RULES "String sToList" [~1] forall s . sToList s = build (\ k z -> sToListStream s k z) #-}
+{-# RULES "String toList" [~1] forall s . toList s = build (\ k z -> sToListStream s k z) #-}
 
 {-# RULES "String sFromList" forall s .  sFromList (unpackCString# s) = fromModified s #-}
 {-# RULES "String sFromList" forall s .  sFromList (unpackCStringUtf8# s) = fromModified s #-}

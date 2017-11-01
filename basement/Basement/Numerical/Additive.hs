@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP               #-}
 {-# LANGUAGE MagicHash         #-}
+{-# OPTIONS_GHC -fno-prof-auto #-}
 module Basement.Numerical.Additive
     ( Additive(..)
     ) where

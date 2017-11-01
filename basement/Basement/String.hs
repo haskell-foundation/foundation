@@ -795,35 +795,15 @@ filter predicate (String arr) = runST $ do
 
 -- | Reverse a string
 reverse :: String -> String
-reverse s@(String ba) = runST $ do
-    ms <- new len
-    loop ms (Offset 0) (Offset 0 `offsetPlusE` len)
+reverse (String arr) = runST $ do
+    ((), dst) <- newNative (C.length arr) $ \(MutableBlock mba) ->
+            C.onBackendPrim
+                (\(Block ba) -> PrimBA.reverse mba 0 ba start end)
+                (\fptr -> withFinalPtr fptr $ \(Ptr addr) -> PrimAddr.reverse mba 0 addr start end)
+                arr
+    freeze dst
   where
-    !len = size s
-    -- write those bytes
-    loop :: PrimMonad prim => MutableString (PrimState prim) -> Offset8 -> Offset8 -> prim String
-    loop ms@(MutableString mba) si didx
-        | didx == Offset 0 = freeze ms
-        | otherwise = do
-            let !h = Vec.unsafeIndex ba si
-                !nb = CountOf (getNbBytes h + 1)
-                d  = didx `offsetMinusE` nb
-            case nb of
-                CountOf 1 -> Vec.unsafeWrite mba d h
-                CountOf 2 -> do
-                    Vec.unsafeWrite mba d       h
-                    Vec.unsafeWrite mba (d + 1) (Vec.unsafeIndex ba (si + 1))
-                CountOf 3 -> do
-                    Vec.unsafeWrite mba d       h
-                    Vec.unsafeWrite mba (d + 1) (Vec.unsafeIndex ba (si + 1))
-                    Vec.unsafeWrite mba (d + 2) (Vec.unsafeIndex ba (si + 2))
-                CountOf 4 -> do
-                    Vec.unsafeWrite mba d       h
-                    Vec.unsafeWrite mba (d + 1) (Vec.unsafeIndex  ba (si + 1))
-                    Vec.unsafeWrite mba (d + 2) (Vec.unsafeIndex ba (si + 2))
-                    Vec.unsafeWrite mba (d + 3) (Vec.unsafeIndex ba (si + 3))
-                _  -> return () -- impossible
-            loop ms (si `offsetPlusE` nb) d
+    !(C.ValidRange start end) = C.offsetsValidRange arr
 
 -- Finds where are the insertion points when we search for a `needle`
 -- within an `haystack`.
