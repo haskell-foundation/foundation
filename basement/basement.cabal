@@ -60,6 +60,10 @@ library
                      Basement.NormalForm
                      Basement.These
 
+                     -- Terminal
+                     Basement.Terminal
+                     Basement.Terminal.ANSI
+
                      -- numeric stuff
                      Basement.IntegralConv
                      Basement.Floating
