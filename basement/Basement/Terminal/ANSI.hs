@@ -16,7 +16,15 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Basement.Terminal.ANSI
-    ( cursorUp
+    (
+    -- * Types
+      Escape
+    , Displacement
+    , ColorComponent
+    , GrayComponent
+    , RGBComponent
+    -- * Simple ANSI escape factory functions
+    , cursorUp
     , cursorDown
     , cursorForward
     , cursorBack
