@@ -114,7 +114,7 @@ instance (Arbitrary a, Arbitrary b, Arbitrary c, Arbitrary d, Arbitrary e, Arbit
 instance Arbitrary a => Arbitrary [a] where
     arbitrary = genWithParams $ \params ->
         fromList <$> (genMax (genMaxSizeArray params) >>= \i -> replicateM (integralCast i) arbitrary)
-instance (Arbitrary a, NatWithinBound Int n) => Arbitrary (ListN.ListN n a) where
+instance (Arbitrary a, KnownNat n, NatWithinBound Int n) => Arbitrary (ListN.ListN n a) where
     arbitrary = ListN.replicateM arbitrary
 
 arbitraryInteger :: Gen Integer
