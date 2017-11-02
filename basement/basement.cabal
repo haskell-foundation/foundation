@@ -60,6 +60,10 @@ library
                      Basement.NormalForm
                      Basement.These
 
+                     -- Terminal
+                     Basement.Terminal
+                     Basement.Terminal.ANSI
+
                      -- numeric stuff
                      Basement.IntegralConv
                      Basement.Floating
@@ -129,6 +133,10 @@ library
 
   build-depends:       base >= 4.7 && < 5
                      , ghc-prim
+
+  if os(windows)
+    build-depends:     Win32
+
   default-language:    Haskell2010
   default-extensions: NoImplicitPrelude
                       RebindableSyntax
