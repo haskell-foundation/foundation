@@ -29,6 +29,7 @@ module Basement.UArray.Base
     , unsafeIndex
     , unsafeIndexer
     , onBackend
+    , onBackendPure
     , onBackendPrim
     , onMutableBackend
     , unsafeDewrap
@@ -278,6 +279,12 @@ onBackend _    onAddr (UArray _ _ (UArrayAddr fptr)) = withUnsafeFinalPtr fptr $
                                                            onAddr fptr ptr
 {-# INLINE onBackend #-}
 
+onBackendPure :: (Block ty -> a)
+              -> (Ptr ty -> a)
+              -> UArray ty
+              -> a
+onBackendPure goBA goAddr arr = onBackend goBA (\_ -> pureST . goAddr) arr
+{-# INLINE onBackendPure #-}
 onBackendPrim :: PrimMonad prim
               => (Block ty -> prim a)
               -> (FinalPtr ty -> prim a)
