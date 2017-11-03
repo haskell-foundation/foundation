@@ -138,16 +138,9 @@ import qualified Basement.Compat.ExtList as List
 import qualified Basement.Base16 as Base16
 import qualified Basement.Alg.Native.Prim as PrimBA
 import qualified Basement.Alg.Foreign.Prim as PrimAddr
-import qualified Basement.Alg.Mutable as MutAlg
+import qualified Basement.Alg.Mutable as Alg
 import qualified Basement.Alg.Class as Alg
 import qualified Basement.Alg.PrimArray as Alg
-
-instance (PrimMonad prim, PrimType ty) => MutAlg.RandomAccess (Ptr ty) prim ty where
-    read (Ptr addr) = PrimAddr.primRead addr
-    write (Ptr addr) = PrimAddr.primWrite addr
-
-instance PrimType ty => Alg.Indexable (Ptr ty) ty where
-    index (Ptr addr) = primAddrIndex addr
 
 -- | Return the element at a specific index from an array.
 --
@@ -651,9 +644,9 @@ sortBy ford vec = runST $ do
     !start = offset vec
 
     goNative :: MutableBlock ty s -> ST s ()
-    goNative mb = MutAlg.inplaceSortBy ford start len mb
+    goNative mb = Alg.inplaceSortBy ford start len mb
     goAddr :: Ptr ty -> ST s ()
-    goAddr (Ptr addr) = MutAlg.inplaceSortBy ford start len (Ptr addr :: Ptr ty)
+    goAddr (Ptr addr) = Alg.inplaceSortBy ford start len (Ptr addr :: Ptr ty)
 {-# SPECIALIZE [3] sortBy :: (Word8 -> Word8 -> Ordering) -> UArray Word8 -> UArray Word8 #-}
 
 filter :: forall ty . PrimType ty => (ty -> Bool) -> UArray ty -> UArray ty

@@ -1,7 +1,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Basement.Alg.Mutable
-    ( RandomAccess, read, write
-    , inplaceSortBy
+    ( inplaceSortBy
     ) where
 
 import           GHC.Types
@@ -12,10 +11,7 @@ import           Basement.Numerical.Multiplicative
 import           Basement.Types.OffsetSize
 import           Basement.PrimType
 import           Basement.Monad
-
-class RandomAccess container prim ty where
-    read  :: container -> (Offset ty)       -> prim ty
-    write :: container -> (Offset ty) -> ty -> prim ()
+import           Basement.Alg.Class
 
 inplaceSortBy :: (PrimMonad prim, RandomAccess container prim ty) 
               => (ty -> ty -> Ordering)

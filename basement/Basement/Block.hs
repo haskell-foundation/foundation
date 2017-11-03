@@ -86,7 +86,7 @@ import qualified Basement.Alg.Class as Alg
 import qualified Basement.Alg.PrimArray as Alg
 
 instance (PrimMonad prim, st ~ PrimState prim, PrimType ty) 
-         => MutAlg.RandomAccess (MutableBlock ty st) prim ty where
+         => Alg.RandomAccess (MutableBlock ty st) prim ty where
     read (MutableBlock mba) = primMbaRead mba
     write (MutableBlock mba) = primMbaWrite mba
 

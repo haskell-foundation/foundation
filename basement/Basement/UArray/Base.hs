@@ -2,6 +2,7 @@
 {-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
 module Basement.UArray.Base
     ( MUArray(..)
     , UArray(..)
@@ -61,6 +62,7 @@ import           Basement.Compat.Semigroup
 import qualified Basement.Runtime as Runtime
 import           Data.Proxy
 import qualified Basement.Compat.ExtList as List
+import qualified Basement.Alg.Class as Alg
 import           Basement.Types.OffsetSize
 import           Basement.FinalPtr
 import           Basement.NormalForm
@@ -81,6 +83,13 @@ data MUArray ty st = MUArray {-# UNPACK #-} !(Offset ty)
 
 data MUArrayBackend ty st = MUArrayMBA (MutableBlock ty st) | MUArrayAddr (FinalPtr ty)
 
+
+instance PrimType ty => Alg.Indexable (Ptr ty) ty where
+    index (Ptr addr) = primAddrIndex addr
+
+instance (PrimMonad prim, PrimType ty) => Alg.RandomAccess (Ptr ty) prim ty where
+    read (Ptr addr) = primAddrRead addr
+    write (Ptr addr) = primAddrWrite addr
 
 -- | An array of type built on top of GHC primitive.
 --
