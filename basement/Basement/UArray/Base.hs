@@ -2,6 +2,7 @@
 {-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
 module Basement.UArray.Base
     ( MUArray(..)
@@ -30,6 +31,7 @@ module Basement.UArray.Base
     , unsafeIndexer
     , onBackend
     , onBackendPure
+    , onBackendPure'
     , onBackendPrim
     , onMutableBackend
     , unsafeDewrap
@@ -285,6 +287,19 @@ onBackendPure :: (Block ty -> a)
               -> a
 onBackendPure goBA goAddr arr = onBackend goBA (\_ -> pureST . goAddr) arr
 {-# INLINE onBackendPure #-}
+
+onBackendPure' :: PrimType  ty
+               => UArray ty
+               -> (forall container. Alg.Indexable container ty 
+                   => container -> Offset ty -> Offset ty -> a)
+               -> a
+onBackendPure' arr f = onBackendPure (\c -> f c start end) 
+                                     (\c -> f c start end) arr
+  where !len = length arr
+        !start = offset arr
+        !end = start `offsetPlusE` len
+{-# INLINE onBackendPure' #-}
+
 onBackendPrim :: PrimMonad prim
               => (Block ty -> prim a)
               -> (FinalPtr ty -> prim a)

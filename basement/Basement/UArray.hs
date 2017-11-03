@@ -372,15 +372,14 @@ splitAt nbElems arr@(UArray start len backend)
 
 breakElem :: PrimType ty => ty -> UArray ty -> (UArray ty, UArray ty)
 breakElem !ty arr@(UArray start len backend)
+-- TODO: return Maybe k
     | k == end   = (arr, empty)
     | k == start = (empty, arr)
     | otherwise  = ( UArray start (offsetAsSize k `sizeSub` offsetAsSize start) backend
                    , UArray k     (len `sizeSub` (offsetAsSize k `sizeSub` offsetAsSize start)) backend)
   where
     !end = start `offsetPlusE` len
-    !k = onBackendPure goBa goAddr arr
-    goBa block = Alg.findIndexElem ty block start end
-    goAddr ptr = Alg.findIndexElem ty ptr start end
+    !k = onBackendPure' arr $ Alg.findIndexElem ty
 {-# NOINLINE [3] breakElem #-}
 {-# RULES "breakElem Word8" [4] breakElem = breakElemByte #-}
 {-# SPECIALIZE [3] breakElem :: Word32 -> UArray Word32 -> (UArray Word32, UArray Word32) #-}
@@ -475,38 +474,35 @@ sub (UArray start len backend) startIdx expectedEndIdx
 
 findIndex :: PrimType ty => ty -> UArray ty -> Maybe (Offset ty)
 findIndex ty arr
+-- TODO: check for end could be done in algorithm
     | k == end  = Nothing
     | otherwise = Just (k `offsetSub` start)
   where
-    !k = onBackendPure goBa goAddr arr
+    !k = onBackendPure' arr $ Alg.findIndexElem ty
     !start = offset arr
     !end = start `offsetPlusE` length arr
-    goBa block = Alg.findIndexElem ty block start end
-    goAddr ptr = Alg.findIndexElem ty ptr start end
 {-# SPECIALIZE [3] findIndex :: Word8 -> UArray Word8 -> Maybe (Offset Word8) #-}
 
 revFindIndex :: PrimType ty => ty -> UArray ty -> Maybe (Offset ty)
 revFindIndex ty arr
+-- TODO: check for end could be done in algorithm
     | k == end  = Nothing
     | otherwise = Just (k `offsetSub` start)
   where
-    !k = onBackendPure goBa goAddr arr
+    !k = onBackendPure' arr $ Alg.revFindIndexElem ty
     !start = offset arr
     !end = start `offsetPlusE` length arr
-    goBa block = Alg.revFindIndexElem ty block start end
-    goAddr ptr = Alg.revFindIndexElem ty ptr start end
 {-# SPECIALIZE [3] revFindIndex :: Word8 -> UArray Word8 -> Maybe (Offset Word8) #-}
 
 break :: forall ty . PrimType ty => (ty -> Bool) -> UArray ty -> (UArray ty, UArray ty)
 break predicate arr
+-- TODO2: check for end could be done in algorithm? but maybe more ops are involved
     | k == end  = (arr, mempty)
     | otherwise = splitAt (offsetAsSize (k `offsetSub` start)) arr
   where
-    !k = onBackendPure goBa goAddr arr
+    !k = onBackendPure' arr $ Alg.findIndexPredicate predicate
     !start = offset arr
     !end = start `offsetPlusE` length arr
-    goBa block = Alg.findIndexPredicate predicate block start end
-    goAddr ptr = Alg.findIndexPredicate predicate ptr start end
 
 {-
 {-# SPECIALIZE [3] findIndex :: Word8 -> UArray Word8 -> Maybe (Offset Word8) #-}
@@ -539,23 +535,22 @@ break predicate arr
 -- ([1,2,3], [0,0,0])
 breakEnd :: forall ty . PrimType ty => (ty -> Bool) -> UArray ty -> (UArray ty, UArray ty)
 breakEnd predicate arr
+-- TODO2: check for end could be done in algorithm? but maybe more ops are involved
     | k == end  = (arr, mempty)
     | otherwise = splitAt (offsetAsSize (k+1) `sizeSub` offsetAsSize start) arr
   where
-    !k = onBackendPure goBa goAddr arr
+    !k = onBackendPure' arr $ Alg.revFindIndexPredicate predicate
     !start = offset arr
     !end   = start `offsetPlusE` length arr
-    goBa block = Alg.revFindIndexPredicate predicate block start end
-    goAddr ptr = Alg.revFindIndexPredicate predicate ptr start end
 {-# SPECIALIZE [3] breakEnd :: (Word8 -> Bool) -> UArray Word8 -> (UArray Word8, UArray Word8) #-}
 
 elem :: PrimType ty => ty -> UArray ty -> Bool
-elem !ty arr = onBackendPure goBa goAddr arr /= end
+--elem !ty arr = onBackendPure goBa goAddr arr /= end
+-- check for end could be done in algorithm? isNothing?
+elem !ty arr = onBackendPure' arr (Alg.findIndexElem ty) /= end
   where
     !start = offset arr
     !end = start `offsetPlusE` length arr
-    goBa block = Alg.findIndexElem ty block start end
-    goAddr ptr = Alg.findIndexElem ty ptr start end
 {-# SPECIALIZE [2] elem :: Word8 -> UArray Word8 -> Bool #-}
 
 intersperse :: forall ty . PrimType ty => ty -> UArray ty -> UArray ty
@@ -771,23 +766,11 @@ foldr f initialAcc vec = loop 0
         | otherwise  = unsafeIndex vec i `f` loop (i+1)
 
 foldl' :: PrimType ty => (a -> ty -> a) -> a -> UArray ty -> a
-foldl' f initialAcc arr = onBackendPure goBA goAddr arr
-  where
-    !len = length arr
-    !start = offset arr
-    !end = start `offsetPlusE` len
-    goBA block = Alg.foldl f initialAcc block start end
-    goAddr ptr = Alg.foldl f initialAcc ptr start end
+foldl' f initialAcc arr = onBackendPure' arr (Alg.foldl f initialAcc)
 {-# SPECIALIZE [3] foldl' :: (a -> Word8 -> a) -> a -> UArray Word8 -> a #-}
 
 foldl1' :: PrimType ty => (ty -> ty -> ty) -> NonEmpty (UArray ty) -> ty
-foldl1' f (NonEmpty arr) = onBackendPure goBA goAddr arr
-  where
-    !len = length arr
-    !start = offset arr
-    !end = start `offsetPlusE` len
-    goBA block = Alg.foldl1 f block start end
-    goAddr ptr = Alg.foldl1 f ptr start end
+foldl1' f (NonEmpty arr) = onBackendPure' arr (Alg.foldl1 f)
 {-# SPECIALIZE [3] foldl1' :: (Word8 -> Word8 -> Word8) -> NonEmpty (UArray Word8) -> Word8 #-}
 
 foldr1 :: PrimType ty => (ty -> ty -> ty) -> NonEmpty (UArray ty) -> ty
@@ -795,21 +778,11 @@ foldr1 f arr = let (initialAcc, rest) = revSplitAt 1 $ getNonEmpty arr
                in foldr f (unsafeIndex initialAcc 0) rest
 
 all :: PrimType ty => (ty -> Bool) -> UArray ty -> Bool
-all predicate arr = onBackendPure (\block -> Alg.all predicate block start end)
-                                  (\ptr -> Alg.all predicate ptr start end)
-                                  arr
-  where
-    start = offset arr
-    end = start `offsetPlusE` length arr
+all predicate arr = onBackendPure' arr $ Alg.all predicate
 {-# SPECIALIZE [3] all :: (Word8 -> Bool) -> UArray Word8 -> Bool #-}
 
 any :: PrimType ty => (ty -> Bool) -> UArray ty -> Bool
-any predicate arr = onBackendPure (\block  -> Alg.any predicate block start end)
-                                  (\ptr -> Alg.any predicate ptr start end)
-                                  arr
-  where
-    start = offset arr
-    end = start `offsetPlusE` length arr
+any predicate arr = onBackendPure' arr $ Alg.any predicate
 {-# SPECIALIZE [3] any :: (Word8 -> Bool) -> UArray Word8 -> Bool #-}
 
 builderAppend :: (PrimType ty, PrimMonad state) => ty -> Builder (UArray ty) (MUArray ty) ty state err ()
