@@ -11,3 +11,5 @@ report.html
 cabal.config
 .idea
 *.iml
+.DS_Store
+*.out
