@@ -17,7 +17,9 @@ module Foundation.Check.Main
 
 import           Basement.Imports
 import           Basement.IntegralConv
+import           Basement.Bounded
 import           Basement.Types.OffsetSize
+import qualified Basement.Terminal.ANSI as ANSI
 import           Foundation.System.Info (os, OS(..))
 import           Foundation.Collection
 import           Foundation.Numerical
@@ -117,10 +119,10 @@ defaultMain allTestRoot = do
     -- display a summary of the result and use the right exit code
     summary cfg
         | kos > 0 = do
-            putStrLn $ "Failed " <> show kos <> " out of " <> show tot
+            putStrLn $ red <> "Failed " <> show kos <> " out of " <> show tot <> reset
             exitFailure
         | otherwise = do
-            putStrLn $ "Succeed " <> show oks <> " test(s)"
+            putStrLn $ green <> "Succeed " <> show oks <> " test(s)" <> reset
             exitSuccess
       where
         oks = testPassed cfg
@@ -199,17 +201,22 @@ displayPropertySucceed name (CountOf nb) = do
 
 successString :: String
 successString = case os of
-    Right Linux -> " ✓ "
-    Right OSX   -> " ✓ "
+    Right Linux -> green <> " ✓ " <> reset
+    Right OSX   -> green <> " ✓ " <> reset
     _           -> "[SUCCESS]"
 {-# NOINLINE successString #-}
 
 failureString :: String
 failureString = case os of
-    Right Linux -> " ✗ "
-    Right OSX   -> " ✗ "
+    Right Linux -> red <> " ✗ " <> reset
+    Right OSX   -> red <> " ✗ " <> reset
     _           -> "[ ERROR ]"
 {-# NOINLINE failureString #-}
+
+reset, green, red :: ANSI.Escape
+reset = ANSI.sgrReset
+green = ANSI.sgrForeground (zn64 2) True
+red = ANSI.sgrForeground (zn64 1) True
 
 displayPropertyFailed :: String -> CountOf TestResult -> String -> CheckMain ()
 displayPropertyFailed name (CountOf nb) w = do
