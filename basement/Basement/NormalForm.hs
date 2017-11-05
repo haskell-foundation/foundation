@@ -10,6 +10,7 @@ import Basement.Types.OffsetSize
 import Basement.Types.Char7
 import Basement.Types.Word128 (Word128)
 import Basement.Types.Word256 (Word256)
+import Basement.Bounded
 import Basement.Endianness
 import Foreign.C.Types
 
@@ -76,6 +77,8 @@ instance NormalForm (CountOf a) where toNormalForm !_ = ()
 instance NormalForm Char7 where toNormalForm !_ = ()
 instance NormalForm Word128 where toNormalForm !_ = ()
 instance NormalForm Word256 where toNormalForm !_ = ()
+instance NormalForm (Zn n) where toNormalForm = toNormalForm . unZn
+instance NormalForm (Zn64 n) where toNormalForm = toNormalForm . unZn64
 
 -----
 -- composed type

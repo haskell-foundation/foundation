@@ -16,8 +16,6 @@ module Basement.Nat
     , CmpNat
     -- * Nat convertion
     , natValNatural
-    , natValCountOf
-    , natValOffset
     , natValInt
     , natValInt8
     , natValInt16
@@ -33,8 +31,6 @@ module Basement.Nat
     -- * Constraint
     , NatInBoundOf
     , NatWithinBound
-    , Countable
-    , Offsetable
     ) where
 
 #include "MachDeps.h"
@@ -42,7 +38,6 @@ module Basement.Nat
 import           GHC.TypeLits
 import           Basement.Compat.Base
 import           Basement.Compat.Natural
-import           Basement.Types.OffsetSize
 import           Basement.Types.Char7 (Char7)
 import           Basement.Types.Word128 (Word128)
 import           Basement.Types.Word256 (Word256)
@@ -56,12 +51,6 @@ import           Data.Type.Bool
 
 natValNatural :: forall n proxy . KnownNat n => proxy n -> Natural
 natValNatural n = Prelude.fromIntegral (natVal n)
-
-natValCountOf :: forall n ty proxy . (KnownNat n, NatWithinBound (CountOf ty) n) => proxy n -> CountOf ty
-natValCountOf n = CountOf $ Prelude.fromIntegral (natVal n)
-
-natValOffset :: forall n ty proxy . (KnownNat n, NatWithinBound (Offset ty) n) => proxy n -> Offset ty
-natValOffset n = Offset $ Prelude.fromIntegral (natVal n)
 
 natValInt :: forall n proxy . (KnownNat n, NatWithinBound Int n) => proxy n -> Int
 natValInt n = Prelude.fromIntegral (natVal n)
@@ -94,28 +83,27 @@ natValWord8 :: forall n proxy . (KnownNat n, NatWithinBound Word8 n) => proxy n 
 natValWord8 n = Prelude.fromIntegral (natVal n)
 
 -- | Get Maximum bounds of different Integral / Natural types related to Nat
-type family NatNumMaxBound ty where
-    NatNumMaxBound Char   = 0x10ffff
-    NatNumMaxBound Char7  = 0x7f
-    NatNumMaxBound Int64  = 0x7fffffffffffffff
-    NatNumMaxBound Int32  = 0x7fffffff
-    NatNumMaxBound Int16  = 0x7fff
-    NatNumMaxBound Int8   = 0x7f
-    NatNumMaxBound Word256 = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-    NatNumMaxBound Word128 = 0xffffffffffffffffffffffffffffffff
-    NatNumMaxBound Word64 = 0xffffffffffffffff
-    NatNumMaxBound Word32 = 0xffffffff
-    NatNumMaxBound Word16 = 0xffff
-    NatNumMaxBound Word8  = 0xff
+type family NatNumMaxBound ty :: Nat
+
+type instance NatNumMaxBound Char   = 0x10ffff
+type instance NatNumMaxBound Char7  = 0x7f
+type instance NatNumMaxBound Int64  = 0x7fffffffffffffff
+type instance NatNumMaxBound Int32  = 0x7fffffff
+type instance NatNumMaxBound Int16  = 0x7fff
+type instance NatNumMaxBound Int8   = 0x7f
+type instance NatNumMaxBound Word256 = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+type instance NatNumMaxBound Word128 = 0xffffffffffffffffffffffffffffffff
+type instance NatNumMaxBound Word64 = 0xffffffffffffffff
+type instance NatNumMaxBound Word32 = 0xffffffff
+type instance NatNumMaxBound Word16 = 0xffff
+type instance NatNumMaxBound Word8  = 0xff
 #if WORD_SIZE_IN_BITS == 64
-    NatNumMaxBound Int    = NatNumMaxBound Int64
-    NatNumMaxBound Word   = NatNumMaxBound Word64
+type instance NatNumMaxBound Int    = NatNumMaxBound Int64
+type instance NatNumMaxBound Word   = NatNumMaxBound Word64
 #else
-    NatNumMaxBound Int    = NatNumMaxBound Int32
-    NatNumMaxBound Word   = NatNumMaxBound Word32
+type instance NatNumMaxBound Int    = NatNumMaxBound Int32
+type instance NatNumMaxBound Word   = NatNumMaxBound Word32
 #endif
-    NatNumMaxBound (CountOf x) = NatNumMaxBound Int
-    NatNumMaxBound (Offset x) = NatNumMaxBound Int
 
 -- | Check if a Nat is in bounds of another integral / natural types
 type family NatInBoundOf ty n where
@@ -134,6 +122,3 @@ type family NatWithinBound ty (n :: Nat) where
 #else
 type NatWithinBound ty n = NatInBoundOf ty n ~ 'True
 #endif
-
-type Countable ty n = NatWithinBound (CountOf ty) n
-type Offsetable ty n = NatWithinBound (Offset ty) n
