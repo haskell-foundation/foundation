@@ -11,3 +11,7 @@ report.html
 cabal.config
 .idea
 *.iml
+.DS_Store
+basement/cbits/a.out
+basement/cbits/.foundation_terminal.c.kate-swp
+*.kate-swp
