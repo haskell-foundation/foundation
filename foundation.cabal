@@ -111,7 +111,6 @@ library
                      Foundation.UUID
                      Foundation.System.Entropy
                      Foundation.System.Bindings
-                     Foundation.System.Bindings.POSIX.Stropts
   other-modules:     
                      Foundation.Tuple
                      Foundation.Hashing.FNV
