@@ -1,9 +1,12 @@
-module Foundation.System.Bindings.POSIX.Stropts 
-    where
+module Basement.Terminal.Size 
+    ( size
+    ) where
         
 import Foreign
 import Foreign.C
 import Prelude
+
+#include "../../../cbits/foundation_system.h"
 
 #include "foundation_system.h"
 #ifdef FOUNDATION_SYSTEM_WINDOWS

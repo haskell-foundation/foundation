@@ -63,6 +63,7 @@ library
                      -- Terminal
                      Basement.Terminal
                      Basement.Terminal.ANSI
+                     Basement.Terminal.Size
 
                      -- numeric stuff
                      Basement.IntegralConv
