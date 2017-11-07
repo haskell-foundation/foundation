@@ -6,9 +6,7 @@ import Foreign
 import Foreign.C
 import Prelude
 
-#include "../../../cbits/foundation_system.h"
-
-#include "foundation_system.h"
+#include "../../cbits/foundation_system.h"
 #ifdef FOUNDATION_SYSTEM_WINDOWS
 #include <windows.h>
 #elif defined FOUNDATION_SYSTEM_UNIX
