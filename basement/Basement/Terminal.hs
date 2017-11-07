@@ -1,13 +1,9 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE ForeignFunctionInterface #-}
 module Basement.Terminal
     ( initialize
     ) where
 
 import Basement.Compat.Base
-import Foreign.C
-import qualified Prelude as P
-
 #ifdef mingw32_HOST_OS
 import System.IO (hSetEncoding, utf8, hPutStrLn, stderr, stdin, stdout)
 import System.Win32.Console (setConsoleCP, setConsoleOutputCP, getConsoleCP, getConsoleOutputCP)

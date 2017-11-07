@@ -11,6 +11,3 @@ report.html
 cabal.config
 .idea
 *.iml
-.DS_Store
-*.kate-swp
-*.out
