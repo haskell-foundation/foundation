@@ -1,3 +1,4 @@
+{-# LANGUAGE UndecidableInstances #-}
 module Basement.Numerical.Subtractive
     ( Subtractive(..)
     ) where
@@ -5,6 +6,8 @@ module Basement.Numerical.Subtractive
 import           Basement.Compat.Base
 import           Basement.Compat.Natural
 import           Basement.IntegralConv
+import           Basement.Bounded
+import           Basement.Nat
 import           Basement.Types.Word128 (Word128)
 import           Basement.Types.Word256 (Word256)
 import qualified Basement.Types.Word128 as Word128
@@ -82,3 +85,9 @@ instance Subtractive Prelude.Double where
 instance Subtractive Prelude.Char where
     type Difference Prelude.Char = Prelude.Int
     (-) a b = (Prelude.-) (charToInt a) (charToInt b)
+instance (KnownNat n, NatWithinBound Word64 n) => Subtractive (Zn64 n) where
+    type Difference (Zn64 n) = Zn64 n
+    (-) a b = (Prelude.-) a b
+instance KnownNat n => Subtractive (Zn n) where
+    type Difference (Zn n) = Zn n
+    (-) a b = (Prelude.-) a b

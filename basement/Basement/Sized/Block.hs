@@ -47,6 +47,7 @@ import           Basement.Block (Block, MutableBlock(..), unsafeIndex)
 import qualified Basement.Block as B
 import           Basement.Monad (PrimMonad, PrimState)
 import           Basement.Nat
+import           Basement.Types.OffsetSize
 import           Basement.NormalForm
 import           Basement.PrimType (PrimType)
 import           Basement.Types.OffsetSize (CountOf(..), Offset(..), offsetSub)

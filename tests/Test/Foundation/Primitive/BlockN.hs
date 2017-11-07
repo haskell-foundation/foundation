@@ -11,6 +11,7 @@ module Test.Foundation.Primitive.BlockN
 import           Data.Proxy (Proxy(..))
 import           Foundation hiding (singleton, replicate, cons, uncons, elem)
 import           Basement.Nat
+import           Basement.Types.OffsetSize
 import qualified Basement.Block as B
 import           Basement.Sized.Block
 import           Basement.From

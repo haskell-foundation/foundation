@@ -11,6 +11,7 @@
 -- Functions defined by the POSIX standards
 --
 -----------------------------------------------------------------------------
+{-# LANGUAGE CApiFFI #-}
 {-# OPTIONS_HADDOCK hide #-}
 module Foundation.System.Bindings.Posix
    where
@@ -348,9 +349,9 @@ foreign import ccall unsafe "openat"
 foreign import ccall unsafe "close"
     sysPosixClose :: CFd -> IO CInt
 
-foreign import ccall unsafe "fcntl"
+foreign import capi "fcntl.h fcntl"
     sysPosixFnctlNoArg :: CFd -> CInt -> IO CInt
-foreign import ccall unsafe "fcntl"
+foreign import capi "fcntl.h fcntl"
     sysPosixFnctlPtr :: CFd -> CInt -> Ptr a -> IO CInt
 
 foreign import ccall unsafe "ftruncate"

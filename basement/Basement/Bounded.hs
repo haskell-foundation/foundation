@@ -10,6 +10,7 @@
 --
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Basement.Bounded
     ( Zn64
     , unZn64
@@ -33,6 +34,15 @@ import qualified Prelude
 newtype Zn64 (n :: Nat) = Zn64 { unZn64 :: Word64 }
     deriving (Show,Eq,Ord)
 
+instance (KnownNat n, NatWithinBound Word64 n) => Prelude.Num (Zn64 n) where
+    fromInteger = zn64 . Prelude.fromInteger
+    (+) = add64
+    (-) = sub64
+    (*) = mul64
+    abs a = a
+    negate _ = error "cannot negate Zn64: use Foundation Numerical hierarchy for this function to not be exposed to Zn64"
+    signum (Zn64 a) = Zn64 (Prelude.signum a)
+
 -- | Create an element of ℤ/nℤ from a Word64
 --
 -- If the value is greater than n, then the value is normalized by using the
@@ -46,9 +56,30 @@ zn64Nat :: forall m n . (KnownNat m, KnownNat n, NatWithinBound Word64 m, NatWit
         -> Zn64 n
 zn64Nat p = Zn64 (natValWord64 p)
 
+-- | Add 2 Zn64
+add64 :: forall n . (KnownNat n, NatWithinBound Word64 n) => Zn64 n -> Zn64 n -> Zn64 n
+add64 (Zn64 a) (Zn64 b) = Zn64 ((a Prelude.+ b) `Prelude.mod` natValWord64 (Proxy :: Proxy n))
+
+-- | subtract 2 Zn64
+sub64 :: forall n . (KnownNat n, NatWithinBound Word64 n) => Zn64 n -> Zn64 n -> Zn64 n
+sub64 (Zn64 a) (Zn64 b) = Zn64 ((a Prelude.- b) `Prelude.mod` natValWord64 (Proxy :: Proxy n))
+
+-- | Multiply 2 Zn64
+mul64 :: forall n . (KnownNat n, NatWithinBound Word64 n) => Zn64 n -> Zn64 n -> Zn64 n
+mul64 (Zn64 a) (Zn64 b) = Zn64 ((a Prelude.* b) `Prelude.mod` natValWord64 (Proxy :: Proxy n))
+
 -- | A type level bounded natural
 newtype Zn (n :: Nat) = Zn { unZn :: Natural }
     deriving (Show,Eq,Ord)
+
+instance KnownNat n => Prelude.Num (Zn n) where
+    fromInteger = zn . Prelude.fromInteger
+    (+) = add
+    (-) = sub
+    (*) = mul
+    abs a = a
+    negate _ = error "cannot negate Zn: use Foundation Numerical hierarchy for this function to not be exposed to Zn"
+    signum = Zn . Prelude.signum . unZn
 
 -- | Create an element of ℤ/nℤ from a Natural.
 --
@@ -60,3 +91,16 @@ zn v = Zn (v `Prelude.mod` natValNatural (Proxy :: Proxy n))
 -- | Create an element of ℤ/nℤ from a type level Nat
 znNat :: forall m n . (KnownNat m, KnownNat n, CmpNat m n ~ 'LT) => Proxy m -> Zn n
 znNat m = Zn (natValNatural m)
+
+-- | Add 2 Zn
+add :: forall n . KnownNat n => Zn n -> Zn n -> Zn n
+add (Zn a) (Zn b) = Zn ((a Prelude.+ b) `Prelude.mod` natValNatural (Proxy :: Proxy n))
+
+-- | subtract 2 Zn
+sub :: forall n . KnownNat n => Zn n -> Zn n -> Zn n
+sub (Zn a) (Zn b) = Zn ((a Prelude.- b) `Prelude.mod` natValNatural (Proxy :: Proxy n))
+
+-- | Multiply 2 Zn
+mul :: forall n . KnownNat n => Zn n -> Zn n -> Zn n
+mul (Zn a) (Zn b) = Zn ((a Prelude.* b) `Prelude.mod` natValNatural (Proxy :: Proxy n))
+

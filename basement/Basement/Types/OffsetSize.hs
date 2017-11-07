@@ -9,6 +9,9 @@
 {-# LANGUAGE MagicHash                  #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE CPP                        #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE ConstraintKinds            #-}
 {-# OPTIONS_GHC -fno-prof-auto          #-}
 module Basement.Types.OffsetSize
     ( FileSize(..)
@@ -36,6 +39,10 @@ module Basement.Types.OffsetSize
     , csizeOfSize
     , sizeOfCSSize
     , sizeOfCSize
+    , Countable
+    , Offsetable
+    , natValCountOf
+    , natValOffset
     ) where
 
 #include "MachDeps.h"
@@ -54,6 +61,7 @@ import Basement.Numerical.Number
 import Basement.Numerical.Additive
 import Basement.Numerical.Subtractive
 import Basement.Numerical.Multiplicative
+import Basement.Nat
 import Basement.IntegralConv
 import Data.List (foldl')
 import qualified Prelude
@@ -247,3 +255,15 @@ sizeOfCSize (CSize (W32# sz)) = CountOf (I# (word2Int# sz))
 #else
 sizeOfCSize (CSize (W64# sz)) = CountOf (I# (word2Int# sz))
 #endif
+
+natValCountOf :: forall n ty proxy . (KnownNat n, NatWithinBound (CountOf ty) n) => proxy n -> CountOf ty
+natValCountOf n = CountOf $ Prelude.fromIntegral (natVal n)
+
+natValOffset :: forall n ty proxy . (KnownNat n, NatWithinBound (Offset ty) n) => proxy n -> Offset ty
+natValOffset n = Offset $ Prelude.fromIntegral (natVal n)
+
+type instance NatNumMaxBound (CountOf x) = NatNumMaxBound Int
+type instance NatNumMaxBound (Offset x) = NatNumMaxBound Int
+
+type Countable ty n = NatWithinBound (CountOf ty) n
+type Offsetable ty n = NatWithinBound (Offset ty) n
