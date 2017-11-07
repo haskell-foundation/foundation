@@ -227,8 +227,4 @@ size = do
 #endif
     case maybeWinsize of
         Just winsize1 -> return winsize1
-        Nothing -> do
-            maybeWinsize2 <- tputWinsize
-            case maybeWinsize2 of
-                Just winsize2 -> return winsize2
-                Nothing -> return (80, 25)
+        Nothing -> return (80, 24)
