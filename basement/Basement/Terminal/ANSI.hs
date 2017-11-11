@@ -55,6 +55,10 @@ import Basement.Imports
 import Basement.Numerical.Multiplicative
 import Basement.Numerical.Additive
 
+#ifndef mingw32_HOST_OS
+#define SUPPORT_ANSI_ESCAPE
+#endif
+
 type Escape = String
 
 type Displacement = Word64
@@ -133,20 +137,8 @@ sgrBackgroundColor216 :: RGBComponent -- ^ Red component
                       -> Escape
 sgrBackgroundColor216 r g b = csi3 48 5 (0x10 + 36 * unZn64 r + 6 * unZn64 g + unZn64 b) "m"
 
-#ifdef mingw32_HOST_OS
-csi0 :: String -> String
-csi0 _ = ""
+#ifdef SUPPORT_ANSI_ESCAPE
 
-csi1 :: Displacement -> String -> String
-csi1 _ _ = ""
-
-csi2 :: Displacement -> Displacement -> String -> String
-csi2 _ _ _ = ""
-
-csi3 :: Displacement -> Displacement -> Displacement -> String -> String
-csi3 _ _ _ _ = ""
-
-#else
 csi0 :: String -> String
 csi0 suffix = mconcat ["\ESC[", suffix]
 
@@ -160,4 +152,19 @@ csi3 :: Displacement -> Displacement -> Displacement -> String -> String
 csi3 p1 p2 p3 suffix = mconcat ["\ESC[", pshow p1, ";", pshow p2, ";", pshow p3, suffix]
 
 pshow = show
+
+#else
+
+csi0 :: String -> String
+csi0 _ = ""
+
+csi1 :: Displacement -> String -> String
+csi1 _ _ = ""
+
+csi2 :: Displacement -> Displacement -> String -> String
+csi2 _ _ _ = ""
+
+csi3 :: Displacement -> Displacement -> Displacement -> String -> String
+csi3 _ _ _ _ = ""
+
 #endif

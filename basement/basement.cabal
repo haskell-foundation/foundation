@@ -130,6 +130,8 @@ library
                      Basement.String.Encoding.ASCII7
                      Basement.String.Encoding.ISO_8859_1
 
+                     Basement.Terminal.Size
+
 
   build-depends:       base >= 4.7 && < 5
                      , ghc-prim

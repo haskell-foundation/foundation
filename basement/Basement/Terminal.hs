@@ -1,9 +1,11 @@
 {-# LANGUAGE CPP #-}
 module Basement.Terminal
     ( initialize
+    , getDimensions
     ) where
 
 import Basement.Compat.Base
+import Basement.Terminal.Size (getDimensions)
 #ifdef mingw32_HOST_OS
 import System.IO (hSetEncoding, utf8, hPutStrLn, stderr, stdin, stdout)
 import System.Win32.Console (setConsoleCP, setConsoleOutputCP, getConsoleCP, getConsoleOutputCP)
@@ -11,7 +13,7 @@ import System.Win32.Console (setConsoleCP, setConsoleOutputCP, getConsoleCP, get
 
 initialize :: IO ()
 initialize = do
-#ifdef ming32_HOST_OS
+#ifdef mingw32_HOST_OS
     query getConsoleOutputCP (\e -> setConsoleOutputCP e >> hSetEncoding stdout utf8 >> hSetEncoding stderr utf8) utf8Code
     query getConsoleCP (\e -> setConsoleCP e >> hSetEncoding stdin utf8) utf8Code
   where
