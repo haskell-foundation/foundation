@@ -14,7 +14,7 @@ import           Prelude (fromIntegral)
 #include "foundation_system.h"
 #ifdef FOUNDATION_SYSTEM_WINDOWS
 
-import           System.Win32.Types (HANDLE)
+import           System.Win32.Types (HANDLE, BOOL)
 import           Graphics.Win32.Misc (getStdHandle, sTD_OUTPUT_HANDLE, StdHandleId)
 
 #include <windows.h>
@@ -135,7 +135,7 @@ tiocgwinsz = Prelude.fromIntegral (#{const TIOCGWINSZ} :: Word)
 
 #elif defined FOUNDATION_SYSTEM_WINDOWS
 foreign import ccall "GetConsoleScreenBufferInfo" c_get_console_screen_buffer_info 
-  :: HANDLE -> Ptr ConsoleScreenBufferInfo -> IO CInt
+  :: HANDLE -> Ptr ConsoleScreenBufferInfo -> IO BOOL
 #endif
 
 #ifdef FOUNDATION_SYSTEM_UNIX
@@ -154,9 +154,9 @@ ioctlWinsize fd = alloca $ \winsizePtr -> do
 getConsoleScreenBufferInfo :: HANDLE -> IO (Maybe ConsoleScreenBufferInfo)
 getConsoleScreenBufferInfo handle = alloca $ \infoPtr -> do
     status <- c_get_console_screen_buffer_info handle infoPtr
-    if status == 0
-        then pure Nothing
-        else Just <$> peek infoPtr
+    if status
+        then Just <$> peek infoPtr
+        else pure Nothing
        
 winWinsize :: StdHandleId -> IO (Maybe (CountOf Char, CountOf Char))
 winWinsize handleRef = (infoToDimensions <$>) <$>
