@@ -63,6 +63,7 @@ library
                      -- Terminal
                      Basement.Terminal
                      Basement.Terminal.ANSI
+                     Basement.Terminal.Size
 
                      -- numeric stuff
                      Basement.IntegralConv
@@ -150,3 +151,4 @@ library
   include-dirs:      cbits
   c-sources:         cbits/foundation_mem.c
                      cbits/foundation_rts.c
+                     cbits/foundation_terminal.c
