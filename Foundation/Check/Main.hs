@@ -20,7 +20,7 @@ import           Basement.IntegralConv
 import           Basement.Bounded
 import           Basement.Types.OffsetSize
 import qualified Basement.Terminal.ANSI as ANSI
-import           Foundation.System.Info (os, OS(..))
+import qualified Basement.Terminal as Terminal
 import           Foundation.Collection
 import           Foundation.Numerical
 import           Foundation.IO.Terminal
@@ -90,6 +90,8 @@ filterTestMatching cfg testRoot
 -- | Run tests
 defaultMain :: Test -> IO ()
 defaultMain allTestRoot = do
+    Terminal.initialize
+
     -- parse arguments
     ecfg <- flip parseArgs defaultConfig <$> getArgs
     cfg  <- case ecfg of
@@ -199,18 +201,19 @@ displayPropertySucceed name (CountOf nb) = do
         , if nb == 1 then " test)" else " tests)"
         ]
 
+unicodeEnabled :: Bool
+unicodeEnabled = True
+
 successString :: String
-successString = case os of
-    Right Linux -> green <> " ✓ " <> reset
-    Right OSX   -> green <> " ✓ " <> reset
-    _           -> "[SUCCESS]"
+successString
+    | unicodeEnabled = green <> " ✓ " <> reset
+    | otherwise      = green <> "[SUCCESS] " <> reset
 {-# NOINLINE successString #-}
 
 failureString :: String
-failureString = case os of
-    Right Linux -> red <> " ✗ " <> reset
-    Right OSX   -> red <> " ✗ " <> reset
-    _           -> "[ ERROR ]"
+failureString
+    | unicodeEnabled = red <> " ✗ " <> reset
+    | otherwise      = red <> "[ ERROR ] " <> reset
 {-# NOINLINE failureString #-}
 
 reset, green, red :: ANSI.Escape
