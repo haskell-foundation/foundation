@@ -1,11 +1,12 @@
 {-# LANGUAGE CApiFFI #-}
 module Basement.Terminal.Size 
-    ( size
+    ( getDimensions
     ) where
         
 import           Foreign
 import           Foreign.C
 import           Basement.Compat.Base
+import           Basement.Types.OffsetSize
 import           Basement.Numerical.Subtractive
 import           Basement.Numerical.Additive
 import           Prelude (fromIntegral)
@@ -135,13 +136,16 @@ foreign import ccall "GetConsoleScreenBufferInfo" c_get_console_screen_buffer_in
 #endif
 
 #ifdef FOUNDATION_SYSTEM_UNIX
-ioctlWinsize :: CInt -> IO (Maybe (Int, Int))
+ioctlWinsize :: CInt -> IO (Maybe (CountOf Char, CountOf Char))
 ioctlWinsize fd = alloca $ \winsizePtr -> do
     status <- c_ioctl fd tiocgwinsz winsizePtr
-    winsize <- peek winsizePtr
     if status == (-1 :: CInt)
         then pure Nothing
-        else pure $ Just (Prelude.fromIntegral . ws_col $ winsize, Prelude.fromIntegral . ws_row $ winsize)
+        else Just . toDimensions <$> peek winsizePtr
+  where
+    toDimensions winsize =
+        ( CountOf . Prelude.fromIntegral . ws_col $ winsize
+        , CountOf . Prelude.fromIntegral . ws_row $ winsize)
        
 #elif defined FOUNDATION_SYSTEM_WINDOWS
 getStdHandle :: CULong -> IO (Maybe Handle)
@@ -158,7 +162,7 @@ getConsoleScreenBufferInfo handle = alloca $ \infoPtr -> do
         then pure Nothing
         else Just <$> peek infoPtr
        
-winWinsize :: CULong -> IO (Maybe (Int, Int))
+winWinsize :: CULong -> IO (Maybe (CountOf Char, CountOf Char))
 winWinsize handleRef = (infoToDimensions <$>) <$>
     (getStdHandle handleRef >>= maybe (pure Nothing) getConsoleScreenBufferInfo >>= pure)
   where
@@ -166,17 +170,22 @@ winWinsize handleRef = (infoToDimensions <$>) <$>
         let window = srWindow info
             width = Prelude.fromIntegral (right window - left window + 1)
             height = Prelude.fromIntegral (bottom window - top window + 1)
-         in (width, height)
+         in (CountOf width, CountOf height)
 #endif
 -- defined FOUNDATION_SYSTEM_WINDOWS
 
-size :: IO (Int, Int)
-size = do
+-- | Return the size of the current terminal
+--
+-- If the system is not supported or that querying the system result in an error
+-- then a default size of (80, 24) will be given back.
+getDimensions :: IO (CountOf Char, CountOf Char)
+getDimensions =
 #if defined FOUNDATION_SYSTEM_WINDOWS
-    maybeWinsize <- winWinsize stdOutputHandle
+    maybe defaultSize id <$> winWinsize stdOutputHandle
 #elif defined FOUNDATION_SYSTEM_UNIX
-    maybeWinsize <- ioctlWinsize 0
+    maybe defaultSize id <$> ioctlWinsize 0
+#else
+    pure defaultSize
 #endif
-    case maybeWinsize of
-        Just winsize1 -> return winsize1
-        Nothing -> return (80, 24)
+  where
+    defaultSize = (80, 24)
