@@ -14,7 +14,8 @@ import           Prelude (fromIntegral)
 #include "foundation_system.h"
 #ifdef FOUNDATION_SYSTEM_WINDOWS
 
-import           System.Win32.Misc (HANDLE, getStdHandle, sTD_OUTPUT_HANDLE, StdHandleId)
+import           System.Win32.Types (HANDLE)
+import           Graphics.Win32.Misc (getStdHandle, sTD_OUTPUT_HANDLE, StdHandleId)
 
 #include <windows.h>
 #elif defined FOUNDATION_SYSTEM_UNIX
