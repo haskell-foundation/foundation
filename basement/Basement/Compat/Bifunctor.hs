@@ -5,19 +5,19 @@
 -- Stability   : experimental
 -- Portability : portable
 --
--- A bifunctor is a type constructor that takes 
+-- A bifunctor is a type constructor that takes
 -- two type arguments and is a functor in /both/ arguments. That
--- is, unlike with 'Functor', a type constructor such as 'Either' 
--- does not need to be partially applied for a 'Bifunctor' 
--- instance, and the methods in this class permit mapping 
+-- is, unlike with 'Functor', a type constructor such as 'Either'
+-- does not need to be partially applied for a 'Bifunctor'
+-- instance, and the methods in this class permit mapping
 -- functions over the 'Left' value or the 'Right' value,
--- or both at the same time. 
+-- or both at the same time.
 --
 -- Formally, the class 'Bifunctor' represents a bifunctor
 -- from @Hask@ -> @Hask@.
 --
--- Intuitively it is a bifunctor where both the first and second 
--- arguments are covariant. 
+-- Intuitively it is a bifunctor where both the first and second
+-- arguments are covariant.
 --
 -- You can define a 'Bifunctor' by either defining 'bimap' or by
 -- defining both 'first' and 'second'.
@@ -44,13 +44,14 @@ class Bifunctor p where
     --
     -- @'bimap' f g ≡ 'first' f '.' 'second' g@
     --
-    --==== Examples:
+    -- ==== __Examples__
+    --
     -- >>> bimap toUpper (+1) ('j', 3)
     -- ('J',4)
-    -- 
+    --
     -- >>> bimap toUpper (+1) (Left 'j')
     -- Left 'J'
-    -- 
+    --
     -- >>> bimap toUpper (+1) (Right 3)
     -- Right 4
     bimap :: (a -> b) -> (c -> d) -> p a c -> p b d
@@ -59,7 +60,9 @@ class Bifunctor p where
     -- | Map covariantly over the first argument.
     --
     -- @'first' f ≡ 'bimap' f 'id'@
-    --==== Examples:
+    --
+    -- ==== __Examples__
+    --
     -- >>> first toUpper ('j', 3)
     -- ('J',3)
     --
@@ -71,6 +74,13 @@ class Bifunctor p where
     -- | Map covariantly over the second argument.
     --
     -- @'second' ≡ 'bimap' 'id'@
+    --
+    -- ==== __Examples__
+    -- >>> second (+1) ('j', 3)
+    -- ('j',4)
+    --
+    -- >>> second (+1) (Right 3)
+    -- Right 4
     second :: (b -> c) -> p a b -> p a c
     second = bimap P.id
 
