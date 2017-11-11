@@ -13,6 +13,9 @@ import           Prelude (fromIntegral)
 
 #include "foundation_system.h"
 #ifdef FOUNDATION_SYSTEM_WINDOWS
+
+import           System.Win32.Misc (HANDLE, getStdHandle, sTD_OUTPUT_HANDLE, StdHandleId)
+
 #include <windows.h>
 #elif defined FOUNDATION_SYSTEM_UNIX
 #include <sys/ioctl.h>
@@ -130,9 +133,8 @@ tiocgwinsz :: CULong
 tiocgwinsz = Prelude.fromIntegral (#{const TIOCGWINSZ} :: Word)
 
 #elif defined FOUNDATION_SYSTEM_WINDOWS
-foreign import ccall "GetStdHandle" c_get_std_handle :: CULong -> IO Handle
 foreign import ccall "GetConsoleScreenBufferInfo" c_get_console_screen_buffer_info 
-  :: Handle -> Ptr ConsoleScreenBufferInfo -> IO CInt
+  :: HANDLE -> Ptr ConsoleScreenBufferInfo -> IO CInt
 #endif
 
 #ifdef FOUNDATION_SYSTEM_UNIX
@@ -148,23 +150,16 @@ ioctlWinsize fd = alloca $ \winsizePtr -> do
         , CountOf . Prelude.fromIntegral . ws_row $ winsize)
        
 #elif defined FOUNDATION_SYSTEM_WINDOWS
-getStdHandle :: CULong -> IO (Maybe Handle)
-getStdHandle handleRef = do
-    handle <- c_get_std_handle handleRef
-    if handle == intPtrToPtr invalidHandleValue
-        then pure Nothing
-        else pure $ Just handle
-
-getConsoleScreenBufferInfo :: Handle -> IO (Maybe ConsoleScreenBufferInfo)
+getConsoleScreenBufferInfo :: HANDLE -> IO (Maybe ConsoleScreenBufferInfo)
 getConsoleScreenBufferInfo handle = alloca $ \infoPtr -> do
     status <- c_get_console_screen_buffer_info handle infoPtr
     if status == 0
         then pure Nothing
         else Just <$> peek infoPtr
        
-winWinsize :: CULong -> IO (Maybe (CountOf Char, CountOf Char))
+winWinsize :: StdHandleId -> IO (Maybe (CountOf Char, CountOf Char))
 winWinsize handleRef = (infoToDimensions <$>) <$>
-    (getStdHandle handleRef >>= maybe (pure Nothing) getConsoleScreenBufferInfo >>= pure)
+    (getStdHandle handleRef >>= getConsoleScreenBufferInfo)
   where
     infoToDimensions info =
         let window = srWindow info
@@ -181,7 +176,7 @@ winWinsize handleRef = (infoToDimensions <$>) <$>
 getDimensions :: IO (CountOf Char, CountOf Char)
 getDimensions =
 #if defined FOUNDATION_SYSTEM_WINDOWS
-    maybe defaultSize id <$> winWinsize stdOutputHandle
+    maybe defaultSize id <$> winWinsize sTD_OUTPUT_HANDLE
 #elif defined FOUNDATION_SYSTEM_UNIX
     maybe defaultSize id <$> ioctlWinsize 0
 #else
