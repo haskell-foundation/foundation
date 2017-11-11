@@ -2,6 +2,7 @@
 #if !(MIN_VERSION_base(4,9,0))
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 #endif
 module Basement.Compat.Semigroup
     ( Semigroup(..)
@@ -18,6 +19,7 @@ import Prelude
 import Data.Data (Data)
 import Data.Monoid (Monoid(..))
 import GHC.Generics (Generic)
+import Data.Typeable
 
 -- errorWithoutStackTrace
 
@@ -25,7 +27,7 @@ infixr 6 <>
 infixr 5 :|
 
 data ListNonEmpty a = a :| [a]
-  deriving ( Eq, Ord, Show, Read, Data, Generic )
+  deriving ( Eq, Ord, Show, Read, Data, Typeable, Generic )
 
 -- | The class of semigroups (types with an associative binary operation).
 --
