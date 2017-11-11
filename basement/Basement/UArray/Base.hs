@@ -2,6 +2,8 @@
 {-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
 module Basement.UArray.Base
     ( MUArray(..)
     , UArray(..)
@@ -28,6 +30,8 @@ module Basement.UArray.Base
     , unsafeIndex
     , unsafeIndexer
     , onBackend
+    , onBackendPure
+    , onBackendPure'
     , onBackendPrim
     , onMutableBackend
     , unsafeDewrap
@@ -61,6 +65,7 @@ import           Basement.Compat.Semigroup
 import qualified Basement.Runtime as Runtime
 import           Data.Proxy
 import qualified Basement.Compat.ExtList as List
+import qualified Basement.Alg.Class as Alg
 import           Basement.Types.OffsetSize
 import           Basement.FinalPtr
 import           Basement.NormalForm
@@ -81,6 +86,13 @@ data MUArray ty st = MUArray {-# UNPACK #-} !(Offset ty)
 
 data MUArrayBackend ty st = MUArrayMBA (MutableBlock ty st) | MUArrayAddr (FinalPtr ty)
 
+
+instance PrimType ty => Alg.Indexable (Ptr ty) ty where
+    index (Ptr addr) = primAddrIndex addr
+
+instance (PrimMonad prim, PrimType ty) => Alg.RandomAccess (Ptr ty) prim ty where
+    read (Ptr addr) = primAddrRead addr
+    write (Ptr addr) = primAddrWrite addr
 
 -- | An array of type built on top of GHC primitive.
 --
@@ -265,8 +277,28 @@ onBackend :: (Block ty -> a)
           -> UArray ty
           -> a
 onBackend onBa _      (UArray _ _ (UArrayBA ba))     = onBa ba
-onBackend _    onAddr (UArray _ _ (UArrayAddr fptr)) = withUnsafeFinalPtr fptr (onAddr fptr)
+onBackend _    onAddr (UArray _ _ (UArrayAddr fptr)) = withUnsafeFinalPtr fptr $ \ptr@(Ptr !_) -> 
+                                                           onAddr fptr ptr
 {-# INLINE onBackend #-}
+
+onBackendPure :: (Block ty -> a)
+              -> (Ptr ty -> a)
+              -> UArray ty
+              -> a
+onBackendPure goBA goAddr arr = onBackend goBA (\_ -> pureST . goAddr) arr
+{-# INLINE onBackendPure #-}
+
+onBackendPure' :: PrimType  ty
+               => UArray ty
+               -> (forall container. Alg.Indexable container ty 
+                   => container -> Offset ty -> Offset ty -> a)
+               -> a
+onBackendPure' arr f = onBackendPure (\c -> f c start end) 
+                                     (\c -> f c start end) arr
+  where !len = length arr
+        !start = offset arr
+        !end = start `offsetPlusE` len
+{-# INLINE onBackendPure' #-}
 
 onBackendPrim :: PrimMonad prim
               => (Block ty -> prim a)
