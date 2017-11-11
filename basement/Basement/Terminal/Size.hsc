@@ -3,11 +3,12 @@ module Basement.Terminal.Size
     ( size
     ) where
         
-import Foreign
-import Foreign.C
-import Basement.Compat.Base
-import Basement.Numerical.Subtractive
-import Prelude (fromIntegral)
+import           Foreign
+import           Foreign.C
+import           Basement.Compat.Base
+import           Basement.Numerical.Subtractive
+import           Basement.Numerical.Additive
+import           Prelude (fromIntegral)
 
 #include "foundation_system.h"
 #ifdef FOUNDATION_SYSTEM_WINDOWS
@@ -24,10 +25,10 @@ import Prelude (fromIntegral)
 
 #ifdef FOUNDATION_SYSTEM_UNIX
 data Winsize = Winsize
-    { ws_row :: CUShort
-    , ws_col :: CUShort
-    , ws_xpixel :: CUShort
-    , ws_ypixel :: CUShort
+    { ws_row    :: !Word16
+    , ws_col    :: !Word16
+    , ws_xpixel :: !Word16
+    , ws_ypixel :: !Word16
     }
 
 instance Storable Winsize where
@@ -49,10 +50,10 @@ instance Storable Winsize where
 type Handle = Ptr CChar  -- void *
 
 data SmallRect = SmallRect 
-    { left :: CShort
-    , top :: CShort
-    , right :: CShort
-    , bottom :: CShort
+    { left   :: !Int16
+    , top    :: !Int16
+    , right  :: !Int16
+    , bottom :: !Int16
     } deriving (Show)
 
 instance Storable SmallRect where
@@ -71,8 +72,8 @@ instance Storable SmallRect where
         #{poke SMALL_RECT, Bottom} ptr b
         
 data Coord = Coord 
-    { x :: CShort
-    , y :: CShort
+    { x :: !Int16
+    , y :: !Int16
     } deriving (Show)
 
 instance Storable Coord where
@@ -87,11 +88,11 @@ instance Storable Coord where
         #{poke COORD, Y} ptr y
 
 data ConsoleScreenBufferInfo = ConsoleScreenBufferInfo 
-    { dwSize :: Coord
-    , dwCursorPosition :: Coord
-    , wAttributes :: CUShort
-    , srWindow :: SmallRect
-    , dwMaximumWindowSize :: Coord
+    { dwSize              :: !Coord
+    , dwCursorPosition    :: !Coord
+    , wAttributes         :: !Word16
+    , srWindow            :: !SmallRect
+    , dwMaximumWindowSize :: !Coord
     } deriving (Show)
 
 instance Storable ConsoleScreenBufferInfo where
@@ -121,7 +122,11 @@ stdOutputHandle = #{const STD_OUTPUT_HANDLE}
 
 #ifdef FOUNDATION_SYSTEM_UNIX
 
-foreign import capi "sys/ioctl.h ioctl" c_ioctl :: CInt -> Ptr Winsize -> IO CInt
+foreign import capi "sys/ioctl.h ioctl" c_ioctl :: CInt -> CULong -> Ptr a -> IO CInt
+
+-- | Get the terminal windows size
+tiocgwinsz :: CULong
+tiocgwinsz = Prelude.fromIntegral (#{const TIOCGWINSZ} :: Word)
 
 #elif defined FOUNDATION_SYSTEM_WINDOWS
 foreign import ccall "GetStdHandle" c_get_std_handle :: CULong -> IO Handle
@@ -132,7 +137,7 @@ foreign import ccall "GetConsoleScreenBufferInfo" c_get_console_screen_buffer_in
 #ifdef FOUNDATION_SYSTEM_UNIX
 ioctlWinsize :: CInt -> IO (Maybe (Int, Int))
 ioctlWinsize fd = alloca $ \winsizePtr -> do
-    status <- c_ioctl fd winsizePtr
+    status <- c_ioctl fd tiocgwinsz winsizePtr
     winsize <- peek winsizePtr
     if status == (-1 :: CInt)
         then pure Nothing
@@ -151,7 +156,7 @@ getConsoleScreenBufferInfo handle = alloca $ \infoPtr -> do
     status <- c_get_console_screen_buffer_info handle infoPtr
     if status == 0
         then pure Nothing
-        else peek infoPtr
+        else Just <$> peek infoPtr
        
 winWinsize :: CULong -> IO (Maybe (Int, Int))
 winWinsize handleRef = (infoToDimensions <$>) <$>

@@ -18,6 +18,7 @@ import           Data.Int (Int8, Int16, Int32, Int64)
 import qualified Prelude
 import           Basement.Compat.Natural
 import           Foreign.C.Types
+import           Foreign.Ptr (IntPtr)
 import           System.Posix.Types
 
 -- | Integral Literal support
@@ -64,13 +65,27 @@ instance Integral Int32 where
     fromInteger a = Prelude.fromInteger a
 instance Integral Int64 where
     fromInteger a = Prelude.fromInteger a
+instance Integral IntPtr where
+    fromInteger a = Prelude.fromInteger a
 instance Integral CSize where
     fromInteger a = Prelude.fromInteger a
+instance Integral CShort where
+    fromInteger a = Prelude.fromInteger a
+instance Integral CUShort where
+    fromInteger a = Prelude.fromInteger a
 instance Integral CInt where
+    fromInteger a = Prelude.fromInteger a
+instance Integral CUInt where
+    fromInteger a = Prelude.fromInteger a
+instance Integral CLong where
+    fromInteger a = Prelude.fromInteger a
+instance Integral CULong where
     fromInteger a = Prelude.fromInteger a
 instance Integral COff where
     fromInteger a = Prelude.fromInteger a
 instance Integral CUIntPtr where
+    fromInteger a = Prelude.fromInteger a
+instance Integral CIntPtr where
     fromInteger a = Prelude.fromInteger a
 
 instance Integral Float where
