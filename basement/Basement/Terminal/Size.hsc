@@ -149,13 +149,12 @@ getStdHandle handleRef = do
 getConsoleScreenBufferInfo :: Handle -> IO (Maybe ConsoleScreenBufferInfo)
 getConsoleScreenBufferInfo handle = alloca $ \infoPtr -> do
     status <- c_get_console_screen_buffer_info handle infoPtr
-    info <- peek infoPtr
     if status == 0
         then pure Nothing
-        else pure $ Just info
+        else peek infoPtr
        
 winWinsize :: CULong -> IO (Maybe (Int, Int))
-winWinsize handleRef = infoToDimensions <$>
+winWinsize handleRef = (infoToDimensions <$>) <$>
     (getStdHandle handleRef >>= maybe (pure Nothing) getConsoleScreenBufferInfo >>= pure)
   where
     infoToDimensions info =
