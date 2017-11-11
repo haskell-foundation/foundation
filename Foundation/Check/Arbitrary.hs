@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE CPP #-}
 module Foundation.Check.Arbitrary
     ( Arbitrary(..)
     , frequency
@@ -19,7 +20,9 @@ import           Basement.Types.OffsetSize
 import qualified Basement.Types.Char7 as Char7
 import           Basement.Types.Word128 (Word128(..))
 import           Basement.Types.Word256 (Word256(..))
+#if __GLASGOW_HASKELL__ >= 710
 import qualified Basement.Sized.List as ListN
+#endif
 import           Foundation.Check.Gen
 import           Foundation.Random
 import           Foundation.Bits
@@ -114,8 +117,10 @@ instance (Arbitrary a, Arbitrary b, Arbitrary c, Arbitrary d, Arbitrary e, Arbit
 instance Arbitrary a => Arbitrary [a] where
     arbitrary = genWithParams $ \params ->
         fromList <$> (genMax (genMaxSizeArray params) >>= \i -> replicateM (integralCast i) arbitrary)
+#if __GLASGOW_HASKELL__ >= 710
 instance (Arbitrary a, KnownNat n, NatWithinBound Int n) => Arbitrary (ListN.ListN n a) where
     arbitrary = ListN.replicateM arbitrary
+#endif
 
 arbitraryInteger :: Gen Integer
 arbitraryInteger =
