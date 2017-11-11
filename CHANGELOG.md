@@ -1,3 +1,19 @@
+## 0.0.17
+
+* Add Terminal capabilities: ANSI Escape, UTF8 codepage initialization, get dimensions
+* Checks: Output now has colors
+* Hashable: Add Word128 & Word256 & Boxed Array instances
+* Semigroup: Compatibility with GHC 8.4
+* Drop criterion for benchmark, now use Gauge
+* Remove more UnboxedTuples from Foundation for easier loading with bytecode interpreter
+* Reduce overhead of profiling common primitive operation like size and offset addition by
+  preventing auto-caf in abstraction module
+* Optimise UTF8 validation
+* Optimise String toList (allow fusion)
+* Optimise String reversal
+* Merge different version of lowlevel array algorithms with one backed by a class.
+* Zn64/Zn : Add Num, Additive, Subtractive, NormalForm, Arbitrary instances
+
 ## 0.0.16
 
 * Re-organize type sized structure and add UVect and Vect
