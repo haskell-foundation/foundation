@@ -151,4 +151,3 @@ library
   include-dirs:      cbits
   c-sources:         cbits/foundation_mem.c
                      cbits/foundation_rts.c
-                     cbits/foundation_terminal.c
