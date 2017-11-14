@@ -1,3 +1,4 @@
+{-# Language CPP #-}
 module Basement.Numerical.Number
     ( IsIntegral(..)
     , IsNatural(..)
@@ -77,8 +78,10 @@ instance IsIntegral CLLong where
     toInteger i = Prelude.toInteger i
 instance IsIntegral CULLong where
     toInteger i = Prelude.toInteger i
+#if MIN_VERSION_base(4,10,0)
 instance IsIntegral CBool where
     toInteger i = Prelude.toInteger i
+#endif
 instance IsIntegral CIntPtr where
     toInteger i = Prelude.toInteger i
 instance IsIntegral CUIntPtr where

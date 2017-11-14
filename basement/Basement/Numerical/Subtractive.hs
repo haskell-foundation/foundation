@@ -1,4 +1,4 @@
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE CPP, UndecidableInstances #-}
 module Basement.Numerical.Subtractive
     ( Subtractive(..)
     ) where
@@ -140,9 +140,11 @@ instance Subtractive CLLong where
 instance Subtractive CULLong where
     type Difference CULLong = CULLong
     (-) = (Prelude.-)
+#if MIN_VERSION_base(4,10,0)
 instance Subtractive CBool where
     type Difference CBool = CBool
     (-) = (Prelude.-)
+#endif
 instance Subtractive CIntPtr where
     type Difference CIntPtr = CIntPtr
     (-) = (Prelude.-)

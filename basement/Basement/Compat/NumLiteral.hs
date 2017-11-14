@@ -1,3 +1,4 @@
+{-# Language CPP #-}
 -- |
 -- Module      : Basement.Compat.NumLiteral
 -- License     : BSD-style
@@ -102,8 +103,10 @@ instance Integral CLLong where
     fromInteger a = Prelude.fromInteger a
 instance Integral CULLong where
     fromInteger a = Prelude.fromInteger a
+#if MIN_VERSION_base(4, 10, 0)
 instance Integral CBool where
     fromInteger a = Prelude.fromInteger a
+#endif
 instance Integral CIntPtr where
     fromInteger a = Prelude.fromInteger a
 instance Integral CUIntPtr where
