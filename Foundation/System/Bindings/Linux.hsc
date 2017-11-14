@@ -16,7 +16,7 @@ module Foundation.System.Bindings.Linux
    where
 
 import Basement.Compat.Base
-import Foreign.C.Types
+import Basement.Compat.C.Types
 import Foundation.System.Bindings.PosixDef
 
 #define __USE_GNU

@@ -7,7 +7,7 @@ module Basement.Bindings.Memory
 import GHC.IO
 import GHC.Prim
 import GHC.Word
-import Foreign.C.Types
+import Basement.Compat.C.Types
 import Foreign.Ptr
 import Basement.Types.OffsetSize
 

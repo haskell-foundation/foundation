@@ -12,11 +12,11 @@ module Basement.Types.Ptr
     ) where
 
 import           Basement.Compat.Base
+import           Basement.Compat.C.Types
 import           Basement.Types.OffsetSize
 import           GHC.Ptr
 import           GHC.Prim
 import           GHC.Types
-import           Foreign.C.Types
 
 data Addr = Addr Addr#
     deriving (Eq,Ord)

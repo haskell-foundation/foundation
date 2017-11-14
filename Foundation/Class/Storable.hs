@@ -35,9 +35,9 @@ import GHC.Types (Double, Float)
 import Foreign.Ptr (castPtr)
 import qualified Foreign.Ptr
 import qualified Foreign.Storable (peek, poke)
-import           Foreign.C.Types (CChar, CUChar)
 
 import Basement.Compat.Base
+import Basement.Compat.C.Types (CChar, CUChar)
 import Basement.Types.OffsetSize
 import Basement.Types.Word128 (Word128(..))
 import Basement.Types.Word256 (Word256(..))
