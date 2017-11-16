@@ -21,8 +21,7 @@ description:
     * Usual partial functions distinguished through type system
 license:             BSD3
 license-file:        LICENSE
-copyright:           2015-2017 Vincent Hanquez <vincent@snarc.org>
-                     2017      Foundation Maintainers
+copyright:           2015-2017 Vincent Hanquez <vincent@snarc.org>, 2017- Foundation Maintainers
 author:              Vincent Hanquez <vincent@snarc.org>
 maintainer:          vincent@snarc.org
 category:            foundation
@@ -37,7 +36,7 @@ extra-doc-files:     README.md
 
 source-repository head
   type: git
-  location: https://github.com/haskell-foundation/foundation.git
+  location: https://github.com/haskell-foundation/foundation
 
 flag experimental
   description:       Enable building experimental features, known as highly unstable or without good support cross-platform
