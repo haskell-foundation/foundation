@@ -18,7 +18,7 @@ unichar :: P.Parser String String
 unichar = P.takeWhile (`elem` hexDigits)
 
 unichars :: P.Parser String [String]
-unichars = P.repeat (P.Between $ 1 `P.And` 9) elemz
+unichars = P.some elemz
     where elemz = P.string " " *> unichar
 
 semiCol :: P.Parser String ()

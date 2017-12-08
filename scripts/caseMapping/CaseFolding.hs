@@ -8,15 +8,13 @@ module CaseFolding
     , mapCF
     ) where
 
-import Foundation 
-import Foundation.IO
+import           Foundation 
+import           Foundation.IO
 import qualified Foundation.Parser as P 
-import Foundation.Collection (Element, nonEmpty_)
-import qualified Foundation.String as S (lower, fromBytesUnsafe, Encoding(..))
+import qualified Foundation.String as S (lower, fromBytesUnsafe)
+import           Foundation.VFS.FilePath
 
 import UnicodeParsers
-
-type FilePath = [Char]
 
 data Fold = Fold {
       code :: String
@@ -36,11 +34,11 @@ entries = CF <$> P.many comment <*> P.some entry
                  <*> unichars <* semiCol
                  <*> (P.string "# " *> P.takeWhile (/= '\n')) <* P.string "\n"
 
-parseCF :: FilePath -> IO (P.Result String CaseFolding)
-parseCF name = P.parse entries . S.fromBytesUnsafe <$> readFile (fromString name)
+parseCF :: FilePath -> IO (Either (P.ParseError String) CaseFolding)
+parseCF name = P.parseOnly entries . S.fromBytesUnsafe <$> readFile name
 
-mapCF :: CaseFolding -> [String]
-mapCF (CF _ ms) = typ <> (fmap nice . filter p $ ms) <> [last]
+mapCF :: (String -> String) -> CaseFolding -> [String]
+mapCF twiddle (CF _ ms) = typ <> (fmap nice . filter p $ ms) <> [last]
     where
       typ = ["foldMapping :: forall s. Char -> s -> Step (CC s) Char"
              ,"{-# NOINLINE foldMapping #-}"]
@@ -50,4 +48,4 @@ mapCF (CF _ ms) = typ <> (fmap nice . filter p $ ms) <> [last]
          where pMap = mapping c <> ["'\\0'","'\\0'","'\\0'"]
                [x,y,z] = take (CountOf 3) pMap
       p f = status f `elem` ("CF" :: String) &&
-            mapping f /= [S.lower (code f)]
+            mapping f /= [twiddle (code f)]
