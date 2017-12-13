@@ -49,16 +49,16 @@ mapSC :: String -> (Case -> [String]) -> (String -> String) -> SpecialCasing -> 
 mapSC wich access twiddle (SC _ ms) =
     typ `mappend` (fmap nice . filter p $ ms) `mappend` last
   where
-    typ    = [wich <>  "Mapping :: forall s. Char -> s -> Step (CC s) Char",
+    typ    = [wich <>  "Mapping :: Char -> CM",
               "{-# NOINLINE " <> wich <> "Mapping #-}"]
-    last   = [wich <> "Mapping c s = Yield (to" <> ucFst wich 
-              <> " c) (CC s '\\0' '\\0')","",""]
+    last   = [wich <> "Mapping c = CM (to" <> ucFst wich 
+              <> " c) '\\0' '\\0'","",""]
     p c = [k] /= a && a /= [twiddle k] && null (conditions c)
         where a = access c
               k = code c
     nice c = "-- " <> name c <> "\n" <>
-             wich <> "Mapping " <> pHex(code c) <> " s = Yield " 
-             <> x <> " (CC s " <> y <> " " <> z <> ")"
+             wich <> "Mapping " <> pHex(code c) <> " = CM " 
+             <> x <> " " <> y <> " " <> z
         where pMap = (pHex <$> access c) <> ["'\\0'","'\\0'","'\\0'"]
               pHex x = "'\\x" <> x <> "'" 
               [x,y,z] = take (CountOf 3) pMap

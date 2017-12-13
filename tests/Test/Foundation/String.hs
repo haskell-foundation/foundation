@@ -59,6 +59,14 @@ testStringCases =
               "this is only a simple string but quite longer than the 64 bytes used in the modified UTF8 parser"
               "this is only a simple string but quite longer than the 64 bytes used in the modified UTF8 parser"
         ]
+    , Group "CaseMapping" 
+         [ CheckPlan "a should capitalize to A" $ validate "a" $ upper "a" == "A"
+         , CheckPlan "b should capitalize to B" $ validate "b" $ upper "b" == "B"
+         , CheckPlan "B should capitalize to B" $ validate "B" $ upper "B" == "B"
+         , CheckPlan "é should capitalize to É" $ validate "é" $ upper "é" == "É"
+         , CheckPlan "ß should capitalize to SS" $ validate "ß" $ upper "ß" == "SS"
+         , CheckPlan "ﬄ should capitalize to FFL" $ validate "ﬄ" $ upper "ﬄ" == "FFL"
+        ]
     {-
     , testGroup "replace" [
           testCase "indices '' 'bb' should raise an error" $ do

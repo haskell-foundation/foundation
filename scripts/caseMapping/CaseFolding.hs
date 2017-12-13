@@ -40,13 +40,13 @@ parseCF name = P.parseOnly entries . S.fromBytesUnsafe <$> readFile name
 mapCF :: (String -> String) -> CaseFolding -> [String]
 mapCF twiddle (CF _ ms) = typ <> (fmap nice . filter p $ ms) <> [last]
     where
-      typ    = ["foldMapping :: forall s. Char -> s -> Step (CC s) Char",
+      typ    = ["foldMapping :: Char -> CM",
                 "{-# NOINLINE foldMapping #-}"]
-      last   = "foldMapping c s = Yield (toLower c) (CC s '\\0' '\\0')"
+      last   = "foldMapping c = CM (toLower c) '\\0' '\\0'"
       p f    = status f `elem` ("CF" :: String) &&
                mapping f /= [twiddle (code f)]
       nice c = "-- " <> name c <> "\n" <>
-               "foldMapping " <> code c <> " s = Yield " <> x <> " (CC s " <> y <> " " <> z <> ")"
+               "foldMapping " <> niceMap (code c) <> " = CM " <> x <> " " <> y <> " " <> z
            where pMap = (niceMap <$> mapping c) <> ["'\\0'","'\\0'","'\\0'"]
                  niceMap x = "'\\x" <> x <> "'" 
                  [x,y,z] = take (CountOf 3) pMap
