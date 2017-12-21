@@ -53,7 +53,7 @@ toPinnedStatus# _  = Pinned
 -- Since GHC 7.8, boolean primitive don't return Bool but Int#.
 #if MIN_VERSION_base(4,7,0)
 bool# :: Int# -> Prelude.Bool
-bool# v = tagToEnum# v
+bool# v = isTrue# v
 #else
 bool# :: Prelude.Bool -> Prelude.Bool
 bool# v = v
