@@ -26,6 +26,7 @@ module Basement.Compat.Primitive
     ) where
 
 import qualified Prelude
+import           GHC.Exts
 import           GHC.Prim
 import           GHC.Word
 #if __GLASGOW_HASKELL__ >= 800
