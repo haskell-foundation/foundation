@@ -184,7 +184,9 @@ elements :: NonEmpty [a] -> Gen a
 elements l = frequency (nonEmptyFmap (\x -> (1, pure x)) l)
 
 between :: (Word, Word) -> Gen Word
-between (x,y) = (+) x <$> genMax range
+between (x,y)
+    | range == 0 = pure x
+    | otherwise = (+) x <$> genMax range
   where range = y - x
 
 genMax :: Word -> Gen Word
