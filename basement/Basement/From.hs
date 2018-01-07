@@ -94,12 +94,6 @@ tryInto = tryFrom
 instance From a a where
     from = id
 
--- Simple numerical instances
-instance From Int Word where
-    from (I# i) = W# (int2Word# i)
-instance From Word Int where
-    from (W# w) = I# (word2Int# w)
-
 instance IsNatural n => From n Natural where
     from = toNatural
 instance IsIntegral n => From n Integer where
