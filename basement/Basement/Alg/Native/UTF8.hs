@@ -25,6 +25,7 @@ module Basement.Alg.Native.UTF8
     , primIndex64
     , primRead8
     , primWrite8
+    , sizeChar
     ) where
 
 import           GHC.Int
@@ -124,6 +125,16 @@ prevSkip ba offset = loop (offset `offsetMinusE` sz1)
     loop o
         | isContinuation (primIndex8 ba o) = loop (o `offsetMinusE` sz1)
         | otherwise                       = o
+
+sizeChar :: Char -> CountOf Word8
+sizeChar !c
+    | bool# (ltWord# x 0x80##   ) = CountOf 1
+    | bool# (ltWord# x 0x800##  ) = CountOf 2
+    | bool# (ltWord# x 0x10000##) = CountOf 3
+    | otherwise                   = CountOf 4
+  where
+    !(I# xi) = fromEnum c
+    !x       = int2Word# xi
 
 write :: PrimMonad prim => Mutable (PrimState prim) -> Offset8 -> Char -> prim Offset8
 write mba !i !c
