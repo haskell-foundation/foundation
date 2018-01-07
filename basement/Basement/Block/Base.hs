@@ -13,6 +13,7 @@ module Basement.Block.Base
     , unsafeCopyElementsRO
     , unsafeCopyBytes
     , unsafeCopyBytesRO
+    , unsafeCopyBytesPtr
     , unsafeRead
     , unsafeWrite
     , unsafeIndex
@@ -325,6 +326,17 @@ unsafeCopyBytesRO :: forall prim ty . PrimMonad prim
 unsafeCopyBytesRO (MutableBlock dstMba) (Offset (I# d)) (Block srcBa) (Offset (I# s)) (CountOf (I# n)) =
     primitive $ \st -> (# copyByteArray# srcBa s dstMba d n st, () #)
 {-# INLINE unsafeCopyBytesRO #-}
+
+-- | Copy a number of bytes from a Ptr to a MutableBlock with specific byte offsets
+unsafeCopyBytesPtr :: forall prim ty . PrimMonad prim
+                   => MutableBlock ty (PrimState prim) -- ^ destination mutable block
+                   -> Offset Word8                     -- ^ offset at destination
+                   -> Ptr ty                           -- ^ source block
+                   -> CountOf Word8                    -- ^ number of bytes to copy
+                   -> prim ()
+unsafeCopyBytesPtr (MutableBlock dstMba) (Offset (I# d)) (Ptr srcBa) (CountOf (I# n)) =
+    primitive $ \st -> (# copyAddrToByteArray# srcBa dstMba d n st, () #)
+{-# INLINE unsafeCopyBytesPtr #-}
 
 -- | read from a cell in a mutable block without bounds checking.
 --
