@@ -154,6 +154,12 @@ instance From Word16 Word256 where
     from (W16# i) = Word256 0 0 0 (wordToWord64 $ W# i)
 instance From Word16 Word where
     from (W16# i) = W# i
+instance From Word16 Int32 where
+    from (W16# w) = I32# (word2Int# w)
+instance From Word16 Int64 where
+    from (W16# w) = intToInt64 (I# (word2Int# w))
+instance From Word16 Int where
+    from (W16# w) = I# (word2Int# w)
 
 instance From Word32 Word64 where
     from (W32# i) = wordToWord64 (W# i)
@@ -163,6 +169,10 @@ instance From Word32 Word256 where
     from (W32# i) = Word256 0 0 0 (wordToWord64 $ W# i)
 instance From Word32 Word where
     from (W32# i) = W# i
+instance From Word32 Int64 where
+    from (W32# w) = intToInt64 (I# (word2Int# w))
+instance From Word32 Int where
+    from (W32# w) = I# (word2Int# w)
 
 instance From Word64 Word128 where
     from w = Word128 0 w
