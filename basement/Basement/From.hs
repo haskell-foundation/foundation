@@ -41,6 +41,7 @@ import           Basement.Numerical.Number
 import           Basement.Numerical.Conversion
 import qualified Basement.Block as Block
 import qualified Basement.BoxedArray as BoxArray
+import           Basement.Cast (cast)
 import qualified Basement.UArray as UArray
 import qualified Basement.String as String
 import qualified Basement.Types.AsciiString as AsciiString
@@ -191,7 +192,9 @@ instance From (Maybe a) (Either () a) where
 instance From (CountOf ty) Int where
     from (CountOf n) = n
 instance From (CountOf ty) Word where
-    from (CountOf n) = from n
+    -- here it is ok to cast the underlying `Int` held by `CountOf` to a `Word`
+    -- as the `Int` should never hold a negative value.
+    from (CountOf n) = cast n
 
 instance From (Either a b) (These a b) where
     from (Left a) = This a

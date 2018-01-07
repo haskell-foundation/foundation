@@ -33,6 +33,7 @@ library
                      Basement.PrimType
 
                      Basement.Exception
+                     Basement.Cast
                      Basement.From
 
                      Basement.Types.Char7
