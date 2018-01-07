@@ -8,6 +8,7 @@ module Basement.Block.Base
     , unsafeNew
     , unsafeThaw
     , unsafeFreeze
+    , unsafeShrink
     , unsafeCopyElements
     , unsafeCopyElementsRO
     , unsafeCopyBytes
@@ -239,6 +240,10 @@ unsafeFreeze (MutableBlock mba) = primitive $ \s1 ->
     case unsafeFreezeByteArray# mba s1 of
         (# s2, ba #) -> (# s2, Block ba #)
 {-# INLINE unsafeFreeze #-}
+
+unsafeShrink :: PrimMonad prim => MutableBlock ty (PrimState prim) -> CountOf ty -> prim ()
+unsafeShrink (MutableBlock mba) (CountOf (I# nsz)) = primitive $ \s ->
+  (# shrinkMutableByteArray# mba nsz s, () #)
 
 -- | Thaw an immutable block.
 --
