@@ -195,6 +195,18 @@ instance From (CountOf ty) Word where
     -- here it is ok to cast the underlying `Int` held by `CountOf` to a `Word`
     -- as the `Int` should never hold a negative value.
     from (CountOf n) = cast n
+instance From Word (Offset ty) where
+    from w = Offset (cast w)
+instance TryFrom Int (Offset ty) where
+    tryFrom i
+        | i < 0     = Nothing
+        | otherwise = Just (Offset i)
+instance TryFrom Int (CountOf ty) where
+    tryFrom i
+        | i < 0     = Nothing
+        | otherwise = Just (CountOf i)
+instance From Word (CountOf ty) where
+    from w = CountOf (cast w)
 
 instance From (Either a b) (These a b) where
     from (Left a) = This a

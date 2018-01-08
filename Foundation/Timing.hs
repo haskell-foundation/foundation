@@ -13,8 +13,8 @@ module Foundation.Timing
     , measure
     ) where
 
-import           Basement.Imports
-import           Basement.IntegralConv
+import           Basement.Imports hiding (from)
+import           Basement.From (from)
 import           Basement.Monad
 -- import           Basement.UArray hiding (unsafeFreeze)
 import           Basement.UArray.Mutable (MUArray)
@@ -57,7 +57,7 @@ getGCStats = do
     if r then pure Nothing else Just <$> GHC.getGCStats
 
 diffGC :: Maybe GHC.GCStats -> Maybe GHC.GCStats -> Maybe Word64
-diffGC gc2 gc1 = integralCast <$> (((-) `on` GHC.bytesAllocated) <$> gc2 <*> gc1)
+diffGC gc2 gc1 = cast <$> (((-) `on` GHC.bytesAllocated) <$> gc2 <*> gc1)
 #endif
 
 -- | Simple one-time measurement of time & other metrics spent in a function
@@ -72,7 +72,7 @@ stopWatch f !a = do
 -- | In depth timing & other metrics analysis of a function
 measure :: Word -> (a -> b) -> a -> IO Measure
 measure nbIters f a = do
-    d <- mutNew (integralCast nbIters) :: IO (MUArray NanoSeconds (PrimState IO))
+    d <- mutNew (from nbIters) :: IO (MUArray NanoSeconds (PrimState IO))
     loop d 0
     Measure <$> unsafeFreeze d
             <*> pure nbIters
@@ -81,5 +81,5 @@ measure nbIters f a = do
         | i == nbIters = return ()
         | otherwise    = do
             (_, r) <- measuringNanoSeconds (evaluate $ f a)
-            mutUnsafeWrite d (integralCast i) r
+            mutUnsafeWrite d (from i) r
             loop d (i+1)

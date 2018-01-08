@@ -109,6 +109,7 @@ import           Basement.Numerical.Additive
 import           Basement.Numerical.Subtractive
 import           Basement.Numerical.Multiplicative
 import           Basement.Numerical.Number
+import           Basement.Cast
 import           Basement.Monad
 import           Basement.PrimType
 import           Basement.FinalPtr
@@ -611,7 +612,7 @@ length (String arr)
 replicate :: CountOf Char -> Char -> String
 replicate (CountOf n) c = runST (new nbBytes >>= fill)
   where
-    nbBytes   = scale (integralCast n :: Word) sz
+    nbBytes   = scale (cast n :: Word) sz
     sz = charToBytes (fromEnum c)
     fill :: PrimMonad prim => MutableString (PrimState prim) -> prim String
     fill ms = loop (Offset 0)
@@ -1135,7 +1136,7 @@ readRational s =
         case mExponant of
             Just exponent
                 | exponent < -10000 || exponent > 10000 -> Nothing
-                | otherwise                             -> Just $ modF isNegative integral % (10 Prelude.^ (integralCast floatingDigits - exponent))
+                | otherwise                             -> Just $ modF isNegative integral % (10 Prelude.^ (cast floatingDigits - exponent))
             Nothing                                     -> Just $ modF isNegative integral % (10 Prelude.^ floatingDigits)
   where
     modF True  = negate . integralUpsize
@@ -1192,9 +1193,9 @@ readFloatingExact str f
         consumeFloat isNegative integral startOfs =
             case decimalDigitsBA integral ba eofs startOfs of
                 (# acc, True, endOfs #) | endOfs > startOfs -> let (CountOf !diff) = endOfs - startOfs
-                                                                in f isNegative acc (integralCast diff) Nothing
+                                                                in f isNegative acc (cast diff) Nothing
                 (# acc, False, endOfs #) | endOfs > startOfs -> let (CountOf !diff) = endOfs - startOfs
-                                                                in consumeExponant isNegative acc (integralCast diff) endOfs
+                                                                in consumeExponant isNegative acc (cast diff) endOfs
                 _                                           -> Nothing
 
         consumeExponant !isNegative !integral !floatingDigits !startOfs
@@ -1232,9 +1233,9 @@ readFloatingExact str f
         consumeFloat isNegative integral startOfs =
             case decimalDigitsPtr integral ptr eofs startOfs of
                 (# acc, True, endOfs #) | endOfs > startOfs -> let (CountOf !diff) = endOfs - startOfs
-                                                                in f isNegative acc (integralCast diff) Nothing
+                                                                in f isNegative acc (cast diff) Nothing
                 (# acc, False, endOfs #) | endOfs > startOfs -> let (CountOf !diff) = endOfs - startOfs
-                                                                in consumeExponant isNegative acc (integralCast diff) endOfs
+                                                                in consumeExponant isNegative acc (cast diff) endOfs
                 _                                           -> Nothing
 
         consumeExponant !isNegative !integral !floatingDigits !startOfs

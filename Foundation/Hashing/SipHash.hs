@@ -21,6 +21,7 @@ import           Data.Bits
 import           Basement.Compat.Base
 import           Basement.Types.OffsetSize
 import           Basement.PrimType
+import           Basement.Cast (cast)
 import           Basement.IntegralConv
 import           Foundation.Hashing.Hasher
 import qualified Basement.UArray as A
@@ -175,7 +176,7 @@ finish !c !d (Sip ist incremental (CountOf len)) = finalize d $
         SipIncremental7 acc -> process c ist (lenMask .|. acc)
   where
     lenMask = (wlen .&. 0xff) .<<. 56
-    wlen = integralCast (integralUpsize len :: Int64) :: Word64
+    wlen = cast (integralUpsize len :: Int64) :: Word64
 
 -- | same as 'hash', except also specifies the number of sipround iterations for compression (C) and digest (D).
 mixBa :: PrimType a => Int -> UArray a -> Sip -> Sip
@@ -202,7 +203,7 @@ mixBa !c !array (Sip initSt initIncr currentLen) =
                         .|. to64 0  (primBaIndex ba (ofs + Offset 7))
                 in loop8 (process c st v) SipIncremental0 (start + Offset 8) l8
         loop8 !st !incr !ofs !l = loop1 st incr ofs l
-        loop1 !st !incr !ofs !l = case l - 1 of 
+        loop1 !st !incr !ofs !l = case l - 1 of
             Nothing -> Sip st incr (currentLen + totalLen)
             Just l1 -> let (!st', !incr') = mix8Prim c (primBaIndex ba ofs) st incr
                         in loop1 st' incr' (ofs + Offset 1) l1

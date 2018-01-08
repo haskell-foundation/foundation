@@ -1,41 +1,33 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE CPP                   #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE DefaultSignatures     #-}
 {-# LANGUAGE MagicHash             #-}
-{-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 -- |
 -- Module      : Basement.Cast
 -- License     : BSD-style
 -- Maintainer  : Haskell Foundation
 --
 module Basement.Cast
-    ( Cast(..)
+    ( Cast, cast
     ) where
 
-import           Basement.Compat.Base
+#include "MachDeps.h"
 
-import           GHC.Types
-import           GHC.Prim
-import           GHC.Int
-import           GHC.Word
+import qualified Basement.Block.Base as Block
+import           Basement.Compat.Base
+import           Basement.Compat.Natural
 import           Basement.Numerical.Number
 import           Basement.Numerical.Conversion
-import qualified Basement.Block.Base as Block
-import qualified Basement.BoxedArray as BoxArray
-import qualified Basement.UArray as UArray
-import qualified Basement.String as String
-import qualified Basement.Types.AsciiString as AsciiString
-import           Basement.Types.Word128 (Word128(..))
-import           Basement.Types.Word256 (Word256(..))
-import qualified Basement.Types.Word128 as Word128
-import qualified Basement.Types.Word256 as Word256
-import           Basement.These
-import           Basement.PrimType (PrimType)
-import           Basement.Types.OffsetSize
-import           Basement.Compat.Natural
-import qualified Prelude (fromIntegral)
+import           Basement.PrimType
+
+import           Data.Proxy (Proxy(..))
+
+import           GHC.Int
+import           GHC.Prim
+import           GHC.ST
+import           GHC.Word
 
 -- | `Cast` an object of type a to b.
 --
@@ -54,98 +46,79 @@ import qualified Prelude (fromIntegral)
 class Cast source destination where
     cast :: source -> destination
 
-instance Cast Int Word where
+    default cast :: ( PrimType source
+                    , PrimType destination
+                    , PrimSize source ~ PrimSize destination
+                    )
+                 => source -> destination
+    cast a = runST $ do
+        mba <- Block.new 1
+        Block.unsafeWrite mba 0 a
+        Block.unsafeRead (Block.unsafeRecast mba) 0
+
+instance Cast Int8  Word8 where
+    cast (I8# i) = W8# (narrow8Word# (int2Word# i))
+instance Cast Int16 Word16 where
+    cast (I16# i) = W16# (narrow16Word# (int2Word# i))
+instance Cast Int32 Word32 where
+    cast (I32# i) = W32# (narrow32Word# (int2Word# i))
+instance Cast Int64 Word64 where
+    cast (I64# i) = W64# (int2Word# i)
+instance Cast Int   Word where
     cast (I# i) = W# (int2Word# i)
-instance Cast Word Int where
+
+instance Cast Word8  Int8 where
+    cast (W8# i) = I8# (narrow8Int# (word2Int# i))
+instance Cast Word16 Int16 where
+    cast (W16# i) = I16# (narrow16Int# (word2Int# i))
+instance Cast Word32 Int32 where
+    cast (W32# i) = I32# (narrow32Int# (word2Int# i))
+instance Cast Word64 Int64 where
+    cast (W64# i) = I64# (word2Int# i)
+instance Cast Word   Int where
     cast (W# w) = I# (word2Int# w)
 
--- Int casts
+#if WORD_SIZE_IN_BITS == 64
+instance Cast Word   Word64 where
+    cast (W# w) = W64# w
+instance Cast Word64 Word where
+    cast (W64# w) = W# w
 
-instance Cast Int8 Int16 where
-    cast (I8# i) = I16# i
-instance Cast Int8 Int32 where
-    cast (I8# i) = I32# i
-instance Cast Int8 Int64 where
-    cast (I8# i) = intToInt64 (I# i)
-instance Cast Int8 Int where
-    cast (I8# i) = I# i
+instance Cast Word   Int64 where
+    cast (W# w) = I64# (word2Int# w)
+instance Cast Int64  Word where
+    cast (I64# i) = W# (int2Word# i)
 
-instance Cast Int16 Int32 where
-    cast (I16# i) = I32# i
-instance Cast Int16 Int64 where
-    cast (I16# i) = intToInt64 (I# i)
-instance Cast Int16 Int where
-    cast (I16# i) = I# i
+instance Cast Int    Int64 where
+    cast (I# i) = I64# i
+instance Cast Int64  Int where
+    cast (I64# i) = I# i
 
-instance Cast Int32 Int64 where
-    cast (I32# i) = intToInt64 (I# i)
-instance Cast Int32 Int where
+instance Cast Int    Word64 where
+    cast (I# i) = W64# (int2Word# i)
+instance Cast Word64 Int where
+    cast (W64# w) = I# (word2Int# w)
+#else
+instance Cast Word   Word32 where
+    cast (W# w) = W32# w
+instance Cast Word32 Word where
+    cast (W32# w) = W# w
+
+instance Cast Word   Int32 where
+    cast (W# w) = I32# (word2Int# w)
+instance Cast Int32  Word where
+    cast (I32# i) = W# (int2Word# i)
+
+instance Cast Int    Int32 where
+    cast (I# i) = I32# i
+instance Cast Int32  Int where
     cast (I32# i) = I# i
 
-instance Cast Int Int64 where
-    cast = intToInt64
-
--- Word casts
-
-instance Cast Word8 Word16 where
-    cast (W8# i) = W16# i
-instance Cast Word8 Word32 where
-    cast (W8# i) = W32# i
-instance Cast Word8 Word64 where
-    cast (W8# i) = wordToWord64 (W# i)
-instance Cast Word8 Word128 where
-    cast (W8# i) = Word128 0 (wordToWord64 $ W# i)
-instance Cast Word8 Word256 where
-    cast (W8# i) = Word256 0 0 0 (wordToWord64 $ W# i)
-instance Cast Word8 Word where
-    cast (W8# i) = W# i
-instance Cast Word8 Int8 where
-    cast (W8# w) = I8# (word2Int# w)
-instance Cast Word8 Int16 where
-    cast (W8# w) = I16# (word2Int# w)
-instance Cast Word8 Int32 where
-    cast (W8# w) = I32# (word2Int# w)
-instance Cast Word8 Int64 where
-    cast (W8# w) = intToInt64 (I# (word2Int# w))
-instance Cast Word8 Int where
-    cast (W8# w) = I# (word2Int# w)
-
-instance Cast Word16 Word32 where
-    cast (W16# i) = W32# i
-instance Cast Word16 Word64 where
-    cast (W16# i) = wordToWord64 (W# i)
-instance Cast Word16 Word128 where
-    cast (W16# i) = Word128 0 (wordToWord64 $ W# i)
-instance Cast Word16 Word256 where
-    cast (W16# i) = Word256 0 0 0 (wordToWord64 $ W# i)
-instance Cast Word16 Word where
-    cast (W16# i) = W# i
-instance Cast Word16 Int16 where
-    cast (W16# w) = I16# (word2Int# w)
-instance Cast Word16 Int32 where
-    cast (W16# w) = I32# (word2Int# w)
-instance Cast Word16 Int64 where
-    cast (W16# w) = intToInt64 (I# (word2Int# w))
-instance Cast Word16 Int where
-    cast (W16# w) = I# (word2Int# w)
-
-instance Cast Word32 Word64 where
-    cast (W32# i) = wordToWord64 (W# i)
-instance Cast Word32 Word128 where
-    cast (W32# i) = Word128 0 (wordToWord64 $ W# i)
-instance Cast Word32 Word256 where
-    cast (W32# i) = Word256 0 0 0 (wordToWord64 $ W# i)
-instance Cast Word32 Word where
-    cast (W32# i) = W# i
-
-instance Cast Word64 Word128 where
-    cast w = Word128 0 w
-instance Cast Word64 Word256 where
-    cast w = Word256 0 0 0 w
-
-instance Cast Word Word64 where
-    cast = wordToWord64
-
+instance Cast Int    Word32 where
+    cast (I# i) = W32# (int2Word# i)
+instance Cast Word32 Int where
+    cast (W32# w) = I# (word2Int# w)
+#endif
 
 instance Cast (Block.Block a) (Block.Block Word8) where
     cast (Block.Block ba) = Block.Block ba

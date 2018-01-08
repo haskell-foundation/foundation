@@ -7,7 +7,6 @@
 module Basement.IntegralConv
     ( IntegralDownsize(..)
     , IntegralUpsize(..)
-    , IntegralCast(..)
     , intToInt64
     , int64ToInt
     , wordToWord64
@@ -43,13 +42,6 @@ class IntegralDownsize a b where
 -- than the size type of 'a'
 class IntegralUpsize a b where
     integralUpsize      :: a -> b
-
--- | Cast an integral value to another value
--- that have the same representional size
-class IntegralCast a b where
-    integralCast :: a -> b
-    default integralCast :: a ~ b => a -> b
-    integralCast = id
 
 integralDownsizeBounded :: forall a b . (Ord a, Bounded b, IntegralDownsize a b, IntegralUpsize b a)
                         => (a -> b)
@@ -219,30 +211,3 @@ instance IntegralDownsize Natural Word32 where
 instance IntegralDownsize Natural Word64 where
     integralDownsize = fromIntegral
     integralDownsizeCheck = integralDownsizeBounded integralDownsize
-
-instance IntegralCast Word Int where
-    integralCast (W# w) = I# (word2Int# w)
-instance IntegralCast Int Word where
-    integralCast (I# i) = W# (int2Word# i)
-instance IntegralCast Word64 Int64 where
-    integralCast = word64ToInt64
-instance IntegralCast Int64 Word64 where
-    integralCast = int64ToWord64
-
-instance IntegralCast Int8 Word8 where
-    integralCast (I8# i) = W8# (narrow8Word# (int2Word# i))
-
-instance IntegralCast Int16 Word16 where
-    integralCast (I16# i) = W16# (narrow16Word# (int2Word# i))
-
-instance IntegralCast Int32 Word32 where
-    integralCast (I32# i) = W32# (narrow32Word# (int2Word# i))
-
-instance IntegralCast Word8 Int8 where
-    integralCast (W8# i) = I8# (narrow8Int# (word2Int# i))
-
-instance IntegralCast Word16 Int16 where
-    integralCast (W16# i) = I16# (narrow16Int# (word2Int# i))
-
-instance IntegralCast Word32 Int32 where
-    integralCast (W32# i) = I32# (narrow32Int# (word2Int# i))

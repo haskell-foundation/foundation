@@ -14,6 +14,7 @@ module Foundation.Check.Arbitrary
 import           Basement.Imports
 import           Foundation.Primitive
 import           Basement.Nat
+import           Basement.Cast (cast)
 import           Basement.IntegralConv
 import           Basement.Bounded
 import           Basement.Types.OffsetSize
@@ -81,11 +82,11 @@ instance Arbitrary Bool where
 
 instance Arbitrary String where
     arbitrary = genWithParams $ \params ->
-        fromList <$> (genMax (genMaxSizeString params) >>= \i -> replicateM (integralCast i) arbitrary)
+        fromList <$> (genMax (genMaxSizeString params) >>= \i -> replicateM (cast i) arbitrary)
 
 instance Arbitrary AsciiString where
     arbitrary = genWithParams $ \params ->
-        fromList <$> (genMax (genMaxSizeString params) >>= \i -> replicateM (integralCast i) arbitrary)
+        fromList <$> (genMax (genMaxSizeString params) >>= \i -> replicateM (cast i) arbitrary)
 
 instance Arbitrary Float where
     arbitrary = arbitraryF32
@@ -116,7 +117,7 @@ instance (Arbitrary a, Arbitrary b, Arbitrary c, Arbitrary d, Arbitrary e, Arbit
 
 instance Arbitrary a => Arbitrary [a] where
     arbitrary = genWithParams $ \params ->
-        fromList <$> (genMax (genMaxSizeArray params) >>= \i -> replicateM (integralCast i) arbitrary)
+        fromList <$> (genMax (genMaxSizeArray params) >>= \i -> replicateM (cast i) arbitrary)
 #if __GLASGOW_HASKELL__ >= 710
 instance (Arbitrary a, KnownNat n, NatWithinBound Int n) => Arbitrary (ListN.ListN n a) where
     arbitrary = ListN.replicateM arbitrary
@@ -153,7 +154,7 @@ arbitraryWord64 :: Gen Word64
 arbitraryWord64 = genWithRng getRandomWord64
 
 arbitraryInt64 :: Gen Int64
-arbitraryInt64 = integralCast <$> arbitraryWord64
+arbitraryInt64 = cast <$> arbitraryWord64
 
 arbitraryF64 :: Gen Double
 arbitraryF64 = genWithRng getRandomF64
@@ -163,7 +164,7 @@ arbitraryF32 = genWithRng getRandomF32
 
 arbitraryUArrayOf :: (PrimType ty, Arbitrary ty) => Word -> Gen (UArray ty)
 arbitraryUArrayOf size = between (0, size) >>=
-    \sz -> fromList <$> replicateM (integralCast sz) arbitrary
+    \sz -> fromList <$> replicateM (cast sz) arbitrary
 
 -- | Call one of the generator weighted
 frequency :: NonEmpty [(Word, Gen a)] -> Gen a

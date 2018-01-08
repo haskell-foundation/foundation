@@ -26,6 +26,7 @@ module Basement.Block.Base
     , newPinned
     , withPtr
     , mutableWithPtr
+    , unsafeRecast
     ) where
 
 import           GHC.Prim
@@ -379,3 +380,8 @@ mutableWithPtr :: PrimMonad prim
 mutableWithPtr mb f = do
     b <- unsafeFreeze mb
     withPtr b f
+
+unsafeRecast :: (PrimType t1, PrimType t2)
+             => MutableBlock t1 st
+             -> MutableBlock t2 st
+unsafeRecast (MutableBlock mba) = MutableBlock mba

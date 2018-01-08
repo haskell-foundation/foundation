@@ -13,6 +13,7 @@ module Foundation.Hashing.Hashable
     ) where
 
 import           Basement.Imports
+import           Basement.Cast (cast)
 import           Basement.Compat.Natural
 import           Basement.Types.Word128
 import           Basement.Types.Word256
@@ -58,13 +59,13 @@ instance Hashable Natural where
             let b = integralDownsize (w :: Natural) :: Word8
              in loop (w `div` 256) (hashMix8 b acc)
 instance Hashable Int8 where
-    hashMix w = hashMix8 (integralCast w)
+    hashMix w = hashMix8 (cast w)
 instance Hashable Int16 where
-    hashMix w = hashMix16 (integralCast w)
+    hashMix w = hashMix16 (cast w)
 instance Hashable Int32 where
-    hashMix w = hashMix32 (integralCast w)
+    hashMix w = hashMix32 (cast w)
 instance Hashable Int64 where
-    hashMix w = hashMix64 (integralCast w)
+    hashMix w = hashMix64 (cast w)
 instance Hashable Integer where
     hashMix i iacc
         | i == 0    = hashMix8 0 iacc
