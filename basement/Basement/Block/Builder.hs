@@ -22,6 +22,8 @@ module Basement.Block.Builder
     ) where
 
 import qualified Basement.Alg.Native.UTF8      as PrimBA
+import           Basement.UTF8.Helper          (charToBytes)
+import           Basement.Numerical.Conversion (charToInt)
 import           Basement.Block.Base (Block(..), MutableBlock(..))
 import qualified Basement.Block.Base as B
 import           Basement.Cast
@@ -135,5 +137,5 @@ emitString (String str) = Builder size $ Action $ \arr off ->
 --
 -- this function may be replaced by `emit :: Encoding -> Char -> Builder`
 emitUTF8Char :: Char -> Builder
-emitUTF8Char c = Builder 4 $ Action $ \(MutableBlock arr) off ->
+emitUTF8Char c = Builder (charToBytes $ charToInt c) $ Action $ \(MutableBlock arr) off ->
     PrimBA.write arr off c
