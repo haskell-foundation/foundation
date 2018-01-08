@@ -47,7 +47,8 @@ newtype Action = Action
                  -> prim (Offset Word8)
     }
 
-data Builder = Builder Action (CountOf Word8)
+data Builder = Builder {-# UNPACK #-} !(CountOf Word8)
+                                      !Action
 
 instance Semigroup Builder where
     (<>) = append
@@ -62,13 +63,13 @@ instance Monoid Builder where
 --
 -- this does nothing, build nothing, take no space (in the resulted block)
 empty :: Builder
-empty = Builder (Action $ \_ _ -> pure 0) 0
+empty = Builder 0 (Action $ \_ !off -> pure off)
 {-# INLINE empty #-}
 
 -- | concatenate the 2 given bulider
 append :: Builder -> Builder -> Builder
-append (Builder (Action action1) size1) (Builder (Action action2) size2) =
-    Builder action size
+append (Builder size1 (Action action1)) (Builder size2 (Action action2)) =
+    Builder size action
   where
     action = Action $ \arr off -> do
       off' <- action1 arr off
@@ -78,7 +79,7 @@ append (Builder (Action action1) size1) (Builder (Action action2) size2) =
 
 -- | run the given builder and return the generated block
 run :: PrimMonad prim => Builder -> prim (Block Word8)
-run (Builder action sz) = do
+run (Builder sz action) = do
     mb <- B.new sz
     off <- runAction_ action mb 0
     B.unsafeShrink mb (offsetAsSize off)
@@ -95,7 +96,7 @@ unsafeRunString b = do
 
 -- | add a Block in the builder
 emit :: Block a -> Builder
-emit b = flip Builder size $ Action $ \arr off ->
+emit b = Builder size $ Action $ \arr off ->
     B.unsafeCopyBytesRO arr off b' 0 size *> pure (off + sizeAsOffset size)
   where
     b' :: Block Word8
@@ -104,7 +105,7 @@ emit b = flip Builder size $ Action $ \arr off ->
     size = B.length b'
 
 emitPrim :: (PrimType ty, ty ~ Word8) => ty -> Builder
-emitPrim a = flip Builder size $ Action $ \(MutableBlock arr) off ->
+emitPrim a = Builder size $ Action $ \(MutableBlock arr) off ->
     primMbaWrite arr off a *> pure (off + sizeAsOffset size)
   where
     size = getSize Proxy a
@@ -113,7 +114,7 @@ emitPrim a = flip Builder size $ Action $ \(MutableBlock arr) off ->
 
 -- | add a string in the builder
 emitString :: String -> Builder
-emitString (String str) = flip Builder size $ Action $ \arr off ->
+emitString (String str) = Builder size $ Action $ \arr off ->
     A.onBackendPrim (onBA arr off) (onAddr arr off) str *> pure (off + sizeAsOffset size)
   where
     size = A.length str
@@ -134,5 +135,5 @@ emitString (String str) = flip Builder size $ Action $ \arr off ->
 --
 -- this function may be replaced by `emit :: Encoding -> Char -> Builder`
 emitUTF8Char :: Char -> Builder
-emitUTF8Char c = flip Builder 4 $ Action $ \(MutableBlock arr) off ->
+emitUTF8Char c = Builder 4 $ Action $ \(MutableBlock arr) off ->
     PrimBA.write arr off c
