@@ -55,6 +55,7 @@ module Basement.Block.Mutable
     , unsafeCopyElementsRO
     , unsafeCopyBytes
     , unsafeCopyBytesRO
+    , unsafeCopyBytesPtr
     ) where
 
 import           GHC.Prim
