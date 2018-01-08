@@ -1,0 +1,202 @@
+- package:
+  - name: foundation
+  - section:
+    - name: bench:bench
+    - message:
+      - name: Module not compiled
+      - module:
+        - BenchUtil.Common
+        - BenchUtil.RefData
+        - Fake.ByteString
+        - Fake.Text
+        - Fake.Vector
+        - Main.hs
+        - Sys
+    - message:
+      - name: Redundant build-depends entry
+      - depends:
+        - attoparsec
+        - base
+        - basement
+        - bytestring
+        - foundation
+        - gauge
+        - text
+        - vector
+  - section:
+    - name: library
+    - message:
+      - name: Excessive other-modules entry
+      - module:
+        - Foundation.System.Bindings.Hs
+        - Foundation.System.Bindings.Network
+    - message:
+      - name: Module not compiled
+      - module:
+        - Foundation.Foreign.MemoryMap.Windows
+        - Foundation.Network.HostName
+        - Foundation.System.Bindings.Macos
+        - Foundation.System.Bindings.Windows
+        - Foundation.System.Entropy.Windows
+    - message:
+      - name: Weeds exported
+      - module:
+        - name: Foundation.Array.Bitmap
+        - identifier:
+          - append
+          - concat
+          - cons
+          - empty
+          - index
+          - read
+          - snoc
+          - unsafeIndex
+          - unsafeRead
+          - unsafeWrite
+          - write
+      - module:
+        - name: Foundation.Check.Print
+        - identifier: diffBlame
+      - module:
+        - name: Foundation.Check.Property
+        - identifier: checkHasSucceed
+      - module:
+        - name: Foundation.Collection.Mappable
+        - identifier: sequence_
+      - module:
+        - name: Foundation.Conduit.Internal
+        - identifier:
+          - Await
+          - Done
+          - Leftover
+          - Pipe
+          - PipeM
+          - Yield
+          - liftResourceT
+          - runResourceT
+      - module:
+        - name: Foundation.Foreign.MemoryMap.Posix
+        - identifier:
+          - MemoryAdvice
+          - MemoryAdviceDontNeed
+          - MemoryAdviceNormal
+          - MemoryAdviceRandom
+          - MemoryAdviceSequential
+          - MemoryAdviceWillNeed
+          - MemoryMapFlag
+          - MemoryMapPrivate
+          - MemoryMapShared
+          - MemoryProtection
+          - MemoryProtectionExecute
+          - MemoryProtectionNone
+          - MemoryProtectionRead
+          - MemoryProtectionWrite
+          - MemorySyncAsync
+          - MemorySyncFlag
+          - MemorySyncInvalidate
+          - MemorySyncSync
+          - memoryAdvise
+          - memoryLock
+          - memoryMap
+          - memoryProtect
+          - memorySync
+          - memoryUnlock
+          - memoryUnmap
+          - sysconfPageSize
+      - module:
+        - name: Foundation.Hashing.FNV
+        - identifier:
+          - FNV1Hash32
+          - FNV1Hash64
+      - module:
+        - name: Foundation.Hashing.Hasher
+        - identifier: hashNew
+      - module:
+        - name: Foundation.IO.File
+        - identifier:
+          - hGetNonBlocking
+          - hGetSome
+      - module:
+        - name: Foundation.Monad.Identity
+        - identifier: IdentityT
+      - module:
+        - name: Foundation.Partial
+        - identifier:
+          - fromJust
+          - fromLeft
+          - fromRight
+          - head
+          - partialError
+      - module:
+        - name: Foundation.Random.ChaChaDRG
+        - identifier: keySize
+      - module:
+        - name: Foundation.Random.XorShift
+        - identifier:
+          - next
+          - nextDouble
+          - nextList
+      - module:
+        - name: Foundation.System.Bindings.Hs
+        - identifier: sysHsCoreGetErrno
+      - module:
+        - name: Foundation.System.Bindings.Network
+        - identifier:
+          - getHErrno
+          - herr_HostNotFound
+          - herr_NoData
+          - herr_NoRecovery
+          - herr_TryAgain
+      - module:
+        - name: Foundation.System.Bindings.Time
+        - identifier:
+          - CTimeVal
+          - CTimeZone
+          - size_CTimeT
+          - size_CTimeVal
+          - size_CTimeZone
+          - sysTimeClockGetRes
+          - sysTimeGetTimeOfDay
+          - sysTime_CLOCK_BOOTTIME
+          - sysTime_CLOCK_BOOTTIME_ALARM
+          - sysTime_CLOCK_MONOTONIC_RAW
+          - sysTime_CLOCK_PROCESS_CPUTIME_ID
+          - sysTime_CLOCK_REALTIME
+          - sysTime_CLOCK_REALTIME_ALARM
+          - sysTime_CLOCK_REALTIME_COARSE
+          - sysTime_CLOCK_TAI
+          - sysTime_CLOCK_THREAD_CPUTIME_ID
+  - section:
+    - name: test:check-foundation
+    - message:
+      - name: Weeds exported
+      - module:
+        - name: Test.Checks.Property.Collection
+        - identifier:
+          - testCollectionProperties
+          - testEqualityProperties
+          - testIsListPropertyies
+          - testMonoidProperties
+          - testOrderingProperties
+          - testSequentialProperties
+          - toListP
+      - module:
+        - name: Test.Data.List
+        - identifier:
+          - generateListOfElement
+          - generateListOfElementMaxN
+          - generateNonEmptyListOfElement
+      - module:
+        - name: Test.Foundation.Number
+        - identifier: testNumber
+  - section:
+    - name: test:doctest
+    - message:
+      - name: Module not compiled
+      - module: DocTest.hs
+    - message:
+      - name: Redundant build-depends entry
+      - depends:
+        - base
+        - doctest
+
