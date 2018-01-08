@@ -15,6 +15,9 @@ module Foundation.Timing
 
 import           Basement.Imports hiding (from)
 import           Basement.From (from)
+#if __GLASGOW_HASKELL__ < 802
+import           Basement.Cast (cast)
+#endif
 import           Basement.Monad
 -- import           Basement.UArray hiding (unsafeFreeze)
 import           Basement.UArray.Mutable (MUArray)
