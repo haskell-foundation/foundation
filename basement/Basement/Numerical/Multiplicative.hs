@@ -8,6 +8,7 @@ module Basement.Numerical.Multiplicative
     ) where
 
 import           Basement.Compat.Base
+import           Basement.Compat.C.Types
 import           Basement.Compat.Natural
 import           Basement.Numerical.Number
 import           Basement.Numerical.Additive
@@ -102,6 +103,7 @@ instance Multiplicative Word128 where
 instance Multiplicative Word256 where
     midentity = 1
     (*) = (Word256.*)
+
 instance Multiplicative Prelude.Float where
     midentity = 1.0
     (*) = (Prelude.*)
@@ -109,6 +111,86 @@ instance Multiplicative Prelude.Double where
     midentity = 1.0
     (*) = (Prelude.*)
 instance Multiplicative Prelude.Rational where
+    midentity = 1.0
+    (*) = (Prelude.*)
+
+instance Multiplicative CChar where
+    midentity = 1
+    (*) = (Prelude.*)
+instance Multiplicative CSChar where
+    midentity = 1
+    (*) = (Prelude.*)
+instance Multiplicative CUChar where
+    midentity = 1
+    (*) = (Prelude.*)
+instance Multiplicative CShort where
+    midentity = 1
+    (*) = (Prelude.*)
+instance Multiplicative CUShort where
+    midentity = 1
+    (*) = (Prelude.*)
+instance Multiplicative CInt where
+    midentity = 1
+    (*) = (Prelude.*)
+instance Multiplicative CUInt where
+    midentity = 1
+    (*) = (Prelude.*)
+instance Multiplicative CLong where
+    midentity = 1
+    (*) = (Prelude.*)
+instance Multiplicative CULong where
+    midentity = 1
+    (*) = (Prelude.*)
+instance Multiplicative CPtrdiff where
+    midentity = 1
+    (*) = (Prelude.*)
+instance Multiplicative CSize where
+    midentity = 1
+    (*) = (Prelude.*)
+instance Multiplicative CWchar where
+    midentity = 1
+    (*) = (Prelude.*)
+instance Multiplicative CSigAtomic where
+    midentity = 1
+    (*) = (Prelude.*)
+instance Multiplicative CLLong where
+    midentity = 1
+    (*) = (Prelude.*)
+instance Multiplicative CULLong where
+    midentity = 1
+    (*) = (Prelude.*)
+instance Multiplicative CIntPtr where
+    midentity = 1
+    (*) = (Prelude.*)
+instance Multiplicative CUIntPtr where
+    midentity = 1
+    (*) = (Prelude.*)
+instance Multiplicative CIntMax where
+    midentity = 1
+    (*) = (Prelude.*)
+instance Multiplicative CUIntMax where
+    midentity = 1
+    (*) = (Prelude.*)
+instance Multiplicative CClock where
+    midentity = 1
+    (*) = (Prelude.*)
+instance Multiplicative CTime where
+    midentity = 1
+    (*) = (Prelude.*)
+instance Multiplicative CUSeconds where
+    midentity = 1
+    (*) = (Prelude.*)
+instance Multiplicative CSUSeconds where
+    midentity = 1
+    (*) = (Prelude.*)
+instance Multiplicative COff where
+    midentity = 1
+    (*) = (Prelude.*)
+
+instance Multiplicative CFloat where
+    midentity = 1.0
+    (*) = (Prelude.*)
+instance Multiplicative CDouble where
     midentity = 1.0
     (*) = (Prelude.*)
 
@@ -155,11 +237,74 @@ instance IDivisible Word256 where
     div = Word256.quot
     mod = Word256.rem
 
+instance IDivisible CChar where
+    div = Prelude.quot
+    mod = Prelude.rem
+instance IDivisible CSChar where
+    div = Prelude.quot
+    mod = Prelude.rem
+instance IDivisible CUChar where
+    div = Prelude.quot
+    mod = Prelude.rem
+instance IDivisible CShort where
+    div = Prelude.quot
+    mod = Prelude.rem
+instance IDivisible CUShort where
+    div = Prelude.quot
+    mod = Prelude.rem
+instance IDivisible CInt where
+    div = Prelude.quot
+    mod = Prelude.rem
+instance IDivisible CUInt where
+    div = Prelude.quot
+    mod = Prelude.rem
+instance IDivisible CLong where
+    div = Prelude.quot
+    mod = Prelude.rem
+instance IDivisible CULong where
+    div = Prelude.quot
+    mod = Prelude.rem
+instance IDivisible CPtrdiff where
+    div = Prelude.quot
+    mod = Prelude.rem
+instance IDivisible CSize where
+    div = Prelude.quot
+    mod = Prelude.rem
+instance IDivisible CWchar where
+    div = Prelude.quot
+    mod = Prelude.rem
+instance IDivisible CSigAtomic where
+    div = Prelude.quot
+    mod = Prelude.rem
+instance IDivisible CLLong where
+    div = Prelude.quot
+    mod = Prelude.rem
+instance IDivisible CULLong where
+    div = Prelude.quot
+    mod = Prelude.rem
+instance IDivisible CIntPtr where
+    div = Prelude.quot
+    mod = Prelude.rem
+instance IDivisible CUIntPtr where
+    div = Prelude.quot
+    mod = Prelude.rem
+instance IDivisible CIntMax where
+    div = Prelude.quot
+    mod = Prelude.rem
+instance IDivisible CUIntMax where
+    div = Prelude.quot
+    mod = Prelude.rem
+
 instance Divisible Prelude.Rational where
     (/) = (Prelude./)
 instance Divisible Float where
     (/) = (Prelude./)
 instance Divisible Double where
+    (/) = (Prelude./)
+
+instance Divisible CFloat where
+    (/) = (Prelude./)
+instance Divisible CDouble where
     (/) = (Prelude./)
 
 recip :: Divisible a => a -> a

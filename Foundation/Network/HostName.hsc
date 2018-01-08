@@ -24,6 +24,7 @@ module Foundation.Network.HostName
 
 import Foundation.Class.Storable
 import Basement.Compat.Base
+import Basement.Compat.C.Types
 import Data.Proxy
 import Foundation.Hashing (Hashable)
 import Foundation.String
@@ -35,7 +36,6 @@ import Foundation.Network.IPv6 (IPv6)
 import Foundation.System.Bindings.Network
 
 import Foreign.C.String
-import Foreign.C.Types
 import Foreign.Ptr (nullPtr)
 import Control.Concurrent.MVar
 import System.IO.Unsafe (unsafePerformIO)

@@ -39,9 +39,9 @@ import           GHC.Int
 import           GHC.Types
 import           GHC.Word
 import           Data.Bits
-import           Foreign.C.Types
 import           Data.Proxy
 import           Basement.Compat.Base
+import           Basement.Compat.C.Types
 import           Basement.Numerical.Subtractive
 import           Basement.Types.OffsetSize
 import           Basement.Types.Char7 (Char7(..))

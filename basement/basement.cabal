@@ -77,6 +77,7 @@ library
                      Basement.Compat.Base
                      Basement.Compat.Bifunctor
                      Basement.Compat.CallStack
+                     Basement.Compat.C.Types
                      Basement.Compat.ExtList
                      Basement.Compat.IsList
                      Basement.Compat.Identity

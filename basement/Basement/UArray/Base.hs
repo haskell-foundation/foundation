@@ -61,6 +61,7 @@ import           Basement.Compat.Primitive
 import           Basement.Monad
 import           Basement.PrimType
 import           Basement.Compat.Base
+import           Basement.Compat.C.Types
 import           Basement.Compat.Semigroup
 import qualified Basement.Runtime as Runtime
 import           Data.Proxy
@@ -74,7 +75,6 @@ import qualified Basement.Block as BLK
 import qualified Basement.Block.Mutable as MBLK
 import           Basement.Numerical.Additive
 import           Basement.Bindings.Memory
-import           Foreign.C.Types
 import           System.IO.Unsafe (unsafeDupablePerformIO)
 
 -- | A Mutable array of types built on top of GHC primitive.

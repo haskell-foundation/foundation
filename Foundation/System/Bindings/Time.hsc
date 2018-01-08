@@ -6,8 +6,8 @@
 module Foundation.System.Bindings.Time where
 
 import Basement.Compat.Base
+import Basement.Compat.C.Types
 import Basement.Types.OffsetSize
-import Foreign.C.Types
 
 #include <time.h>
 #include <sys/time.h>

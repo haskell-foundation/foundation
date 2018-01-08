@@ -16,7 +16,7 @@ module Foundation.System.Bindings.Network
     ) where
 
 import Basement.Compat.Base
-import Foreign.C.Types
+import Basement.Compat.C.Types
 
 #ifdef mingw32_HOST_OS
 # include <winsock2.h>

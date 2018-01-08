@@ -1,3 +1,4 @@
+{-# Language CPP #-}
 -- |
 -- Module      : Basement.Compat.NumLiteral
 -- License     : BSD-style
@@ -15,11 +16,10 @@ module Basement.Compat.NumLiteral
 import           Prelude (Int, Integer, Rational, Float, Double)
 import           Data.Word (Word8, Word16, Word32, Word64, Word)
 import           Data.Int (Int8, Int16, Int32, Int64)
+import           Basement.Compat.C.Types
 import qualified Prelude
 import           Basement.Compat.Natural
-import           Foreign.C.Types
 import           Foreign.Ptr (IntPtr)
-import           System.Posix.Types
 
 -- | Integral Literal support
 --
@@ -67,7 +67,17 @@ instance Integral Int64 where
     fromInteger a = Prelude.fromInteger a
 instance Integral IntPtr where
     fromInteger a = Prelude.fromInteger a
-instance Integral CSize where
+
+instance Integral Float where
+    fromInteger a = Prelude.fromInteger a
+instance Integral Double where
+    fromInteger a = Prelude.fromInteger a
+
+instance Integral CChar where
+    fromInteger a = Prelude.fromInteger a
+instance Integral CSChar where
+    fromInteger a = Prelude.fromInteger a
+instance Integral CUChar where
     fromInteger a = Prelude.fromInteger a
 instance Integral CShort where
     fromInteger a = Prelude.fromInteger a
@@ -81,16 +91,39 @@ instance Integral CLong where
     fromInteger a = Prelude.fromInteger a
 instance Integral CULong where
     fromInteger a = Prelude.fromInteger a
-instance Integral COff where
+instance Integral CPtrdiff where
+    fromInteger a = Prelude.fromInteger a
+instance Integral CSize where
+    fromInteger a = Prelude.fromInteger a
+instance Integral CWchar where
+    fromInteger a = Prelude.fromInteger a
+instance Integral CSigAtomic where
+    fromInteger a = Prelude.fromInteger a
+instance Integral CLLong where
+    fromInteger a = Prelude.fromInteger a
+instance Integral CULLong where
+    fromInteger a = Prelude.fromInteger a
+#if MIN_VERSION_base(4, 10, 0)
+instance Integral CBool where
+    fromInteger a = Prelude.fromInteger a
+#endif
+instance Integral CIntPtr where
     fromInteger a = Prelude.fromInteger a
 instance Integral CUIntPtr where
     fromInteger a = Prelude.fromInteger a
-instance Integral CIntPtr where
+instance Integral CIntMax where
     fromInteger a = Prelude.fromInteger a
-
-instance Integral Float where
+instance Integral CUIntMax where
     fromInteger a = Prelude.fromInteger a
-instance Integral Double where
+instance Integral CClock where
+    fromInteger a = Prelude.fromInteger a
+instance Integral CTime where
+    fromInteger a = Prelude.fromInteger a
+instance Integral CUSeconds where
+    fromInteger a = Prelude.fromInteger a
+instance Integral CSUSeconds where
+    fromInteger a = Prelude.fromInteger a
+instance Integral COff where
     fromInteger a = Prelude.fromInteger a
 instance Integral CFloat where
     fromInteger a = Prelude.fromInteger a
@@ -119,12 +152,31 @@ instance HasNegation Word32 where
     negate = Prelude.negate
 instance HasNegation Word64 where
     negate = Prelude.negate
-instance HasNegation CInt where
-    negate = Prelude.negate
+
 instance HasNegation Float where
     negate = Prelude.negate
 instance HasNegation Double where
     negate = Prelude.negate
+
+instance HasNegation CChar where
+    negate = Prelude.negate
+instance HasNegation CSChar where
+    negate = Prelude.negate
+instance HasNegation CShort where
+    negate = Prelude.negate
+instance HasNegation CInt where
+    negate = Prelude.negate
+instance HasNegation CLong where
+    negate = Prelude.negate
+instance HasNegation CPtrdiff where
+    negate = Prelude.negate
+instance HasNegation CWchar where
+    negate = Prelude.negate
+instance HasNegation CLLong where
+    negate = Prelude.negate
+instance HasNegation CIntMax where
+    negate = Prelude.negate
+
 instance HasNegation CFloat where
     negate = Prelude.negate
 instance HasNegation CDouble where
@@ -136,6 +188,7 @@ instance Fractional Float where
     fromRational a = Prelude.fromRational a
 instance Fractional Double where
     fromRational a = Prelude.fromRational a
+
 instance Fractional CFloat where
     fromRational a = Prelude.fromRational a
 instance Fractional CDouble where

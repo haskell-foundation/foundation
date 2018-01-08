@@ -3,7 +3,7 @@ module Foundation.System.Bindings.Macos
     where
 
 import Basement.Compat.Base
-import Foreign.C.Types
+import Basement.Compat.C.Types
 import Foundation.System.Bindings.PosixDef
 import Basement.Types.OffsetSize
 

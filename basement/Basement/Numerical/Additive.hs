@@ -9,6 +9,7 @@ module Basement.Numerical.Additive
 #include "MachDeps.h"
 
 import           Basement.Compat.Base
+import           Basement.Compat.C.Types
 import           Basement.Compat.Natural
 import           Basement.Numerical.Number
 import qualified Prelude
@@ -16,7 +17,6 @@ import           GHC.Types
 import           GHC.Prim
 import           GHC.Int
 import           GHC.Word
-import           Foreign.C.Types
 import           Basement.Bounded
 import           Basement.Nat
 import           Basement.Types.Word128 (Word128)
@@ -120,16 +120,119 @@ instance Additive Prelude.Double where
     azero = 0.0
     (D# a) + (D# b) = D# (a +## b)
     scale = scaleNum
-instance Additive CSize where
-    azero = 0
-    (+) = (Prelude.+)
-    scale = scaleNum
+
 instance (KnownNat n, NatWithinBound Word64 n) => Additive (Zn64 n) where
     azero = zn64 0
     (+) = (Prelude.+)
     scale = scaleNum
 instance KnownNat n => Additive (Zn n) where
     azero = zn 0
+    (+) = (Prelude.+)
+    scale = scaleNum
+
+instance Additive CChar where
+    azero = 0
+    (+) = (Prelude.+)
+    scale = scaleNum
+instance Additive CSChar where
+    azero = 0
+    (+) = (Prelude.+)
+    scale = scaleNum
+instance Additive CUChar where
+    azero = 0
+    (+) = (Prelude.+)
+    scale = scaleNum
+instance Additive CShort where
+    azero = 0
+    (+) = (Prelude.+)
+    scale = scaleNum
+instance Additive CUShort where
+    azero = 0
+    (+) = (Prelude.+)
+    scale = scaleNum
+instance Additive CInt where
+    azero = 0
+    (+) = (Prelude.+)
+    scale = scaleNum
+instance Additive CUInt where
+    azero = 0
+    (+) = (Prelude.+)
+    scale = scaleNum
+instance Additive CLong where
+    azero = 0
+    (+) = (Prelude.+)
+    scale = scaleNum
+instance Additive CULong where
+    azero = 0
+    (+) = (Prelude.+)
+    scale = scaleNum
+instance Additive CPtrdiff where
+    azero = 0
+    (+) = (Prelude.+)
+    scale = scaleNum
+instance Additive CSize where
+    azero = 0
+    (+) = (Prelude.+)
+    scale = scaleNum
+instance Additive CWchar where
+    azero = 0
+    (+) = (Prelude.+)
+    scale = scaleNum
+instance Additive CSigAtomic where
+    azero = 0
+    (+) = (Prelude.+)
+    scale = scaleNum
+instance Additive CLLong where
+    azero = 0
+    (+) = (Prelude.+)
+    scale = scaleNum
+instance Additive CULLong where
+    azero = 0
+    (+) = (Prelude.+)
+    scale = scaleNum
+instance Additive CIntPtr where
+    azero = 0
+    (+) = (Prelude.+)
+    scale = scaleNum
+instance Additive CUIntPtr where
+    azero = 0
+    (+) = (Prelude.+)
+    scale = scaleNum
+instance Additive CIntMax where
+    azero = 0
+    (+) = (Prelude.+)
+    scale = scaleNum
+instance Additive CUIntMax where
+    azero = 0
+    (+) = (Prelude.+)
+    scale = scaleNum
+instance Additive CClock where
+    azero = 0
+    (+) = (Prelude.+)
+    scale = scaleNum
+instance Additive CTime where
+    azero = 0
+    (+) = (Prelude.+)
+    scale = scaleNum
+instance Additive CUSeconds where
+    azero = 0
+    (+) = (Prelude.+)
+    scale = scaleNum
+instance Additive CSUSeconds where
+    azero = 0
+    (+) = (Prelude.+)
+    scale = scaleNum
+instance Additive COff where
+    azero = 0
+    (+) = (Prelude.+)
+    scale = scaleNum
+
+instance Additive CFloat where
+    azero = 0
+    (+) = (Prelude.+)
+    scale = scaleNum
+instance Additive CDouble where
+    azero = 0
     (+) = (Prelude.+)
     scale = scaleNum
 
