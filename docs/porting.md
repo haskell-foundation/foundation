@@ -26,7 +26,7 @@
 ## Formats
 
 | Name | Haskell package | Foundation module | Status |
-| ------------ | ------------- | ------------ |
+| ------------ | ------------- | ------------ | ------------ |
 | JSON | aeson, json | | Not-Started |
 | YAML | yaml | | Not-Started |
 | CSV  | cassava, csv | | Not-Started |
@@ -46,6 +46,8 @@
 | QuickCheck   | Foundation.Check      | Started |
 | tasty        | Foundation.Check.Main | Started |
 
-# Benchmarks
+## Benchmarks
 
+| Haskell package | Foundation module | Status |
+| ------------ | ------------- | ------------ |
 | Criterion    | Foundation.Timing     | Started |
