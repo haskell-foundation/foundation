@@ -10,7 +10,7 @@
 -- Maintainer  : Haskell Foundation
 --
 module Basement.Cast
-    ( Cast, cast
+    ( Cast(..)
     ) where
 
 #include "MachDeps.h"
