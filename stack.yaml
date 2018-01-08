@@ -1,7 +1,7 @@
-resolver: nightly-2017-10-21
+resolver: lts-10.3
 packages:
 - '.'
 - location: basement/
   extra-dep: true
 extra-deps:
-- gauge-0.1.3
+- gauge-0.2.0
