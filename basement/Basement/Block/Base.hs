@@ -80,6 +80,9 @@ instance PrimType ty => IsList (Block ty) where
     fromList = internalFromList
     toList = internalToList
 
+-- | A Mutable block of memory containing unpacked bytes representing values of type 'ty'
+data MutableBlock ty st = MutableBlock (MutableByteArray# st)
+
 isPinned :: Block ty -> PinnedStatus
 isPinned (Block ba) = toPinnedStatus# (compatIsByteArrayPinned# ba)
 
@@ -246,9 +249,6 @@ concat l  =
         unsafeCopyBytesRO r i x 0 lx
         doCopy r (i `offsetPlusE` lx) xs
       where !lx = lengthBytes x
-
--- | A Mutable block of memory containing unpacked bytes representing values of type 'ty'
-data MutableBlock ty st = MutableBlock (MutableByteArray# st)
 
 -- | Freeze a mutable block into a block.
 --
