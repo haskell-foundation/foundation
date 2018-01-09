@@ -64,7 +64,7 @@ instance Cast Int16 Word16 where
 instance Cast Int32 Word32 where
     cast (I32# i) = W32# (narrow32Word# (int2Word# i))
 instance Cast Int64 Word64 where
-    cast (I64# i) = W64# (int2Word# i)
+    cast = int64ToWord64
 instance Cast Int   Word where
     cast (I# i) = W# (int2Word# i)
 
@@ -75,7 +75,7 @@ instance Cast Word16 Int16 where
 instance Cast Word32 Int32 where
     cast (W32# i) = I32# (narrow32Int# (word2Int# i))
 instance Cast Word64 Int64 where
-    cast (W64# i) = I64# (word2Int# i)
+    cast = word64ToInt64
 instance Cast Word   Int where
     cast (W# w) = I# (word2Int# w)
 
