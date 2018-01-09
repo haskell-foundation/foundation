@@ -18,6 +18,8 @@ module Basement.Block.Base
     -- * Properties
     , length
     , lengthBytes
+    , isPinned
+    , isMutablePinned
     -- * Other methods
     , mutableEmpty
     , new
@@ -75,6 +77,12 @@ instance PrimType ty => IsList (Block ty) where
     type Item (Block ty) = ty
     fromList = internalFromList
     toList = internalToList
+
+isPinned :: Block ty -> PinnedStatus
+isPinned (Block ba) = toPinnedStatus# (compatIsByteArrayPinned# ba)
+
+isMutablePinned :: MutableBlock s ty -> PinnedStatus
+isMutablePinned (MutableBlock mba) = toPinnedStatus# (compatIsMutableByteArrayPinned# mba)
 
 length :: forall ty . PrimType ty => Block ty -> CountOf ty
 length (Block ba) =
