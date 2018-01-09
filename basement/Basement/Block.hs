@@ -115,12 +115,6 @@ create n initializer
         M.iterSet initializer mb
         unsafeFreeze mb
 
-isPinned :: Block ty -> PinnedStatus
-isPinned (Block ba) = toPinnedStatus# (compatIsByteArrayPinned# ba)
-
-isMutablePinned :: MutableBlock s ty -> PinnedStatus
-isMutablePinned (MutableBlock mba) = toPinnedStatus# (compatIsMutableByteArrayPinned# mba)
-
 singleton :: PrimType ty => ty -> Block ty
 singleton ty = create 1 (const ty)
 
@@ -138,6 +132,10 @@ thaw array = do
     pure ma
 {-# INLINE thaw #-}
 
+-- | Freeze a MutableBlock into a Block, copying all the data
+--
+-- If the data is modified in the mutable block after this call, then
+-- the immutable Block resulting is not impacted.
 freeze :: (PrimType ty, PrimMonad prim) => MutableBlock ty (PrimState prim) -> prim (Block ty)
 freeze ma = do
     ma' <- unsafeNew Unpinned len

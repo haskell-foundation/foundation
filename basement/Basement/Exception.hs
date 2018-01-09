@@ -29,6 +29,8 @@ import           Basement.Monad
 -- * OOB_Index: reading an immutable vector
 -- * OOB_Read: reading a mutable vector
 -- * OOB_Write: write a mutable vector
+-- * OOB_MemCopy: copying a vector
+-- * OOB_MemSet: initializing a mutable vector
 data OutOfBoundOperation = OOB_Read | OOB_Write | OOB_MemSet | OOB_MemCopy | OOB_Index
     deriving (Show,Eq,Typeable)
 

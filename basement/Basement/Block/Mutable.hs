@@ -38,8 +38,11 @@ module Basement.Block.Mutable
     ( Block(..)
     , MutableBlock(..)
     , mutableLengthSize
+    , mutableLength
     , mutableLengthBytes
     , mutableWithPtr
+    , withMutablePtr
+    , withMutablePtrHint
     , new
     , newPinned
     , mutableEmpty
@@ -68,20 +71,6 @@ import           Basement.Numerical.Additive
 import           Basement.PrimType
 import           Basement.Block.Base
 
--- | Return the length of a Mutable Block
---
--- note: we don't allow resizing yet, so this can remain a pure function
-mutableLengthSize :: forall ty st . PrimType ty => MutableBlock ty st -> CountOf ty
-mutableLengthSize (MutableBlock mba) =
-    let !(CountOf (I# szBits)) = primSizeInBytes (Proxy :: Proxy ty)
-        !elems              = quotInt# (sizeofMutableByteArray# mba) szBits
-     in CountOf (I# elems)
-{-# INLINE[1] mutableLengthSize #-}
-
-mutableLengthBytes :: MutableBlock ty st -> CountOf Word8
-mutableLengthBytes (MutableBlock mba) = CountOf (I# (sizeofMutableByteArray# mba))
-{-# INLINE[1] mutableLengthBytes #-}
-
 -- | Set all mutable block element to a value
 iterSet :: (PrimType ty, PrimMonad prim)
         => (Offset ty -> ty)
@@ -89,11 +78,15 @@ iterSet :: (PrimType ty, PrimMonad prim)
         -> prim ()
 iterSet f ma = loop 0
   where
-    !sz = mutableLengthSize ma
+    !sz = mutableLength ma
     loop i
         | i .==# sz = pure ()
         | otherwise = unsafeWrite ma i (f i) >> loop (i+1)
     {-# INLINE loop #-}
+
+mutableLengthSize :: PrimType ty => MutableBlock ty st -> CountOf ty
+mutableLengthSize = mutableLength
+{-# DEPRECATED mutableLengthSize "use mutableLength" #-}
 
 -- | read a cell in a mutable array.
 --
@@ -102,7 +95,7 @@ read :: (PrimMonad prim, PrimType ty) => MutableBlock ty (PrimState prim) -> Off
 read array n
     | isOutOfBound n len = primOutOfBound OOB_Read n len
     | otherwise          = unsafeRead array n
-  where len = mutableLengthSize array
+  where len = mutableLength array
 {-# INLINE read #-}
 
 -- | Write to a cell in a mutable array.

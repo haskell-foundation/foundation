@@ -171,6 +171,10 @@ isMutablePinned (MUArray _ _ (MUArrayMBA mb))  = BLK.isMutablePinned mb
 newPinned :: forall prim ty . (PrimMonad prim, PrimType ty) => CountOf ty -> prim (MUArray ty (PrimState prim))
 newPinned n = MUArray 0 n . MUArrayMBA <$> MBLK.newPinned n
 
+-- | Create a new unpinned mutable array of size @n elements.
+--
+-- If the size exceeds a GHC-defined threshold, then the memory will be
+-- pinned. To be certain about pinning status with small size, use 'newPinned'
 newUnpinned :: forall prim ty . (PrimMonad prim, PrimType ty) => CountOf ty -> prim (MUArray ty (PrimState prim))
 newUnpinned n = MUArray 0 n . MUArrayMBA <$> MBLK.new n
 
