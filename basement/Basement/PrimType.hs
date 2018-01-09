@@ -50,6 +50,7 @@ import           Basement.Endianness
 import           Basement.Types.Word128 (Word128(..))
 import           Basement.Types.Word256 (Word256(..))
 import           Basement.Monad
+import           Basement.Nat
 import qualified Prelude (quot)
 
 #if WORD_SIZE_IN_BITS < 64
