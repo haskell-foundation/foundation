@@ -132,6 +132,10 @@ thaw array = do
     pure ma
 {-# INLINE thaw #-}
 
+-- | Freeze a MutableBlock into a Block, copying all the data
+--
+-- If the data is modified in the mutable block after this call, then
+-- the immutable Block resulting is not impacted.
 freeze :: (PrimType ty, PrimMonad prim) => MutableBlock ty (PrimState prim) -> prim (Block ty)
 freeze ma = do
     ma' <- unsafeNew Unpinned len
