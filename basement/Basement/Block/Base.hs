@@ -282,10 +282,14 @@ unsafeNew pinSt (CountOf (I# bytes)) = case pinSt of
     Unpinned -> primitive $ \s1 -> case newByteArray# bytes s1 of { (# s2, mba #) -> (# s2, MutableBlock mba #) }
     _        -> primitive $ \s1 -> case newAlignedPinnedByteArray# bytes 8# s1 of { (# s2, mba #) -> (# s2, MutableBlock mba #) }
 
--- | Create a new mutable block of a specific N size of 'ty' elements
+-- | Create a new unpinned mutable block of a specific N size of 'ty' elements
+--
+-- If the size exceeds a GHC-defined threshold, then the memory will be
+-- pinned. To be certain about pinning status with small size, use 'newPinned'
 new :: forall prim ty . (PrimMonad prim, PrimType ty) => CountOf ty -> prim (MutableBlock ty (PrimState prim))
 new n = unsafeNew Unpinned (sizeOfE (primSizeInBytes (Proxy :: Proxy ty)) n)
 
+-- | Create a new pinned mutable block of a specific N size of 'ty' elements
 newPinned :: forall prim ty . (PrimMonad prim, PrimType ty) => CountOf ty -> prim (MutableBlock ty (PrimState prim))
 newPinned n = unsafeNew Pinned (sizeOfE (primSizeInBytes (Proxy :: Proxy ty)) n)
 
