@@ -159,6 +159,12 @@ foreignMem :: PrimType ty
            -> UArray ty
 foreignMem fptr nb = UArray (Offset 0) nb (UArrayAddr fptr)
 
+-- | Create a foreign UArray from foreign memory and given offset/size
+--
+-- No check are performed to make sure this is valid, so this is unsafe.
+--
+-- This is particularly useful when dealing with foreign memory and
+-- 'ByteString'
 fromForeignPtr :: PrimType ty
                => (ForeignPtr ty, Int, Int) -- ForeignPtr, an offset in prim elements, a size in prim elements
                -> UArray ty
@@ -188,6 +194,10 @@ unsafeCopyFrom v' newLen f = new newLen >>= fill 0 >>= unsafeFreeze
             | otherwise  = do f v' i r'
                               fill (i + 1) r'
 
+-- | Freeze a MUArray into a UArray by copying all the content is a pristine new buffer
+--
+-- The MUArray in parameter can be still be used after the call without
+-- changing the resulting frozen data.
 freeze :: (PrimType ty, PrimMonad prim) => MUArray ty (PrimState prim) -> prim (UArray ty)
 freeze ma = do
     ma' <- new len
@@ -195,6 +205,10 @@ freeze ma = do
     unsafeFreeze ma'
   where len = mutableLength ma
 
+-- | Just like 'freeze' but copy only the first n bytes
+--
+-- The size requested need to be smaller or equal to the length
+-- of the MUArray, otherwise a Out of Bounds exception is raised
 freezeShrink :: (PrimType ty, PrimMonad prim) => MUArray ty (PrimState prim) -> CountOf ty -> prim (UArray ty)
 freezeShrink ma n = do
     when (n > mutableLength ma) $ primOutOfBound OOB_MemCopy (sizeAsOffset n) (mutableLength ma)
@@ -293,6 +307,14 @@ copyToPtr arr dst@(Ptr dst#) = onBackendPrim copyBa copyPtr arr
     copyBa (Block ba) = primitive $ \s1 -> (# compatCopyByteArrayToAddr# ba os# dst# szBytes# s1, () #)
     copyPtr fptr = unsafePrimFromIO $ withFinalPtr fptr $ \ptr -> copyBytes dst (ptr `plusPtr` os) szBytes
 
+-- | Get a Ptr pointing to the data in the UArray.
+--
+-- Since a UArray is immutable, this Ptr shouldn't be
+-- to use to modify the contents
+--
+-- If the UArray is pinned, then its address is returned as is,
+-- however if it's unpinned, a pinned copy of the UArray is made
+-- before getting the address.
 withPtr :: forall ty prim a . (PrimMonad prim, PrimType ty)
         => UArray ty
         -> (Ptr ty -> prim a)
@@ -330,6 +352,12 @@ recast array
     (CountOf alen) = sizeInBytes (length array)
     missing = alen `mod` bs
 
+-- | Unsafely recast an UArray containing 'a' to an UArray containing 'b'
+--
+-- The offset and size are converted from units of 'a' to units of 'b',
+-- but no check are performed to make sure this is compatible.
+--
+-- use 'recast' if unsure.
 unsafeRecast :: (PrimType a, PrimType b) => UArray a -> UArray b
 unsafeRecast (UArray start len backend) = UArray (primOffsetRecast start) (sizeRecast len) $
     case backend of
