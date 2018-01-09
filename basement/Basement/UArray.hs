@@ -197,6 +197,7 @@ freeze ma = do
 
 freezeShrink :: (PrimType ty, PrimMonad prim) => MUArray ty (PrimState prim) -> CountOf ty -> prim (UArray ty)
 freezeShrink ma n = do
+    when (n > mutableLength ma) $ primOutOfBound OOB_MemCopy (sizeAsOffset n) (mutableLength ma)
     ma' <- new n
     copyAt ma' (Offset 0) ma (Offset 0) n
     unsafeFreeze ma'
