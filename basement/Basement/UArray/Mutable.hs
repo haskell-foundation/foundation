@@ -36,6 +36,7 @@ module Basement.UArray.Mutable
     , write
     , read
     , withMutablePtr
+    , withMutablePtrHint
     ) where
 
 import           GHC.Prim
