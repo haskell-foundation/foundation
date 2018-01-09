@@ -73,6 +73,9 @@ library
                      Basement.Numerical.Multiplicative
                      Basement.Bounded
 
+                     -- exported algorithms
+                     Basement.Alg.XorShift
+
                      -- compat / base redefinition
                      Basement.Compat.Base
                      Basement.Compat.Bifunctor
