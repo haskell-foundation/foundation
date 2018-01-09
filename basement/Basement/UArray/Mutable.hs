@@ -119,26 +119,13 @@ withMutablePtrHint :: forall ty prim a . (PrimMonad prim, PrimType ty)
                    -> MUArray ty (PrimState prim)
                    -> (Ptr ty -> prim a)
                    -> prim a
-withMutablePtrHint _ _ (MUArray start _ (MUArrayAddr fptr))  f =
-    withFinalPtr fptr (\ptr -> f (ptr `plusPtr` os))
+withMutablePtrHint skipCopy skipCopyBack (MUArray start _ back) f =
+    case back of
+        MUArrayAddr fptr -> withFinalPtr fptr (\ptr -> f (ptr `plusPtr` os))
+        MUArrayMBA mb    -> MBLK.withMutablePtrHint skipCopy skipCopyBack mb $ \ptr -> f (ptr `plusPtr` os)
   where
     sz           = primSizeInBytes (Proxy :: Proxy ty)
     !(Offset os) = offsetOfE sz start
-withMutablePtrHint skipCopy skipCopyBack vec@(MUArray start vecSz (MUArrayMBA mb)) f
-    | BLK.isMutablePinned mb == Pinned = MBLK.mutableWithPtr mb (\ptr -> f (ptr `plusPtr` os))
-    | otherwise                        = do
-        trampoline <- newPinned vecSz
-        if not skipCopy
-            then copyAt trampoline 0 vec 0 vecSz
-            else pure ()
-        r <- withMutablePtr trampoline f
-        if not skipCopyBack
-            then copyAt vec 0 trampoline 0 vecSz
-            else pure ()
-        pure r
-  where
-    !(Offset os) = offsetOfE sz start
-    sz           = primSizeInBytes (Proxy :: Proxy ty)
 
 -- | Create a pointer on the beginning of the mutable array
 -- and call a function 'f'.

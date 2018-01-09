@@ -319,17 +319,10 @@ withPtr :: forall ty prim a . (PrimMonad prim, PrimType ty)
         => UArray ty
         -> (Ptr ty -> prim a)
         -> prim a
-withPtr a f
-    | isPinned a == Pinned =
-        onBackendPrim (\blk  -> BLK.withPtr  blk  $ \ptr -> f (ptr `plusPtr` os))
-                      (\fptr -> withFinalPtr fptr $ \ptr -> f (ptr `plusPtr` os))
-                      a
-    | otherwise = do
-        arr <- do
-            trampoline <- newPinned (length a)
-            unsafeCopyAtRO trampoline 0 a 0 (length a)
-            unsafeFreeze trampoline
-        withPtr arr f
+withPtr a f =
+    onBackendPrim (\blk  -> BLK.withPtr  blk  $ \ptr -> f (ptr `plusPtr` os))
+                  (\fptr -> withFinalPtr fptr $ \ptr -> f (ptr `plusPtr` os))
+                  a
   where
     !sz          = primSizeInBytes (Proxy :: Proxy ty)
     !(Offset os) = offsetOfE sz $ offset a
