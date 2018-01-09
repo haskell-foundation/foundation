@@ -20,6 +20,8 @@ module Basement.Block.Base
     , lengthBytes
     , isPinned
     , isMutablePinned
+    , mutableLength
+    , mutableLengthBytes
     -- * Other methods
     , mutableEmpty
     , new
@@ -95,6 +97,17 @@ length (Block ba) =
 lengthBytes :: Block ty -> CountOf Word8
 lengthBytes (Block ba) = CountOf (I# (sizeofByteArray# ba))
 {-# INLINE[1] lengthBytes #-}
+
+-- | Return the length of a Mutable Block
+--
+-- note: we don't allow resizing yet, so this can remain a pure function
+mutableLength :: forall ty st . PrimType ty => MutableBlock ty st -> CountOf ty
+mutableLength mb = sizeRecast $ mutableLengthBytes mb
+{-# INLINE[1] mutableLength #-}
+
+mutableLengthBytes :: MutableBlock ty st -> CountOf Word8
+mutableLengthBytes (MutableBlock mba) = CountOf (I# (sizeofMutableByteArray# mba))
+{-# INLINE[1] mutableLengthBytes #-}
 
 -- | Create an empty block of memory
 empty :: Block ty
