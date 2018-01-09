@@ -63,6 +63,7 @@ module Basement.Block
     , intersperse
     -- * Foreign interfaces
     , unsafeCopyToPtr
+    , withPtr
     ) where
 
 import           GHC.Prim
