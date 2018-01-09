@@ -27,6 +27,8 @@ module Basement.Block.Base
     , new
     , newPinned
     , withPtr
+    , withMutablePtr
+    , withMutablePtrHint
     , mutableWithPtr
     ) where
 
@@ -362,16 +364,28 @@ unsafeWrite :: (PrimMonad prim, PrimType ty) => MutableBlock ty (PrimState prim)
 unsafeWrite (MutableBlock mba) i v = primMbaWrite mba i v
 {-# INLINE unsafeWrite #-}
 
--- | Use the 'Ptr' to a block in a safer construct
+-- | Get a Ptr pointing to the data in the Block.
 --
--- If the block is not pinned, this is a _dangerous_ operation
+-- Since a Block is immutable, this Ptr shouldn't be
+-- to use to modify the contents
+--
+-- If the Block is pinned, then its address is returned as is,
+-- however if it's unpinned, a pinned copy of the UArray is made
+-- before getting the address.
 withPtr :: PrimMonad prim
         => Block ty
         -> (Ptr ty -> prim a)
         -> prim a
-withPtr x@(Block ba) f = do
-    let addr = Ptr (byteArrayContents# ba)
-    f addr <* touch x
+withPtr x@(Block ba) f
+    | isPinned x == Pinned = f (Ptr (byteArrayContents# ba)) <* touch x
+    | otherwise            = do
+        arr@(Block arrBa) <- makeTrampoline
+        f (Ptr (byteArrayContents# arrBa)) <* touch arr
+  where
+    makeTrampoline = do
+        trampoline <- unsafeNew Pinned (lengthBytes x)
+        unsafeCopyBytesRO trampoline 0 x 0 (lengthBytes x)
+        unsafeFreeze trampoline
 
 touch :: PrimMonad prim => Block ty -> prim ()
 touch (Block ba) =
@@ -384,6 +398,66 @@ mutableWithPtr :: PrimMonad prim
                 => MutableBlock ty (PrimState prim)
                 -> (Ptr ty -> prim a)
                 -> prim a
-mutableWithPtr mb f = do
-    b <- unsafeFreeze mb
-    withPtr b f
+mutableWithPtr = withMutablePtr
+{-# DEPRECATED mutableWithPtr "use withMutablePtr" #-}
+
+-- | Create a pointer on the beginning of the MutableBlock
+-- and call a function 'f'.
+--
+-- The mutable block can be mutated by the 'f' function
+-- and the change will be reflected in the mutable block
+--
+-- If the mutable block is unpinned, a trampoline buffer
+-- is created and the data is only copied when 'f' return.
+--
+-- it is all-in-all highly inefficient as this cause 2 copies
+withMutablePtr :: PrimMonad prim
+               => MutableBlock ty (PrimState prim)
+               -> (Ptr ty -> prim a)
+               -> prim a
+withMutablePtr = withMutablePtrHint False False
+
+
+-- | Same as 'withMutablePtr' but allow to specify 2 optimisations
+-- which is only useful when the MutableBlock is unpinned and need
+-- a pinned trampoline to be called safely.
+--
+-- If skipCopy is True, then the first copy which happen before
+-- the call to 'f', is skipped. The Ptr is now effectively
+-- pointing to uninitialized data in a new mutable Block.
+--
+-- If skipCopyBack is True, then the second copy which happen after
+-- the call to 'f', is skipped. Then effectively in the case of a
+-- trampoline being used the memory changed by 'f' will not
+-- be reflected in the original Mutable Block.
+--
+-- If using the wrong parameters, it will lead to difficult to
+-- debug issue of corrupted buffer which only present themselves
+-- with certain Mutable Block that happened to have been allocated
+-- unpinned.
+--
+-- If unsure use 'withMutablePtr', which default to *not* skip
+-- any copy.
+withMutablePtrHint :: forall ty prim a . PrimMonad prim
+                   => Bool -- ^ hint that the buffer doesn't need to have the same value as the mutable block when calling f
+                   -> Bool -- ^ hint that the buffer is not supposed to be modified by call of f
+                   -> MutableBlock ty (PrimState prim)
+                   -> (Ptr ty -> prim a)
+                   -> prim a
+withMutablePtrHint skipCopy skipCopyBack mb f
+    | isMutablePinned mb == Pinned = callWithPtr mb
+    | otherwise                    = do
+        trampoline <- unsafeNew Pinned vecSz
+        if not skipCopy
+            then unsafeCopyBytes trampoline 0 mb 0 vecSz
+            else pure ()
+        r <- callWithPtr trampoline
+        if not skipCopyBack
+            then unsafeCopyBytes mb 0 trampoline 0 vecSz
+            else pure ()
+        pure r
+  where
+    vecSz = mutableLengthBytes mb
+    callWithPtr pinnedMb = do
+        b@(Block ba) <- unsafeFreeze pinnedMb
+        f (Ptr (byteArrayContents# ba)) <* touch b

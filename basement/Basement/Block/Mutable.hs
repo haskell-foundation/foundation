@@ -41,6 +41,8 @@ module Basement.Block.Mutable
     , mutableLength
     , mutableLengthBytes
     , mutableWithPtr
+    , withMutablePtr
+    , withMutablePtrHint
     , new
     , newPinned
     , mutableEmpty
