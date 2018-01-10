@@ -1,5 +1,5 @@
 name:                basement
-version:             0.0.4
+version:             0.0.5
 synopsis:            Foundation scrap box of array & string
 description:         Foundation most basic primitives without any dependencies
 homepage:            https://github.com/haskell-foundation/foundation#readme
