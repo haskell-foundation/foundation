@@ -2,6 +2,6 @@ resolver: lts-10.3
 packages:
 - '.'
 - location: basement/
-  extra-dep: false
+  extra-dep: true
 extra-deps:
 - gauge-0.2.0
