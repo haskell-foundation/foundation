@@ -33,6 +33,7 @@ library
                      Basement.PrimType
 
                      Basement.Exception
+                     Basement.Cast
                      Basement.From
 
                      Basement.Types.Char7
@@ -51,9 +52,11 @@ library
                      Basement.BoxedArray
                      Basement.Block
                      Basement.Block.Mutable
+                     Basement.Block.Builder
                      Basement.UArray
                      Basement.UArray.Mutable
                      Basement.String
+                     Basement.String.Builder
                      Basement.NonEmpty
                      
                      -- Utils

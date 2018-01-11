@@ -3,6 +3,7 @@
 module Basement.Numerical.Conversion
     ( intToInt64
     , int64ToInt
+    , intToWord
     , wordToWord64
     , word64ToWord
     , Word32x2(..)
@@ -91,6 +92,9 @@ wordToChar (W# word) = C# (chr# (word2Int# word))
 
 wordToInt :: Word -> Int
 wordToInt (W# word) = I# (word2Int# word)
+
+intToWord :: Int -> Word
+intToWord (I# i) = W# (int2Word# i)
 
 charToInt :: Char -> Int
 charToInt (C# x) = I# (ord# x)

@@ -41,6 +41,7 @@ import           Basement.Numerical.Number
 import           Basement.Numerical.Conversion
 import qualified Basement.Block as Block
 import qualified Basement.BoxedArray as BoxArray
+import           Basement.Cast (cast)
 import qualified Basement.UArray as UArray
 import qualified Basement.String as String
 import qualified Basement.Types.AsciiString as AsciiString
@@ -93,12 +94,6 @@ tryInto = tryFrom
 
 instance From a a where
     from = id
-
--- Simple numerical instances
-instance From Int Word where
-    from (I# i) = W# (int2Word# i)
-instance From Word Int where
-    from (W# w) = I# (word2Int# w)
 
 instance IsNatural n => From n Natural where
     from = toNatural
@@ -160,6 +155,12 @@ instance From Word16 Word256 where
     from (W16# i) = Word256 0 0 0 (wordToWord64 $ W# i)
 instance From Word16 Word where
     from (W16# i) = W# i
+instance From Word16 Int32 where
+    from (W16# w) = I32# (word2Int# w)
+instance From Word16 Int64 where
+    from (W16# w) = intToInt64 (I# (word2Int# w))
+instance From Word16 Int where
+    from (W16# w) = I# (word2Int# w)
 
 instance From Word32 Word64 where
     from (W32# i) = wordToWord64 (W# i)
@@ -169,6 +170,10 @@ instance From Word32 Word256 where
     from (W32# i) = Word256 0 0 0 (wordToWord64 $ W# i)
 instance From Word32 Word where
     from (W32# i) = W# i
+instance From Word32 Int64 where
+    from (W32# w) = intToInt64 (I# (word2Int# w))
+instance From Word32 Int where
+    from (W32# w) = I# (word2Int# w)
 
 instance From Word64 Word128 where
     from w = Word128 0 w
@@ -187,7 +192,21 @@ instance From (Maybe a) (Either () a) where
 instance From (CountOf ty) Int where
     from (CountOf n) = n
 instance From (CountOf ty) Word where
-    from (CountOf n) = from n
+    -- here it is ok to cast the underlying `Int` held by `CountOf` to a `Word`
+    -- as the `Int` should never hold a negative value.
+    from (CountOf n) = cast n
+instance From Word (Offset ty) where
+    from w = Offset (cast w)
+instance TryFrom Int (Offset ty) where
+    tryFrom i
+        | i < 0     = Nothing
+        | otherwise = Just (Offset i)
+instance TryFrom Int (CountOf ty) where
+    tryFrom i
+        | i < 0     = Nothing
+        | otherwise = Just (CountOf i)
+instance From Word (CountOf ty) where
+    from w = CountOf (cast w)
 
 instance From (Either a b) (These a b) where
     from (Left a) = This a

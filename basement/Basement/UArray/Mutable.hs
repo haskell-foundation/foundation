@@ -153,10 +153,10 @@ copyFromPtr src@(Ptr src#) count marr
     ofs = mutableOffset marr
 
     sz = primSizeInBytes (Proxy :: Proxy ty)
-    !(CountOf bytes@(I# bytes#)) = sizeOfE sz count
-    !(Offset od@(I# od#)) = offsetOfE sz ofs
+    !count'@(CountOf bytes@(I# bytes#)) = sizeOfE sz count
+    !off'@(Offset od@(I# od#)) = offsetOfE sz ofs
 
-    copyNative (MutableBlock mba) = primitive $ \st -> (# copyAddrToByteArray# src# mba od# bytes# st, () #)
+    copyNative mba = MBLK.unsafeCopyBytesPtr mba off' src count'
     copyPtr fptr = withFinalPtr fptr $ \dst ->
         unsafePrimFromIO $ copyBytes (dst `plusPtr` od) src bytes
 

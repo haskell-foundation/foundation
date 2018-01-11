@@ -17,6 +17,7 @@ module Foundation.Check.Main
 
 import           Basement.Imports
 import           Basement.IntegralConv
+import           Basement.Cast (cast)
 import           Basement.Bounded
 import           Basement.Types.OffsetSize
 import qualified Basement.Terminal.ANSI as ANSI
@@ -285,7 +286,7 @@ testProperty name prop = do
     params <- getGenParams . config <$> get
     maxTests <- numTests . config <$> get
 
-    (res,nb) <- liftIO $ iterateProperty (CountOf $ integralDownsize (integralCast maxTests :: Int64)) params rngIt prop
+    (res,nb) <- liftIO $ iterateProperty (CountOf $ integralDownsize (cast maxTests :: Int64)) params rngIt prop
     case res of
         PropertyFailed {} -> failed
         PropertySuccess   -> passed

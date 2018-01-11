@@ -4,6 +4,7 @@
 -- Stability   : experimental
 -- Portability : portable
 --
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -49,6 +50,7 @@ import           Basement.Endianness
 import           Basement.Types.Word128 (Word128(..))
 import           Basement.Types.Word256 (Word256(..))
 import           Basement.Monad
+import           Basement.Nat
 import qualified Prelude (quot)
 
 #if WORD_SIZE_IN_BITS < 64
@@ -160,6 +162,9 @@ primMutableArrayWrite ma (Offset (I# ofs)) v =
 --
 -- Types need to be a instance of storable and have fixed sized.
 class Eq ty => PrimType ty where
+    -- | type level size of the given `ty`
+    type PrimSize ty :: Nat
+
     -- | get the size in bytes of a ty element
     primSizeInBytes :: Proxy ty -> CountOf Word8
 
@@ -227,6 +232,11 @@ shiftWord = 2
 {-# SPECIALIZE [3] primBaUIndex :: ByteArray# -> Offset Word8 -> Word8 #-}
 
 instance PrimType Int where
+#if WORD_SIZE_IN_BITS == 64
+    type PrimSize Int = 8
+#else
+    type PrimSize Int = 4
+#endif
     primSizeInBytes _ = sizeInt
     {-# INLINE primSizeInBytes #-}
     primShiftToBytes _ = shiftInt
@@ -245,6 +255,11 @@ instance PrimType Int where
     {-# INLINE primAddrWrite #-}
 
 instance PrimType Word where
+#if WORD_SIZE_IN_BITS == 64
+    type PrimSize Word = 8
+#else
+    type PrimSize Word = 4
+#endif
     primSizeInBytes _ = sizeWord
     {-# INLINE primSizeInBytes #-}
     primShiftToBytes _ = shiftWord
@@ -263,6 +278,7 @@ instance PrimType Word where
     {-# INLINE primAddrWrite #-}
 
 instance PrimType Word8 where
+    type PrimSize Word8 = 1
     primSizeInBytes _ = CountOf 1
     {-# INLINE primSizeInBytes #-}
     primShiftToBytes _ = 0
@@ -281,6 +297,7 @@ instance PrimType Word8 where
     {-# INLINE primAddrWrite #-}
 
 instance PrimType Word16 where
+    type PrimSize Word16 = 2
     primSizeInBytes _ = CountOf 2
     {-# INLINE primSizeInBytes #-}
     primShiftToBytes _ = 1
@@ -298,6 +315,7 @@ instance PrimType Word16 where
     primAddrWrite addr (Offset (I# n)) (W16# w) = primitive $ \s1 -> (# writeWord16OffAddr# addr n w s1, () #)
     {-# INLINE primAddrWrite #-}
 instance PrimType Word32 where
+    type PrimSize Word32 = 4
     primSizeInBytes _ = CountOf 4
     {-# INLINE primSizeInBytes #-}
     primShiftToBytes _ = 2
@@ -315,6 +333,7 @@ instance PrimType Word32 where
     primAddrWrite addr (Offset (I# n)) (W32# w) = primitive $ \s1 -> (# writeWord32OffAddr# addr n w s1, () #)
     {-# INLINE primAddrWrite #-}
 instance PrimType Word64 where
+    type PrimSize Word64 = 8
     primSizeInBytes _ = CountOf 8
     {-# INLINE primSizeInBytes #-}
     primShiftToBytes _ = 3
@@ -332,6 +351,7 @@ instance PrimType Word64 where
     primAddrWrite addr (Offset (I# n)) (W64# w) = primitive $ \s1 -> (# writeWord64OffAddr# addr n w s1, () #)
     {-# INLINE primAddrWrite #-}
 instance PrimType Word128 where
+    type PrimSize Word128 = 16
     primSizeInBytes _ = CountOf 16
     {-# INLINE primSizeInBytes #-}
     primShiftToBytes _ = 4
@@ -364,6 +384,7 @@ instance PrimType Word128 where
       where (# n1, n2 #) = offset128_64 n
     {-# INLINE primAddrWrite #-}
 instance PrimType Word256 where
+    type PrimSize Word256 = 32
     primSizeInBytes _ = CountOf 32
     {-# INLINE primSizeInBytes #-}
     primShiftToBytes _ = 5
@@ -406,6 +427,7 @@ instance PrimType Word256 where
       where (# n1, n2, n3, n4 #) = offset256_64 n
     {-# INLINE primAddrWrite #-}
 instance PrimType Int8 where
+    type PrimSize Int8 = 1
     primSizeInBytes _ = CountOf 1
     {-# INLINE primSizeInBytes #-}
     primShiftToBytes _ = 0
@@ -423,6 +445,7 @@ instance PrimType Int8 where
     primAddrWrite addr (Offset (I# n)) (I8# w) = primitive $ \s1 -> (# writeInt8OffAddr# addr n w s1, () #)
     {-# INLINE primAddrWrite #-}
 instance PrimType Int16 where
+    type PrimSize Int16 = 2
     primSizeInBytes _ = CountOf 2
     {-# INLINE primSizeInBytes #-}
     primShiftToBytes _ = 1
@@ -440,6 +463,7 @@ instance PrimType Int16 where
     primAddrWrite addr (Offset (I# n)) (I16# w) = primitive $ \s1 -> (# writeInt16OffAddr# addr n w s1, () #)
     {-# INLINE primAddrWrite #-}
 instance PrimType Int32 where
+    type PrimSize Int32 = 4
     primSizeInBytes _ = CountOf 4
     {-# INLINE primSizeInBytes #-}
     primShiftToBytes _ = 2
@@ -457,6 +481,7 @@ instance PrimType Int32 where
     primAddrWrite addr (Offset (I# n)) (I32# w) = primitive $ \s1 -> (# writeInt32OffAddr# addr n w s1, () #)
     {-# INLINE primAddrWrite #-}
 instance PrimType Int64 where
+    type PrimSize Int64 = 8
     primSizeInBytes _ = CountOf 8
     {-# INLINE primSizeInBytes #-}
     primShiftToBytes _ = 3
@@ -475,6 +500,7 @@ instance PrimType Int64 where
     {-# INLINE primAddrWrite #-}
 
 instance PrimType Float where
+    type PrimSize Float = 4
     primSizeInBytes _ = CountOf 4
     {-# INLINE primSizeInBytes #-}
     primShiftToBytes _ = 2
@@ -492,6 +518,7 @@ instance PrimType Float where
     primAddrWrite addr (Offset (I# n)) (F# w) = primitive $ \s1 -> (# writeFloatOffAddr# addr n w s1, () #)
     {-# INLINE primAddrWrite #-}
 instance PrimType Double where
+    type PrimSize Double = 8
     primSizeInBytes _ = CountOf 8
     {-# INLINE primSizeInBytes #-}
     primShiftToBytes _ = 3
@@ -510,6 +537,7 @@ instance PrimType Double where
     {-# INLINE primAddrWrite #-}
 
 instance PrimType Char where
+    type PrimSize Char = 4
     primSizeInBytes _ = CountOf 4
     {-# INLINE primSizeInBytes #-}
     primShiftToBytes _ = 2
@@ -528,6 +556,7 @@ instance PrimType Char where
     {-# INLINE primAddrWrite #-}
 
 instance PrimType CChar where
+    type PrimSize CChar = 1
     primSizeInBytes _ = CountOf 1
     {-# INLINE primSizeInBytes #-}
     primShiftToBytes _ = 0
@@ -545,6 +574,7 @@ instance PrimType CChar where
     primAddrWrite addr (Offset n) (CChar int8) = primAddrWrite addr (Offset n) int8
     {-# INLINE primAddrWrite #-}
 instance PrimType CUChar where
+    type PrimSize CUChar = 1
     primSizeInBytes _ = CountOf 1
     {-# INLINE primSizeInBytes #-}
     primShiftToBytes _ = 0
@@ -563,6 +593,7 @@ instance PrimType CUChar where
     {-# INLINE primAddrWrite #-}
 
 instance PrimType Char7 where
+    type PrimSize Char7 = 1
     primSizeInBytes _ = CountOf 1
     {-# INLINE primSizeInBytes #-}
     primShiftToBytes _ = 0
@@ -581,6 +612,7 @@ instance PrimType Char7 where
     {-# INLINE primAddrWrite #-}
 
 instance PrimType a => PrimType (LE a) where
+    type PrimSize (LE a) = PrimSize a
     primSizeInBytes _ = primSizeInBytes (Proxy :: Proxy a)
     {-# INLINE primSizeInBytes #-}
     primShiftToBytes _ = primShiftToBytes (Proxy :: Proxy a)
@@ -598,6 +630,7 @@ instance PrimType a => PrimType (LE a) where
     primAddrWrite addr (Offset a) (LE w) = primAddrWrite addr (Offset a) w
     {-# INLINE primAddrWrite #-}
 instance PrimType a => PrimType (BE a) where
+    type PrimSize (BE a) = PrimSize a
     primSizeInBytes _ = primSizeInBytes (Proxy :: Proxy a)
     {-# INLINE primSizeInBytes #-}
     primShiftToBytes _ = primShiftToBytes (Proxy :: Proxy a)

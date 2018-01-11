@@ -58,6 +58,7 @@ module Basement.Block.Mutable
     , unsafeCopyElementsRO
     , unsafeCopyBytes
     , unsafeCopyBytesRO
+    , unsafeCopyBytesPtr
     -- * Foreign
     , copyFromPtr
     , copyToPtr

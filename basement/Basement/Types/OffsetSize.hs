@@ -61,6 +61,7 @@ import Basement.Numerical.Number
 import Basement.Numerical.Additive
 import Basement.Numerical.Subtractive
 import Basement.Numerical.Multiplicative
+import Basement.Numerical.Conversion (intToWord)
 import Basement.Nat
 import Basement.IntegralConv
 import Data.List (foldl')
@@ -88,14 +89,10 @@ newtype Offset ty = Offset Int
 instance IsIntegral (Offset ty) where
     toInteger (Offset i) = toInteger i
 instance IsNatural (Offset ty) where
-    toNatural (Offset i) = toNatural (integralCast i :: Word)
+    toNatural (Offset i) = toNatural (intToWord i)
 instance Subtractive (Offset ty) where
     type Difference (Offset ty) = CountOf ty
     (Offset a) - (Offset b) = CountOf (a-b)
-instance IntegralCast Int (Offset ty) where
-    integralCast i = Offset i
-instance IntegralCast Word (Offset ty) where
-    integralCast (W# w) = Offset (I# (word2Int# w))
 
 (+.) :: Offset ty -> Int -> Offset ty
 (+.) (Offset a) b = Offset (a + b)
@@ -192,7 +189,7 @@ instance Prelude.Num (CountOf ty) where
 instance IsIntegral (CountOf ty) where
     toInteger (CountOf i) = toInteger i
 instance IsNatural (CountOf ty) where
-    toNatural (CountOf i) = toNatural (integralCast i :: Word)
+    toNatural (CountOf i) = toNatural (intToWord i)
 
 instance Additive (CountOf ty) where
     azero = CountOf 0
@@ -210,11 +207,6 @@ instance Monoid (CountOf ty) where
     mempty = azero
     mappend = (+)
     mconcat = foldl' (+) 0
-
-instance IntegralCast Int (CountOf ty) where
-    integralCast i = CountOf i
-instance IntegralCast Word (CountOf ty) where
-    integralCast (W# w) = CountOf (I# (word2Int# w))
 
 sizeOfE :: CountOf Word8 -> CountOf ty -> CountOf Word8
 sizeOfE (CountOf sz) (CountOf ty) = CountOf (ty * sz)

@@ -8,10 +8,12 @@ module Basement.Block.Base
     , unsafeNew
     , unsafeThaw
     , unsafeFreeze
+    , unsafeShrink
     , unsafeCopyElements
     , unsafeCopyElementsRO
     , unsafeCopyBytes
     , unsafeCopyBytesRO
+    , unsafeCopyBytesPtr
     , unsafeRead
     , unsafeWrite
     , unsafeIndex
@@ -30,6 +32,7 @@ module Basement.Block.Base
     , withMutablePtr
     , withMutablePtrHint
     , mutableWithPtr
+    , unsafeRecast
     ) where
 
 import           GHC.Prim
@@ -263,6 +266,10 @@ unsafeFreeze (MutableBlock mba) = primitive $ \s1 ->
         (# s2, ba #) -> (# s2, Block ba #)
 {-# INLINE unsafeFreeze #-}
 
+unsafeShrink :: PrimMonad prim => MutableBlock ty (PrimState prim) -> CountOf ty -> prim ()
+unsafeShrink (MutableBlock mba) (CountOf (I# nsz)) = primitive $ \s ->
+  (# shrinkMutableByteArray# mba nsz s, () #)
+
 -- | Thaw an immutable block.
 --
 -- If the immutable block is modified, then the original immutable block will
@@ -348,6 +355,17 @@ unsafeCopyBytesRO (MutableBlock dstMba) (Offset (I# d)) (Block srcBa) (Offset (I
     primitive $ \st -> (# copyByteArray# srcBa s dstMba d n st, () #)
 {-# INLINE unsafeCopyBytesRO #-}
 
+-- | Copy a number of bytes from a Ptr to a MutableBlock with specific byte offsets
+unsafeCopyBytesPtr :: forall prim ty . PrimMonad prim
+                   => MutableBlock ty (PrimState prim) -- ^ destination mutable block
+                   -> Offset Word8                     -- ^ offset at destination
+                   -> Ptr ty                           -- ^ source block
+                   -> CountOf Word8                    -- ^ number of bytes to copy
+                   -> prim ()
+unsafeCopyBytesPtr (MutableBlock dstMba) (Offset (I# d)) (Ptr srcBa) (CountOf (I# n)) =
+    primitive $ \st -> (# copyAddrToByteArray# srcBa dstMba d n st, () #)
+{-# INLINE unsafeCopyBytesPtr #-}
+
 -- | read from a cell in a mutable block without bounds checking.
 --
 -- Reading from invalid memory can return unpredictable and invalid values.
@@ -390,6 +408,11 @@ withPtr x@(Block ba) f
 touch :: PrimMonad prim => Block ty -> prim ()
 touch (Block ba) =
     unsafePrimFromIO $ primitive $ \s -> case touch# ba s of { s2 -> (# s2, () #) }
+
+unsafeRecast :: (PrimType t1, PrimType t2)
+             => MutableBlock t1 st
+             -> MutableBlock t2 st
+unsafeRecast (MutableBlock mba) = MutableBlock mba
 
 -- | Use the 'Ptr' to a mutable block in a safer construct
 --

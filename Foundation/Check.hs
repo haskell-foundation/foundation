@@ -37,6 +37,7 @@ module Foundation.Check
     ) where
 
 import           Basement.Imports
+import           Basement.Cast (cast)
 import           Basement.IntegralConv
 import           Basement.Types.OffsetSize
 import           Foundation.Check.Gen
@@ -80,7 +81,7 @@ iterateProperty limit genParams genRngIter prop = iterProp 1
                                       | otherwise -> return (PropertySuccess, iter)
         where
           iterW64 :: Word64
-          iterW64 = let (CountOf iter') = iter in integralCast (integralUpsize iter' :: Int64)
+          iterW64 = let (CountOf iter') = iter in cast (integralUpsize iter' :: Int64)
 
           -- TODO revisit to let through timeout and other exception like ctrl-c or thread killing.
           toResult :: IO (PropertyResult, Bool)

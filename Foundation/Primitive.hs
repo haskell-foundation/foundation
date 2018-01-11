@@ -19,7 +19,6 @@ module Foundation.Primitive
     -- * Integral convertion
     , IntegralUpsize(..)
     , IntegralDownsize(..)
-    , IntegralCast(..)
 
     -- * Evaluation
     , NormalForm(..)
