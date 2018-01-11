@@ -1,5 +1,5 @@
 name:                basement
-version:             0.0.4
+version:             0.0.5
 synopsis:            Foundation scrap box of array & string
 description:         Foundation most basic primitives without any dependencies
 homepage:            https://github.com/haskell-foundation/foundation#readme
@@ -76,10 +76,14 @@ library
                      Basement.Numerical.Multiplicative
                      Basement.Bounded
 
+                     -- exported algorithms
+                     Basement.Alg.XorShift
+
                      -- compat / base redefinition
                      Basement.Compat.Base
                      Basement.Compat.Bifunctor
                      Basement.Compat.CallStack
+                     Basement.Compat.C.Types
                      Basement.Compat.ExtList
                      Basement.Compat.IsList
                      Basement.Compat.Identity

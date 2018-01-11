@@ -42,10 +42,10 @@ module Foundation.Foreign.MemoryMap.Posix
     ) where
 
 import Basement.Compat.Base
+import Basement.Compat.C.Types
 import Basement.Types.OffsetSize
 import System.Posix.Types
 import Foreign.Ptr
-import Foreign.C.Types
 import Foreign.C.Error
 import Data.Bits
 

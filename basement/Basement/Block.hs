@@ -28,6 +28,8 @@ module Basement.Block
     , thaw
     , freeze
     , copy
+    , unsafeCast
+    , cast
     -- * safer api
     , create
     , isPinned
@@ -61,6 +63,7 @@ module Basement.Block
     , intersperse
     -- * Foreign interfaces
     , unsafeCopyToPtr
+    , withPtr
     ) where
 
 import           GHC.Prim
@@ -80,6 +83,7 @@ import           Basement.Block.Mutable (Block(..), MutableBlock(..), new, unsaf
 import           Basement.Block.Base
 import           Basement.Numerical.Additive
 import           Basement.Numerical.Subtractive
+import           Basement.Numerical.Multiplicative
 import qualified Basement.Alg.Native.Prim as Prim
 import qualified Basement.Alg.Mutable as MutAlg
 import qualified Basement.Alg.Class as Alg
@@ -115,12 +119,6 @@ create n initializer
         M.iterSet initializer mb
         unsafeFreeze mb
 
-isPinned :: Block ty -> PinnedStatus
-isPinned (Block ba) = toPinnedStatus# (compatIsByteArrayPinned# ba)
-
-isMutablePinned :: MutableBlock s ty -> PinnedStatus
-isMutablePinned (MutableBlock mba) = toPinnedStatus# (compatIsMutableByteArrayPinned# mba)
-
 singleton :: PrimType ty => ty -> Block ty
 singleton ty = create 1 (const ty)
 
@@ -138,6 +136,10 @@ thaw array = do
     pure ma
 {-# INLINE thaw #-}
 
+-- | Freeze a MutableBlock into a Block, copying all the data
+--
+-- If the data is modified in the mutable block after this call, then
+-- the immutable Block resulting is not impacted.
 freeze :: (PrimType ty, PrimMonad prim) => MutableBlock ty (PrimState prim) -> prim (Block ty)
 freeze ma = do
     ma' <- unsafeNew Unpinned len
@@ -394,3 +396,32 @@ intersperse sep blk = case len - 1 of
                 unsafeWrite mb o     (unsafeIndex blk i)
                 unsafeWrite mb (o+1) sep
                 loop (o+2) (i+1)
+
+-- | Unsafely recast an UArray containing 'a' to an UArray containing 'b'
+--
+-- The offset and size are converted from units of 'a' to units of 'b',
+-- but no check are performed to make sure this is compatible.
+--
+-- use 'cast' if unsure.
+unsafeCast :: PrimType b => Block a -> Block b
+unsafeCast (Block ba) = Block ba
+
+-- | Cast a Block of 'a' to a Block of 'b'
+--
+-- The requirement is that the size of type 'a' need to be a multiple or
+-- dividend of the size of type 'b'.
+--
+-- If this requirement is not met, the InvalidRecast exception is thrown
+cast :: forall a b . (PrimType a, PrimType b) => Block a -> Block b
+cast blk@(Block ba)
+    | aTypeSize == bTypeSize || bTypeSize == 1 = unsafeCast blk
+    | missing   == 0                           = unsafeCast blk
+    | otherwise                                =
+        throw $ InvalidRecast (RecastSourceSize alen) (RecastDestinationSize $ alen + missing)
+  where
+    (CountOf alen) = lengthBytes blk
+
+    aTypeSize = primSizeInBytes (Proxy :: Proxy a)
+    bTypeSize@(CountOf bs) = primSizeInBytes (Proxy :: Proxy b)
+
+    missing = alen `mod` bs

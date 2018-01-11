@@ -1,3 +1,12 @@
+## 0.0.18
+
+* Add missing lowlevel Block functionality
+* Cleanup UArray to use more functions from Block
+* Push Xoroshiro down to basement
+* Add instances for foundation's numerical classes for C types
+* Update benchmarks to gauge 0.2.0
+* Add documentation to some block & uarray functions
+
 ## 0.0.17
 
 * Add Terminal capabilities: ANSI Escape, UTF8 codepage initialization, get dimensions

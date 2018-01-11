@@ -51,10 +51,10 @@ import GHC.Types
 import GHC.Word
 import GHC.Int
 import GHC.Prim
-import Foreign.C.Types
 import System.Posix.Types (CSsize (..))
 import Data.Bits
 import Basement.Compat.Base
+import Basement.Compat.C.Types
 import Basement.Compat.Semigroup
 import Data.Proxy
 import Basement.Numerical.Number

@@ -16,12 +16,12 @@ module Foundation.System.Entropy.Unix
     ) where
 
 import Foreign.Ptr
-import Foreign.C.Types
 import Control.Exception as E
 import Control.Monad
 import System.IO
 import System.IO.Unsafe (unsafePerformIO)
 import Basement.Compat.Base
+import Basement.Compat.C.Types
 import Prelude (fromIntegral)
 import Foundation.System.Entropy.Common
 import Foundation.Numerical

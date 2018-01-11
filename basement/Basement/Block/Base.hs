@@ -20,11 +20,17 @@ module Basement.Block.Base
     -- * Properties
     , length
     , lengthBytes
+    , isPinned
+    , isMutablePinned
+    , mutableLength
+    , mutableLengthBytes
     -- * Other methods
     , mutableEmpty
     , new
     , newPinned
     , withPtr
+    , withMutablePtr
+    , withMutablePtrHint
     , mutableWithPtr
     , unsafeRecast
     ) where
@@ -79,6 +85,15 @@ instance PrimType ty => IsList (Block ty) where
     fromList = internalFromList
     toList = internalToList
 
+-- | A Mutable block of memory containing unpacked bytes representing values of type 'ty'
+data MutableBlock ty st = MutableBlock (MutableByteArray# st)
+
+isPinned :: Block ty -> PinnedStatus
+isPinned (Block ba) = toPinnedStatus# (compatIsByteArrayPinned# ba)
+
+isMutablePinned :: MutableBlock s ty -> PinnedStatus
+isMutablePinned (MutableBlock mba) = toPinnedStatus# (compatIsMutableByteArrayPinned# mba)
+
 length :: forall ty . PrimType ty => Block ty -> CountOf ty
 length (Block ba) =
     case primShiftToBytes (Proxy :: Proxy ty) of
@@ -90,6 +105,17 @@ length (Block ba) =
 lengthBytes :: Block ty -> CountOf Word8
 lengthBytes (Block ba) = CountOf (I# (sizeofByteArray# ba))
 {-# INLINE[1] lengthBytes #-}
+
+-- | Return the length of a Mutable Block
+--
+-- note: we don't allow resizing yet, so this can remain a pure function
+mutableLength :: forall ty st . PrimType ty => MutableBlock ty st -> CountOf ty
+mutableLength mb = sizeRecast $ mutableLengthBytes mb
+{-# INLINE[1] mutableLength #-}
+
+mutableLengthBytes :: MutableBlock ty st -> CountOf Word8
+mutableLengthBytes (MutableBlock mba) = CountOf (I# (sizeofMutableByteArray# mba))
+{-# INLINE[1] mutableLengthBytes #-}
 
 -- | Create an empty block of memory
 empty :: Block ty
@@ -229,9 +255,6 @@ concat l  =
         doCopy r (i `offsetPlusE` lx) xs
       where !lx = lengthBytes x
 
--- | A Mutable block of memory containing unpacked bytes representing values of type 'ty'
-data MutableBlock ty st = MutableBlock (MutableByteArray# st)
-
 -- | Freeze a mutable block into a block.
 --
 -- If the mutable block is still use after freeze,
@@ -268,10 +291,14 @@ unsafeNew pinSt (CountOf (I# bytes)) = case pinSt of
     Unpinned -> primitive $ \s1 -> case newByteArray# bytes s1 of { (# s2, mba #) -> (# s2, MutableBlock mba #) }
     _        -> primitive $ \s1 -> case newAlignedPinnedByteArray# bytes 8# s1 of { (# s2, mba #) -> (# s2, MutableBlock mba #) }
 
--- | Create a new mutable block of a specific N size of 'ty' elements
+-- | Create a new unpinned mutable block of a specific N size of 'ty' elements
+--
+-- If the size exceeds a GHC-defined threshold, then the memory will be
+-- pinned. To be certain about pinning status with small size, use 'newPinned'
 new :: forall prim ty . (PrimMonad prim, PrimType ty) => CountOf ty -> prim (MutableBlock ty (PrimState prim))
 new n = unsafeNew Unpinned (sizeOfE (primSizeInBytes (Proxy :: Proxy ty)) n)
 
+-- | Create a new pinned mutable block of a specific N size of 'ty' elements
 newPinned :: forall prim ty . (PrimMonad prim, PrimType ty) => CountOf ty -> prim (MutableBlock ty (PrimState prim))
 newPinned n = unsafeNew Pinned (sizeOfE (primSizeInBytes (Proxy :: Proxy ty)) n)
 
@@ -355,20 +382,37 @@ unsafeWrite :: (PrimMonad prim, PrimType ty) => MutableBlock ty (PrimState prim)
 unsafeWrite (MutableBlock mba) i v = primMbaWrite mba i v
 {-# INLINE unsafeWrite #-}
 
--- | Use the 'Ptr' to a block in a safer construct
+-- | Get a Ptr pointing to the data in the Block.
 --
--- If the block is not pinned, this is a _dangerous_ operation
+-- Since a Block is immutable, this Ptr shouldn't be
+-- to use to modify the contents
+--
+-- If the Block is pinned, then its address is returned as is,
+-- however if it's unpinned, a pinned copy of the UArray is made
+-- before getting the address.
 withPtr :: PrimMonad prim
         => Block ty
         -> (Ptr ty -> prim a)
         -> prim a
-withPtr x@(Block ba) f = do
-    let addr = Ptr (byteArrayContents# ba)
-    f addr <* touch x
+withPtr x@(Block ba) f
+    | isPinned x == Pinned = f (Ptr (byteArrayContents# ba)) <* touch x
+    | otherwise            = do
+        arr@(Block arrBa) <- makeTrampoline
+        f (Ptr (byteArrayContents# arrBa)) <* touch arr
+  where
+    makeTrampoline = do
+        trampoline <- unsafeNew Pinned (lengthBytes x)
+        unsafeCopyBytesRO trampoline 0 x 0 (lengthBytes x)
+        unsafeFreeze trampoline
 
 touch :: PrimMonad prim => Block ty -> prim ()
 touch (Block ba) =
     unsafePrimFromIO $ primitive $ \s -> case touch# ba s of { s2 -> (# s2, () #) }
+
+unsafeRecast :: (PrimType t1, PrimType t2)
+             => MutableBlock t1 st
+             -> MutableBlock t2 st
+unsafeRecast (MutableBlock mba) = MutableBlock mba
 
 -- | Use the 'Ptr' to a mutable block in a safer construct
 --
@@ -377,11 +421,66 @@ mutableWithPtr :: PrimMonad prim
                 => MutableBlock ty (PrimState prim)
                 -> (Ptr ty -> prim a)
                 -> prim a
-mutableWithPtr mb f = do
-    b <- unsafeFreeze mb
-    withPtr b f
+mutableWithPtr = withMutablePtr
+{-# DEPRECATED mutableWithPtr "use withMutablePtr" #-}
 
-unsafeRecast :: (PrimType t1, PrimType t2)
-             => MutableBlock t1 st
-             -> MutableBlock t2 st
-unsafeRecast (MutableBlock mba) = MutableBlock mba
+-- | Create a pointer on the beginning of the MutableBlock
+-- and call a function 'f'.
+--
+-- The mutable block can be mutated by the 'f' function
+-- and the change will be reflected in the mutable block
+--
+-- If the mutable block is unpinned, a trampoline buffer
+-- is created and the data is only copied when 'f' return.
+--
+-- it is all-in-all highly inefficient as this cause 2 copies
+withMutablePtr :: PrimMonad prim
+               => MutableBlock ty (PrimState prim)
+               -> (Ptr ty -> prim a)
+               -> prim a
+withMutablePtr = withMutablePtrHint False False
+
+
+-- | Same as 'withMutablePtr' but allow to specify 2 optimisations
+-- which is only useful when the MutableBlock is unpinned and need
+-- a pinned trampoline to be called safely.
+--
+-- If skipCopy is True, then the first copy which happen before
+-- the call to 'f', is skipped. The Ptr is now effectively
+-- pointing to uninitialized data in a new mutable Block.
+--
+-- If skipCopyBack is True, then the second copy which happen after
+-- the call to 'f', is skipped. Then effectively in the case of a
+-- trampoline being used the memory changed by 'f' will not
+-- be reflected in the original Mutable Block.
+--
+-- If using the wrong parameters, it will lead to difficult to
+-- debug issue of corrupted buffer which only present themselves
+-- with certain Mutable Block that happened to have been allocated
+-- unpinned.
+--
+-- If unsure use 'withMutablePtr', which default to *not* skip
+-- any copy.
+withMutablePtrHint :: forall ty prim a . PrimMonad prim
+                   => Bool -- ^ hint that the buffer doesn't need to have the same value as the mutable block when calling f
+                   -> Bool -- ^ hint that the buffer is not supposed to be modified by call of f
+                   -> MutableBlock ty (PrimState prim)
+                   -> (Ptr ty -> prim a)
+                   -> prim a
+withMutablePtrHint skipCopy skipCopyBack mb f
+    | isMutablePinned mb == Pinned = callWithPtr mb
+    | otherwise                    = do
+        trampoline <- unsafeNew Pinned vecSz
+        if not skipCopy
+            then unsafeCopyBytes trampoline 0 mb 0 vecSz
+            else pure ()
+        r <- callWithPtr trampoline
+        if not skipCopyBack
+            then unsafeCopyBytes mb 0 trampoline 0 vecSz
+            else pure ()
+        pure r
+  where
+    vecSz = mutableLengthBytes mb
+    callWithPtr pinnedMb = do
+        b@(Block ba) <- unsafeFreeze pinnedMb
+        f (Ptr (byteArrayContents# ba)) <* touch b

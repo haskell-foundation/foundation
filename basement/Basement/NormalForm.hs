@@ -5,6 +5,7 @@ module Basement.NormalForm
     ) where
 
 import Basement.Compat.Base
+import Basement.Compat.C.Types
 import Basement.Compat.Natural
 import Basement.Types.OffsetSize
 import Basement.Types.Char7
@@ -12,7 +13,6 @@ import Basement.Types.Word128 (Word128)
 import Basement.Types.Word256 (Word256)
 import Basement.Bounded
 import Basement.Endianness
-import Foreign.C.Types
 
 -- | Data that can be fully evaluated in Normal Form
 --

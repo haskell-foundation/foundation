@@ -1,5 +1,5 @@
 name:                foundation
-version:             0.0.17
+version:             0.0.18
 synopsis:            Alternative prelude with batteries and no dependencies
 description:
     A custom prelude with no dependencies apart from base.
@@ -191,7 +191,7 @@ library
                       BangPatterns
                       DeriveDataTypeable
   build-depends:     base >= 4.7 && < 5
-                   , basement == 0.0.4
+                   , basement == 0.0.5
                    , ghc-prim
   -- FIXME add suport for armel mipsel
   --  CPP-options: -DARCH_IS_LITTLE_ENDIAN
@@ -273,7 +273,7 @@ Benchmark bench
   if flag(minimal-deps) || impl(ghc < 7.10)
     buildable: False
   else
-    build-depends:     base >= 4, gauge, basement, foundation
+    build-depends:     base >= 4, gauge >= 0.2.0, basement, foundation
     if flag(bench-all)
       cpp-options:     -DBENCH_ALL
       build-depends:   text, attoparsec, vector, bytestring

@@ -12,8 +12,7 @@ module Foundation.System.Bindings.PosixDef
     , CMode(..)
     ) where
 
-import Foreign.C.Types
-import System.Posix.Types (COff(..), CMode(..))
+import Basement.Compat.C.Types
 
 type CErrno = CInt
 type CFd = CInt
