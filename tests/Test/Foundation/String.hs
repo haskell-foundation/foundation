@@ -69,9 +69,10 @@ testStringCases =
          , CheckPlan "é should capitalize to É" $ validate "é" $ upper "é" == "É"
          , CheckPlan "ß should capitalize to SS" $ validate "ß" $ upper "ß" == "SS"
          , CheckPlan "ﬄ should capitalize to FFL" $ validate "ﬄ" $ upper "ﬄ" == "FFL"
-         , CheckPlan "0a should capitalize to 0A" $ validate "0a" $ upper "0a" == "0A"
+         , CheckPlan "0a should capitalize to 0A" $ validate "0a" $ upper "\0a" == "\0A"
+         , CheckPlan "0a should capitalize to 0A" $ validate "0a" $ upper "a\0a" == "A\0A"
+         , CheckPlan "0a should capitalize to 0A" $ validate "0a" $ upper "\0\0" == "\0\0"
          , CheckPlan "00 should not capitalize" $ validate "00" $ upper "00" == "00"
-         , CheckPlan "should capitalize NULL to NULL" $ validate "NULL" $ upper (fromString ['\0']) == "\0"
         ]
     {-
     , testGroup "replace" [

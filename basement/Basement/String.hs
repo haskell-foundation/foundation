@@ -1341,7 +1341,7 @@ caseConvertNBuff op s@(String ba) = runST $ Vec.unsafeIndexer ba go
                 let !(c, idx') = nextI idx
                     !cm@(CM c1 c2 c3) = op c 
                     !cSize = if c2 == '\0' -- if c2 is empty, c3 will be empty as well.
-                              then eSize c1 
+                              then charToBytes (fromEnum c1) 
                               else eSize c1 + eSize c2 + eSize c3
                     !nchanged = changed || c1 /= c || c2 /= '\0'
                 loop idx' (ns + cSize) nchanged
@@ -1357,17 +1357,17 @@ caseConvert op s@(String ba)
     go :: String -> Offset Char -> Offset8 -> MutableString s -> Offset8 -> ST s (Offset8, Offset8)
     go src' srcI srcIdx dst dstIdx = do
       let !(CM c1 c2 c3) = op c 
-      dstIdx' <- write dst dstIdx c1
+      dstIdx <- write dst dstIdx c1
       nextDstIdx <- 
         if c2 == '\0' -- We don't want to check C3 if C2 is empty.
-          then return dstIdx'
+          then return dstIdx
           else do
-            dstIdx''  <- writeChar c2 dstIdx'
-            writeChar c3 dstIdx''
+            dstIdx  <- writeValidChar c2 dstIdx
+            writeValidChar c3 dstIdx
       return (nextSrcIdx, nextDstIdx)
           where
             !(Step c nextSrcIdx) = next src' srcIdx
-            writeChar cc wIdx =
+            writeValidChar cc wIdx =
                 if cc == '\0'
                     then return wIdx 
                 else do
