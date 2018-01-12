@@ -60,6 +60,8 @@ instance Monoid Builder where
     {-# INLINE mempty #-}
     mappend = append
     {-# INLINABLE mappend #-}
+    mconcat = concat
+    {-# INLINABLE mconcat #-}
 
 -- | create an empty builder
 --
@@ -78,6 +80,15 @@ append (Builder size1 (Action action1)) (Builder size2 (Action action2)) =
       action2 arr off'
     size = size1 + size2
 {-# INLINABLE append #-}
+
+-- | concatenate the list of builder
+concat :: [Builder] -> Builder
+concat = loop 0 (Action $ \_ !off -> pure off)
+  where
+    loop !sz acc          []                              = Builder sz acc
+    loop !sz (Action acc) (Builder !s (Action action):xs) =
+       loop (sz + s) (Action $ \arr off -> acc arr off >>= action arr) xs
+{-# INLINABLE concat #-}
 
 -- | run the given builder and return the generated block
 run :: PrimMonad prim => Builder -> prim (Block Word8)
