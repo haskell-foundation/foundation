@@ -1318,7 +1318,7 @@ decimalDigitsPtr startAcc ptr !endOfs !startOfs = loop startAcc startOfs
 {-# SPECIALIZE decimalDigitsPtr :: Int -> Addr# -> Offset Word8 -> Offset Word8 -> (# Int, Bool, Offset Word8 #) #-}
 {-# SPECIALIZE decimalDigitsPtr :: Word -> Addr# -> Offset Word8 -> Offset Word8 -> (# Word, Bool, Offset Word8 #) #-}
 
--- | A unicode string size may increase during a case conversion operation.
+-- | A unicode string size may vary during a case conversion operation.
 --   This function calculates the new buffer size for a case conversion.
 --   Returns Nothing if no case conversion is needed.
 caseConvertNBuff :: (Char -> CM) -> String -> Maybe (CountOf Word8)
@@ -1333,31 +1333,37 @@ caseConvertNBuff op s@(String ba) = runST $ Vec.unsafeIndexer ba go
         eSize !e = if e == '\0' 
                       then 0
                       else charToBytes (fromEnum e)
-        loop !idx ns convert
-            | idx == end = if convert
+        loop !idx ns changed 
+            | idx == end = if changed
                              then return $ Just ns
                              else return Nothing
             | otherwise = do
                 let !(c, idx') = nextI idx
                     !cm@(CM c1 c2 c3) = op c 
-                    !cSize = (eSize c1) + (eSize c2) + (eSize c3)
-                    !nconvert = convert || not ((c1 == c) && (c2 == '\0') && (c3 == '\0'))
-                loop idx' (ns + cSize) nconvert
+                    !cSize = if c2 == '\0' -- if c2 is empty, c3 will be empty as well.
+                              then eSize c1 
+                              else eSize c1 + eSize c2 + eSize c3
+                    !nchanged = changed || c1 /= c || c2 /= '\0'
+                loop idx' (ns + cSize) nchanged
 
 -- | Convert a 'String' 'Char' by 'Char' using a case mapping function. 
 caseConvert :: (Char -> CM) -> String -> String
 caseConvert op s@(String ba) 
   = case nBuff of
       Nothing -> s
-      (Just nLen) -> runST $ unsafeCopyFrom s nLen go
+      Just nLen -> runST $ unsafeCopyFrom s nLen go
   where
     !nBuff = caseConvertNBuff op s
     go :: String -> Offset Char -> Offset8 -> MutableString s -> Offset8 -> ST s (Offset8, Offset8)
     go src' srcI srcIdx dst dstIdx = do
       let !(CM c1 c2 c3) = op c 
-      dstIdx'    <- writeChar c1 dstIdx 
-      dstIdx''   <- writeChar c2 dstIdx'
-      nextDstIdx <- writeChar c3 dstIdx''
+      dstIdx' <- write dst dstIdx c1
+      nextDstIdx <- 
+        if c2 == '\0' -- We don't want to check C3 if C2 is empty.
+          then return dstIdx'
+          else do
+            dstIdx''  <- writeChar c2 dstIdx'
+            writeChar c3 dstIdx''
       return (nextSrcIdx, nextDstIdx)
           where
             !(Step c nextSrcIdx) = next src' srcIdx

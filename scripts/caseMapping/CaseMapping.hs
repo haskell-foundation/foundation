@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
-
-module CaseMapping where
+module CaseMapping (
+  main
+) where
 
 import qualified Basement.String as BS (charMap)
 import           Data.Char (toUpper, toLower)
