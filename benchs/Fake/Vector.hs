@@ -15,6 +15,7 @@ module Fake.Vector
     , and
     , all
     , any
+    , concat
     ) where
 
 import Prelude (undefined)
@@ -40,3 +41,4 @@ foldr _ _ _ = undefined
 and _ _ = undefined
 all _ _ = undefined
 any _ _ = undefined
+concat = undefined

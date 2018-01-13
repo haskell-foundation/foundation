@@ -17,6 +17,7 @@ module Fake.ByteString
     , readInt
     , readInteger
     , unpack
+    , concat
     ) where
 
 import Prelude (undefined, Maybe(..))
@@ -41,6 +42,8 @@ foldr _ _ _ = undefined
 and _ _ = undefined
 all _ _ = undefined
 any _ _ = undefined
+concat :: [ByteString] -> ByteString
+concat _ = undefined
 unpack :: ByteString -> [Word8]
 unpack = undefined
 
