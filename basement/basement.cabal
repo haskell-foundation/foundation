@@ -131,6 +131,7 @@ library
 
                      Basement.UArray.Base
 
+                     Basement.String.CaseMapping
                      Basement.String.Encoding.Encoding
                      Basement.String.Encoding.UTF16
                      Basement.String.Encoding.UTF32

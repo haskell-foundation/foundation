@@ -59,6 +59,21 @@ testStringCases =
               "this is only a simple string but quite longer than the 64 bytes used in the modified UTF8 parser"
               "this is only a simple string but quite longer than the 64 bytes used in the modified UTF8 parser"
         ]
+    , Group "CaseMapping" 
+         [ Property "upper . upper == upper" $ \l ->
+             let s = fromList l
+              in upper (upper s) === upper s
+         , CheckPlan "a should capitalize to A" $ validate "a" $ upper "a" == "A"
+         , CheckPlan "b should capitalize to B" $ validate "b" $ upper "b" == "B"
+         , CheckPlan "B should not capitalize" $ validate "B" $ upper "B" == "B"
+         , CheckPlan "é should capitalize to É" $ validate "é" $ upper "é" == "É"
+         , CheckPlan "ß should capitalize to SS" $ validate "ß" $ upper "ß" == "SS"
+         , CheckPlan "ﬄ should capitalize to FFL" $ validate "ﬄ" $ upper "ﬄ" == "FFL"
+         , CheckPlan "0a should capitalize to 0A" $ validate "0a" $ upper "\0a" == "\0A"
+         , CheckPlan "0a should capitalize to 0A" $ validate "0a" $ upper "a\0a" == "A\0A"
+         , CheckPlan "0a should capitalize to 0A" $ validate "0a" $ upper "\0\0" == "\0\0"
+         , CheckPlan "00 should not capitalize" $ validate "00" $ upper "00" == "00"
+        ]
     {-
     , testGroup "replace" [
           testCase "indices '' 'bb' should raise an error" $ do
