@@ -21,7 +21,7 @@ main = do
   cfs <- case pcf of
            Left err -> putStrLn (show err) >> undefined
            Right cf -> return cf
-  h <- openFile ("../../basement/Basement/String/CaseMapping.hs") WriteMode
+  h <- openFile ("NewCaseMapping.hs") WriteMode
   let comments = ("--" <>) <$>
                  take 2 (cfComments cfs) <> take 2 (scComments scs)
   (hPut h) . S.toBytes S.UTF8  . intercalate "\n" $
