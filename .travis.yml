@@ -35,6 +35,10 @@ matrix:
     language: generic
     addons: { apt: { packages: [ libgmp-dev ] } }
     compiler: ghc-7.10
+  - env: BUILD=stack RESOLVER=ghc-7.8 HADDOCK="--no-haddock"
+    language: generic
+    addons: { apt: { packages: [ libgmp-dev ] } }
+    compiler: ghc-7.8
   - env: BUILD=stack RESOLVER=ghc-8.0
     os: osx
     language: generic
@@ -85,7 +89,7 @@ script:
           --flag foundation:bounds-check ${EXPERIMENTAL} \
           --install-ghc \
           --coverage --bench --no-run-benchmarks \
-          --haddock --no-haddock-deps
+          ${HADDOCK---haddock --no-haddock-deps}
       ;;
     cabal)
       cabal install --only-dependencies --enable-tests
