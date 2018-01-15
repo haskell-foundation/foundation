@@ -7,7 +7,7 @@
 curl "https://unicode.org/Public/UNIDATA/CaseFolding.txt" >> CaseFolding.txt
 curl "https://unicode.org/Public/UNIDATA/SpecialCasing.txt" >> SpecialCasing.txt
 
-stack runghc -- -XNoImplicitPrelude -XRebindableSyntax -XTypeFamilies -XBangPatterns -XDeriveDataTypeable CaseMapping.hs
+stack runghc -- -XNoImplicitPrelude -XTypeFamilies -XBangPatterns CaseMapping.hs
 
 if [ "$(head -n 7 "NewCaseMapping.hs")" = "$(head -n 7 "../../basement/Basement/String/CaseMapping.hs")" ]
   then
