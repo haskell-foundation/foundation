@@ -43,6 +43,8 @@ benchsString = bgroup "String"
     , benchFilter
     , benchRead
     , benchFromUTF8Bytes
+    , benchUpper
+    , benchLower
     ]
   where
     diffTextString :: (String -> a)
@@ -131,6 +133,14 @@ benchsString = bgroup "String"
 
     benchFilter = bgroup "Filter" $
         fmap (\(n, dat) -> bgroup n $ diffTextString (filter (> 'b')) (Just $ filter (> 'b')) (Text.filter (> 'b')) dat)
+            allDat
+
+    benchUpper = bgroup "Upper" $
+        fmap (\(n, dat) -> bgroup n $ diffTextString upper Nothing Text.toUpper dat)
+            allDat
+
+    benchLower = bgroup "Lower" $
+        fmap (\(n, dat) -> bgroup n $ diffTextString lower Nothing Text.toLower dat)
             allDat
 
     benchRead = bgroup "Read"
