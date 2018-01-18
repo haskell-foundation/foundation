@@ -1,6 +1,7 @@
-{-# LANGUAGE CPP                   #-}
-{-# LANGUAGE MagicHash #-}
-{-# LANGUAGE UnboxedTuples #-}
+{-# LANGUAGE CPP                #-}
+{-# LANGUAGE MagicHash          #-}
+{-# LANGUAGE UnboxedTuples      #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 module Basement.Types.Word256
     ( Word256(..)
     , (+)
@@ -39,7 +40,7 @@ data Word256 = Word256 {-# UNPACK #-} !Word64
                        {-# UNPACK #-} !Word64
                        {-# UNPACK #-} !Word64
                        {-# UNPACK #-} !Word64
-    deriving (Eq)
+    deriving (Eq, Typeable)
 
 instance Show Word256 where
     show w = Prelude.show (toNatural w)
