@@ -95,8 +95,7 @@ run :: PrimMonad prim => Builder -> prim (Block Word8)
 run (Builder sz action) = do
     mb <- B.new sz
     off <- runAction_ action mb 0
-    B.unsafeShrink mb (offsetAsSize off)
-    B.unsafeFreeze mb
+    B.unsafeShrink mb (offsetAsSize off) >>= B.unsafeFreeze
 
 -- | run the given builder and return a UTF8String
 --
