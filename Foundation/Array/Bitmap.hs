@@ -13,6 +13,7 @@
 -- unnecessary churn.
 --
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 module Foundation.Array.Bitmap
     ( Bitmap
     , MutableBitmap
@@ -46,6 +47,7 @@ import           GHC.ST
 import qualified Data.List
 
 data Bitmap = Bitmap (CountOf Bool) (UArray Word32)
+    deriving (Typeable)
 
 data MutableBitmap st = MutableBitmap (CountOf Bool) (MUArray Word32 st)
 
