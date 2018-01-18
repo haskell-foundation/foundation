@@ -1,6 +1,7 @@
-{-# LANGUAGE CPP                   #-}
-{-# LANGUAGE MagicHash #-}
-{-# LANGUAGE UnboxedTuples #-}
+{-# LANGUAGE CPP                #-}
+{-# LANGUAGE MagicHash          #-}
+{-# LANGUAGE UnboxedTuples      #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 module Basement.Types.Word128
     ( Word128(..)
     , (+)
@@ -37,7 +38,7 @@ import           Basement.Numerical.Number
 -- | 128 bits Word
 data Word128 = Word128 {-# UNPACK #-} !Word64
                        {-# UNPACK #-} !Word64
-    deriving (Eq)
+    deriving (Eq, Typeable)
 
 instance Show Word128 where
     show w = Prelude.show (toNatural w)
