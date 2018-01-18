@@ -80,6 +80,7 @@ library
                      Basement.Alg.XorShift
 
                      -- compat / base redefinition
+                     Basement.Compat.AMP
                      Basement.Compat.Base
                      Basement.Compat.Bifunctor
                      Basement.Compat.CallStack
