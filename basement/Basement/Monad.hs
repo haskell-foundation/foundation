@@ -16,6 +16,7 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE ConstraintKinds #-}
 module Basement.Monad
     ( PrimMonad(..)
     , MonadFailure(..)
@@ -34,6 +35,7 @@ import           GHC.IORef
 import           GHC.IO
 import           GHC.Prim
 import           Basement.Compat.Base (Exception, (.), ($), Applicative)
+import           Basement.Compat.AMP
 
 -- | Primitive monad that can handle mutation.
 --
@@ -120,7 +122,7 @@ primTouch x = unsafePrimFromIO $ primitive $ \s -> case touch# x s of { s2 -> (#
 -- | Monad that can represent failure
 --
 -- Similar to MonadFail but with a parametrized Failure linked to the Monad
-class Prelude.Monad m => MonadFailure m where
+class AMPMonad m => MonadFailure m where
     -- | The associated type with the MonadFailure, representing what
     -- failure can be encoded in this monad
     type Failure m

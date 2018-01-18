@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ConstraintKinds #-}
 module Foundation.Monad.Exception
     ( MonadThrow(..)
     , MonadCatch(..)
@@ -6,10 +7,11 @@ module Foundation.Monad.Exception
     ) where
 
 import           Basement.Compat.Base
+import           Basement.Compat.AMP
 import qualified Control.Exception as E
 
 -- | Monad that can throw exception
-class Monad m => MonadThrow m where
+class AMPMonad m => MonadThrow m where
     -- | Throw immediatity an exception.
     -- Only a 'MonadCatch' monad will be able to catch the exception using 'catch'
     throw :: Exception e => e -> m a

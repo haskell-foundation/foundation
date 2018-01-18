@@ -1,9 +1,11 @@
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ConstraintKinds #-}
 module Foundation.Monad.Except
     ( ExceptT(..)
     ) where
 
 import Basement.Imports
+import Basement.Compat.AMP
 import Foundation.Monad.Base
 import Foundation.Monad.Reader
 
@@ -12,7 +14,7 @@ newtype ExceptT e m a = ExceptT { runExceptT :: m (Either e a) }
 instance Functor m => Functor (ExceptT e m) where
     fmap f = ExceptT . fmap (fmap f) . runExceptT
 
-instance (Functor m, Monad m) => Applicative (ExceptT e m) where
+instance AMPMonad m => Applicative (ExceptT e m) where
     pure a = ExceptT $ pure (Right a)
     ExceptT f <*> ExceptT v = ExceptT $ do
         mf <- f
@@ -24,11 +26,11 @@ instance (Functor m, Monad m) => Applicative (ExceptT e m) where
                     Left e -> pure (Left e)
                     Right x -> pure (Right (k x))
 
-instance Monad m => MonadFailure (ExceptT e m) where
+instance AMPMonad m => MonadFailure (ExceptT e m) where
     type Failure (ExceptT e m) = e
     mFail = ExceptT . pure . Left
 
-instance Monad m => Monad (ExceptT e m) where
+instance AMPMonad m => Monad (ExceptT e m) where
     return a = ExceptT $ return (Right a)
     m >>= k = ExceptT $ do
         a <- runExceptT m
