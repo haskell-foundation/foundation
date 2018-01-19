@@ -1,12 +1,12 @@
 name:                basement
-version:             0.0.5
+version:             0.0.6
 synopsis:            Foundation scrap box of array & string
 description:         Foundation most basic primitives without any dependencies
 homepage:            https://github.com/haskell-foundation/foundation#readme
 license:             BSD3
 license-file:        LICENSE
 copyright:           2015-2017 Vincent Hanquez <vincent@snarc.org>
-                     2017      Foundation Maintainers
+                     2017-2018 Foundation Maintainers
 maintainer:          vincent@snarc.org
 copyright:           Vincent Hanquez
 category:            Web

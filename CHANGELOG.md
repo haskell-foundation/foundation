@@ -1,3 +1,10 @@
+## 0.0.19
+
+* Add Block, UArray, String Builder
+* Improve concat for Block andd UArray
+* Add unicode case mapping
+* Re-add compatibility with ghc 7.8
+
 ## 0.0.18
 
 * Add missing lowlevel Block functionality

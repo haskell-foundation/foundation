@@ -1,5 +1,5 @@
 name:                foundation
-version:             0.0.18
+version:             0.0.19
 synopsis:            Alternative prelude with batteries and no dependencies
 description:
     A custom prelude with no dependencies apart from base.
@@ -191,7 +191,7 @@ library
                       BangPatterns
                       DeriveDataTypeable
   build-depends:     base >= 4.7 && < 5
-                   , basement == 0.0.5
+                   , basement == 0.0.6
                    , ghc-prim
   -- FIXME add suport for armel mipsel
   --  CPP-options: -DARCH_IS_LITTLE_ENDIAN
