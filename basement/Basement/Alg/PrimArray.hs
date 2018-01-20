@@ -47,7 +47,7 @@ revFindIndexElem ty ba startIndex endIndex
 {-# INLINE revFindIndexElem #-}
 
 findIndexPredicate :: Indexable container ty => (ty -> Bool) -> container -> Offset ty -> Offset ty -> Offset ty
-findIndexPredicate predicate ba !startIndex !endIndex = loop startIndex
+findIndexPredicate predicate ba startIndex endIndex = loop startIndex
   where
     loop !i
         | i >= endIndex = sentinel
