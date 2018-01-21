@@ -3,6 +3,7 @@
 {-# LANGUAGE NoImplicitPrelude          #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE CPP                        #-}
 module Basement.Alg.String
     ( copyFilter
@@ -13,18 +14,23 @@ module Basement.Alg.String
 
 import           GHC.Prim
 import           GHC.ST
+import           Basement.Alg.Class
+import           Basement.Alg.UTF8
 import           Basement.Compat.Base
 import           Basement.Numerical.Additive
 import           Basement.Types.OffsetSize
+import           Basement.PrimType
+import           Basement.Block (MutableBlock(..))
 
 import           Basement.UTF8.Helper
 import           Basement.UTF8.Table
 import           Basement.UTF8.Types
 
-copyFilter :: (Char -> Bool)
+copyFilter :: forall s container . Indexable container Word8
+           => (Char -> Bool)
            -> CountOf Word8
            -> MutableByteArray# s
-           -> PrimBackend.Immutable
+           -> container
            -> Offset Word8
            -> ST s (CountOf Word8)
 copyFilter predicate !sz dst src start = loop (Offset 0) start
@@ -33,27 +39,28 @@ copyFilter predicate !sz dst src start = loop (Offset 0) start
     loop !d !s
         | s == end  = pure (offsetAsSize d)
         | otherwise =
-            let !h = PrimBackend.primIndex src s
+            let !h = index src s
              in case headerIsAscii h of
-                    True | predicate (toChar1 h) -> PrimNative.primWrite dst d h >> loop (d + Offset 1) (s + Offset 1)
+                    True | predicate (toChar1 h) -> primMbaWrite dst d h >> loop (d + Offset 1) (s + Offset 1)
                          | otherwise             -> loop d (s + Offset 1)
                     False ->
-                        case UTF8Backend.next src s of
-                            Step c s' | predicate c -> UTF8Native.write dst d c >>= \d' -> loop d' s'
+                        case next src s of
+                            Step c s' | predicate c -> writeUTF8 (MutableBlock dst :: MutableBlock Word8 s) d c >>= \d' -> loop d' s'
                                       | otherwise   -> loop d s'
 
-validate :: Offset Word8
-         -> PrimBackend.Immutable
+validate :: Indexable container Word8
+         => Offset Word8
+         -> container
          -> Offset Word8
          -> (Offset Word8, Maybe ValidationFailure)
 validate end ba ofsStart = loop4 ofsStart
   where
     loop4 !ofs
         | ofs4 < end =
-            let h1 = PrimBackend.primIndex ba ofs
-                h2 = PrimBackend.primIndex ba (ofs+1)
-                h3 = PrimBackend.primIndex ba (ofs+2)
-                h4 = PrimBackend.primIndex ba (ofs+3)
+            let h1 = index ba ofs
+                h2 = index ba (ofs+1)
+                h3 = index ba (ofs+2)
+                h4 = index ba (ofs+3)
              in if headerIsAscii h1 && headerIsAscii h2 && headerIsAscii h3 && headerIsAscii h4
                     then loop4 ofs4
                     else loop ofs
@@ -65,7 +72,7 @@ validate end ba ofsStart = loop4 ofsStart
         | headerIsAscii h = loop (ofs + Offset 1)
         | otherwise       = multi (CountOf $ getNbBytes h) ofs
       where
-        h = PrimBackend.primIndex ba ofs
+        h = index ba ofs
 
     multi (CountOf 0xff) pos = (pos, Just InvalidHeader)
     multi nbConts pos
@@ -73,27 +80,28 @@ validate end ba ofsStart = loop4 ofsStart
         | otherwise =
             case nbConts of
                 CountOf 1 ->
-                    let c1 = PrimBackend.primIndex ba posNext
+                    let c1 = index ba posNext
                     in if isContinuation c1
                         then loop (pos + Offset 2)
                         else (pos, Just InvalidContinuation)
                 CountOf 2 ->
-                    let c1 = PrimBackend.primIndex ba posNext
-                        c2 = PrimBackend.primIndex ba (pos + Offset 2)
+                    let c1 = index ba posNext
+                        c2 = index ba (pos + Offset 2)
                      in if isContinuation2 c1 c2
                             then loop (pos + Offset 3)
                             else (pos, Just InvalidContinuation)
                 CountOf _ ->
-                    let c1 = PrimBackend.primIndex ba posNext
-                        c2 = PrimBackend.primIndex ba (pos + Offset 2)
-                        c3 = PrimBackend.primIndex ba (pos + Offset 3)
+                    let c1 = index ba posNext
+                        c2 = index ba (pos + Offset 2)
+                        c3 = index ba (pos + Offset 3)
                      in if isContinuation3 c1 c2 c3
                             then loop (pos + Offset 4)
                             else (pos, Just InvalidContinuation)
       where posNext = pos + Offset 1
 
-findIndexPredicate :: (Char -> Bool)
-                   -> PrimBackend.Immutable
+findIndexPredicate :: Indexable container Word8
+                   => (Char -> Bool)
+                   -> container
                    -> Offset Word8
                    -> Offset Word8
                    -> Offset Word8
@@ -103,11 +111,12 @@ findIndexPredicate predicate ba !startIndex !endIndex = loop startIndex
         | i < endIndex && not (predicate c) = loop (i')
         | otherwise                         = i
       where
-        Step c i' = UTF8Backend.next ba i
+        Step c i' = next ba i
 {-# INLINE findIndexPredicate #-}
 
-revFindIndexPredicate :: (Char -> Bool)
-                      -> PrimBackend.Immutable
+revFindIndexPredicate :: Indexable container Word8
+                      => (Char -> Bool)
+                      -> container
                       -> Offset Word8
                       -> Offset Word8
                       -> Offset Word8
@@ -120,5 +129,5 @@ revFindIndexPredicate predicate ba startIndex endIndex
         | i' > startIndex = loop i'
         | otherwise       = endIndex
       where 
-        StepBack c i' = UTF8Backend.prev ba i
+        StepBack c i' = prev ba i
 {-# INLINE revFindIndexPredicate #-}

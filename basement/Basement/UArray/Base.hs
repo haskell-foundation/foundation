@@ -323,12 +323,12 @@ onMutableBackend _     onAddr (MUArray _ _ (MUArrayAddr fptr)) = onAddr fptr
 {-# INLINE onMutableBackend #-}
 
 
-unsafeDewrap :: (ByteArray# -> Offset ty -> a)
+unsafeDewrap :: (Block ty -> Offset ty -> a)
              -> (Ptr ty -> Offset ty -> ST s a)
              -> UArray ty
              -> a
 unsafeDewrap _ g (UArray start _ (UArrayAddr fptr))     = withUnsafeFinalPtr fptr $ \ptr -> g ptr start
-unsafeDewrap f _ (UArray start _ (UArrayBA (Block ba))) = f ba start
+unsafeDewrap f _ (UArray start _ (UArrayBA ba)) = f ba start
 {-# INLINE unsafeDewrap #-}
 
 unsafeDewrap2 :: (ByteArray# -> ByteArray# -> a)
@@ -392,7 +392,7 @@ vToList a
     | otherwise = unsafeDewrap goBa goPtr a
   where
     !len = length a
-    goBa ba start = loop start
+    goBa (Block ba) start = loop start
       where
         !end = start `offsetPlusE` len
         loop !i | i == end  = []

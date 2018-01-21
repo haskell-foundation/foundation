@@ -166,8 +166,8 @@ validate array ofsStart sz = C.unsafeDewrap goBa goAddr array
     unTranslateOffset start = first (\e -> e `offsetSub` start)
     goBa ba start =
         unTranslateOffset start $ Alg.validate (start+end) ba (start + ofsStart)
-    goAddr (Ptr addr) start =
-        pure $ unTranslateOffset start $ Alg.validate (start+end) addr (ofsStart + start)
+    goAddr ptr@(Ptr !_) start =
+        pure $ unTranslateOffset start $ Alg.validate (start+end) ptr (ofsStart + start)
     end = ofsStart `offsetPlusE` sz
 
 -- | Similar to 'validate' but works on a 'MutableByteArray'
@@ -358,8 +358,8 @@ splitAt n s@(String ba)
 indexN :: CountOf Char -> String -> Offset Word8
 indexN !n (String ba) = Vec.unsafeDewrap goVec goAddr ba
   where
-    goVec :: ByteArray# -> Offset Word8 -> Offset Word8
-    goVec !ma !start = loop start 0
+    goVec :: Block Word8 -> Offset Word8 -> Offset Word8
+    goVec (Block !ma) !start = loop start 0
       where
         !len = start `offsetPlusE` Vec.length ba
         loop :: Offset Word8 -> Offset Char -> Offset Word8
@@ -471,11 +471,11 @@ breakEnd predicate s@(String arr)
   where
     k = C.onBackend goVec (\_ -> pure . goAddr) arr
     (C.ValidRange !start !end) = offsetsValidRange arr
-    goVec (Block ba) = let k = Alg.revFindIndexPredicate predicate ba start end
+    goVec ba@(Block !_) = let k = Alg.revFindIndexPredicate predicate ba start end
                         in if k == end then end else UTF8.nextSkip ba k
-    goAddr (Ptr addr) =
-        let k = Alg.revFindIndexPredicate predicate addr start end
-         in if k == end then end else UTF8.nextSkip addr k
+    goAddr ptr@(Ptr !_) =
+        let k = Alg.revFindIndexPredicate predicate ptr start end
+         in if k == end then end else UTF8.nextSkip ptr k
 {-# INLINE [2] breakEnd #-}
 
 #if MIN_VERSION_base(4,9,0)
@@ -604,8 +604,8 @@ length (String arr)
     | otherwise    = C.onBackend goVec (\_ -> pure . goAddr) arr
   where
     (C.ValidRange !start !end) = offsetsValidRange arr
-    goVec (Block ma) = UTF8.length ma start end
-    goAddr (Ptr ptr) = UTF8.length ptr start end
+    goVec ma = UTF8.length ma start end
+    goAddr ptr = UTF8.length ptr start end
 
 -- | Replicate a character @c@ @n@ times to create a string of length @n@
 replicate :: CountOf Char -> Char -> String
@@ -785,8 +785,8 @@ sortBy sortF s = fromList $ Data.List.sortBy sortF $ toList s -- FIXME for tests
 filter :: (Char -> Bool) -> String -> String
 filter predicate (String arr) = runST $ do
     (finalSize, dst) <- newNative sz $ \(MutableBlock mba) ->
-        C.onBackendPrim (\(Block ba) -> Alg.copyFilter predicate sz mba ba start)
-                        (\fptr -> withFinalPtr fptr $ \(Ptr addr) -> Alg.copyFilter predicate sz mba addr start)
+        C.onBackendPrim (\ba@(Block !_) -> Alg.copyFilter predicate sz mba ba start)
+                        (\fptr -> withFinalPtr fptr $ \ptr@(Ptr !_) -> Alg.copyFilter predicate sz mba ptr start)
                         arr
     freezeShrink finalSize dst
   where
@@ -798,8 +798,8 @@ reverse :: String -> String
 reverse (String arr) = runST $ do
     ((), dst) <- newNative (C.length arr) $ \(MutableBlock mba) ->
             C.onBackendPrim
-                (\(Block ba) -> UTF8.reverse mba 0 ba start end)
-                (\fptr -> withFinalPtr fptr $ \(Ptr addr) -> UTF8.reverse mba 0 addr start end)
+                (\ba@(Block !_) -> UTF8.reverse mba 0 ba start end)
+                (\fptr -> withFinalPtr fptr $ \ptr@(Ptr !_) -> UTF8.reverse mba 0 ptr start end)
                 arr
     freeze dst
   where
@@ -1052,7 +1052,7 @@ builderBuild sizeChunksI sb
 builderBuild_ :: PrimMonad m => Int -> Builder String MutableString Word8 m () () -> m String
 builderBuild_ sizeChunksI sb = either (\() -> internalError "impossible output") id <$> builderBuild sizeChunksI sb
 
-stringDewrap :: (ByteArray# -> Offset Word8 -> a)
+stringDewrap :: (Block Word8 -> Offset Word8 -> a)
              -> (Ptr Word8 -> Offset Word8 -> ST s a)
              -> String
              -> a
@@ -1065,7 +1065,7 @@ stringDewrap withBa withPtr (String ba) = C.unsafeDewrap withBa withPtr ba
 readIntegral :: (HasNegation i, IntegralUpsize Word8 i, Additive i, Multiplicative i, IsIntegral i) => String -> Maybe i
 readIntegral str
     | sz == 0   = Nothing
-    | otherwise = stringDewrap withBa (\(Ptr ptr) -> pure . withPtr ptr) str
+    | otherwise = stringDewrap withBa (\ptr -> pure . withPtr ptr) str
   where
     !sz = size str
     withBa ba ofs =
@@ -1094,7 +1094,7 @@ readInteger = readIntegral
 readNatural :: String -> Maybe Natural
 readNatural str
     | sz == 0   = Nothing
-    | otherwise = stringDewrap withBa (\(Ptr ptr) -> pure . withPtr ptr) str
+    | otherwise = stringDewrap withBa (\ptr -> pure . withPtr ptr) str
   where
     !sz = size str
     withBa ba stringStart =
@@ -1215,7 +1215,7 @@ readFloatingExact str f
                 case decimalDigitsBA 0 ba eofs ofs of
                     (# acc, True, endOfs #) | endOfs > ofs -> f isNegative integral floatingDigits (Just $! if exponentNegative then negate acc else acc)
                     _                                      -> Nothing
-    withPtr (Ptr ptr) stringStart = pure $
+    withPtr ptr stringStart = pure $
         let !isNegative = UTF8.expectAscii ptr stringStart 0x2d
          in consumeIntegral isNegative (if isNegative then stringStart+1 else stringStart)
       where
@@ -1280,7 +1280,7 @@ readFloatingExact str f
 -- this function
 decimalDigitsBA :: (IntegralUpsize Word8 acc, Additive acc, Multiplicative acc, Integral acc)
                 => acc
-                -> ByteArray#
+                -> Block Word8
                 -> Offset Word8 -- end offset
                 -> Offset Word8 -- start offset
                 -> (# acc, Bool, Offset Word8 #)
@@ -1292,15 +1292,15 @@ decimalDigitsBA startAcc ba !endOfs !startOfs = loop startAcc startOfs
             case UTF8.nextAsciiDigit ba ofs of
                 sg@(StepDigit d) | isValidStepDigit sg -> loop (10 * acc + integralUpsize d) (succ ofs)
                                  | otherwise           -> (# acc, False, ofs #)
-{-# SPECIALIZE decimalDigitsBA :: Integer -> ByteArray# -> Offset Word8 -> Offset Word8 -> (# Integer, Bool, Offset Word8 #) #-}
-{-# SPECIALIZE decimalDigitsBA :: Natural -> ByteArray# -> Offset Word8 -> Offset Word8 -> (# Natural, Bool, Offset Word8 #) #-}
-{-# SPECIALIZE decimalDigitsBA :: Int -> ByteArray# -> Offset Word8 -> Offset Word8 -> (# Int, Bool, Offset Word8 #) #-}
-{-# SPECIALIZE decimalDigitsBA :: Word -> ByteArray# -> Offset Word8 -> Offset Word8 -> (# Word, Bool, Offset Word8 #) #-}
+{-# SPECIALIZE decimalDigitsBA :: Integer -> Block Word8 -> Offset Word8 -> Offset Word8 -> (# Integer, Bool, Offset Word8 #) #-}
+{-# SPECIALIZE decimalDigitsBA :: Natural -> Block Word8 -> Offset Word8 -> Offset Word8 -> (# Natural, Bool, Offset Word8 #) #-}
+{-# SPECIALIZE decimalDigitsBA :: Int -> Block Word8 -> Offset Word8 -> Offset Word8 -> (# Int, Bool, Offset Word8 #) #-}
+{-# SPECIALIZE decimalDigitsBA :: Word -> Block Word8 -> Offset Word8 -> Offset Word8 -> (# Word, Bool, Offset Word8 #) #-}
 
 -- | same as decimalDigitsBA specialized for ptr #
 decimalDigitsPtr :: (IntegralUpsize Word8 acc, Additive acc, Multiplicative acc, Integral acc)
                  => acc
-                 -> Addr#
+                 -> Ptr Word8
                  -> Offset Word8 -- end offset
                  -> Offset Word8 -- start offset
                  -> (# acc, Bool, Offset Word8 #)
@@ -1312,10 +1312,10 @@ decimalDigitsPtr startAcc ptr !endOfs !startOfs = loop startAcc startOfs
             case UTF8.nextAsciiDigit ptr ofs of
                 sg@(StepDigit d) | isValidStepDigit sg -> loop (10 * acc + integralUpsize d) (succ ofs)
                                  | otherwise           -> (# acc, False, ofs #)
-{-# SPECIALIZE decimalDigitsPtr :: Integer -> Addr# -> Offset Word8 -> Offset Word8 -> (# Integer, Bool, Offset Word8 #) #-}
-{-# SPECIALIZE decimalDigitsPtr :: Natural -> Addr# -> Offset Word8 -> Offset Word8 -> (# Natural, Bool, Offset Word8 #) #-}
-{-# SPECIALIZE decimalDigitsPtr :: Int -> Addr# -> Offset Word8 -> Offset Word8 -> (# Int, Bool, Offset Word8 #) #-}
-{-# SPECIALIZE decimalDigitsPtr :: Word -> Addr# -> Offset Word8 -> Offset Word8 -> (# Word, Bool, Offset Word8 #) #-}
+{-# SPECIALIZE decimalDigitsPtr :: Integer -> Ptr Word8 -> Offset Word8 -> Offset Word8 -> (# Integer, Bool, Offset Word8 #) #-}
+{-# SPECIALIZE decimalDigitsPtr :: Natural -> Ptr Word8 -> Offset Word8 -> Offset Word8 -> (# Natural, Bool, Offset Word8 #) #-}
+{-# SPECIALIZE decimalDigitsPtr :: Int -> Ptr Word8 -> Offset Word8 -> Offset Word8 -> (# Int, Bool, Offset Word8 #) #-}
+{-# SPECIALIZE decimalDigitsPtr :: Word -> Ptr Word8 -> Offset Word8 -> Offset Word8 -> (# Word, Bool, Offset Word8 #) #-}
 
 -- | A unicode string size may vary during a case conversion operation.
 --   This function calculates the new buffer size for a case conversion.
@@ -1427,15 +1427,15 @@ all :: (Char -> Bool) -> String -> Bool
 all predicate (String arr) = C.onBackend goBA (\_ -> pure . goAddr) arr
   where
     !(C.ValidRange start end) = C.offsetsValidRange arr
-    goBA (Block ba)   = UTF8.all predicate ba start end
-    goAddr (Ptr addr) = UTF8.all predicate addr start end
+    goBA ba   = UTF8.all predicate ba start end
+    goAddr addr = UTF8.all predicate addr start end
 
 any :: (Char -> Bool) -> String -> Bool
 any predicate (String arr) = C.onBackend goBA (\_ -> pure . goAddr) arr
   where
     !(C.ValidRange start end) = C.offsetsValidRange arr
-    goBA (Block ba)   = UTF8.any predicate ba start end
-    goAddr (Ptr addr) = UTF8.any predicate addr start end
+    goBA ba   = UTF8.any predicate ba start end
+    goAddr addr = UTF8.any predicate addr start end
 
 -- | Transform string @src@ to base64 binary representation.
 toBase64 :: String -> String
