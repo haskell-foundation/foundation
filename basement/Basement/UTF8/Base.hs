@@ -30,8 +30,7 @@ import           Basement.Monad
 import           Basement.FinalPtr
 import           Basement.UTF8.Helper
 import           Basement.UTF8.Types
-import qualified Basement.Alg.Native.UTF8      as PrimBA
-import qualified Basement.Alg.Foreign.UTF8     as PrimAddr
+import qualified Basement.Alg.UTF8         as UTF8
 import           Basement.UArray           (UArray)
 import           Basement.Block            (MutableBlock)
 import qualified Basement.Block.Mutable    as BLK
@@ -94,12 +93,12 @@ sToList (String arr) = Vec.onBackend onBA onAddr arr
       where
         loop !idx
             | idx == end = []
-            | otherwise  = let !(Step c idx') = PrimBA.next ba idx in c : loop idx'
+            | otherwise  = let !(Step c idx') = UTF8.next ba idx in c : loop idx'
     onAddr fptr (Ptr ptr) = pureST (loop start)
       where
         loop !idx
             | idx == end = []
-            | otherwise  = let !(Step c idx') = PrimAddr.next ptr idx in c : loop idx'
+            | otherwise  = let !(Step c idx') = UTF8.next ptr idx in c : loop idx'
 {-# NOINLINE sToList #-}
 
 sToListStream (String arr) k z = Vec.onBackend onBA onAddr arr
@@ -109,12 +108,12 @@ sToListStream (String arr) k z = Vec.onBackend onBA onAddr arr
       where
         loop !idx
             | idx == end = z
-            | otherwise  = let !(Step c idx') = PrimBA.next ba idx in c `k` loop idx'
+            | otherwise  = let !(Step c idx') = UTF8.next ba idx in c `k` loop idx'
     onAddr fptr (Ptr ptr) = pureST (loop start)
       where
         loop !idx
             | idx == end = z
-            | otherwise  = let !(Step c idx') = PrimAddr.next ptr idx in c `k` loop idx'
+            | otherwise  = let !(Step c idx') = UTF8.next ptr idx in c `k` loop idx'
 
 {-# RULES "String sToList" [~1] forall s . sToList s = build (\ k z -> sToListStream s k z) #-}
 {-# RULES "String toList" [~1] forall s . toList s = build (\ k z -> sToListStream s k z) #-}
@@ -178,16 +177,16 @@ next (String array) !n = Vec.onBackend nextBA nextAddr array
   where
     !start = Vec.offset array
     reoffset (Step a ofs) = Step a (ofs `offsetSub` start)
-    nextBA (BLK.Block ba) = reoffset (PrimBA.next ba (start + n))
-    nextAddr _ (Ptr ptr)  = pureST $ reoffset (PrimAddr.next ptr (start + n))
+    nextBA (BLK.Block ba) = reoffset (UTF8.next ba (start + n))
+    nextAddr _ (Ptr ptr)  = pureST $ reoffset (UTF8.next ptr (start + n))
 
 prev :: String -> Offset8 -> StepBack
 prev (String array) !n = Vec.onBackend prevBA prevAddr array
   where
     !start = Vec.offset array
     reoffset (StepBack a ofs) = StepBack a (ofs `offsetSub` start)
-    prevBA (BLK.Block ba) = reoffset (PrimBA.prev ba (start + n))
-    prevAddr _ (Ptr ptr)  = pureST $ reoffset (PrimAddr.prev ptr (start + n))
+    prevBA (BLK.Block ba) = reoffset (UTF8.prev ba (start + n))
+    prevAddr _ (Ptr ptr)  = pureST $ reoffset (UTF8.prev ptr (start + n))
 
 -- A variant of 'next' when you want the next character
 -- to be ASCII only.
@@ -202,8 +201,8 @@ expectAscii (String ba) n v = Vec.unsafeIndex ba n == v
 
 write :: PrimMonad prim => MutableString (PrimState prim) -> Offset8 -> Char -> prim Offset8
 write (MutableString marray) ofs c =
-    MVec.onMutableBackend (\(BLK.MutableBlock mba) -> PrimBA.write mba (start + ofs) c)
-                          (\fptr -> withFinalPtr fptr $ \(Ptr ptr) -> PrimAddr.write ptr (start + ofs) c)
+    MVec.onMutableBackend (\(BLK.MutableBlock mba) -> UTF8.write mba (start + ofs) c)
+                          (\fptr -> withFinalPtr fptr $ \(Ptr ptr) -> UTF8.write ptr (start + ofs) c)
                           marray
   where start = MVec.mutableOffset marray
 

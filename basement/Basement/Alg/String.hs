@@ -4,7 +4,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE CPP                        #-}
-module Basement.Alg.Foreign.String
+module Basement.Alg.String
     ( copyFilter
     , validate
     , findIndexPredicate
@@ -17,10 +17,6 @@ import           Basement.Compat.Base
 import           Basement.Numerical.Additive
 import           Basement.Types.OffsetSize
 
-import qualified Basement.Alg.Native.Prim as PrimNative -- NO SUBST
-import qualified Basement.Alg.Native.UTF8 as UTF8Native -- NO SUBST
-import qualified Basement.Alg.Foreign.Prim as PrimBackend
-import qualified Basement.Alg.Foreign.UTF8 as UTF8Backend
 import           Basement.UTF8.Helper
 import           Basement.UTF8.Table
 import           Basement.UTF8.Types

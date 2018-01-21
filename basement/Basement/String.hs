@@ -122,10 +122,8 @@ import           Basement.UTF8.Helper
 import           Basement.UTF8.Base
 import           Basement.UTF8.Types
 import           Basement.UArray.Base as C (onBackendPrim, onBackend, offset, ValidRange(..), offsetsValidRange)
-import qualified Basement.Alg.Native.UTF8 as PrimBA
-import qualified Basement.Alg.Foreign.UTF8 as PrimAddr
-import qualified Basement.Alg.Native.String as BackendBA
-import qualified Basement.Alg.Foreign.String as BackendAddr
+import qualified Basement.Alg.UTF8 as UTF8
+import qualified Basement.Alg.String as Alg
 import           GHC.Prim
 import           GHC.ST
 import           GHC.Types
@@ -167,9 +165,9 @@ validate array ofsStart sz = C.unsafeDewrap goBa goAddr array
   where
     unTranslateOffset start = first (\e -> e `offsetSub` start)
     goBa ba start =
-        unTranslateOffset start $ BackendBA.validate (start+end) ba (start + ofsStart)
+        unTranslateOffset start $ Alg.validate (start+end) ba (start + ofsStart)
     goAddr (Ptr addr) start =
-        pure $ unTranslateOffset start $ BackendAddr.validate (start+end) addr (ofsStart + start)
+        pure $ unTranslateOffset start $ Alg.validate (start+end) addr (ofsStart + start)
     end = ofsStart `offsetPlusE` sz
 
 -- | Similar to 'validate' but works on a 'MutableByteArray'
@@ -473,11 +471,11 @@ breakEnd predicate s@(String arr)
   where
     k = C.onBackend goVec (\_ -> pure . goAddr) arr
     (C.ValidRange !start !end) = offsetsValidRange arr
-    goVec (Block ba) = let k = BackendBA.revFindIndexPredicate predicate ba start end
-                        in if k == end then end else PrimBA.nextSkip ba k
+    goVec (Block ba) = let k = Alg.revFindIndexPredicate predicate ba start end
+                        in if k == end then end else UTF8.nextSkip ba k
     goAddr (Ptr addr) =
-        let k = BackendAddr.revFindIndexPredicate predicate addr start end
-         in if k == end then end else PrimAddr.nextSkip addr k
+        let k = Alg.revFindIndexPredicate predicate addr start end
+         in if k == end then end else UTF8.nextSkip addr k
 {-# INLINE [2] breakEnd #-}
 
 #if MIN_VERSION_base(4,9,0)
@@ -606,8 +604,8 @@ length (String arr)
     | otherwise    = C.onBackend goVec (\_ -> pure . goAddr) arr
   where
     (C.ValidRange !start !end) = offsetsValidRange arr
-    goVec (Block ma) = PrimBA.length ma start end
-    goAddr (Ptr ptr) = PrimAddr.length ptr start end
+    goVec (Block ma) = UTF8.length ma start end
+    goAddr (Ptr ptr) = UTF8.length ptr start end
 
 -- | Replicate a character @c@ @n@ times to create a string of length @n@
 replicate :: CountOf Char -> Char -> String
@@ -787,8 +785,8 @@ sortBy sortF s = fromList $ Data.List.sortBy sortF $ toList s -- FIXME for tests
 filter :: (Char -> Bool) -> String -> String
 filter predicate (String arr) = runST $ do
     (finalSize, dst) <- newNative sz $ \(MutableBlock mba) ->
-        C.onBackendPrim (\(Block ba) -> BackendBA.copyFilter predicate sz mba ba start)
-                        (\fptr -> withFinalPtr fptr $ \(Ptr addr) -> BackendAddr.copyFilter predicate sz mba addr start)
+        C.onBackendPrim (\(Block ba) -> Alg.copyFilter predicate sz mba ba start)
+                        (\fptr -> withFinalPtr fptr $ \(Ptr addr) -> Alg.copyFilter predicate sz mba addr start)
                         arr
     freezeShrink finalSize dst
   where
@@ -800,8 +798,8 @@ reverse :: String -> String
 reverse (String arr) = runST $ do
     ((), dst) <- newNative (C.length arr) $ \(MutableBlock mba) ->
             C.onBackendPrim
-                (\(Block ba) -> PrimBA.reverse mba 0 ba start end)
-                (\fptr -> withFinalPtr fptr $ \(Ptr addr) -> PrimAddr.reverse mba 0 addr start end)
+                (\(Block ba) -> UTF8.reverse mba 0 ba start end)
+                (\fptr -> withFinalPtr fptr $ \(Ptr addr) -> UTF8.reverse mba 0 addr start end)
                 arr
     freeze dst
   where
@@ -1071,14 +1069,14 @@ readIntegral str
   where
     !sz = size str
     withBa ba ofs =
-        let negativeSign = PrimBA.expectAscii ba ofs 0x2d
+        let negativeSign = UTF8.expectAscii ba ofs 0x2d
             startOfs     = if negativeSign then succ ofs else ofs
          in case decimalDigitsBA 0 ba endOfs startOfs of
                 (# acc, True, endOfs' #) | endOfs' > startOfs -> Just $! if negativeSign then negate acc else acc
                 _                                             -> Nothing
       where !endOfs = ofs `offsetPlusE` sz
     withPtr addr ofs =
-        let negativeSign = PrimAddr.expectAscii addr ofs 0x2d
+        let negativeSign = UTF8.expectAscii addr ofs 0x2d
             startOfs     = if negativeSign then succ ofs else ofs
          in case decimalDigitsPtr 0 addr endOfs startOfs of
                 (# acc, True, endOfs' #) | endOfs' > startOfs -> Just $! if negativeSign then negate acc else acc
@@ -1178,7 +1176,7 @@ readFloatingExact str f
     !sz = size str
 
     withBa ba stringStart =
-        let !isNegative = PrimBA.expectAscii ba stringStart 0x2d
+        let !isNegative = UTF8.expectAscii ba stringStart 0x2d
          in consumeIntegral isNegative (if isNegative then stringStart+1 else stringStart)
       where
         eofs = stringStart `offsetPlusE` sz
@@ -1186,7 +1184,7 @@ readFloatingExact str f
             case decimalDigitsBA 0 ba eofs startOfs of
                 (# acc, True , endOfs #) | endOfs > startOfs -> f isNegative acc 0 Nothing -- end of stream and no '.'
                 (# acc, False, endOfs #) | endOfs > startOfs ->
-                    if PrimBA.expectAscii ba endOfs 0x2e
+                    if UTF8.expectAscii ba endOfs 0x2e
                         then consumeFloat isNegative acc (endOfs + 1)
                         else consumeExponant isNegative acc 0 endOfs
                 _                                            -> Nothing
@@ -1203,14 +1201,14 @@ readFloatingExact str f
             | startOfs == eofs = f isNegative integral floatingDigits Nothing
             | otherwise        =
                 -- consume 'E' or 'e'
-                case PrimBA.nextAscii ba startOfs of
+                case UTF8.nextAscii ba startOfs of
                     StepASCII 0x45 -> consumeExponantSign (startOfs+1)
                     StepASCII 0x65 -> consumeExponantSign (startOfs+1)
                     _              -> Nothing
           where
             consumeExponantSign ofs
                 | ofs == eofs = Nothing
-                | otherwise   = let exponentNegative = PrimBA.expectAscii ba ofs 0x2d
+                | otherwise   = let exponentNegative = UTF8.expectAscii ba ofs 0x2d
                                  in consumeExponantNumber exponentNegative (if exponentNegative then ofs + 1 else ofs)
 
             consumeExponantNumber exponentNegative ofs =
@@ -1218,7 +1216,7 @@ readFloatingExact str f
                     (# acc, True, endOfs #) | endOfs > ofs -> f isNegative integral floatingDigits (Just $! if exponentNegative then negate acc else acc)
                     _                                      -> Nothing
     withPtr (Ptr ptr) stringStart = pure $
-        let !isNegative = PrimAddr.expectAscii ptr stringStart 0x2d
+        let !isNegative = UTF8.expectAscii ptr stringStart 0x2d
          in consumeIntegral isNegative (if isNegative then stringStart+1 else stringStart)
       where
         eofs = stringStart `offsetPlusE` sz
@@ -1226,7 +1224,7 @@ readFloatingExact str f
             case decimalDigitsPtr 0 ptr eofs startOfs of
                 (# acc, True , endOfs #) | endOfs > startOfs -> f isNegative acc 0 Nothing -- end of stream and no '.'
                 (# acc, False, endOfs #) | endOfs > startOfs ->
-                    if PrimAddr.expectAscii ptr endOfs 0x2e
+                    if UTF8.expectAscii ptr endOfs 0x2e
                         then consumeFloat isNegative acc (endOfs + 1)
                         else consumeExponant isNegative acc 0 endOfs
                 _                                            -> Nothing
@@ -1243,14 +1241,14 @@ readFloatingExact str f
             | startOfs == eofs = f isNegative integral floatingDigits Nothing
             | otherwise        =
                 -- consume 'E' or 'e'
-                case PrimAddr.nextAscii ptr startOfs of
+                case UTF8.nextAscii ptr startOfs of
                     StepASCII 0x45 -> consumeExponantSign (startOfs+1)
                     StepASCII 0x65 -> consumeExponantSign (startOfs+1)
                     _              -> Nothing
           where
             consumeExponantSign ofs
                 | ofs == eofs = Nothing
-                | otherwise   = let exponentNegative = PrimAddr.expectAscii ptr ofs 0x2d
+                | otherwise   = let exponentNegative = UTF8.expectAscii ptr ofs 0x2d
                                  in consumeExponantNumber exponentNegative (if exponentNegative then ofs + 1 else ofs)
 
             consumeExponantNumber exponentNegative ofs =
@@ -1291,7 +1289,7 @@ decimalDigitsBA startAcc ba !endOfs !startOfs = loop startAcc startOfs
     loop !acc !ofs
         | ofs == endOfs = (# acc, True, ofs #)
         | otherwise     =
-            case PrimBA.nextAsciiDigit ba ofs of
+            case UTF8.nextAsciiDigit ba ofs of
                 sg@(StepDigit d) | isValidStepDigit sg -> loop (10 * acc + integralUpsize d) (succ ofs)
                                  | otherwise           -> (# acc, False, ofs #)
 {-# SPECIALIZE decimalDigitsBA :: Integer -> ByteArray# -> Offset Word8 -> Offset Word8 -> (# Integer, Bool, Offset Word8 #) #-}
@@ -1311,7 +1309,7 @@ decimalDigitsPtr startAcc ptr !endOfs !startOfs = loop startAcc startOfs
     loop !acc !ofs
         | ofs == endOfs = (# acc, True, ofs #)
         | otherwise     =
-            case PrimAddr.nextAsciiDigit ptr ofs of
+            case UTF8.nextAsciiDigit ptr ofs of
                 sg@(StepDigit d) | isValidStepDigit sg -> loop (10 * acc + integralUpsize d) (succ ofs)
                                  | otherwise           -> (# acc, False, ofs #)
 {-# SPECIALIZE decimalDigitsPtr :: Integer -> Addr# -> Offset Word8 -> Offset Word8 -> (# Integer, Bool, Offset Word8 #) #-}
@@ -1429,15 +1427,15 @@ all :: (Char -> Bool) -> String -> Bool
 all predicate (String arr) = C.onBackend goBA (\_ -> pure . goAddr) arr
   where
     !(C.ValidRange start end) = C.offsetsValidRange arr
-    goBA (Block ba)   = PrimBA.all predicate ba start end
-    goAddr (Ptr addr) = PrimAddr.all predicate addr start end
+    goBA (Block ba)   = UTF8.all predicate ba start end
+    goAddr (Ptr addr) = UTF8.all predicate addr start end
 
 any :: (Char -> Bool) -> String -> Bool
 any predicate (String arr) = C.onBackend goBA (\_ -> pure . goAddr) arr
   where
     !(C.ValidRange start end) = C.offsetsValidRange arr
-    goBA (Block ba)   = PrimBA.any predicate ba start end
-    goAddr (Ptr addr) = PrimAddr.any predicate addr start end
+    goBA (Block ba)   = UTF8.any predicate ba start end
+    goAddr (Ptr addr) = UTF8.any predicate addr start end
 
 -- | Transform string @src@ to base64 binary representation.
 toBase64 :: String -> String

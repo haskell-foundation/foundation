@@ -3,7 +3,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE CPP                        #-}
-module Basement.Alg.Foreign.UTF8
+module Basement.Alg.UTF8
     ( Immutable
     , Mutable
     -- * functions
@@ -21,10 +21,6 @@ module Basement.Alg.Foreign.UTF8
     , foldr
     , length
     , reverse
-    -- temporary
-    , primIndex64
-    , primRead8
-    , primWrite8
     ) where
 
 import           GHC.Int
@@ -34,8 +30,6 @@ import           GHC.Prim
 import           Data.Bits
 import           Basement.Compat.Base hiding (toList)
 import           Basement.Compat.Primitive
-import           Basement.Alg.Foreign.Prim
-import qualified Basement.Alg.Native.Prim as PrimNative -- NO SUBST
 import           Data.Proxy
 import           Basement.Numerical.Additive
 import           Basement.Numerical.Subtractive

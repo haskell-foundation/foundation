@@ -84,7 +84,6 @@ import           Basement.Block.Base
 import           Basement.Numerical.Additive
 import           Basement.Numerical.Subtractive
 import           Basement.Numerical.Multiplicative
-import qualified Basement.Alg.Native.Prim as Prim
 import qualified Basement.Alg.Mutable as MutAlg
 import qualified Basement.Alg.Class as Alg
 import qualified Basement.Alg.PrimArray as Alg
