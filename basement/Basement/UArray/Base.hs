@@ -90,6 +90,9 @@ data MUArrayBackend ty st = MUArrayMBA (MutableBlock ty st) | MUArrayAddr (Final
 instance PrimType ty => Alg.Indexable (Ptr ty) ty where
     index (Ptr addr) = primAddrIndex addr
 
+instance Alg.Indexable (Ptr Word8) Word64 where
+    index (Ptr addr) = primAddrIndex addr
+
 instance (PrimMonad prim, PrimType ty) => Alg.RandomAccess (Ptr ty) prim ty where
     read (Ptr addr) = primAddrRead addr
     write (Ptr addr) = primAddrWrite addr

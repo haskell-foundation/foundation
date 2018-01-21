@@ -97,6 +97,10 @@ instance (PrimType ty) => Alg.Indexable (Block ty) ty where
     index (Block ba) = primBaIndex ba
     {-# INLINE index #-}
 
+instance Alg.Indexable (Block Word8) Word64 where
+    index (Block ba) = primBaIndex ba
+    {-# INLINE index #-}
+
 -- | Copy all the block content to the memory starting at the destination address
 unsafeCopyToPtr :: forall ty prim . PrimMonad prim
                 => Block ty -- ^ the source block to copy
