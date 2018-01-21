@@ -140,7 +140,7 @@ compatShrinkMutableByteArray# mba i s =
 compatShrinkMutableByteArray# src i s =
     -- not check whether i is smaller than the size of the buffer
     case newAlignedPinnedByteArray# i 8# s of { (# s2, dst #) ->
-    case copyMutableByteArray# dst 0# src 0# i s2 of { s3 -> (# s3, dst #) }}
+    case copyMutableByteArray# src 0# dst 0# i s2 of { s3 -> (# s3, dst #) }}
 #endif
 {-# INLINE compatShrinkMutableByteArray# #-}
 
@@ -151,7 +151,7 @@ compatResizeMutableByteArray# mba i s = resizeMutableByteArray# mba i s
 #else
 compatResizeMutableByteArray# src i s =
     case newAlignedPinnedByteArray# i 8# s of { (# s2, dst #) ->
-    case copyMutableByteArray# dst 0# src 0# nbBytes s2 of { s3 -> (# s3, dst #) }}
+    case copyMutableByteArray# src 0# dst 0# nbBytes s2 of { s3 -> (# s3, dst #) }}
   where
     isGrow = bool# (i ># len)
     nbBytes
