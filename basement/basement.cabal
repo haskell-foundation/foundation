@@ -113,13 +113,8 @@ library
                      Basement.Alg.Mutable
                      Basement.Alg.PrimArray
 
-                     Basement.Alg.Native.Prim
-                     Basement.Alg.Native.UTF8
-                     Basement.Alg.Native.String
-
-                     Basement.Alg.Foreign.Prim
-                     Basement.Alg.Foreign.UTF8
-                     Basement.Alg.Foreign.String
+                     Basement.Alg.UTF8
+                     Basement.Alg.String
 
                      Basement.Numerical.Conversion
 
