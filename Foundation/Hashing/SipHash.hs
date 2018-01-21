@@ -24,6 +24,7 @@ import           Basement.PrimType
 import           Basement.Cast (cast)
 import           Basement.IntegralConv
 import           Foundation.Hashing.Hasher
+import           Basement.Block (Block(..))
 import qualified Basement.UArray as A
 import           Foundation.Array
 import           Foundation.Numerical
@@ -186,8 +187,8 @@ mixBa !c !array (Sip initSt initIncr currentLen) =
     totalLen = A.length array8
     array8 = A.unsafeRecast array
 
-    goVec :: ByteArray# -> Offset Word8 -> Sip
-    goVec ba start = loop8 initSt initIncr start totalLen
+    goVec :: Block Word8 -> Offset Word8 -> Sip
+    goVec (Block ba) start = loop8 initSt initIncr start totalLen
       where
         loop8 !st !incr            _     0 = Sip st incr (currentLen + totalLen)
         loop8 !st SipIncremental0 !ofs !l = case l - 8 of
