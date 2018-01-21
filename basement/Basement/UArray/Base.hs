@@ -300,9 +300,7 @@ onBackendPure' :: forall ty a . PrimType  ty
 onBackendPure' arr f = onBackendPure f' f' arr
   where f' :: Alg.Indexable container ty => container -> a
         f' c = f c start end
-          where !len = length arr
-                !start = offset arr
-                !end = start `offsetPlusE` len
+          where (ValidRange !start !end) = offsetsValidRange arr
 {-# INLINE onBackendPure' #-}
 
 onBackendPrim :: PrimMonad prim
