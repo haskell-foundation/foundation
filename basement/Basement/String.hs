@@ -469,7 +469,7 @@ break predicate s@(String ba) = runST $ Vec.unsafeIndexer ba go
 breakEnd :: (Char -> Bool) -> String -> (String, String)
 breakEnd predicate s@(String arr)
     | k == end  = (s, mempty)
-    | otherwise = splitIndex k s
+    | otherwise = splitIndex (k `offsetSub` start) s
   where
     k = C.onBackend goVec (\_ -> pure . goAddr) arr
     (C.ValidRange !start !end) = offsetsValidRange arr
