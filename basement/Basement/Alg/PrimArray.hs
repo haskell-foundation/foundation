@@ -28,10 +28,9 @@ findIndexElem :: (Indexable container ty, Eq ty) => ty -> container -> Offset ty
 findIndexElem ty ba startIndex endIndex = loop startIndex
   where
     loop !i
-        | i >= endIndex = sentinel
-        | t == ty       = i
-        | otherwise     = loop (i+1)
-      where t = index ba i
+        | i >= endIndex    = sentinel
+        | index ba i == ty = i
+        | otherwise        = loop (i+1)
 {-# INLINE findIndexElem #-}
 
 revFindIndexElem :: (Indexable container ty, Eq ty) => ty -> container -> Offset ty -> Offset ty -> Offset ty
@@ -48,10 +47,9 @@ findIndexPredicate :: Indexable container ty => (ty -> Bool) -> container -> Off
 findIndexPredicate predicate ba startIndex endIndex = loop startIndex
   where
     loop !i
-        | i >= endIndex = sentinel
-        | found         = i
-        | otherwise     = loop (i+1)
-      where found = predicate (index ba i)
+        | i >= endIndex          = sentinel
+        | predicate (index ba i) = i
+        | otherwise              = loop (i+1)
 {-# INLINE findIndexPredicate #-}
 
 revFindIndexPredicate :: Indexable container ty => (ty -> Bool) -> container -> Offset ty -> Offset ty -> Offset ty
