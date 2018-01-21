@@ -147,5 +147,5 @@ emitString (String str) = Builder size $ Action $ \arr off ->
 --
 -- this function may be replaced by `emit :: Encoding -> Char -> Builder`
 emitUTF8Char :: Char -> Builder
-emitUTF8Char c = Builder (charToBytes $ charToInt c) $ Action $ \(MutableBlock arr) off ->
-    UTF8.write arr off c
+emitUTF8Char c = Builder (charToBytes $ charToInt c) $ Action $ \block@(MutableBlock !_) off ->
+    UTF8.writeUTF8 block off c

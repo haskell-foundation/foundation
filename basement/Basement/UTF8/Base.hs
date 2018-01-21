@@ -89,12 +89,12 @@ sToList :: String -> [Char]
 sToList (String arr) = Vec.onBackend onBA onAddr arr
   where
     (Vec.ValidRange !start !end) = Vec.offsetsValidRange arr
-    onBA (BLK.Block ba) = loop start
+    onBA ba@(BLK.Block _) = loop start
       where
         loop !idx
             | idx == end = []
             | otherwise  = let !(Step c idx') = UTF8.next ba idx in c : loop idx'
-    onAddr fptr (Ptr ptr) = pureST (loop start)
+    onAddr fptr ptr@(Ptr _) = pureST (loop start)
       where
         loop !idx
             | idx == end = []
@@ -104,12 +104,12 @@ sToList (String arr) = Vec.onBackend onBA onAddr arr
 sToListStream (String arr) k z = Vec.onBackend onBA onAddr arr
   where
     (Vec.ValidRange !start !end) = Vec.offsetsValidRange arr
-    onBA (BLK.Block ba) = loop start
+    onBA ba@(BLK.Block _) = loop start
       where
         loop !idx
             | idx == end = z
             | otherwise  = let !(Step c idx') = UTF8.next ba idx in c `k` loop idx'
-    onAddr fptr (Ptr ptr) = pureST (loop start)
+    onAddr fptr ptr@(Ptr _) = pureST (loop start)
       where
         loop !idx
             | idx == end = z
@@ -177,16 +177,16 @@ next (String array) !n = Vec.onBackend nextBA nextAddr array
   where
     !start = Vec.offset array
     reoffset (Step a ofs) = Step a (ofs `offsetSub` start)
-    nextBA (BLK.Block ba) = reoffset (UTF8.next ba (start + n))
-    nextAddr _ (Ptr ptr)  = pureST $ reoffset (UTF8.next ptr (start + n))
+    nextBA ba@(BLK.Block _) = reoffset (UTF8.next ba (start + n))
+    nextAddr _ ptr@(Ptr _)  = pureST $ reoffset (UTF8.next ptr (start + n))
 
 prev :: String -> Offset8 -> StepBack
 prev (String array) !n = Vec.onBackend prevBA prevAddr array
   where
     !start = Vec.offset array
     reoffset (StepBack a ofs) = StepBack a (ofs `offsetSub` start)
-    prevBA (BLK.Block ba) = reoffset (UTF8.prev ba (start + n))
-    prevAddr _ (Ptr ptr)  = pureST $ reoffset (UTF8.prev ptr (start + n))
+    prevBA ba@(BLK.Block _) = reoffset (UTF8.prev ba (start + n))
+    prevAddr _ ptr@(Ptr _)  = pureST $ reoffset (UTF8.prev ptr (start + n))
 
 -- A variant of 'next' when you want the next character
 -- to be ASCII only.
@@ -201,8 +201,8 @@ expectAscii (String ba) n v = Vec.unsafeIndex ba n == v
 
 write :: PrimMonad prim => MutableString (PrimState prim) -> Offset8 -> Char -> prim Offset8
 write (MutableString marray) ofs c =
-    MVec.onMutableBackend (\(BLK.MutableBlock mba) -> UTF8.write mba (start + ofs) c)
-                          (\fptr -> withFinalPtr fptr $ \(Ptr ptr) -> UTF8.write ptr (start + ofs) c)
+    MVec.onMutableBackend (\mba@(BLK.MutableBlock _) -> UTF8.writeUTF8 mba (start + ofs) c)
+                          (\fptr -> withFinalPtr fptr $ \ptr@(Ptr _) -> UTF8.writeUTF8 ptr (start + ofs) c)
                           marray
   where start = MVec.mutableOffset marray
 
