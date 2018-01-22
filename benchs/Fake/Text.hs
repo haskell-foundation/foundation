@@ -11,6 +11,8 @@ module Fake.Text
     , decimal
     , double
     , decodeUtf8
+    , toLower
+    , toUpper
     ) where
 
 import Prelude (undefined, Either(..), Char)
@@ -27,6 +29,8 @@ filter _    = undefined
 reverse     = undefined
 any         = undefined
 decodeUtf8  = undefined
+toLower     = undefined
+toUpper     = undefined
 
 decimal :: Text -> Either a (b, c)
 decimal = undefined
