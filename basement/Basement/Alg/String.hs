@@ -47,6 +47,7 @@ copyFilter predicate !sz dst src start = loop (Offset 0) start
                         case next src s of
                             Step c s' | predicate c -> writeUTF8 (MutableBlock dst :: MutableBlock Word8 s) d c >>= \d' -> loop d' s'
                                       | otherwise   -> loop d s'
+{-# INLINE copyFilter #-}
 
 validate :: Indexable container Word8
          => Offset Word8
@@ -98,6 +99,7 @@ validate end ba ofsStart = loop4 ofsStart
                             then loop (pos + Offset 4)
                             else (pos, Just InvalidContinuation)
       where posNext = pos + Offset 1
+{-# INLINE validate #-}
 
 findIndexPredicate :: Indexable container Word8
                    => (Char -> Bool)
