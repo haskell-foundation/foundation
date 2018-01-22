@@ -1321,29 +1321,42 @@ decimalDigitsPtr startAcc ptr !endOfs !startOfs = loop startAcc startOfs
 --   This function calculates the new buffer size for a case conversion.
 --   Returns Nothing if no case conversion is needed.
 caseConvertNBuff :: (Char -> CM) -> String -> Maybe (CountOf Word8)
-caseConvertNBuff op s@(String ba) = runST $ Vec.unsafeIndexer ba go
+caseConvertNBuff op s@(String arr) = C.onBackend goBlk (\_ -> pure . goFptr) arr
   where
-    !sz = size s
-    !end = azero `offsetPlusE` sz
-    go :: (Offset Word8 -> Word8) -> ST st (Maybe (CountOf Word8))
-    go getIdx = loop (Offset 0) 0 False
+    eSize !e = if e == '\0' 
+                then 0
+                else charToBytes (fromEnum e)
+    goFptr (Ptr addr) = loop start 0 False
       where
-        !nextI = nextWithIndexer getIdx
-        eSize !e = if e == '\0' 
-                      then 0
-                      else charToBytes (fromEnum e)
-        loop !idx ns changed 
+        loop !idx !ns changed
             | idx == end = if changed
-                             then return $ Just ns
-                             else return Nothing
+                              then Just ns
+                              else Nothing
             | otherwise = do
-                let !(c, idx') = nextI idx
-                    !cm@(CM c1 c2 c3) = op c 
+                let !cm@(CM c1 c2 c3) = op c 
                     !cSize = if c2 == '\0' -- if c2 is empty, c3 will be empty as well.
-                              then charToBytes (fromEnum c1) 
-                              else eSize c1 + eSize c2 + eSize c3
+                                then charToBytes (fromEnum c1) 
+                                else eSize c1 + eSize c2 + eSize c3
                     !nchanged = changed || c1 /= c || c2 /= '\0'
                 loop idx' (ns + cSize) nchanged
+          where (Step c idx') = PrimAddr.next addr idx
+    goBlk :: Block Word8 -> Maybe (CountOf Word8)
+    goBlk (Block ba) = loop start 0 False
+      where
+        loop !idx !ns changed
+            | idx == end = if changed
+                              then Just ns
+                              else Nothing
+            | otherwise = do
+                let !cm@(CM c1 c2 c3) = op c 
+                    !cSize = if c2 == '\0' -- if c2 is empty, c3 will be empty as well.
+                                then charToBytes (fromEnum c1) 
+                                else eSize c1 + eSize c2 + eSize c3
+                    !nchanged = changed || c1 /= c || c2 /= '\0'
+                loop idx' (ns + cSize) nchanged
+          where (Step c idx') = PrimBA.next ba idx
+    !(C.ValidRange start end) = C.offsetsValidRange arr
+
 
 -- | Convert a 'String' 'Char' by 'Char' using a case mapping function. 
 caseConvert :: (Char -> CM) -> String -> String
