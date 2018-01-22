@@ -1065,7 +1065,7 @@ stringDewrap withBa withPtr (String ba) = C.unsafeDewrap withBa withPtr ba
 readIntegral :: (HasNegation i, IntegralUpsize Word8 i, Additive i, Multiplicative i, IsIntegral i) => String -> Maybe i
 readIntegral str
     | sz == 0   = Nothing
-    | otherwise = stringDewrap withBa (\ptr -> pure . withPtr ptr) str
+    | otherwise = stringDewrap withBa (\ptr@(Ptr !_) -> pure . withPtr ptr) str
   where
     !sz = size str
     withBa ba ofs =
@@ -1094,7 +1094,7 @@ readInteger = readIntegral
 readNatural :: String -> Maybe Natural
 readNatural str
     | sz == 0   = Nothing
-    | otherwise = stringDewrap withBa (\ptr -> pure . withPtr ptr) str
+    | otherwise = stringDewrap withBa (\ptr@(Ptr !_) -> pure . withPtr ptr) str
   where
     !sz = size str
     withBa ba stringStart =
@@ -1215,7 +1215,7 @@ readFloatingExact str f
                 case decimalDigitsBA 0 ba eofs ofs of
                     (# acc, True, endOfs #) | endOfs > ofs -> f isNegative integral floatingDigits (Just $! if exponentNegative then negate acc else acc)
                     _                                      -> Nothing
-    withPtr ptr stringStart = pure $
+    withPtr ptr@(Ptr !_) stringStart = pure $
         let !isNegative = UTF8.expectAscii ptr stringStart 0x2d
          in consumeIntegral isNegative (if isNegative then stringStart+1 else stringStart)
       where
