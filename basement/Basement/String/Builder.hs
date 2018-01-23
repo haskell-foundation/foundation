@@ -15,6 +15,9 @@ module Basement.String.Builder
     -- * Emit functions
     , emit
     , emitChar
+
+    -- * unsafe
+    , unsafeStringBuilder
     ) where
 
 
@@ -29,6 +32,10 @@ import qualified Basement.UArray.Base as A
 
 newtype Builder = Builder Block.Builder
   deriving (Semigroup, Monoid)
+
+unsafeStringBuilder :: Block.Builder -> Builder
+unsafeStringBuilder = Builder
+{-# INLINE unsafeStringBuilder #-}
 
 run :: PrimMonad prim => Builder -> prim (String, Maybe ValidationFailure, UArray Word8)
 run (Builder builder) = do

@@ -74,6 +74,7 @@ library
                      Foundation.Conduit
                      Foundation.Conduit.Textual
                      Foundation.Exception
+                     Foundation.Format.CSV
                      Foundation.String
                      Foundation.String.Read
                      Foundation.String.Builder
@@ -228,6 +229,8 @@ test-suite check-foundation
                      Test.Data.List
                      Test.Foundation.Network.IPv4
                      Test.Foundation.Network.IPv6
+                     Test.Foundation.Format
+                     Test.Foundation.Format.CSV
   default-extensions: NoImplicitPrelude
                       RebindableSyntax
                       OverloadedStrings
