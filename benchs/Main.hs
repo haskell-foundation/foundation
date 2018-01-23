@@ -137,11 +137,11 @@ benchsString = bgroup "String"
 
     benchUpper = bgroup "Upper" $
         fmap (\(n, dat) -> bgroup n $ diffTextString upper Nothing Text.toUpper dat)
-            allDat
+            (("ascii already upper", rdFoundationUpper) : allDat)
 
     benchLower = bgroup "Lower" $
         fmap (\(n, dat) -> bgroup n $ diffTextString lower Nothing Text.toLower dat)
-            allDat
+            (("ascii already lower", rdFoundationLower) : allDat)
 
     benchRead = bgroup "Read"
         [ bgroup "Integer"

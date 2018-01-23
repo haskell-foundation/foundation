@@ -7,6 +7,8 @@ module BenchUtil.RefData
     , rdFoundationZh
     , rdFoundationJap
     , rdFoundationHun
+    , rdFoundationLower
+    , rdFoundationUpper
     -- byte array
     , rdBytes20
     , rdBytes200
@@ -25,6 +27,12 @@ rdLoremIpsum5 = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam or
 
 rdFoundationEn :: [Char]
 rdFoundationEn = "Set in the year 0 F.E. (\"Foundation Era\"), The Psychohistorians opens on Trantor, the capital of the 12,000-year-old Galactic Empire. Though the empire appears stable and powerful, it is slowly decaying in ways that parallel the decline of the Western Roman Empire. Hari Seldon, a mathematician and psychologist, has developed psychohistory, a new field of science and psychology that equates all possibilities in large societies to mathematics, allowing for the prediction of future events."
+
+rdFoundationLower :: [Char]
+rdFoundationLower = "set in the year 0 f.e. (\"foundation era\"), the psychohistorians opens on trantor, the capital of the 12,000-year-old galactic empire. though the empire appears stable and powerful, it is slowly decaying in ways that parallel the decline of the western roman empire. hari seldon, a mathematician and psychologist, has developed psychohistory, a new field of science and psychology that equates all possibilities in large societies to mathematics, allowing for the prediction of future events."
+
+rdFoundationUpper :: [Char]
+rdFoundationUpper = "SET IN THE YEAR 0 F.E. (\"FOUNDATION ERA\"), THE PSYCHOHISTORIANS OPENS ON TRANTOR, THE CAPITAL OF THE 12,000-YEAR-OLD GALACTIC EMPIRE. THOUGH THE EMPIRE APPEARS STABLE AND POWERFUL, IT IS SLOWLY DECAYING IN WAYS THAT PARALLEL THE DECLINE OF THE WESTERN ROMAN EMPIRE. HARI SELDON, A MATHEMATICIAN AND PSYCHOLOGIST, HAS DEVELOPED PSYCHOHISTORY, A NEW FIELD OF SCIENCE AND PSYCHOLOGY THAT EQUATES ALL POSSIBILITIES IN LARGE SOCIETIES TO MATHEMATICS, ALLOWING FOR THE PREDICTION OF FUTURE EVENTS."
 
 rdFoundationZh :: [Char]
 rdFoundationZh = "故事發生在〈心理史學家〉五十年後，端點星面臨首度的「謝頓危機」（Seldon Crisis）銀河帝國邊緣的星群紛紛獨立起來，端點星處於四個王國之間，備受威脅。此時，謝頓早前錄下影像突然播放，告知他的後人端點星「銀河百科全書第一號基地」的真正目的──在千年後建立一個新的銀河帝國。同時，在這一千年間，基地會遇到各種不同的危機，令基地可以急速成長。端點星市長塞佛·哈定（Salvor Hardin）趁機發動政變，從心神未定的百科全書理事會手中奪權，以他靈活的手腕帶領端點星走出危機。"

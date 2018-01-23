@@ -121,7 +121,8 @@ import           Basement.UTF8.Table
 import           Basement.UTF8.Helper
 import           Basement.UTF8.Base
 import           Basement.UTF8.Types
-import           Basement.UArray.Base as C (onBackendPrim, onBackend, offset, ValidRange(..), offsetsValidRange)
+import           Basement.UArray.Base as C (onBackendPrim, onBackend, onBackendPure, offset, ValidRange(..), offsetsValidRange)
+import           Basement.Alg.Class (Indexable)
 import qualified Basement.Alg.UTF8 as UTF8
 import qualified Basement.Alg.String as Alg
 import           GHC.Prim
@@ -1321,69 +1322,62 @@ decimalDigitsPtr startAcc ptr !endOfs !startOfs = loop startAcc startOfs
 --   This function calculates the new buffer size for a case conversion.
 --   Returns Nothing if no case conversion is needed.
 caseConvertNBuff :: (Char -> CM) -> String -> Maybe (CountOf Word8)
-caseConvertNBuff op s@(String arr) = C.onBackend goBlk (\_ -> pure . goFptr) arr
+caseConvertNBuff op s@(String arr) = C.onBackendPure goContainer goContainer arr
   where
-    eSize !e = if e == '\0' 
-                then 0
-                else charToBytes (fromEnum e)
-    goFptr (Ptr addr) = loop start 0 False
-      where
-        loop !idx !ns changed
-            | idx == end = if changed
-                              then Just ns
-                              else Nothing
-            | otherwise = do
-                let !cm@(CM c1 c2 c3) = op c 
-                    !cSize = if c2 == '\0' -- if c2 is empty, c3 will be empty as well.
-                                then charToBytes (fromEnum c1) 
-                                else eSize c1 + eSize c2 + eSize c3
-                    !nchanged = changed || c1 /= c || c2 /= '\0'
-                loop idx' (ns + cSize) nchanged
-          where (Step c idx') = PrimAddr.next addr idx
-    goBlk :: Block Word8 -> Maybe (CountOf Word8)
-    goBlk (Block ba) = loop start 0 False
-      where
-        loop !idx !ns changed
-            | idx == end = if changed
-                              then Just ns
-                              else Nothing
-            | otherwise = do
-                let !cm@(CM c1 c2 c3) = op c 
-                    !cSize = if c2 == '\0' -- if c2 is empty, c3 will be empty as well.
-                                then charToBytes (fromEnum c1) 
-                                else eSize c1 + eSize c2 + eSize c3
-                    !nchanged = changed || c1 /= c || c2 /= '\0'
-                loop idx' (ns + cSize) nchanged
-          where (Step c idx') = PrimBA.next ba idx
     !(C.ValidRange start end) = C.offsetsValidRange arr
-
+    eSize !e = if e == '\0' then 0 else charToBytes (fromEnum e)
+    {-# INLINE eSize #-}
+    goContainer :: (Indexable container Word8) => container -> Maybe (CountOf Word8)
+    goContainer ba = loop start 0 False
+      where
+        loop !idx !ns !changed
+            | idx == end = if changed
+                              then Just ns
+                              else Nothing
+            | otherwise = do
+                let !(Step c idx') = UTF8.next ba idx
+                    !(CM c1 c2 c3) = op c 
+                    !cSize = if c2 == '\0' -- if c2 is empty, c3 will be empty as well.
+                                then charToBytes (fromEnum c1) 
+                                else eSize c1 + eSize c2 + eSize c3
+                    !nchanged = changed || c1 /= c || c2 /= '\0'
+                loop idx' (ns + cSize) nchanged
 
 -- | Convert a 'String' 'Char' by 'Char' using a case mapping function. 
 caseConvert :: (Char -> CM) -> String -> String
-caseConvert op s@(String ba) 
-  = case nBuff of
+caseConvert op s@(String arr) = case nBuff of
       Nothing -> s
-      Just nLen -> runST $ unsafeCopyFrom s nLen go
+      Just nLen -> runST $ do
+          ((), dst) <- newNative nLen $ \mba ->
+                  C.onBackendPrim
+                        (\blk  -> goBlk mba blk (Offset 0) start)
+                        (\fptr -> withFinalPtr fptr $ \ptr -> goBlk mba ptr (Offset 0) start)
+                        arr
+          freeze dst
   where
+    !(C.ValidRange start end) = C.offsetsValidRange arr
     !nBuff = caseConvertNBuff op s
-    go :: String -> Offset Char -> Offset8 -> MutableString s -> Offset8 -> ST s (Offset8, Offset8)
-    go src' srcI srcIdx dst dstIdx = do
-      let !(CM c1 c2 c3) = op c 
-      dstIdx <- write dst dstIdx c1
-      nextDstIdx <- 
-        if c2 == '\0' -- We don't want to check C3 if C2 is empty.
-          then return dstIdx
-          else do
-            dstIdx  <- writeValidChar c2 dstIdx
-            writeValidChar c3 dstIdx
-      return (nextSrcIdx, nextDstIdx)
-          where
-            !(Step c nextSrcIdx) = next src' srcIdx
-            writeValidChar cc wIdx =
-                if cc == '\0'
-                    then return wIdx 
-                else do
-                    write dst wIdx cc
+    goBlk :: (Indexable container Word8, PrimMonad prim) => MutableBlock Word8 (PrimState prim) -> container -> Offset Word8 -> Offset Word8 -> prim ()
+    goBlk !dst !src = loop
+      where
+        loop !dstIdx !srcIdx
+          | srcIdx == end = return ()
+          | otherwise = do
+              let !(CM c1 c2 c3) = op c 
+                  !(Step c nextSrcIdx) = UTF8.next src srcIdx
+              !dstIdx <- UTF8.writeUTF8 dst dstIdx c1
+              nextDstIdx <- 
+                if c2 == '\0' -- We don't want to check C3 if C2 is empty.
+                  then return dstIdx
+                  else do
+                    dstIdx  <- writeValidChar c2 dstIdx
+                    writeValidChar c3 dstIdx
+              loop nextDstIdx nextSrcIdx
+        writeValidChar !cc !wIdx =
+            if cc == '\0'
+                then return wIdx 
+                else UTF8.writeUTF8 dst wIdx cc
+        {-# INLINE writeValidChar #-}
 
 -- | Convert a 'String' to the upper-case equivalent.
 upper :: String -> String
