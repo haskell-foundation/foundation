@@ -20,6 +20,7 @@
 {-# LANGUAGE AllowAmbiguousTypes       #-}
 {-# LANGUAGE DeriveDataTypeable        #-}
 {-# LANGUAGE DeriveGeneric             #-}
+{-# LANGUAGE FlexibleContexts          #-}
 module Basement.Sized.List
     ( ListN
     , toListN
@@ -136,7 +137,7 @@ replicate :: forall (n :: Nat) a . (NatWithinBound Int n, KnownNat n) => a -> Li
 replicate a = ListN $ Prelude.replicate (Prelude.fromIntegral $ natVal (Proxy :: Proxy n)) a
 
 -- | Decompose a list into its head and tail.
-uncons :: 1 <= n => ListN n a -> (a, ListN (n-1) a)
+uncons :: (1 <= n) => ListN n a -> (a, ListN (n-1) a)
 uncons (ListN (x:xs)) = (x, ListN xs)
 uncons _ = impossible
 
@@ -187,12 +188,12 @@ minimum :: (Ord a, 1 <= n) => ListN n a -> a
 minimum (ListN l) = Prelude.minimum l
 
 -- | Get the head element of a list
-head :: 1 <= n => ListN n a -> a
+head :: (1 <= n) => ListN n a -> a
 head (ListN (x:_)) = x
 head _ = impossible
 
 -- | Get the tail of a list
-tail :: 1 <= n => ListN n a -> ListN (n-1) a
+tail :: (1 <= n) => ListN n a -> ListN (n-1) a
 tail (ListN (_:xs)) = ListN xs
 tail _ = impossible
 
@@ -257,7 +258,7 @@ foldl' f acc (ListN l) = Data.List.foldl' f acc l
 
 -- | Fold all elements from left strictly with a first element
 -- as the accumulator
-foldl1' :: 1 <= n => (a -> a -> a) -> ListN n a -> a
+foldl1' :: (1 <= n) => (a -> a -> a) -> ListN n a -> a
 foldl1' f (ListN l) = Data.List.foldl1' f l
 
 -- | Fold all elements from right
