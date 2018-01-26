@@ -1,8 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell #-}
 module Test.Foundation.Misc
     ( testHexadecimal
-    , testTime
     , testUUID
     ) where
 
@@ -33,16 +31,6 @@ hex = loop
 testHexadecimal = Group "hexadecimal"
     [ Property  "UArray(W8)" $ \l ->
         toList (toHexadecimal (fromListP (Proxy :: Proxy (UArray Word8)) l)) == hex l
-    ]
-
-testTime = Group "Time"
-    [ Property "foundation_time_clock_gettime links properly" $
-        $(let s :: String
-              s = fromString "Hello"
-
-              b :: Bool
-              b = s == s
-           in [| b |])
     ]
 
 testUUID = Group "UUID"

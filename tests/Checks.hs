@@ -198,7 +198,6 @@ main = defaultMain $ Group "foundation"
     , testNetworkIPv6
     , testBase64Refs
     , testHexadecimal
-    , testTime
     , testUUID
     , testRandom
     , testConduit
