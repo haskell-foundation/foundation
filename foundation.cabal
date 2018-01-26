@@ -59,7 +59,12 @@ flag bounds-check
   manual:            True
 
 flag doctest
-  description:       Add extra friendly boundary check for unsafe array operations
+  description:       Build doctest on demand only
+  default:           False
+  manual:            True
+
+flag linktest
+  description:       Run linking test
   default:           False
   manual:            True
 
@@ -249,7 +254,7 @@ test-suite foundation-link
   main-is:           Scripts/Link.hs
   default-extensions: NoImplicitPrelude
                       RebindableSyntax
-  if os(windows)
+  if flag(linktest)
     build-depends:     base
                      , foundation
                      , template-haskell
