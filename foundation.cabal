@@ -1,5 +1,5 @@
 name:                foundation
-version:             0.0.18
+version:             0.0.19
 synopsis:            Alternative prelude with batteries and no dependencies
 description:
     A custom prelude with no dependencies apart from base.
@@ -74,6 +74,7 @@ library
                      Foundation.Conduit
                      Foundation.Conduit.Textual
                      Foundation.Exception
+                     Foundation.Format.CSV
                      Foundation.String
                      Foundation.String.Read
                      Foundation.String.Builder
@@ -191,7 +192,7 @@ library
                       BangPatterns
                       DeriveDataTypeable
   build-depends:     base >= 4.7 && < 5
-                   , basement == 0.0.5
+                   , basement == 0.0.6
                    , ghc-prim
   -- FIXME add suport for armel mipsel
   --  CPP-options: -DARCH_IS_LITTLE_ENDIAN
@@ -228,6 +229,8 @@ test-suite check-foundation
                      Test.Data.List
                      Test.Foundation.Network.IPv4
                      Test.Foundation.Network.IPv6
+                     Test.Foundation.Format
+                     Test.Foundation.Format.CSV
   default-extensions: NoImplicitPrelude
                       RebindableSyntax
                       OverloadedStrings

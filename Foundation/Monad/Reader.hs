@@ -3,6 +3,7 @@
 --
 -- This is useful to keep a non-modifiable value
 -- in a context
+{-# LANGUAGE ConstraintKinds #-}
 module Foundation.Monad.Reader
     ( -- * MonadReader
       MonadReader(..)
@@ -12,10 +13,11 @@ module Foundation.Monad.Reader
     ) where
 
 import Basement.Compat.Base (($), (.), const)
+import Basement.Compat.AMP
 import Foundation.Monad.Base
 import Foundation.Monad.Exception
 
-class Monad m => MonadReader m where
+class AMPMonad m => MonadReader m where
     type ReaderContext m
     ask :: m (ReaderContext m)
 
@@ -32,7 +34,7 @@ instance Applicative m => Applicative (ReaderT r m) where
     fab <*> fa = ReaderT $ \r -> runReaderT fab r <*> runReaderT fa r
     {-# INLINE (<*>) #-}
 
-instance Monad m => Monad (ReaderT r m) where
+instance AMPMonad m => Monad (ReaderT r m) where
     return a = ReaderT $ const (return a)
     {-# INLINE return #-}
     ma >>= mab = ReaderT $ \r -> runReaderT ma r >>= \a -> runReaderT (mab a) r
@@ -64,6 +66,6 @@ instance MonadBracket m => MonadBracket (ReaderT r m) where
                               (\a exn -> runReaderT (cleanupExcept a exn) c)
                               (\a -> runReaderT (innerAction a) c)
 
-instance Monad m => MonadReader (ReaderT r m) where
+instance AMPMonad m => MonadReader (ReaderT r m) where
     type ReaderContext (ReaderT r m) = r
     ask = ReaderT return

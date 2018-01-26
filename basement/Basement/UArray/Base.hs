@@ -605,29 +605,26 @@ append a b
     !la = length a
     !lb = length b
 
-concat :: PrimType ty => [UArray ty] -> UArray ty
-concat [] = empty
-concat l  =
-    case filterAndSum (CountOf 0) [] l of
-        (_,[])            -> empty
-        (_,[x])           -> x
-        (totalLen,chunks) -> runST $ do
-            r <- new totalLen
-            doCopy r (Offset 0) chunks
-            unsafeFreeze r
+concat :: forall ty . PrimType ty => [UArray ty] -> UArray ty
+concat original = runST $ do
+    r <- new total
+    goCopy r 0 original
+    unsafeFreeze r
   where
-    -- TODO would go faster not to reverse but pack from the end instead
-    filterAndSum !totalLen acc []     = (totalLen, List.reverse acc)
-    filterAndSum !totalLen acc (x:xs)
-        | len == CountOf 0 = filterAndSum totalLen acc xs
-        | otherwise      = filterAndSum (len+totalLen) (x:acc) xs
-      where len = length x
+    !total = size 0 original
+    -- size
+    size !sz []     = sz
+    size !sz (x:xs) = size (length x + sz) xs
 
-    doCopy _ _ []     = return ()
-    doCopy r i (x:xs) = do
-        unsafeCopyAtRO r i x (Offset 0) lx
-        doCopy r (i `offsetPlusE` lx) xs
-      where lx = length x
+    zero = Offset 0
+
+    goCopy r = loop
+      where
+        loop _  []      = pure ()
+        loop !i (x:xs) = do
+            unsafeCopyAtRO r i x zero lx
+            loop (i `offsetPlusE` lx) xs
+          where !lx = length x
 
 -- | Create a Block from a UArray.
 --

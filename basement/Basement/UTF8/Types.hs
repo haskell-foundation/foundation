@@ -9,6 +9,8 @@ module Basement.UTF8.Types
     , isValidStepDigit
     -- * Unicode Errors
     , ValidationFailure(..)
+    -- * Case Conversion
+    , CM (..)
     ) where
 
 import           Basement.Compat.Base
@@ -33,6 +35,9 @@ newtype StepDigit = StepDigit Word8
 
 -- | Step when processing ASCII character
 newtype StepASCII = StepASCII Word8
+
+-- | Specialized tuple used for case mapping.
+data CM = CM {-# UNPACK #-} !Char {-# UNPACK #-} !Char {-# UNPACK #-} !Char deriving (Eq)
 
 isValidStepASCII :: StepASCII -> Bool
 isValidStepASCII (StepASCII w) = w < 0x80

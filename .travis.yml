@@ -15,6 +15,10 @@ matrix:
   - env: BUILD=hlint
     language: generic
     compiler: hlint
+  - env: BUILD=weeder
+    language: generic
+    addons: { apt: { packages: [ libgmp-dev ] } }
+    compiler: weeder
   - env: BUILD=stack RESOLVER=ghc-8.0
     language: generic
     addons: { apt: { packages: [ libgmp-dev ] } }
@@ -31,6 +35,10 @@ matrix:
     language: generic
     addons: { apt: { packages: [ libgmp-dev ] } }
     compiler: ghc-7.10
+  - env: BUILD=stack RESOLVER=ghc-7.8 HADDOCK="--no-haddock"
+    language: generic
+    addons: { apt: { packages: [ libgmp-dev ] } }
+    compiler: ghc-7.8
   - env: BUILD=stack RESOLVER=ghc-8.0
     os: osx
     language: generic
@@ -45,6 +53,10 @@ matrix:
     language: generic
     addons: { apt: { packages: [ libgmp-dev ] } }
     compiler: ghc-8.0
+  - env: BUILD=weeder
+    language: generic
+    addons: { apt: { packages: [ libgmp-dev ] } }
+    compiler: weeder
   - env: BUILD=hlint
     language: generic
     compiler: hlint
@@ -54,7 +66,7 @@ install:
   - mkdir -p ~/.local/bin
   - |
     case "$BUILD" in
-      stack)
+      stack|weeder)
         if [ `uname` = "Darwin" ]
         then
           travis_retry curl --insecure -L https://www.stackage.org/stack/osx-x86_64 | tar xz --strip-components=1 --include '*/stack' -C ~/.local/bin
@@ -77,7 +89,7 @@ script:
           --flag foundation:bounds-check ${EXPERIMENTAL} \
           --install-ghc \
           --coverage --bench --no-run-benchmarks \
-          --haddock --no-haddock-deps
+          ${HADDOCK---haddock --no-haddock-deps}
       ;;
     cabal)
       cabal install --only-dependencies --enable-tests
@@ -87,6 +99,12 @@ script:
       ;;
     hlint)
       curl -sL https://raw.github.com/ndmitchell/hlint/master/misc/travis.sh | sh -s . --cpp-define=__GLASGOW_HASKELL__=800 --cpp-define=x86_64_HOST_ARCH=1 --cpp-define=mingw32_HOST_OS=1
+      ;;
+    weeder)
+      stack --no-terminal build \
+            --flag foundation:bounds-check ${EXPERIMENTAL} \
+            --install-ghc
+      curl -sL https://raw.github.com/ndmitchell/weeder/master/misc/travis.sh | sh -s .
       ;;
   esac
   set +ex

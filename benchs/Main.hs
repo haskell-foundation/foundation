@@ -13,6 +13,7 @@ import Foundation.String.Read
 import Foundation.String
 import BenchUtil.Common
 import BenchUtil.RefData
+import qualified Basement.Block.Builder as Builder
 
 import Sys
 
@@ -179,6 +180,8 @@ benchsByteArray = bgroup "ByteArray"
     , benchFoldr
     , benchReverse
     , benchFilter
+    , benchMonoidConcat
+    , benchBuilderBlock
     , benchAll
     , benchSort
     , benchSort32
@@ -204,10 +207,35 @@ benchsByteArray = bgroup "ByteArray"
         t = ByteString.pack dat
         v = Vector.fromList dat
 
+    diffListByteArray :: ([UArray Word8] -> a)
+                      -> ([Block Word8] -> b)
+                      -> ([ByteString.ByteString] -> c)
+                      -> ([Vector.Vector Word8] -> d)
+                      -> [[Word8]]
+                      -> [Benchmark]
+    diffListByteArray uarrayBench blockBench bsBench vectorBench dat =
+        [ bench "[UArray_W8]" $ whnf uarrayBench s
+        , bench "[Block_W8]" $ whnf blockBench s'
+#ifdef BENCH_ALL
+        , bench "[ByteString]" $ whnf bsBench t
+        , bench "[Vector_W8]" $ whnf vectorBench v
+#endif
+        ]
+      where
+        s = fromList <$> dat
+        s' = fromList <$> dat
+        t = ByteString.pack <$> dat
+        v = Vector.fromList <$> dat
+
     allDat =
         [ ("bs20", rdBytes20)
         , ("bs200", rdBytes200)
         , ("bs2000", rdBytes2000)
+        ]
+    allListDat =
+        [ ("listBs20", Prelude.replicate 20 rdBytes20)
+        , ("listBs200", Prelude.replicate 200 rdBytes200)
+        , ("listBs2000", Prelude.replicate 2000 rdBytes2000)
         ]
     allDatSuffix s = fmap (first (\x -> x <> "-" <> s)) allDat
 
@@ -269,6 +297,15 @@ benchsByteArray = bgroup "ByteArray"
         fmap (\(n, dat) -> bgroup n $ diffByteArray (filter (> 100)) (filter (> 100))
                                                     (ByteString.filter (> 100))
                                                     (Vector.filter (> 100)) dat) allDat
+
+    benchMonoidConcat = bgroup "Monoid/mconcat" $
+        fmap (\(n, dat) -> bgroup n $ diffListByteArray mconcat mconcat ByteString.concat Vector.concat dat) allListDat
+    benchBuilderBlock = bgroup "Monoid/builder" $
+        [ bench "[block Word8]" $ whnf builderConcat (Prelude.replicate 2000 (fromList rdBytes2000))
+        ]
+      where
+        builderConcat :: [Block Word8] -> Block Word8
+        builderConcat l = runST $ Builder.run $ mconcat (fmap Builder.emit l)
 
     benchSort = bgroup "Sort" $ fmap (\(n, dat) ->
         bgroup n $

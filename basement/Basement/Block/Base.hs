@@ -231,29 +231,26 @@ append a b
     !la = lengthBytes a
     !lb = lengthBytes b
 
-concat :: [Block ty] -> Block ty
-concat [] = empty
-concat l  =
-    case filterAndSum 0 [] l of
-        (_,[])            -> empty
-        (_,[x])           -> x
-        (totalLen,chunks) -> runST $ do
-            r <- unsafeNew Unpinned totalLen
-            doCopy r 0 chunks
-            unsafeFreeze r
+concat :: forall ty . [Block ty] -> Block ty
+concat original = runST $ do
+    r <- unsafeNew Unpinned total
+    goCopy r zero original
+    unsafeFreeze r
   where
-    -- TODO would go faster not to reverse but pack from the end instead
-    filterAndSum !totalLen acc []     = (totalLen, Data.List.reverse acc)
-    filterAndSum !totalLen acc (x:xs)
-        | len == 0  = filterAndSum totalLen acc xs
-        | otherwise = filterAndSum (len+totalLen) (x:acc) xs
-      where len = lengthBytes x
+    !total = size 0 original
+    -- size
+    size !sz []     = sz
+    size !sz (x:xs) = size (lengthBytes x + sz) xs
 
-    doCopy _ _ []     = return ()
-    doCopy r i (x:xs) = do
-        unsafeCopyBytesRO r i x 0 lx
-        doCopy r (i `offsetPlusE` lx) xs
-      where !lx = lengthBytes x
+    zero = Offset 0
+
+    goCopy r = loop
+      where
+        loop _  []      = pure ()
+        loop !i (x:xs) = do
+            unsafeCopyBytesRO r i x zero lx
+            loop (i `offsetPlusE` lx) xs
+          where !lx = lengthBytes x
 
 -- | Freeze a mutable block into a block.
 --
@@ -266,9 +263,10 @@ unsafeFreeze (MutableBlock mba) = primitive $ \s1 ->
         (# s2, ba #) -> (# s2, Block ba #)
 {-# INLINE unsafeFreeze #-}
 
-unsafeShrink :: PrimMonad prim => MutableBlock ty (PrimState prim) -> CountOf ty -> prim ()
+unsafeShrink :: PrimMonad prim => MutableBlock ty (PrimState prim) -> CountOf ty -> prim (MutableBlock ty (PrimState prim))
 unsafeShrink (MutableBlock mba) (CountOf (I# nsz)) = primitive $ \s ->
-  (# shrinkMutableByteArray# mba nsz s, () #)
+    case compatShrinkMutableByteArray# mba nsz s of
+        (# s, mba' #) -> (# s, MutableBlock mba' #)
 
 -- | Thaw an immutable block.
 --

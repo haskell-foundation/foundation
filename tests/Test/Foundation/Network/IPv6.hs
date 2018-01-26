@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Test.Foundation.Network.IPv6
@@ -27,6 +28,7 @@ testOrdering genElement = Property "ordering" $
 
 testNetworkIPv6 :: Test
 testNetworkIPv6 = Group "IPv6"
+#if __GLASGOW_HASKELL__ >= 710
     [ Property "toTuple . fromTuple == id" $
         forAll genIPv6Tuple $ \x -> x === toTuple (fromTuple x)
     , Property "toString . fromString == id" $
@@ -46,3 +48,6 @@ testNetworkIPv6 = Group "IPv6"
         , Property "0:0::FFFF:129.144.52.38" $ (fromTuple (0,0,0,0,0,0xffff,0x8190,0x3426)) === (fromString "0:0::FFFF:129.144.52.38")
         ]
     ]
+#else
+    []
+#endif

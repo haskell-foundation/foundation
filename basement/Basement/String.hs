@@ -116,6 +116,7 @@ import           Basement.FinalPtr
 import           Basement.IntegralConv
 import           Basement.Floating
 import           Basement.MutableBuilder
+import           Basement.String.CaseMapping (upperMapping, lowerMapping)
 import           Basement.UTF8.Table
 import           Basement.UTF8.Helper
 import           Basement.UTF8.Base
@@ -1318,15 +1319,68 @@ decimalDigitsPtr startAcc ptr !endOfs !startOfs = loop startAcc startOfs
 {-# SPECIALIZE decimalDigitsPtr :: Int -> Addr# -> Offset Word8 -> Offset Word8 -> (# Int, Bool, Offset Word8 #) #-}
 {-# SPECIALIZE decimalDigitsPtr :: Word -> Addr# -> Offset Word8 -> Offset Word8 -> (# Word, Bool, Offset Word8 #) #-}
 
--- | Convert a 'String' to the upper-case equivalent.
---   Does not properly support multicharacter Unicode conversions.
-upper :: String -> String
-upper = charMap toUpper
+-- | A unicode string size may vary during a case conversion operation.
+--   This function calculates the new buffer size for a case conversion.
+--   Returns Nothing if no case conversion is needed.
+caseConvertNBuff :: (Char -> CM) -> String -> Maybe (CountOf Word8)
+caseConvertNBuff op s@(String ba) = runST $ Vec.unsafeIndexer ba go
+  where
+    !sz = size s
+    !end = azero `offsetPlusE` sz
+    go :: (Offset Word8 -> Word8) -> ST st (Maybe (CountOf Word8))
+    go getIdx = loop (Offset 0) 0 False
+      where
+        !nextI = nextWithIndexer getIdx
+        eSize !e = if e == '\0' 
+                      then 0
+                      else charToBytes (fromEnum e)
+        loop !idx ns changed 
+            | idx == end = if changed
+                             then return $ Just ns
+                             else return Nothing
+            | otherwise = do
+                let !(c, idx') = nextI idx
+                    !cm@(CM c1 c2 c3) = op c 
+                    !cSize = if c2 == '\0' -- if c2 is empty, c3 will be empty as well.
+                              then charToBytes (fromEnum c1) 
+                              else eSize c1 + eSize c2 + eSize c3
+                    !nchanged = changed || c1 /= c || c2 /= '\0'
+                loop idx' (ns + cSize) nchanged
+
+-- | Convert a 'String' 'Char' by 'Char' using a case mapping function. 
+caseConvert :: (Char -> CM) -> String -> String
+caseConvert op s@(String ba) 
+  = case nBuff of
+      Nothing -> s
+      Just nLen -> runST $ unsafeCopyFrom s nLen go
+  where
+    !nBuff = caseConvertNBuff op s
+    go :: String -> Offset Char -> Offset8 -> MutableString s -> Offset8 -> ST s (Offset8, Offset8)
+    go src' srcI srcIdx dst dstIdx = do
+      let !(CM c1 c2 c3) = op c 
+      dstIdx <- write dst dstIdx c1
+      nextDstIdx <- 
+        if c2 == '\0' -- We don't want to check C3 if C2 is empty.
+          then return dstIdx
+          else do
+            dstIdx  <- writeValidChar c2 dstIdx
+            writeValidChar c3 dstIdx
+      return (nextSrcIdx, nextDstIdx)
+          where
+            !(Step c nextSrcIdx) = next src' srcIdx
+            writeValidChar cc wIdx =
+                if cc == '\0'
+                    then return wIdx 
+                else do
+                    write dst wIdx cc
 
 -- | Convert a 'String' to the upper-case equivalent.
---   Does not properly support multicharacter Unicode conversions.
+upper :: String -> String
+upper = caseConvert upperMapping
+
+-- | Convert a 'String' to the upper-case equivalent.
 lower :: String -> String
-lower = charMap toLower
+lower = caseConvert lowerMapping
 
 -- | Check whether the first string is a prefix of the second string.
 isPrefixOf :: String -> String -> Bool
