@@ -20,6 +20,9 @@ import           Graphics.Win32.Misc (getStdHandle, sTD_OUTPUT_HANDLE, StdHandle
 #include <windows.h>
 #elif defined FOUNDATION_SYSTEM_UNIX
 #include <sys/ioctl.h>
+#ifdef __sun
+#include <sys/termios.h>
+#endif
 #endif 
 
 #include <stdio.h>
