@@ -33,6 +33,8 @@ module Basement.Sized.List
     , singleton
     , uncons
     , cons
+    , unsnoc
+    , snoc
     , index
     , indexStatic
     , updateAt
@@ -43,6 +45,7 @@ module Basement.Sized.List
     , foldl'
     , foldl1'
     , foldr
+    , reverse
     , append
     , minimum
     , maximum
@@ -144,6 +147,14 @@ uncons _ = impossible
 -- | prepend an element to the list
 cons :: a -> ListN n a -> ListN (n+1) a
 cons a (ListN l) = ListN (a : l)
+
+-- | Decompose a list into its first elements and the last.
+unsnoc :: (1 <= n) => ListN n a -> (ListN (n-1) a, a)
+unsnoc (ListN l) = (ListN $ Data.List.init l, Data.List.last l)
+
+-- | append an element to the list
+snoc :: ListN n a -> a -> ListN (n+1) a
+snoc (ListN l) a = ListN (l Prelude.++ [a])
 
 -- | Create an empty list of a
 empty :: ListN 0 a
@@ -264,6 +275,10 @@ foldl1' f (ListN l) = Data.List.foldl1' f l
 -- | Fold all elements from right
 foldr :: (a -> b -> b) -> b -> ListN n a -> b
 foldr f acc (ListN l) = Prelude.foldr f acc l
+
+-- | Reverse a list
+reverse :: ListN n a -> ListN n a
+reverse (ListN l) = ListN (Prelude.reverse l)
 
 -- | Zip 2 lists of the same size, returning a new list of
 -- the tuple of each elements
