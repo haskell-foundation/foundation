@@ -44,6 +44,8 @@ module Basement.Sized.List
     , foldl
     , foldl'
     , foldl1'
+    , scanl'
+    , scanl1'
     , foldr
     , reverse
     , append
@@ -275,6 +277,25 @@ foldl1' f (ListN l) = Data.List.foldl1' f l
 -- | Fold all elements from right
 foldr :: (a -> b -> b) -> b -> ListN n a -> b
 foldr f acc (ListN l) = Prelude.foldr f acc l
+
+-- | 'scanl' is similar to 'foldl', but returns a list of successive
+-- reduced values from the left
+--
+-- > scanl f z [x1, x2, ...] == [z, z `f` x1, (z `f` x1) `f` x2, ...]
+scanl' :: (b -> a -> b) -> b -> ListN n a -> ListN (n+1) b
+scanl' f initialAcc (ListN start) = ListN (go initialAcc start)
+  where
+    go !acc l = acc : case l of
+                        []     -> []
+                        (x:xs) -> go (f acc x) xs
+
+-- | 'scanl1' is a variant of 'scanl' that has no starting value argument:
+--
+-- > scanl1 f [x1, x2, ...] == [x1, x1 `f` x2, ...]
+scanl1' :: (a -> a -> a) -> ListN n a -> ListN n a
+scanl1' f (ListN l) = case l of
+                        []     -> ListN []
+                        (x:xs) -> ListN $ Data.List.scanl' f x xs
 
 -- | Reverse a list
 reverse :: ListN n a -> ListN n a
