@@ -87,6 +87,7 @@ script:
       rm stack.yaml && ln -sv .travis/stack-${RESOLVER}.yaml stack.yaml
       stack --no-terminal test \
           --flag foundation:bounds-check ${EXPERIMENTAL} \
+          --flag foundation:linktest \
           --install-ghc \
           --coverage --bench --no-run-benchmarks \
           ${HADDOCK---haddock --no-haddock-deps}

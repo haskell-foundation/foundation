@@ -15,5 +15,5 @@ environment:
 
 test_script:
 - stack setup > nul
-- echo "" | stack --no-terminal build --test
+- echo "" | stack --no-terminal build --test --flag foundation:linktest
 - stack exec -- ghc -package=foundation -e 1
