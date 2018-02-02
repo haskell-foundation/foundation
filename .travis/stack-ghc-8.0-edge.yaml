@@ -1,9 +1,0 @@
-resolver: lts-9.21
-packages:
-- '.'
-- basement/
-- edge/
-extra-deps:
-- gauge-0.2.0
-flags: {}
-extra-package-dbs: []

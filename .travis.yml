@@ -5,61 +5,24 @@ sudo: false
 cache:
   directories:
   - $HOME/.ghc
-  - $HOME/.cabal
   - $HOME/.stack
+  - $HOME/.local
 
-# The different configurations we want to test. We have BUILD=cabal which uses
-# cabal-install, and BUILD=stack which uses Stack.
 matrix:
   include:
-  - env: BUILD=hlint
-    language: generic
-    compiler: hlint
-  - env: BUILD=weeder
-    language: generic
-    addons: { apt: { packages: [ libgmp-dev ] } }
-    compiler: weeder
-  - env: BUILD=stack RESOLVER=ghc-8.0
-    language: generic
-    addons: { apt: { packages: [ libgmp-dev ] } }
-    compiler: ghc-8.0
-  - env: BUILD=stack RESOLVER=ghc-8.0-edge
-    language: generic
-    addons: { apt: { packages: [ libgmp-dev ] } }
-    compiler: ghc-8.0
-  - env: BUILD=stack RESOLVER=ghc-8.2
-    language: generic
-    compiler: ghc-8.2
-    addons: { apt: { packages: [ libgmp-dev ] } }
-  - env: BUILD=stack RESOLVER=ghc-7.10
-    language: generic
-    addons: { apt: { packages: [ libgmp-dev ] } }
-    compiler: ghc-7.10
-  - env: BUILD=stack RESOLVER=ghc-7.8 HADDOCK="--no-haddock"
-    language: generic
-    addons: { apt: { packages: [ libgmp-dev ] } }
-    compiler: ghc-7.8
-  - env: BUILD=stack RESOLVER=ghc-8.0
-    os: osx
-    language: generic
-    compiler: ghc-8.0
-  - env: BUILD=stack RESOLVER=ghc-8.0 EXPERIMENTAL="--flag foundation:experimental"
-    language: generic
-    addons: { apt: { packages: [ libgmp-dev ] } }
-    compiler: ghc-8.0
-
+  - { env: BUILD=stack RESOLVER=ghc-7.8, compiler: ghc-7.8, language: generic, addons: { apt: { packages: [ libgmp-dev ] } } }
+  - { env: BUILD=stack RESOLVER=ghc-8.2, compiler: ghc-8.2, language: generic, addons: { apt: { packages: [ libgmp-dev ] } } }
+  - { env: BUILD=stack RESOLVER=ghc-7.10, compiler: ghc-7.10, language: generic, addons: { apt: { packages: [ libgmp-dev ] } } }
+  - { env: BUILD=stack RESOLVER=ghc-8.0, compiler: ghc-8.0, language: generic, addons: { apt: { packages: [ libgmp-dev ] } } }
+  - { env: BUILD=stack RESOLVER=ghc-8.0, compiler: ghc-8.0, language: generic, addons: { apt: { packages: [ libgmp-dev ] } }, os: osx }
+  - { env: BUILD=stack RESOLVER=ghc-8.0-edge, compiler: ghc-8.0-edge, language: generic, addons: { apt: { packages: [ libgmp-dev ] } } }
+  - { env: BUILD=stack RESOLVER=ghc-8.0-experimental, compiler: ghc-8.0-experimental, language: generic, addons: { apt: { packages: [ libgmp-dev ] } } }
+  - { env: BUILD=hlint, compiler: hlint, language: generic }
+  - { env: BUILD=weeder, compiler: weeder, language: generic, addons: { apt: { packages: [ libgmp-dev ] } } }
   allow_failures:
-  - env: BUILD=stack RESOLVER=ghc-8.0 EXPERIMENTAL="--flag foundation:experimental"
-    language: generic
-    addons: { apt: { packages: [ libgmp-dev ] } }
-    compiler: ghc-8.0
-  - env: BUILD=weeder
-    language: generic
-    addons: { apt: { packages: [ libgmp-dev ] } }
-    compiler: weeder
-  - env: BUILD=hlint
-    language: generic
-    compiler: hlint
+  - { env: BUILD=stack RESOLVER=ghc-8.0-experimental, compiler: ghc-8.0-experimental, language: generic, addons: { apt: { packages: [ libgmp-dev ] } } }
+  - { env: BUILD=hlint, compiler: hlint, language: generic }
+  - { env: BUILD=weeder, compiler: weeder, language: generic, addons: { apt: { packages: [ libgmp-dev ] } } }
 
 install:
   - export PATH=$HOME/.local/bin::$HOME/.cabal/bin:$PATH
@@ -84,34 +47,48 @@ script:
   if [ "x${RUNTEST}" = "xfalse" ]; then exit 0; fi
   case "$BUILD" in
     stack)
-      rm stack.yaml && ln -sv .travis/stack-${RESOLVER}.yaml stack.yaml
-      stack --no-terminal test \
-          --flag foundation:bounds-check ${EXPERIMENTAL} \
-          --flag foundation:linktest \
-          --install-ghc \
-          --coverage --bench --no-run-benchmarks \
-          ${HADDOCK---haddock --no-haddock-deps}
-      ;;
-    cabal)
-      cabal install --only-dependencies --enable-tests
-      cabal test
-      cabal check
-      cabal sdist
+      # create the build stack.yaml
+      case "$RESOLVER" in
+      ghc-7.8)
+        echo "{ resolver: lts-2.22, packages: [ '.', basement/ ], extra-deps: [ gauge-0.2.1 ], flags: { foundation: { bounds-check: true, linktest: true } } }" > stack.yaml
+        export HADDOCK_OPTs="--no-haddock"
+        ;;
+      ghc-8.2)
+        echo "{ resolver: lts-10.4, packages: [ '.', basement/ ], extra-deps: [ gauge-0.2.1 ], flags: { foundation: { bounds-check: true, linktest: true } } }" > stack.yaml
+        export HADDOCK_OPTs="--haddock --no-haddock-deps"
+        ;;
+      ghc-7.10)
+        echo "{ resolver: lts-6.35, packages: [ '.', basement/ ], extra-deps: [ gauge-0.2.1 ], flags: { foundation: { bounds-check: true, linktest: true } } }" > stack.yaml
+        export HADDOCK_OPTs="--haddock --no-haddock-deps"
+        ;;
+      ghc-8.0)
+        echo "{ resolver: lts-9.21, packages: [ '.', basement/ ], extra-deps: [ gauge-0.2.1 ], flags: { foundation: { bounds-check: true, linktest: true } } }" > stack.yaml
+        export HADDOCK_OPTs="--haddock --no-haddock-deps"
+        ;;
+      ghc-8.0)
+        echo "{ resolver: lts-9.21, packages: [ '.', basement/ ], extra-deps: [ gauge-0.2.1 ], flags: { foundation: { bounds-check: true, linktest: true } } }" > stack.yaml
+        export HADDOCK_OPTs="--haddock --no-haddock-deps"
+        ;;
+      ghc-8.0-edge)
+        echo "{ resolver: lts-9.21, packages: [ '.', basement/, edge/ ], extra-deps: [ gauge-0.2.1 ], flags: { foundation: { bounds-check: true, linktest: true } } }" > stack.yaml
+        export HADDOCK_OPTs="--haddock --no-haddock-deps"
+        ;;
+      ghc-8.0-experimental)
+        echo "{ resolver: lts-9.21, packages: [ '.', basement/ ], extra-deps: [ gauge-0.2.1 ], flags: { foundation: { bounds-check: true, linktest: true, experimental: true } } }" > stack.yaml
+        export HADDOCK_OPTs="--haddock --no-haddock-deps"
+        ;;
+      esac
+      # build & run test
+      stack --no-terminal test --install-ghc --coverage --bench --no-run-benchmarks \
+          ${HADDOCK_OPTS}
       ;;
     hlint)
       curl -sL https://raw.github.com/ndmitchell/hlint/master/misc/travis.sh | sh -s . --cpp-define=__GLASGOW_HASKELL__=800 --cpp-define=x86_64_HOST_ARCH=1 --cpp-define=mingw32_HOST_OS=1
       ;;
     weeder)
-      stack --no-terminal build \
-            --flag foundation:bounds-check ${EXPERIMENTAL} \
-            --install-ghc
+      stack --no-terminal build --install-ghc
       curl -sL https://raw.github.com/ndmitchell/weeder/master/misc/travis.sh | sh -s .
       ;;
   esac
   set +ex
 
-# It doesn't seem to be working so far.
-#
-#after_script:
-#    - travis_retry curl -L https://github.com/rubik/stack-hpc-coveralls/releases/download/v0.0.3.0/shc-linux-x64-$GHCVER.tar.bz2 | tar -xj
-#    - ./shc foundation test-foundation
