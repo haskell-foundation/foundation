@@ -76,11 +76,11 @@ class (IsList c, Item c ~ Element c, Monoid c, Collection c) => Sequential c whe
     break :: (Element c -> Bool) -> c -> (c,c)
     break predicate = span (not . predicate)
 
-    -- | Split a collection when the predicate return true
+    -- | Split a collection when the predicate return true starting from the end of the collection
     breakEnd :: (Element c -> Bool) -> c -> (c,c)
     breakEnd predicate = spanEnd (not . predicate)
 
-    -- | Split a collection when the predicate return true starting from the end of the collection
+    -- | Split a collection at the given element
     breakElem :: Eq (Element c) => Element c -> c -> (c,c)
     breakElem c = break (== c)
 
@@ -116,7 +116,7 @@ class (IsList c, Item c ~ Element c, Monoid c, Collection c) => Sequential c whe
     -- | Filter all the elements that satisfy the predicate
     filter :: (Element c -> Bool) -> c -> c
 
-    -- | Partition the elements thtat satisfy the predicate and those that don't
+    -- | Partition the elements that satisfy the predicate and those that don't
     partition :: (Element c -> Bool) -> c -> (c,c)
     partition predicate c = (filter predicate c, filter (not . predicate) c)
 
