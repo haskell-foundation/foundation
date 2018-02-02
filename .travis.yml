@@ -51,29 +51,36 @@ script:
       case "$RESOLVER" in
       ghc-7.8)
         echo "{ resolver: lts-2.22, packages: [ '.', basement/ ], extra-deps: [ gauge-0.2.1 ], flags: { foundation: { bounds-check: true, linktest: true } } }" > stack.yaml
+        export HADDOCK_OPTs="--no-haddock"
         ;;
       ghc-8.2)
         echo "{ resolver: lts-10.4, packages: [ '.', basement/ ], extra-deps: [ gauge-0.2.1 ], flags: { foundation: { bounds-check: true, linktest: true } } }" > stack.yaml
+        export HADDOCK_OPTs="--haddock --no-haddock-deps"
         ;;
       ghc-7.10)
         echo "{ resolver: lts-6.35, packages: [ '.', basement/ ], extra-deps: [ gauge-0.2.1 ], flags: { foundation: { bounds-check: true, linktest: true } } }" > stack.yaml
+        export HADDOCK_OPTs="--haddock --no-haddock-deps"
         ;;
       ghc-8.0)
         echo "{ resolver: lts-9.21, packages: [ '.', basement/ ], extra-deps: [ gauge-0.2.1 ], flags: { foundation: { bounds-check: true, linktest: true } } }" > stack.yaml
+        export HADDOCK_OPTs="--haddock --no-haddock-deps"
         ;;
       ghc-8.0)
         echo "{ resolver: lts-9.21, packages: [ '.', basement/ ], extra-deps: [ gauge-0.2.1 ], flags: { foundation: { bounds-check: true, linktest: true } } }" > stack.yaml
+        export HADDOCK_OPTs="--haddock --no-haddock-deps"
         ;;
       ghc-8.0-edge)
         echo "{ resolver: lts-9.21, packages: [ '.', basement/, edge/ ], extra-deps: [ gauge-0.2.1 ], flags: { foundation: { bounds-check: true, linktest: true } } }" > stack.yaml
+        export HADDOCK_OPTs="--haddock --no-haddock-deps"
         ;;
       ghc-8.0-experimental)
         echo "{ resolver: lts-9.21, packages: [ '.', basement/ ], extra-deps: [ gauge-0.2.1 ], flags: { foundation: { bounds-check: true, linktest: true, experimental: true } } }" > stack.yaml
+        export HADDOCK_OPTs="--haddock --no-haddock-deps"
         ;;
       esac
       # build & run test
       stack --no-terminal test --install-ghc --coverage --bench --no-run-benchmarks \
-          ${HADDOCK---haddock --no-haddock-deps}
+          ${HADDOCK_OPTS}
       ;;
     hlint)
       curl -sL https://raw.github.com/ndmitchell/hlint/master/misc/travis.sh | sh -s . --cpp-define=__GLASGOW_HASKELL__=800 --cpp-define=x86_64_HOST_ARCH=1 --cpp-define=mingw32_HOST_OS=1
