@@ -1,8 +1,0 @@
-resolver: lts-6.35
-packages:
-- '.'
-- basement/
-extra-deps:
-- gauge-0.2.0
-flags: {}
-extra-package-dbs: []
