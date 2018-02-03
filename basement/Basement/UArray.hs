@@ -136,8 +136,6 @@ import           Basement.MutableBuilder
 import           Basement.Bindings.Memory (sysHsMemFindByteBa, sysHsMemFindByteAddr)
 import qualified Basement.Compat.ExtList as List
 import qualified Basement.Base16 as Base16
-import qualified Basement.Alg.Native.Prim as PrimBA
-import qualified Basement.Alg.Foreign.Prim as PrimAddr
 import qualified Basement.Alg.Mutable as Alg
 import qualified Basement.Alg.Class as Alg
 import qualified Basement.Alg.PrimArray as Alg
@@ -440,11 +438,11 @@ breakLine arr@(UArray start len backend)
     carriageReturn = 0xd
     goBa (Block ba) =
         let k = sysHsMemFindByteBa ba start end lineFeed
-            cr = k > start && PrimBA.primIndex ba (k `offsetSub` 1) == carriageReturn
+            cr = k > start && primBaIndex ba (k `offsetSub` 1) == carriageReturn
          in (if cr then k `offsetSub` 1 else k, k)
     goAddr (Ptr addr) =
         let k = sysHsMemFindByteAddr addr start end lineFeed
-            cr = k > start && PrimAddr.primIndex addr (k `offsetSub` 1) == carriageReturn
+            cr = k > start && primAddrIndex addr (k `offsetSub` 1) == carriageReturn
          in (if cr then k `offsetSub` 1 else k, k)
 
 -- inverse a CountOf that is specified from the end (e.g. take n elements from the end)

@@ -21,6 +21,7 @@ module Foundation.Hashing.FNV
     , FNV1a_64
     ) where
 
+import           Basement.Block (Block(..))
 import           Basement.Compat.Base
 import qualified Basement.UArray as A
 import           Basement.Types.OffsetSize
@@ -119,8 +120,8 @@ fnv1_32_mixBa baA !initialState = A.unsafeDewrap goVec goAddr ba
     ba :: A.UArray Word8
     ba = A.unsafeRecast baA
 
-    goVec :: ByteArray# -> Offset Word8 -> FNV1_32
-    goVec !ma !start = loop start initialState
+    goVec :: Block Word8 -> Offset Word8 -> FNV1_32
+    goVec (Block !ma) !start = loop start initialState
       where
         !len = start `offsetPlusE` A.length ba
         loop !idx !acc
@@ -144,8 +145,8 @@ fnv1a_32_mixBa baA !initialState  = A.unsafeDewrap goVec goAddr ba
     ba :: A.UArray Word8
     ba = A.unsafeRecast baA
 
-    goVec :: ByteArray# -> Offset Word8 -> FNV1a_32
-    goVec !ma !start = loop start initialState
+    goVec :: Block Word8 -> Offset Word8 -> FNV1a_32
+    goVec (Block !ma) !start = loop start initialState
       where
         !len = start `offsetPlusE` A.length ba
         loop !idx !acc
@@ -169,8 +170,8 @@ fnv1_64_mixBa baA !initialState = A.unsafeDewrap goVec goAddr ba
     ba :: A.UArray Word8
     ba = A.unsafeRecast baA
 
-    goVec :: ByteArray# -> Offset Word8 -> FNV1_64
-    goVec !ma !start = loop start initialState
+    goVec :: Block Word8 -> Offset Word8 -> FNV1_64
+    goVec (Block !ma) !start = loop start initialState
       where
         !len = start `offsetPlusE` A.length ba
         loop !idx !acc
@@ -194,8 +195,8 @@ fnv1a_64_mixBa baA !initialState = A.unsafeDewrap goVec goAddr ba
     ba :: A.UArray Word8
     ba = A.unsafeRecast baA
 
-    goVec :: ByteArray# -> Offset Word8 -> FNV1a_64
-    goVec !ma !start = loop start initialState
+    goVec :: Block Word8 -> Offset Word8 -> FNV1a_64
+    goVec (Block !ma) !start = loop start initialState
       where
         !len = start `offsetPlusE` A.length ba
         loop !idx !acc

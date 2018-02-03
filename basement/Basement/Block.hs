@@ -84,7 +84,6 @@ import           Basement.Block.Base
 import           Basement.Numerical.Additive
 import           Basement.Numerical.Subtractive
 import           Basement.Numerical.Multiplicative
-import qualified Basement.Alg.Native.Prim as Prim
 import qualified Basement.Alg.Mutable as MutAlg
 import qualified Basement.Alg.Class as Alg
 import qualified Basement.Alg.PrimArray as Alg
@@ -95,6 +94,10 @@ instance (PrimMonad prim, st ~ PrimState prim, PrimType ty)
     write (MutableBlock mba) = primMbaWrite mba
 
 instance (PrimType ty) => Alg.Indexable (Block ty) ty where
+    index (Block ba) = primBaIndex ba
+    {-# INLINE index #-}
+
+instance Alg.Indexable (Block Word8) Word64 where
     index (Block ba) = primBaIndex ba
     {-# INLINE index #-}
 
