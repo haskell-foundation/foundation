@@ -164,7 +164,8 @@ string s = FieldString s encoding
 -- | CSV Row
 --
 newtype Row = Row { unRow :: Array Field }
-  deriving (Eq, Show, Typeable, Monoid, Collection, NormalForm, Sequential, IndexedCollection)
+  deriving (Eq, Show, Typeable, Semigroup, Monoid, Collection, NormalForm, Sequential, IndexedCollection)
+
 type instance Element Row = Field
 instance IsList Row where
     type Item Row = Field
@@ -188,7 +189,7 @@ instance (ToField a, ToField b, ToField c, ToField d, ToField e, ToField f) => T
 
 -- | CSV Type
 newtype CSV = CSV { unCSV :: Array Row }
-  deriving (Eq, Show, Typeable, Monoid, Collection, NormalForm, Sequential, IndexedCollection)
+  deriving (Eq, Show, Typeable, Semigroup, Monoid, Collection, NormalForm, Sequential, IndexedCollection)
 
 type instance Element CSV = Row
 
