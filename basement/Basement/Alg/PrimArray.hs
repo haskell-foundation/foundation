@@ -28,42 +28,38 @@ findIndexElem :: (Indexable container ty, Eq ty) => ty -> container -> Offset ty
 findIndexElem ty ba startIndex endIndex = loop startIndex
   where
     loop !i
-        | i < endIndex && t /= ty = loop (i+1)
-        | otherwise               = i
-      where t = index ba i
+        | i >= endIndex    = sentinel
+        | index ba i == ty = i
+        | otherwise        = loop (i+1)
 {-# INLINE findIndexElem #-}
 
 revFindIndexElem :: (Indexable container ty, Eq ty) => ty -> container -> Offset ty -> Offset ty -> Offset ty
-revFindIndexElem ty ba startIndex endIndex
-    | endIndex > startIndex = loop (endIndex `offsetMinusE` 1)
-    | otherwise             = endIndex
+revFindIndexElem ty ba startIndex endIndex = loop endIndex
   where
-    loop !i
-        | t == ty        = i
-        | i > startIndex = loop (i `offsetMinusE` 1)
-        | otherwise      = endIndex
-      where t = index ba i
+    loop !iplus1
+        | iplus1 <= startIndex = sentinel
+        | index ba i == ty     = i
+        | otherwise            = loop i
+      where !i = iplus1 `offsetMinusE` 1
 {-# INLINE revFindIndexElem #-}
 
 findIndexPredicate :: Indexable container ty => (ty -> Bool) -> container -> Offset ty -> Offset ty -> Offset ty
-findIndexPredicate predicate ba !startIndex !endIndex = loop startIndex
+findIndexPredicate predicate ba startIndex endIndex = loop startIndex
   where
     loop !i
-        | i < endIndex && not found = loop (i+1)
-        | otherwise                 = i
-      where found = predicate (index ba i)
+        | i >= endIndex          = sentinel
+        | predicate (index ba i) = i
+        | otherwise              = loop (i+1)
 {-# INLINE findIndexPredicate #-}
 
 revFindIndexPredicate :: Indexable container ty => (ty -> Bool) -> container -> Offset ty -> Offset ty -> Offset ty
-revFindIndexPredicate predicate ba startIndex endIndex
-    | endIndex > startIndex = loop (endIndex `offsetMinusE` 1)
-    | otherwise             = endIndex
+revFindIndexPredicate predicate ba startIndex endIndex = loop endIndex
   where
-    loop !i
-        | found          = i
-        | i > startIndex = loop (i `offsetMinusE` 1)
-        | otherwise      = endIndex
-      where found = predicate (index ba i)
+    loop !iplus1
+        | iplus1 <= startIndex   = sentinel
+        | predicate (index ba i) = i
+        | otherwise              = loop i
+      where !i = iplus1 `offsetMinusE` 1
 {-# INLINE revFindIndexPredicate #-}
 
 foldl :: Indexable container ty => (a -> ty -> a) -> a -> container -> Offset ty -> Offset ty -> a

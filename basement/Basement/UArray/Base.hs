@@ -295,16 +295,15 @@ onBackendPure :: (Block ty -> a)
 onBackendPure goBA goAddr arr = onBackend goBA (\_ -> pureST . goAddr) arr
 {-# INLINE onBackendPure #-}
 
-onBackendPure' :: PrimType  ty
+onBackendPure' :: forall ty a . PrimType  ty
                => UArray ty
                -> (forall container. Alg.Indexable container ty 
                    => container -> Offset ty -> Offset ty -> a)
                -> a
-onBackendPure' arr f = onBackendPure (\c -> f c start end) 
-                                     (\c -> f c start end) arr
-  where !len = length arr
-        !start = offset arr
-        !end = start `offsetPlusE` len
+onBackendPure' arr f = onBackendPure f' f' arr
+  where f' :: Alg.Indexable container ty => container -> a
+        f' c = f c start end
+          where (ValidRange !start !end) = offsetsValidRange arr
 {-# INLINE onBackendPure' #-}
 
 onBackendPrim :: PrimMonad prim

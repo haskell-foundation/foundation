@@ -17,6 +17,7 @@ module Basement.Types.OffsetSize
     ( FileSize(..)
     , Offset(..)
     , Offset8
+    , sentinel
     , offsetOfE
     , offsetPlusE
     , offsetMinusE
@@ -85,6 +86,8 @@ type Offset8 = Offset Word8
 -- Trying to bring some sanity by a lightweight wrapping.
 newtype Offset ty = Offset Int
     deriving (Show,Eq,Ord,Enum,Additive,Typeable,Integral,Prelude.Num)
+
+sentinel = Offset (-1)
 
 instance IsIntegral (Offset ty) where
     toInteger (Offset i) = toInteger i

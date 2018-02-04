@@ -281,12 +281,11 @@ break predicate blk = findBreak 0
 
 breakEnd :: PrimType ty => (ty -> Bool) -> Block ty -> (Block ty, Block ty)
 breakEnd predicate blk
-    | k == end  = (blk, mempty)
-    | otherwise = splitAt (offsetAsSize (k+1)) blk
+    | k == sentinel = (blk, mempty)
+    | otherwise     = splitAt (offsetAsSize (k+1)) blk
   where
-    k = Alg.revFindIndexPredicate predicate blk 0 end
-    end = 0 `offsetPlusE` len
-    !len = length blk
+    !k = Alg.revFindIndexPredicate predicate blk 0 end
+    !end = sizeAsOffset $ length blk
 {-# SPECIALIZE [2] breakEnd :: (Word8 -> Bool) -> Block Word8 -> (Block Word8, Block Word8) #-}
 
 span :: PrimType ty => (ty -> Bool) -> Block ty -> (Block ty, Block ty)
