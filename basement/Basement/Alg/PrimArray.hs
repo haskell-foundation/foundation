@@ -1,11 +1,11 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE MagicHash                  #-}
 module Basement.Alg.PrimArray
-    ( Indexable, index
-    , findIndexElem
+    ( findIndexElem
     , revFindIndexElem
     , findIndexPredicate
     , revFindIndexPredicate
+    , elem
     , foldl
     , foldr
     , foldl1
@@ -16,6 +16,7 @@ module Basement.Alg.PrimArray
 
 import           GHC.Types
 import           GHC.Prim
+import           Data.Maybe
 import           Basement.Alg.Class
 import           Basement.Compat.Base
 import           Basement.Numerical.Additive
@@ -24,45 +25,57 @@ import           Basement.Types.OffsetSize
 import           Basement.PrimType
 import           Basement.Monad
 
-findIndexElem :: (Indexable container ty, Eq ty) => ty -> container -> Offset ty -> Offset ty -> Offset ty
+findIndexElem :: (Indexable container ty, Eq ty) 
+              => ty -> container -> Offset ty -> Offset ty 
+              -> Maybe (Offset ty)
 findIndexElem ty ba startIndex endIndex = loop startIndex
   where
     loop !i
-        | i < endIndex && t /= ty = loop (i+1)
-        | otherwise               = i
+        | i == endIndex = Nothing
+        | t == ty       = Just (i `offsetSub` startIndex)
+        | otherwise     = loop (i+1)
       where t = index ba i
 {-# INLINE findIndexElem #-}
 
-revFindIndexElem :: (Indexable container ty, Eq ty) => ty -> container -> Offset ty -> Offset ty -> Offset ty
-revFindIndexElem ty ba startIndex endIndex
-    | endIndex > startIndex = loop (endIndex `offsetMinusE` 1)
-    | otherwise             = endIndex
+elem :: (Indexable container ty, Eq ty) 
+     => ty -> container -> Offset ty -> Offset ty 
+     -> Bool
+elem ty ba startIndex endIndex = isJust $ findIndexElem ty ba startIndex endIndex
+{-# INLINE elem #-}
+
+revFindIndexElem :: (Indexable container ty, Eq ty) 
+                 => ty -> container -> Offset ty -> Offset ty 
+                 -> Maybe (Offset ty)
+revFindIndexElem ty ba startIndex endIndex = loop (endIndex `offsetMinusE` 1)
   where
     loop !i
-        | t == ty        = i
-        | i > startIndex = loop (i `offsetMinusE` 1)
-        | otherwise      = endIndex
+        | i < startIndex = Nothing
+        | t == ty        = Just (i `offsetSub` startIndex)
+        | otherwise      = loop (i `offsetMinusE` 1)
       where t = index ba i
 {-# INLINE revFindIndexElem #-}
 
-findIndexPredicate :: Indexable container ty => (ty -> Bool) -> container -> Offset ty -> Offset ty -> Offset ty
+findIndexPredicate :: Indexable container ty 
+                   => (ty -> Bool) -> container -> Offset ty -> Offset ty 
+                   -> Maybe (Offset ty)
 findIndexPredicate predicate ba !startIndex !endIndex = loop startIndex
   where
     loop !i
-        | i < endIndex && not found = loop (i+1)
-        | otherwise                 = i
+        | i == endIndex = Nothing
+        | found         = Just (i `offsetSub` startIndex)
+        | otherwise     = loop (i+1)
       where found = predicate (index ba i)
 {-# INLINE findIndexPredicate #-}
 
-revFindIndexPredicate :: Indexable container ty => (ty -> Bool) -> container -> Offset ty -> Offset ty -> Offset ty
-revFindIndexPredicate predicate ba startIndex endIndex
-    | endIndex > startIndex = loop (endIndex `offsetMinusE` 1)
-    | otherwise             = endIndex
+revFindIndexPredicate :: Indexable container ty 
+                      => (ty -> Bool) -> container -> Offset ty -> Offset ty 
+                      -> Maybe (Offset ty)
+revFindIndexPredicate predicate ba startIndex endIndex = loop (endIndex `offsetMinusE` 1)
   where
     loop !i
-        | found          = i
-        | i > startIndex = loop (i `offsetMinusE` 1)
-        | otherwise      = endIndex
+        | i < startIndex = Nothing
+        | found          = Just (i `offsetSub` startIndex)
+        | otherwise      = loop (i `offsetMinusE` 1)
       where found = predicate (index ba i)
 {-# INLINE revFindIndexPredicate #-}
 

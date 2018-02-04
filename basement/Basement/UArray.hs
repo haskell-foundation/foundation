@@ -391,15 +391,11 @@ splitAt nbElems arr@(UArray start len backend)
 
 
 breakElem :: PrimType ty => ty -> UArray ty -> (UArray ty, UArray ty)
-breakElem !ty arr@(UArray start len backend)
--- TODO: return Maybe k
-    | k == end   = (arr, empty)
-    | k == start = (empty, arr)
-    | otherwise  = ( UArray start (offsetAsSize k `sizeSub` offsetAsSize start) backend
-                   , UArray k     (len `sizeSub` (offsetAsSize k `sizeSub` offsetAsSize start)) backend)
-  where
-    !end = start `offsetPlusE` len
-    !k = onBackendPure' arr $ Alg.findIndexElem ty
+breakElem !ty arr@(UArray start len backend) = case onBackendPure' arr $ Alg.findIndexElem ty of
+    Nothing -> (arr, empty)
+    Just 0  -> (empty, arr)
+    Just k  -> ( UArray start     (offsetAsSize k) backend
+               , UArray (start+k) (len `sizeSub` (offsetAsSize k)) backend)
 {-# NOINLINE [3] breakElem #-}
 {-# RULES "breakElem Word8" [4] breakElem = breakElemByte #-}
 {-# SPECIALIZE [3] breakElem :: Word32 -> UArray Word32 -> (UArray Word32, UArray Word32) #-}
@@ -493,36 +489,17 @@ sub (UArray start len backend) startIdx expectedEndIdx
     endIdx = min expectedEndIdx (0 `offsetPlusE` len)
 
 findIndex :: PrimType ty => ty -> UArray ty -> Maybe (Offset ty)
-findIndex ty arr
--- TODO: check for end could be done in algorithm
-    | k == end  = Nothing
-    | otherwise = Just (k `offsetSub` start)
-  where
-    !k = onBackendPure' arr $ Alg.findIndexElem ty
-    !start = offset arr
-    !end = start `offsetPlusE` length arr
+findIndex ty arr = onBackendPure' arr $ Alg.findIndexElem ty
 {-# SPECIALIZE [3] findIndex :: Word8 -> UArray Word8 -> Maybe (Offset Word8) #-}
 
 revFindIndex :: PrimType ty => ty -> UArray ty -> Maybe (Offset ty)
-revFindIndex ty arr
--- TODO: check for end could be done in algorithm
-    | k == end  = Nothing
-    | otherwise = Just (k `offsetSub` start)
-  where
-    !k = onBackendPure' arr $ Alg.revFindIndexElem ty
-    !start = offset arr
-    !end = start `offsetPlusE` length arr
+revFindIndex ty arr = onBackendPure' arr $ Alg.revFindIndexElem ty
 {-# SPECIALIZE [3] revFindIndex :: Word8 -> UArray Word8 -> Maybe (Offset Word8) #-}
 
 break :: forall ty . PrimType ty => (ty -> Bool) -> UArray ty -> (UArray ty, UArray ty)
-break predicate arr
--- TODO2: check for end could be done in algorithm? but maybe more ops are involved
-    | k == end  = (arr, mempty)
-    | otherwise = splitAt (offsetAsSize (k `offsetSub` start)) arr
-  where
-    !k = onBackendPure' arr $ Alg.findIndexPredicate predicate
-    !start = offset arr
-    !end = start `offsetPlusE` length arr
+break predicate arr = case onBackendPure' arr $ Alg.findIndexPredicate predicate of
+    Nothing -> (arr, mempty)
+    Just k  -> splitAt (offsetAsSize k) arr
 
 {-
 {-# SPECIALIZE [3] findIndex :: Word8 -> UArray Word8 -> Maybe (Offset Word8) #-}
@@ -554,23 +531,13 @@ break predicate arr
 -- > breakEnd (> 0) [1,2,3,0,0,0]
 -- ([1,2,3], [0,0,0])
 breakEnd :: forall ty . PrimType ty => (ty -> Bool) -> UArray ty -> (UArray ty, UArray ty)
-breakEnd predicate arr
--- TODO2: check for end could be done in algorithm? but maybe more ops are involved
-    | k == end  = (arr, mempty)
-    | otherwise = splitAt (offsetAsSize (k+1) `sizeSub` offsetAsSize start) arr
-  where
-    !k = onBackendPure' arr $ Alg.revFindIndexPredicate predicate
-    !start = offset arr
-    !end   = start `offsetPlusE` length arr
+breakEnd predicate arr = case onBackendPure' arr $ Alg.revFindIndexPredicate predicate of
+    Nothing -> (arr, mempty)
+    Just k  -> splitAt (offsetAsSize k + 1) arr
 {-# SPECIALIZE [3] breakEnd :: (Word8 -> Bool) -> UArray Word8 -> (UArray Word8, UArray Word8) #-}
 
 elem :: PrimType ty => ty -> UArray ty -> Bool
---elem !ty arr = onBackendPure goBa goAddr arr /= end
--- check for end could be done in algorithm? isNothing?
-elem !ty arr = onBackendPure' arr (Alg.findIndexElem ty) /= end
-  where
-    !start = offset arr
-    !end = start `offsetPlusE` length arr
+elem !ty arr = onBackendPure' arr $ Alg.elem ty
 {-# SPECIALIZE [2] elem :: Word8 -> UArray Word8 -> Bool #-}
 
 intersperse :: forall ty . PrimType ty => ty -> UArray ty -> UArray ty
