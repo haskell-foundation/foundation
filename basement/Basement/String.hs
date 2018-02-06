@@ -1318,66 +1318,38 @@ decimalDigitsPtr startAcc ptr !endOfs !startOfs = loop startAcc startOfs
 {-# SPECIALIZE decimalDigitsPtr :: Int -> Ptr Word8 -> Offset Word8 -> Offset Word8 -> (# Int, Bool, Offset Word8 #) #-}
 {-# SPECIALIZE decimalDigitsPtr :: Word -> Ptr Word8 -> Offset Word8 -> Offset Word8 -> (# Word, Bool, Offset Word8 #) #-}
 
--- | A unicode string size may vary during a case conversion operation.
---   This function calculates the new buffer size for a case conversion.
---   Returns Nothing if no case conversion is needed.
-caseConvertNBuff :: (Char -> CM) -> String -> Maybe (CountOf Word8)
-caseConvertNBuff op s@(String arr) = C.onBackendPure goContainer goContainer arr
-  where
-    !(C.ValidRange start end) = C.offsetsValidRange arr
-    eSize !e = if e == '\0' then 0 else charToBytes (fromEnum e)
-    {-# INLINE eSize #-}
-    goContainer :: (Indexable container Word8) => container -> Maybe (CountOf Word8)
-    goContainer ba = loop start 0 False
-      where
-        loop !idx !ns !changed
-            | idx == end = if changed
-                              then Just ns
-                              else Nothing
-            | otherwise = do
-                let !(Step c idx') = UTF8.next ba idx
-                    !(CM c1 c2 c3) = op c 
-                    !cSize = if c2 == '\0' -- if c2 is empty, c3 will be empty as well.
-                                then charToBytes (fromEnum c1) 
-                                else eSize c1 + eSize c2 + eSize c3
-                    !nchanged = changed || c1 /= c || c2 /= '\0'
-                loop idx' (ns + cSize) nchanged
-
 -- | Convert a 'String' 'Char' by 'Char' using a case mapping function. 
 caseConvert :: (Char -> CM) -> String -> String
-caseConvert op s@(String arr) = case nBuff of
-      Nothing -> s
-      Just nLen -> runST $ do
-          ((), dst) <- newNative nLen $ \mba ->
+caseConvert op s@(String arr) = runST $ do
+          ((nL), dst) <- newNative (nLen * 3) $ \mba ->
                   C.onBackendPrim
                         (\blk  -> goBlk mba blk (Offset 0) start)
                         (\fptr -> withFinalPtr fptr $ \ptr -> goBlk mba ptr (Offset 0) start)
                         arr
-          freeze dst
+          unsafeFreezeShrink dst nL
   where
     !(C.ValidRange start end) = C.offsetsValidRange arr
-    !nBuff = caseConvertNBuff op s
-    goBlk :: (Indexable container Word8, PrimMonad prim) => MutableBlock Word8 (PrimState prim) -> container -> Offset Word8 -> Offset Word8 -> prim ()
-    goBlk !dst !src = loop
+    !nLen = C.length arr
+    goBlk :: (Indexable container Word8, PrimMonad prim) => MutableBlock Word8 (PrimState prim) -> container -> Offset Word8 -> Offset Word8 -> prim (CountOf Word8)
+    goBlk !dst !src = loop 0
       where
-        loop !dstIdx !srcIdx
-          | srcIdx == end = return ()
+        eSize !e = if e == '\0' then 0 else charToBytes (fromEnum e)
+        loop !nLen !dstIdx !srcIdx
+          | srcIdx == end = return nLen
           | otherwise = do
               let !(CM c1 c2 c3) = op c 
                   !(Step c nextSrcIdx) = UTF8.next src srcIdx
+                  !cSize = if c2 == '\0' -- if c2 is empty, c3 will be empty as well.
+                             then charToBytes (fromEnum c1) 
+                             else eSize c1 + eSize c2 + eSize c3
               !dstIdx <- UTF8.writeUTF8 dst dstIdx c1
               nextDstIdx <- 
                 if c2 == '\0' -- We don't want to check C3 if C2 is empty.
                   then return dstIdx
                   else do
-                    dstIdx  <- writeValidChar c2 dstIdx
-                    writeValidChar c3 dstIdx
-              loop nextDstIdx nextSrcIdx
-        writeValidChar !cc !wIdx =
-            if cc == '\0'
-                then return wIdx 
-                else UTF8.writeUTF8 dst wIdx cc
-        {-# INLINE writeValidChar #-}
+                    dstIdx  <- UTF8.writeUTF8 dst dstIdx c2
+                    if c3 == '\0' then return dstIdx else UTF8.writeUTF8 dst dstIdx c3 -- is there any C3
+              loop (nLen + cSize) nextDstIdx nextSrcIdx
 
 -- | Convert a 'String' to the upper-case equivalent.
 upper :: String -> String

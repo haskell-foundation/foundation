@@ -203,6 +203,10 @@ instance Subtractive (CountOf ty) where
     (CountOf a) - (CountOf b) | a >= b    = Just . CountOf $ a - b
                               | otherwise = Nothing
 
+instance Multiplicative (CountOf ty) where
+    midentity = CountOf 1
+    (*) (CountOf a) (CountOf b) = CountOf (a * b)
+
 instance Semigroup (CountOf ty) where
     (<>) = (+)
 
