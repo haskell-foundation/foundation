@@ -273,8 +273,10 @@ testCheckPlan name actions = do
         then return (GroupResult name 0 (planValidations st) [])
         else do
             displayCurrent name
-            forM_ fails $ \f ->
-                liftIO $ putStrLn $ show f
+            forM_ fails $ \(PropertyResult name' nb r) ->
+                case r of
+                    PropertySuccess  -> whenVerbose $ displayPropertySucceed (name <> ": " <> name') nb
+                    PropertyFailed w -> whenErrorOnly $ displayPropertyFailed (name <> ": " <> name') nb w
             return (GroupResult name (length fails) (planValidations st) fails)
 
 testProperty :: String -> Property -> CheckMain TestResult
