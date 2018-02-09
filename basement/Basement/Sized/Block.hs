@@ -19,6 +19,8 @@ module Basement.Sized.Block
     , lengthBytes
     , toBlockN
     , toBlock
+    , new
+    , newPinned
     , singleton
     , replicate
     , thaw
@@ -43,6 +45,7 @@ module Basement.Sized.Block
     , intersperse
     , withPtr
     , withMutablePtr
+    , withMutablePtrHint
     , cast
     , mutableCast
     ) where
@@ -52,7 +55,7 @@ import           Basement.Compat.Base
 import           Basement.Numerical.Additive (scale)
 import           Basement.Block (Block, MutableBlock(..), unsafeIndex)
 import qualified Basement.Block as B
-import qualified Basement.Block.Base as B (withMutablePtr, unsafeRecast)
+import qualified Basement.Block.Base as B
 import           Basement.Monad (PrimMonad, PrimState)
 import           Basement.Nat
 import           Basement.Types.OffsetSize
@@ -62,7 +65,7 @@ import           Basement.PrimType (PrimType, PrimSize, primSizeInBytes)
 -- | Sized version of 'Block'
 --
 newtype BlockN (n :: Nat) a = BlockN { unBlock :: Block a }
-  deriving (NormalForm, Eq, Show, Data)
+  deriving (NormalForm, Eq, Show, Data, Ord)
 
 newtype MutableBlockN (n :: Nat) ty st = MutableBlockN { unMBlock :: MutableBlock ty st }
 
@@ -107,6 +110,21 @@ mutableCast :: forall n m a b st
             => MutableBlockN n a st
             -> MutableBlockN m b st
 mutableCast (MutableBlockN b) = MutableBlockN (B.unsafeRecast b)
+
+-- | Create a new unpinned mutable block of a specific N size of 'ty' elements
+--
+-- If the size exceeds a GHC-defined threshold, then the memory will be
+-- pinned. To be certain about pinning status with small size, use 'newPinned'
+new :: forall n ty prim
+     . (PrimType ty, KnownNat n, Countable ty n, PrimMonad prim)
+    => prim (MutableBlockN n ty (PrimState prim))
+new = MutableBlockN <$> B.new (toCount @n)
+
+-- | Create a new pinned mutable block of a specific N size of 'ty' elements
+newPinned :: forall n ty prim
+           . (PrimType ty, KnownNat n, Countable ty n, PrimMonad prim)
+          => prim (MutableBlockN n ty (PrimState prim))
+newPinned = MutableBlockN <$> B.newPinned (toCount @n)
 
 singleton :: PrimType ty => ty -> BlockN 1 ty
 singleton a = BlockN (B.singleton a)
@@ -227,3 +245,32 @@ withMutablePtr :: (PrimMonad prim, KnownNat n)
                -> (Ptr ty -> prim a)
                -> prim a
 withMutablePtr mb = B.withMutablePtr (unMBlock mb)
+
+-- | Same as 'withMutablePtr' but allow to specify 2 optimisations
+-- which is only useful when the MutableBlock is unpinned and need
+-- a pinned trampoline to be called safely.
+--
+-- If skipCopy is True, then the first copy which happen before
+-- the call to 'f', is skipped. The Ptr is now effectively
+-- pointing to uninitialized data in a new mutable Block.
+--
+-- If skipCopyBack is True, then the second copy which happen after
+-- the call to 'f', is skipped. Then effectively in the case of a
+-- trampoline being used the memory changed by 'f' will not
+-- be reflected in the original Mutable Block.
+--
+-- If using the wrong parameters, it will lead to difficult to
+-- debug issue of corrupted buffer which only present themselves
+-- with certain Mutable Block that happened to have been allocated
+-- unpinned.
+--
+-- If unsure use 'withMutablePtr', which default to *not* skip
+-- any copy.
+withMutablePtrHint :: forall n ty prim a . (PrimMonad prim, KnownNat n)
+                   => Bool -- ^ hint that the buffer doesn't need to have the same value as the mutable block when calling f
+                   -> Bool -- ^ hint that the buffer is not supposed to be modified by call of f
+                   -> MutableBlockN n ty (PrimState prim)
+                   -> (Ptr ty -> prim a)
+                   -> prim a
+withMutablePtrHint skipCopy skipCopyBack (MutableBlockN mb) f =
+    B.withMutablePtrHint skipCopy skipCopyBack mb f
