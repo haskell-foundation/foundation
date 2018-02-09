@@ -25,7 +25,6 @@ import Prelude (fromIntegral, read)
 import qualified Text.Printf as Base
 import Data.Char (isHexDigit, isDigit)
 import Numeric (readHex)
-import Control.Monad (when)
 
 import Foundation.Class.Storable
 import Foundation.Hashing.Hashable

@@ -34,7 +34,6 @@ import           Foundation.List.DList
 import           Foundation.Random
 import           Foundation.Monad
 import           Foundation.Monad.State
-import           Control.Monad (when)
 import           Data.Maybe (catMaybes)
 
 nbFail :: TestResult -> HasFailures

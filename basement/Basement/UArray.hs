@@ -106,7 +106,6 @@ module Basement.UArray
     , toBase64Internal
     ) where
 
-import           Control.Monad (when)
 import           GHC.Prim
 import           GHC.Types
 import           GHC.Word
