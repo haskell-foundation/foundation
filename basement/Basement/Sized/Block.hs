@@ -41,18 +41,20 @@ module Basement.Sized.Block
     , intersperse
     , withPtr
     , withMutablePtr
+    , cast
+    , mutableCast
     ) where
 
 import           Data.Proxy (Proxy(..))
 import           Basement.Compat.Base
 import           Basement.Block (Block, MutableBlock(..), unsafeIndex)
 import qualified Basement.Block as B
-import qualified Basement.Block.Base as B (withMutablePtr)
+import qualified Basement.Block.Base as B (withMutablePtr, unsafeRecast)
 import           Basement.Monad (PrimMonad, PrimState)
 import           Basement.Nat
 import           Basement.Types.OffsetSize
 import           Basement.NormalForm
-import           Basement.PrimType (PrimType)
+import           Basement.PrimType (PrimType, PrimSize)
 
 newtype BlockN (n :: Nat) a = BlockN { unBlock :: Block a } deriving (NormalForm, Eq, Show)
 
@@ -67,6 +69,24 @@ toBlockN b
 
 toBlock :: BlockN n ty -> Block ty
 toBlock = unBlock
+
+cast :: forall n m a b
+      . ( PrimType a, PrimType b
+        , KnownNat n, KnownNat m
+        , ((PrimSize b) * m) ~ ((PrimSize a) * n)
+        )
+      => BlockN n a
+      -> BlockN m b
+cast (BlockN b) = BlockN (B.unsafeCast b)
+
+mutableCast :: forall n m a b st
+             . ( PrimType a, PrimType b
+             , KnownNat n, KnownNat m
+             , ((PrimSize b) * m) ~ ((PrimSize a) * n)
+             )
+            => MutableBlockN n a st
+            -> MutableBlockN m b st
+mutableCast (MutableBlockN b) = MutableBlockN (B.unsafeRecast b)
 
 singleton :: PrimType ty => ty -> BlockN 1 ty
 singleton a = BlockN (B.singleton a)

@@ -5,6 +5,7 @@
 {-# LANGUAGE CPP                   #-}
 {-# LANGUAGE MagicHash             #-}
 {-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE TypeOperators         #-}
 -- |
 -- Module      : Basement.From
 -- License     : BSD-style
@@ -50,7 +51,7 @@ import           Basement.Types.Word256 (Word256(..))
 import qualified Basement.Types.Word128 as Word128
 import qualified Basement.Types.Word256 as Word256
 import           Basement.These
-import           Basement.PrimType (PrimType)
+import           Basement.PrimType (PrimType, PrimSize)
 import           Basement.Types.OffsetSize
 import           Basement.Compat.Natural
 import qualified Prelude (fromIntegral)
@@ -247,6 +248,9 @@ instance TryFrom (UArray.UArray Word8) String.String where
 #if __GLASGOW_HASKELL__ >= 800
 instance From (BlockN.BlockN n ty) (Block.Block ty) where
     from = BlockN.toBlock
+instance (PrimType a, PrimType b, KnownNat n, KnownNat m, ((PrimSize b) Basement.Nat.* m) ~ ((PrimSize a) Basement.Nat.* n))
+      => From (BlockN.BlockN n a) (BlockN.BlockN m b) where
+    from = BlockN.cast
 instance (NatWithinBound Int n, PrimType ty) => From (BlockN.BlockN n ty) (UArray.UArray ty) where
     from = UArray.fromBlock . BlockN.toBlock
 instance (NatWithinBound Int n, PrimType ty) => From (BlockN.BlockN n ty) (BoxArray.Array ty) where
