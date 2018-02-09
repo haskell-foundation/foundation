@@ -386,7 +386,7 @@ unsafeWrite (MutableBlock mba) i v = primMbaWrite mba i v
 -- to use to modify the contents
 --
 -- If the Block is pinned, then its address is returned as is,
--- however if it's unpinned, a pinned copy of the UArray is made
+-- however if it's unpinned, a pinned copy of the Block is made
 -- before getting the address.
 withPtr :: PrimMonad prim
         => Block ty
