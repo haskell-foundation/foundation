@@ -39,18 +39,20 @@ module Basement.Sized.Block
     , reverse
     , sortBy
     , intersperse
+    , withPtr
+    , withMutablePtr
     ) where
 
 import           Data.Proxy (Proxy(..))
 import           Basement.Compat.Base
 import           Basement.Block (Block, MutableBlock(..), unsafeIndex)
 import qualified Basement.Block as B
+import qualified Basement.Block.Base as B (withMutablePtr)
 import           Basement.Monad (PrimMonad, PrimState)
 import           Basement.Nat
 import           Basement.Types.OffsetSize
 import           Basement.NormalForm
 import           Basement.PrimType (PrimType)
-import           Basement.Types.OffsetSize (CountOf(..), Offset(..), offsetSub)
 
 newtype BlockN (n :: Nat) a = BlockN { unBlock :: Block a } deriving (NormalForm, Eq, Show)
 
@@ -155,3 +157,33 @@ toCount = natValCountOf (Proxy @n)
 
 toOffset :: forall n ty . (KnownNat n, Offsetable ty n) => Offset ty
 toOffset = natValOffset (Proxy @n)
+
+-- | Get a Ptr pointing to the data in the Block.
+--
+-- Since a Block is immutable, this Ptr shouldn't be
+-- to use to modify the contents
+--
+-- If the Block is pinned, then its address is returned as is,
+-- however if it's unpinned, a pinned copy of the Block is made
+-- before getting the address.
+withPtr :: (PrimMonad prim, KnownNat n)
+        => BlockN n ty
+        -> (Ptr ty -> prim a)
+        -> prim a
+withPtr b = B.withPtr (unBlock b)
+
+-- | Create a pointer on the beginning of the MutableBlock
+-- and call a function 'f'.
+--
+-- The mutable block can be mutated by the 'f' function
+-- and the change will be reflected in the mutable block
+--
+-- If the mutable block is unpinned, a trampoline buffer
+-- is created and the data is only copied when 'f' return.
+--
+-- it is all-in-all highly inefficient as this cause 2 copies
+withMutablePtr :: (PrimMonad prim, KnownNat n)
+               => MutableBlockN n ty (PrimState prim)
+               -> (Ptr ty -> prim a)
+               -> prim a
+withMutablePtr mb = B.withMutablePtr (unMBlock mb)
