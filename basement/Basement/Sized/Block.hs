@@ -15,6 +15,8 @@
 module Basement.Sized.Block
     ( BlockN
     , MutableBlockN
+    , length
+    , lengthBytes
     , toBlockN
     , toBlock
     , singleton
@@ -47,6 +49,7 @@ module Basement.Sized.Block
 
 import           Data.Proxy (Proxy(..))
 import           Basement.Compat.Base
+import           Basement.Numerical.Additive (scale)
 import           Basement.Block (Block, MutableBlock(..), unsafeIndex)
 import qualified Basement.Block as B
 import qualified Basement.Block.Base as B (withMutablePtr, unsafeRecast)
@@ -54,9 +57,12 @@ import           Basement.Monad (PrimMonad, PrimState)
 import           Basement.Nat
 import           Basement.Types.OffsetSize
 import           Basement.NormalForm
-import           Basement.PrimType (PrimType, PrimSize)
+import           Basement.PrimType (PrimType, PrimSize, primSizeInBytes)
 
-newtype BlockN (n :: Nat) a = BlockN { unBlock :: Block a } deriving (NormalForm, Eq, Show)
+-- | Sized version of 'Block'
+--
+newtype BlockN (n :: Nat) a = BlockN { unBlock :: Block a }
+  deriving (NormalForm, Eq, Show, Data)
 
 newtype MutableBlockN (n :: Nat) ty st = MutableBlockN { unMBlock :: MutableBlock ty st }
 
@@ -66,6 +72,20 @@ toBlockN b
     | otherwise = Nothing
   where
     expected = toCount @n
+
+length :: forall n ty
+        . (KnownNat n, Countable ty n)
+       => BlockN n ty
+       -> CountOf ty
+length _ = toCount @n
+
+lengthBytes :: forall n ty
+             . (PrimType ty, KnownNat n, Countable ty n)
+            => BlockN n ty
+            -> CountOf Word8
+lengthBytes b = scale bytes (sizeCast Proxy (length b))
+  where
+    bytes = primSizeInBytes (Proxy @ty)
 
 toBlock :: BlockN n ty -> Block ty
 toBlock = unBlock
