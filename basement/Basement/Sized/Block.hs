@@ -83,12 +83,10 @@ length :: forall n ty
 length _ = toCount @n
 
 lengthBytes :: forall n ty
-             . (PrimType ty, KnownNat n, Countable ty n)
+             . PrimType ty
             => BlockN n ty
             -> CountOf Word8
-lengthBytes b = scale bytes (sizeCast Proxy (length b))
-  where
-    bytes = primSizeInBytes (Proxy @ty)
+lengthBytes = B.lengthBytes . unBlock
 
 toBlock :: BlockN n ty -> Block ty
 toBlock = unBlock
