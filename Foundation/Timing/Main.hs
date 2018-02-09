@@ -14,7 +14,6 @@ module Foundation.Timing.Main
 import           Basement.Imports
 import           Foundation.IO.Terminal
 import           Foundation.Collection
-import           Control.Monad (when)
 
 data MainConfig = MainConfig
     { mainHelp       :: Bool

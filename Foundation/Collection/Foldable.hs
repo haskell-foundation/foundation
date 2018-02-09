@@ -7,6 +7,14 @@
 --
 -- A mono-morphic re-thinking of the Foldable class
 --
+
+{-# LANGUAGE CPP                   #-}
+
+#if MIN_VERSION_base(4,9,0)
+{-# LANGUAGE DataKinds     #-}
+{-# LANGUAGE TypeOperators #-}
+#endif
+
 module Foundation.Collection.Foldable
     ( Foldable(..)
     , Fold1able(..)
@@ -15,10 +23,16 @@ module Foundation.Collection.Foldable
 import           Basement.Compat.Base
 import           Foundation.Collection.Element
 import           Basement.NonEmpty
+import           Basement.Nat
 import qualified Data.List
 import qualified Basement.UArray as UV
 import qualified Basement.Block as BLK
 import qualified Basement.BoxedArray as BA
+
+#if MIN_VERSION_base(4,9,0)
+import qualified Basement.Sized.List as LN
+import qualified Basement.Sized.Block as BLKN
+#endif
 
 -- | Give the ability to fold a collection on itself
 class Foldable collection where
@@ -74,12 +88,22 @@ instance UV.PrimType ty => Foldable (BLK.Block ty) where
     foldr = BLK.foldr
     foldl' = BLK.foldl'
 
+#if MIN_VERSION_base(4,9,0)
+instance Foldable (LN.ListN n a) where
+    foldr = LN.foldr
+    foldl' = LN.foldl'
+instance UV.PrimType ty => Foldable (BLKN.BlockN n ty) where
+    foldr = BLKN.foldr
+    foldl' = BLKN.foldl'
+#endif
+
 ----------------------------
 -- Fold1able instances
 ----------------------------
+
 instance Fold1able [a] where
-  foldr1 f  = Data.List.foldr1 f . getNonEmpty
-  foldl1' f = Data.List.foldl1' f . getNonEmpty
+    foldr1  f = Data.List.foldr1  f . getNonEmpty
+    foldl1' f = Data.List.foldl1' f . getNonEmpty
 
 instance UV.PrimType ty => Fold1able (UV.UArray ty) where
     foldr1 = UV.foldr1
@@ -90,3 +114,9 @@ instance Fold1able (BA.Array ty) where
 instance UV.PrimType ty => Fold1able (BLK.Block ty) where
     foldr1  = BLK.foldr1
     foldl1' = BLK.foldl1'
+
+#if MIN_VERSION_base(4,9,0)
+instance (1 <= n) => Fold1able (LN.ListN n a) where
+    foldr1  f = LN.foldr1  f . getNonEmpty
+    foldl1' f = LN.foldl1' f . getNonEmpty
+#endif

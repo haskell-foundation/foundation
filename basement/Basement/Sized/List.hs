@@ -47,6 +47,7 @@ module Basement.Sized.List
     , scanl'
     , scanl1'
     , foldr
+    , foldr1
     , reverse
     , append
     , minimum
@@ -277,6 +278,10 @@ foldl1' f (ListN l) = Data.List.foldl1' f l
 -- | Fold all elements from right
 foldr :: (a -> b -> b) -> b -> ListN n a -> b
 foldr f acc (ListN l) = Prelude.foldr f acc l
+
+-- | Fold all elements from right assuming at least one element is in the list.
+foldr1 :: (1 <= n) => (a -> a -> a) -> ListN n a -> a
+foldr1 f (ListN l) = Prelude.foldr1 f l
 
 -- | 'scanl' is similar to 'foldl', but returns a list of successive
 -- reduced values from the left

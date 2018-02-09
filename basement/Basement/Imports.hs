@@ -36,6 +36,8 @@ module Basement.Imports
     , Prelude.Functor (..)
     , Control.Applicative.Applicative (..)
     , Prelude.Monad (..)
+    , Control.Monad.when
+    , Control.Monad.unless
     , Prelude.Maybe (..)
     , Prelude.Ordering (..)
     , Prelude.Bool (..)
@@ -87,6 +89,7 @@ import qualified Prelude
 import qualified Control.Category
 import qualified Control.Applicative
 import qualified Control.Exception
+import qualified Control.Monad
 import qualified Data.Monoid
 import qualified Data.Data
 import qualified Data.Typeable

@@ -9,7 +9,6 @@ module Foundation.UUID
     , uuidParser
     ) where
 
-import Control.Monad (unless)
 import Data.Maybe (fromMaybe)
 
 import           Basement.Compat.Base
