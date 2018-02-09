@@ -17,11 +17,15 @@ import Basement.String (String)
 import Basement.Types.AsciiString (AsciiString)
 import Basement.Types.Char7 (Char7)
 import Basement.NonEmpty
+import Basement.Sized.Block (BlockN)
+import Basement.Sized.List  (ListN)
 
 -- | Element type of a collection
 type family Element container
 type instance Element [a] = a
+type instance Element (ListN n a) = a
 type instance Element (Block ty) = ty
+type instance Element (BlockN n ty) = ty
 type instance Element (UArray ty) = ty
 type instance Element (Array ty) = ty
 type instance Element String = Char
