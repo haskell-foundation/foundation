@@ -469,13 +469,11 @@ withMutablePtrHint skipCopy skipCopyBack mb f
     | isMutablePinned mb == Pinned = callWithPtr mb
     | otherwise                    = do
         trampoline <- unsafeNew Pinned vecSz
-        if not skipCopy
-            then unsafeCopyBytes trampoline 0 mb 0 vecSz
-            else pure ()
+        unless skipCopy $
+            unsafeCopyBytes trampoline 0 mb 0 vecSz
         r <- callWithPtr trampoline
-        if not skipCopyBack
-            then unsafeCopyBytes mb 0 trampoline 0 vecSz
-            else pure ()
+        unless skipCopyBack $
+            unsafeCopyBytes mb 0 trampoline 0 vecSz
         pure r
   where
     vecSz = mutableLengthBytes mb
