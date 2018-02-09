@@ -11,6 +11,7 @@ module Foundation.Collection.Indexed
     ) where
 
 import           Basement.Compat.Base
+import           Basement.Numerical.Additive ((+))
 import           Basement.Types.OffsetSize
 import           Foundation.Collection.Element
 import qualified Data.List
@@ -36,14 +37,14 @@ instance IndexedCollection [a] where
 instance UV.PrimType ty => IndexedCollection (BLK.Block ty) where
     (!) l n
         | A.isOutOfBound n (BLK.length l) = Nothing
-        | otherwise                           = Just $ BLK.index l n
+        | otherwise                       = Just $ BLK.index l n
     findIndex predicate c = loop 0
       where
         !len = BLK.length c
         loop i
             | i .==# len                      = Nothing
             | predicate (BLK.unsafeIndex c i) = Just i
-            | otherwise                       = Nothing
+            | otherwise                       = loop (i + 1)
 
 instance UV.PrimType ty => IndexedCollection (UV.UArray ty) where
     (!) l n
