@@ -12,6 +12,12 @@ module Basement.Types.Word128
     , bitwiseAnd
     , bitwiseOr
     , bitwiseXor
+    , complement
+    , shiftL
+    , shiftR
+    , rotateL
+    , rotateR
+    , popCount
     , fromNatural
     ) where
 

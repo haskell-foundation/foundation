@@ -23,9 +23,10 @@ source-repository head
 
 library
   hs-source-dirs:    .
-  exposed-modules:   
+  exposed-modules:
                      Basement.Imports
 
+                     Basement.Bits
                      Basement.Base16
                      Basement.Bindings.Memory
                      Basement.Endianness
@@ -58,7 +59,7 @@ library
                      Basement.String
                      Basement.String.Builder
                      Basement.NonEmpty
-                     
+
                      -- Utils
                      Basement.NormalForm
                      Basement.These
