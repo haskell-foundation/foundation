@@ -99,6 +99,7 @@ import qualified Basement.UArray           as Vec
 import qualified Basement.UArray           as C
 import qualified Basement.UArray.Mutable   as MVec
 import           Basement.Block.Mutable (Block(..), MutableBlock(..))
+import qualified Basement.Block.Mutable    as MBLK 
 import           Basement.Compat.Bifunctor
 import           Basement.Compat.Base
 import           Basement.Compat.Natural
@@ -121,7 +122,7 @@ import           Basement.UTF8.Table
 import           Basement.UTF8.Helper
 import           Basement.UTF8.Base
 import           Basement.UTF8.Types
-import           Basement.UArray.Base as C (onBackendPrim, onBackend, onBackendPure, offset, ValidRange(..), offsetsValidRange)
+import           Basement.UArray.Base as C (onBackendPrim, onBackend, onBackendPure, offset, ValidRange(..), offsetsValidRange, MUArray(..), MUArrayBackend(..))
 import           Basement.Alg.Class (Indexable)
 import qualified Basement.Alg.UTF8 as UTF8
 import qualified Basement.Alg.String as Alg
@@ -1321,21 +1322,30 @@ decimalDigitsPtr startAcc ptr !endOfs !startOfs = loop startAcc startOfs
 -- | Convert a 'String' 'Char' by 'Char' using a case mapping function. 
 caseConvert :: (Char -> CM) -> String -> String
 caseConvert op s@(String arr) = runST $ do
-          ((nL), dst) <- newNative (nLen * 3) $ \mba ->
-                  C.onBackendPrim
-                        (\blk  -> goBlk mba blk (Offset 0) start)
-                        (\fptr -> withFinalPtr fptr $ \ptr -> goBlk mba ptr (Offset 0) start)
-                        arr
-          unsafeFreezeShrink dst nL
+  mba <- MBLK.new iLen
+  nL <- C.onBackendPrim
+        (\blk  -> goBlk mba blk (Offset 0) start)
+        (\fptr -> withFinalPtr fptr $ \ptr -> goBlk mba ptr (Offset 0) start)
+        arr
+  freeze . MutableString $ MVec.MUArray 0 nL (C.MUArrayMBA mba)
   where
     !(C.ValidRange start end) = C.offsetsValidRange arr
-    !nLen = C.length arr
-    goBlk :: (Indexable container Word8, PrimMonad prim) => MutableBlock Word8 (PrimState prim) -> container -> Offset Word8 -> Offset Word8 -> prim (CountOf Word8)
-    goBlk !dst !src = loop 0
+    -- We'll assume the worst case scenario for a simple case convert (ie. no additional char)
+    -- which is 4 bytes per character. In case of a special case convert, we'll re-allocate
+    -- a bigger array.
+    !iLen = 1 + (fromInteger $ 4 * (toInteger $ length s))
+    goBlk :: (Indexable container Word8, PrimMonad prim) =>
+             MutableBlock Word8 (PrimState prim) ->
+             container -> 
+             Offset Word8 -> 
+             Offset Word8 -> 
+             prim (CountOf Word8)
+    goBlk !dst !src = loop dst iLen 0
       where
         eSize !e = if e == '\0' then 0 else charToBytes (fromEnum e)
-        loop !nLen !dstIdx !srcIdx
+        loop !dst !allocLen !nLen !dstIdx !srcIdx
           | srcIdx == end = return nLen
+          | nLen == allocLen = realloc allocLen
           | otherwise = do
               let !(CM c1 c2 c3) = op c 
                   !(Step c nextSrcIdx) = UTF8.next src srcIdx
@@ -1349,7 +1359,13 @@ caseConvert op s@(String arr) = runST $ do
                   else do
                     dstIdx  <- UTF8.writeUTF8 dst dstIdx c2
                     if c3 == '\0' then return dstIdx else UTF8.writeUTF8 dst dstIdx c3 -- is there any C3
-              loop (nLen + cSize) nextDstIdx nextSrcIdx
+              loop dst allocLen (nLen + cSize) nextDstIdx nextSrcIdx
+          where  
+            {-# NOINLINE realloc #-}
+            realloc !allocLen = do
+              let allocLen = allocLen + allocLen + 1
+              mba <- MBLK.new allocLen
+              loop mba allocLen nLen dstIdx srcIdx
 
 -- | Convert a 'String' to the upper-case equivalent.
 upper :: String -> String
