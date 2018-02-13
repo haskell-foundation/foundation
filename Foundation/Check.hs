@@ -26,6 +26,7 @@ module Foundation.Check
     , IsProperty(..)
     , (===)
     , propertyCompare
+    , propertyCompareWith
     , propertyAnd
     , propertyFail
     , forAll
