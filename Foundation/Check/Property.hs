@@ -12,6 +12,7 @@ module Foundation.Check.Property
     , forAll
     , (===)
     , propertyCompare
+    , propertyCompareWith
     , propertyAnd
     , propertyFail
     ) where
@@ -92,9 +93,22 @@ propertyCompare :: (Show a, Typeable a)
                 -> a                -- ^ value left of the operator
                 -> a                -- ^ value right of the operator
                 -> PropertyCheck
-propertyCompare name op a b =
-    let sa = pretty a Proxy
-        sb = pretty b Proxy
+propertyCompare name op = propertyCompareWith name op (flip pretty Proxy)
+
+-- | A property that check for a specific comparaison of its 2 members.
+--
+-- This is equivalent to `===` but with `compare` and a given method to
+-- pretty print the values.
+--
+propertyCompareWith :: String           -- ^ name of the function used for comparaison, e.g. (<)
+                    -> (a -> a -> Bool) -- ^ function used for value comparaison
+                    -> (a -> String)    -- ^ function used to pretty print the values
+                    -> a                -- ^ value left of the operator
+                    -> a                -- ^ value right of the operator
+                    -> PropertyCheck
+propertyCompareWith name op display a b =
+    let sa = display a
+        sb = display b
      in PropertyBinaryOp (a `op` b) name sa sb
 
 -- | A conjuctive property composed of 2 properties that need to pass
