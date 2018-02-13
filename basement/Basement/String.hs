@@ -1321,8 +1321,8 @@ decimalDigitsPtr startAcc ptr !endOfs !startOfs = loop startAcc startOfs
 
 -- | Convert a 'String' 'Char' by 'Char' using a case mapping function. 
 caseConvert :: (Char -> CM) -> String -> String
-caseConvert op s@(String arr) = runST $ do
-  mba <- MBLK.new iLen
+caseConvert op s@(String arr) = runST $ do 
+  mba <- MBLK.new (iLen + 1)
   nL <- C.onBackendPrim
         (\blk  -> go mba blk (Offset 0) start)
         (\fptr -> withFinalPtr fptr $ \ptr -> go mba ptr (Offset 0) start)
@@ -1330,9 +1330,7 @@ caseConvert op s@(String arr) = runST $ do
   freeze . MutableString $ MVec.MUArray 0 nL (C.MUArrayMBA mba)
   where
     !(C.ValidRange start end) = C.offsetsValidRange arr
-    -- We'll assume the worst case scenario for a simple case convert (ie. no additional char):
-    -- 4 bytes per character. In case of a special case convert, we'll re-allocate a X2 bigger array.
-    !iLen = 1 + (fromInteger $ 4 * (toInteger $ length s))
+    !iLen = C.length arr
     go :: (Indexable container Word8, PrimMonad prim) =>
              MutableBlock Word8 (PrimState prim) ->
              container -> 
@@ -1348,23 +1346,21 @@ caseConvert op s@(String arr) = runST $ do
           | otherwise = do
               let !(CM c1 c2 c3) = op c 
                   !(Step c nextSrcIdx) = UTF8.next src srcIdx
-              dstIdx <- UTF8.writeUTF8 dst dstIdx c1
-              (nextDstIdx, !cSize) <- 
-                if c2 == '\0' -- We don't want to check C3 if C2 is empty.
-                  then return (dstIdx, charToBytes (fromEnum c1))
-                  else do
-                    let cS = eSize c1 + eSize c2 + eSize c3
-                    dstIdx  <- UTF8.writeUTF8 dst dstIdx c2
-                    ndi <- if c3 == '\0' then return dstIdx else UTF8.writeUTF8 dst dstIdx c3
-                    return (ndi, cS)
-              loop dst allocLen (nLen + cSize) nextDstIdx nextSrcIdx
+              nextDstIdx <- UTF8.writeUTF8 dst dstIdx c1
+              if c2 == '\0' -- We keep the most common case loop as short as possible.
+                then loop dst allocLen (nLen + charToBytes (fromEnum c1)) nextDstIdx nextSrcIdx
+                else do
+                  let !cSize = eSize c1 + eSize c2 + eSize c3
+                  nextDstIdx <- UTF8.writeUTF8 dst nextDstIdx c2
+                  nextDstIdx <- if c3 == '\0' then return nextDstIdx else UTF8.writeUTF8 dst nextDstIdx c3
+                  loop dst allocLen (nLen + cSize) nextDstIdx nextSrcIdx
           where  
             {-# NOINLINE realloc #-}
             realloc !allocLen = do
-              let allocLen = allocLen + allocLen + 1
-              mba <- MBLK.new allocLen
-              MBLK.unsafeCopyElements mba 0 dst 0 nLen
-              loop mba allocLen nLen dstIdx srcIdx
+              let nl = allocLen + allocLen + 1
+              nDst <- MBLK.new nl 
+              MBLK.unsafeCopyElements nDst 0 dst 0 nLen
+              loop nDst nl nLen dstIdx srcIdx
 
 -- | Convert a 'String' to the upper-case equivalent.
 upper :: String -> String
