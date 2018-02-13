@@ -79,6 +79,7 @@ module Basement.String
     , readFloatingExact
     , upper
     , lower
+    , caseFold
     , isPrefixOf
     , isSuffixOf
     , isInfixOf
@@ -117,7 +118,7 @@ import           Basement.FinalPtr
 import           Basement.IntegralConv
 import           Basement.Floating
 import           Basement.MutableBuilder
-import           Basement.String.CaseMapping (upperMapping, lowerMapping)
+import           Basement.String.CaseMapping (upperMapping, lowerMapping, foldMapping)
 import           Basement.UTF8.Table
 import           Basement.UTF8.Helper
 import           Basement.UTF8.Base
@@ -1322,7 +1323,7 @@ decimalDigitsPtr startAcc ptr !endOfs !startOfs = loop startAcc startOfs
 -- | Convert a 'String' 'Char' by 'Char' using a case mapping function. 
 caseConvert :: (Char -> CM) -> String -> String
 caseConvert op s@(String arr) = runST $ do 
-  mba <- MBLK.new (iLen + 1)
+  mba <- MBLK.new iLen 
   nL <- C.onBackendPrim
         (\blk  -> go mba blk (Offset 0) start)
         (\fptr -> withFinalPtr fptr $ \ptr -> go mba ptr (Offset 0) start)
@@ -1330,7 +1331,7 @@ caseConvert op s@(String arr) = runST $ do
   freeze . MutableString $ MVec.MUArray 0 nL (C.MUArrayMBA mba)
   where
     !(C.ValidRange start end) = C.offsetsValidRange arr
-    !iLen = C.length arr
+    !iLen = 1 + C.length arr
     go :: (Indexable container Word8, PrimMonad prim) =>
              MutableBlock Word8 (PrimState prim) ->
              container -> 
@@ -1342,7 +1343,7 @@ caseConvert op s@(String arr) = runST $ do
         eSize !e = if e == '\0' then 0 else charToBytes (fromEnum e)
         loop !dst !allocLen !nLen !dstIdx !srcIdx
           | srcIdx == end = return nLen
-          | nLen == allocLen = realloc allocLen
+          | nLen == allocLen = realloc
           | otherwise = do
               let !(CM c1 c2 c3) = op c 
                   !(Step c nextSrcIdx) = UTF8.next src srcIdx
@@ -1356,11 +1357,11 @@ caseConvert op s@(String arr) = runST $ do
                   loop dst allocLen (nLen + cSize) nextDstIdx nextSrcIdx
           where  
             {-# NOINLINE realloc #-}
-            realloc !allocLen = do
-              let nl = allocLen + allocLen + 1
-              nDst <- MBLK.new nl 
+            realloc = do
+              let nAll = allocLen + allocLen + 1
+              nDst <- MBLK.new nAll 
               MBLK.unsafeCopyElements nDst 0 dst 0 nLen
-              loop nDst nl nLen dstIdx srcIdx
+              loop nDst nAll nLen dstIdx srcIdx
 
 -- | Convert a 'String' to the upper-case equivalent.
 upper :: String -> String
@@ -1369,6 +1370,12 @@ upper = caseConvert upperMapping
 -- | Convert a 'String' to the upper-case equivalent.
 lower :: String -> String
 lower = caseConvert lowerMapping
+
+-- | Convert a 'String' to the unicode case fold equivalent.
+--
+-- Case folding is mostly used for caseless comparison of strings.
+caseFold :: String -> String
+caseFold = caseConvert foldMapping
 
 -- | Check whether the first string is a prefix of the second string.
 isPrefixOf :: String -> String -> Bool
