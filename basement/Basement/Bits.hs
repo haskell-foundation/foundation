@@ -19,7 +19,7 @@
 
 module Basement.Bits
     ( BitOps(..)
-    , PrimBitOps(..)
+    , FiniteBitsOps(..)
 
     , Bits
     , toBits
@@ -50,7 +50,7 @@ import GHC.Word
 import GHC.Int
 
 -- | operation over finit bits
-class PrimBitOps bits where
+class FiniteBitsOps bits where
     -- | get the number of bits in the given object
     --
     numberOfBits :: bits -> CountOf Bool
@@ -175,7 +175,7 @@ instance SizeValid n => BitOps (Bits n) where
     isBitSet (Bits a) (Offset w)  = OldBits.testBit a w
     setBit   (Bits a) (Offset w)  = Bits (OldBits.setBit a w)
     clearBit (Bits a) (Offset w)  = Bits (OldBits.clearBit a w)
-instance (SizeValid n, NatWithinBound (CountOf Bool) n) => PrimBitOps (Bits n) where
+instance (SizeValid n, NatWithinBound (CountOf Bool) n) => FiniteBitsOps (Bits n) where
     numberOfBits _ = natValCountOf (Proxy @n)
     rotateL a i = (a .<<. i) .|. (a .>>. d)
       where
@@ -189,7 +189,7 @@ instance (SizeValid n, NatWithinBound (CountOf Bool) n) => PrimBitOps (Bits n) w
 
 -- Bool ------------------------------------------------------------------------
 
-instance PrimBitOps Bool where
+instance FiniteBitsOps Bool where
     numberOfBits _ = 1
     rotateL x _ = x
     rotateR x _ = x
@@ -219,7 +219,7 @@ instance BitOps Bool where
 
 -- Word8 ----------------------------------------------------------------------
 
-instance PrimBitOps Word8 where
+instance FiniteBitsOps Word8 where
     numberOfBits _ = 8
     rotateL (W8# x#) (CountOf (I# i#))
         | isTrue# (i'# ==# 0#) = W8# x#
@@ -247,7 +247,7 @@ instance BitOps Word8 where
 
 -- Word16 ---------------------------------------------------------------------
 
-instance PrimBitOps Word16 where
+instance FiniteBitsOps Word16 where
     numberOfBits _ = 16
     rotateL (W16# x#) (CountOf (I# i#))
         | isTrue# (i'# ==# 0#) = W16# x#
@@ -275,7 +275,7 @@ instance BitOps Word16 where
 
 -- Word32 ---------------------------------------------------------------------
 
-instance PrimBitOps Word32 where
+instance FiniteBitsOps Word32 where
     numberOfBits _ = 32
     rotateL (W32# x#) (CountOf (I# i#))
         | isTrue# (i'# ==# 0#) = W32# x#
@@ -303,7 +303,7 @@ instance BitOps Word32 where
 
 -- Word64 ---------------------------------------------------------------------
 
-instance PrimBitOps Word64 where
+instance FiniteBitsOps Word64 where
     numberOfBits _ = 64
     rotateL (W64# x#) (CountOf (I# i#))
         | isTrue# (i'# ==# 0#) = W64# x#
@@ -331,7 +331,7 @@ instance BitOps Word64 where
 
 -- Word128 --------------------------------------------------------------------
 
-instance PrimBitOps Word128 where
+instance FiniteBitsOps Word128 where
     numberOfBits _ = 128
     rotateL w (CountOf n) = Word128.rotateL w n
     rotateR w (CountOf n) = Word128.rotateR w n
@@ -346,7 +346,7 @@ instance BitOps Word128 where
 
 -- Word256 --------------------------------------------------------------------
 
-instance PrimBitOps Word256 where
+instance FiniteBitsOps Word256 where
     numberOfBits _ = 256
     rotateL w (CountOf n) = Word256.rotateL w n
     rotateR w (CountOf n) = Word256.rotateR w n
@@ -361,7 +361,7 @@ instance BitOps Word256 where
 
 -- Int8 -----------------------------------------------------------------------
 
-instance PrimBitOps Int8 where
+instance FiniteBitsOps Int8 where
     numberOfBits _ = 8
     rotateL (I8# x#) (CountOf (I# i#))
         | isTrue# (i'# ==# 0#) = I8# x#
@@ -391,7 +391,7 @@ instance BitOps Int8 where
 
 -- Int16 ----------------------------------------------------------------------
 
-instance PrimBitOps Int16 where
+instance FiniteBitsOps Int16 where
     numberOfBits _ = 16
     rotateL (I16# x#) (CountOf (I# i#))
         | isTrue# (i'# ==# 0#) = I16# x#
@@ -421,7 +421,7 @@ instance BitOps Int16 where
 
 -- Int32 ----------------------------------------------------------------------
 
-instance PrimBitOps Int32 where
+instance FiniteBitsOps Int32 where
     numberOfBits _ = 32
     rotateL (I32# x#) (CountOf (I# i#))
         | isTrue# (i'# ==# 0#) = I32# x#
@@ -451,7 +451,7 @@ instance BitOps Int32 where
 
 -- Int64 ----------------------------------------------------------------------
 
-instance PrimBitOps Int64 where
+instance FiniteBitsOps Int64 where
     numberOfBits _ = 64
     rotateL (I64# x#) (CountOf (I# i#))
         | isTrue# (i'# ==# 0#) = I64# x#
