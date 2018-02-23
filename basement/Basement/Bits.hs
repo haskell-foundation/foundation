@@ -63,6 +63,9 @@ class FiniteBitsOps bits where
     -- | count of number of bit set to 1 in the given bit set.
     popCount :: bits -> CountOf Bool
 
+    -- | reverse all bits in the argument
+    bitFlip   :: bits -> bits
+
     -- | count of the number of leading zeros
     countLeadingZeros :: bits -> CountOf Bool
     default countLeadingZeros :: BitOps bits => bits -> CountOf Bool
@@ -92,8 +95,6 @@ class BitOps bits where
     (.^.)     :: bits -> bits -> bits
     (.<<.)    :: bits -> CountOf Bool -> bits
     (.>>.)    :: bits -> CountOf Bool -> bits
-    -- | reverse all bits in the argument
-    not_      :: bits -> bits
     -- | construct a bit set with the bit at the given index set.
     bit       :: Offset Bool -> bits
     default bit :: Integral bits => Offset Bool -> bits
@@ -111,8 +112,8 @@ class BitOps bits where
 
     -- | clear the bit at the given index
     clearBit  :: bits -> Offset Bool -> bits
-    default clearBit :: Integral bits => bits -> Offset Bool -> bits
-    clearBit x n = x .&. (not_ (bit n))
+    default clearBit :: FiniteBitsOps bits => bits -> Offset Bool -> bits
+    clearBit x n = x .&. (bitFlip (bit n))
 
 -- | Bool set of 'n' bits.
 --
@@ -170,12 +171,12 @@ instance SizeValid n => BitOps (Bits n) where
     (.^.)    (Bits a) (Bits b)    = Bits (a `OldBits.xor` b)
     (.<<.)   (Bits a) (CountOf w) = Bits (a `OldBits.shiftL` w)
     (.>>.)   (Bits a) (CountOf w) = Bits (a `OldBits.shiftR` w)
-    not_     (Bits a)             = Bits (OldBits.complement a)
     bit               (Offset w)  = Bits (OldBits.bit w)
     isBitSet (Bits a) (Offset w)  = OldBits.testBit a w
     setBit   (Bits a) (Offset w)  = Bits (OldBits.setBit a w)
     clearBit (Bits a) (Offset w)  = Bits (OldBits.clearBit a w)
 instance (SizeValid n, NatWithinBound (CountOf Bool) n) => FiniteBitsOps (Bits n) where
+    bitFlip (Bits a) = Bits (OldBits.complement a)
     numberOfBits _ = natValCountOf (Proxy @n)
     rotateL a i = (a .<<. i) .|. (a .>>. d)
       where
@@ -195,6 +196,7 @@ instance FiniteBitsOps Bool where
     rotateR x _ = x
     popCount True = 1
     popCount False = 0
+    bitFlip  = not
     countLeadingZeros True  = 0
     countLeadingZeros False = 1
     countTrailingZeros True  = 0
@@ -203,7 +205,6 @@ instance BitOps Bool where
     (.&.) = (&&)
     (.|.) = (||)
     (.^.) = (/=)
-    not_  = not
     x .<<. 0 = x
     _ .<<. _ = False
     x .>>. 0 = x
@@ -233,6 +234,8 @@ instance FiniteBitsOps Word8 where
                                           (x# `uncheckedShiftL#` (8# -# i'#))))
       where
         !i'# = word2Int# (int2Word# i# `and#` 7##)
+    bitFlip (W8# x#) = W8# (x# `xor#` mb#)
+        where !(W8# mb#) = maxBound
     popCount (W8# x#) = CountOf $ wordToInt (W# (popCnt8# x#))
     countLeadingZeros (W8# w#) = CountOf $ wordToInt (W# (clz8# w#))
     countTrailingZeros (W8# w#) = CountOf $ wordToInt (W# (ctz8# w#))
@@ -242,8 +245,6 @@ instance BitOps Word8 where
     (W8# x#) .^. (W8# y#)   = W8# (x# `xor#` y#)
     (W8# x#) .<<. (CountOf (I# i#)) = W8# (narrow8Word# (x# `shiftL#` i#))
     (W8# x#) .>>. (CountOf (I# i#)) = W8# (narrow8Word# (x# `shiftRL#` i#))
-    not_ (W8# x#) = W8# (x# `xor#` mb#)
-        where !(W8# mb#) = maxBound
 
 -- Word16 ---------------------------------------------------------------------
 
@@ -261,6 +262,8 @@ instance FiniteBitsOps Word16 where
                                             (x# `uncheckedShiftL#` (16# -# i'#))))
       where
         !i'# = word2Int# (int2Word# i# `and#` 15##)
+    bitFlip (W16# x#) = W16# (x# `xor#` mb#)
+        where !(W16# mb#) = maxBound
     popCount (W16# x#) = CountOf $ wordToInt (W# (popCnt16# x#))
     countLeadingZeros (W16# w#) = CountOf $ wordToInt (W# (clz16# w#))
     countTrailingZeros (W16# w#) = CountOf $ wordToInt (W# (ctz16# w#))
@@ -270,8 +273,6 @@ instance BitOps Word16 where
     (W16# x#) .^. (W16# y#)   = W16# (x# `xor#` y#)
     (W16# x#) .<<. (CountOf (I# i#)) = W16# (narrow16Word# (x# `shiftL#` i#))
     (W16# x#) .>>. (CountOf (I# i#)) = W16# (narrow16Word# (x# `shiftRL#` i#))
-    not_ (W16# x#) = W16# (x# `xor#` mb#)
-        where !(W16# mb#) = maxBound
 
 -- Word32 ---------------------------------------------------------------------
 
@@ -289,6 +290,8 @@ instance FiniteBitsOps Word32 where
                                             (x# `uncheckedShiftL#` (32# -# i'#))))
       where
         !i'# = word2Int# (int2Word# i# `and#` 31##)
+    bitFlip (W32# x#) = W32# (x# `xor#` mb#)
+        where !(W32# mb#) = maxBound
     popCount (W32# x#) = CountOf $ wordToInt (W# (popCnt32# x#))
     countLeadingZeros (W32# w#) = CountOf $ wordToInt (W# (clz32# w#))
     countTrailingZeros (W32# w#) = CountOf $ wordToInt (W# (ctz32# w#))
@@ -298,8 +301,6 @@ instance BitOps Word32 where
     (W32# x#) .^. (W32# y#)   = W32# (x# `xor#` y#)
     (W32# x#) .<<. (CountOf (I# i#)) = W32# (narrow32Word# (x# `shiftL#` i#))
     (W32# x#) .>>. (CountOf (I# i#)) = W32# (narrow32Word# (x# `shiftRL#` i#))
-    not_ (W32# x#) = W32# (x# `xor#` mb#)
-        where !(W32# mb#) = maxBound
 
 -- Word64 ---------------------------------------------------------------------
 
@@ -317,6 +318,8 @@ instance FiniteBitsOps Word64 where
                                             (x# `uncheckedShiftL#` (64# -# i'#))))
       where
         !i'# = word2Int# (int2Word# i# `and#` 63##)
+    bitFlip (W64# x#) = W64# (x# `xor#` mb#)
+        where !(W64# mb#) = maxBound
     popCount (W64# x#) = CountOf $ wordToInt (W# (popCnt64# x#))
     countLeadingZeros (W64# w#) = CountOf $ wordToInt (W# (clz64# w#))
     countTrailingZeros (W64# w#) = CountOf $ wordToInt (W# (ctz64# w#))
@@ -326,8 +329,6 @@ instance BitOps Word64 where
     (W64# x#) .^. (W64# y#)   = W64# (x# `xor#` y#)
     (W64# x#) .<<. (CountOf (I# i#)) = W64# (x# `shiftL#` i#)
     (W64# x#) .>>. (CountOf (I# i#)) = W64# (x# `shiftRL#` i#)
-    not_ (W64# x#) = W64# (x# `xor#` mb#)
-        where !(W64# mb#) = maxBound
 
 -- Word128 --------------------------------------------------------------------
 
@@ -335,12 +336,12 @@ instance FiniteBitsOps Word128 where
     numberOfBits _ = 128
     rotateL w (CountOf n) = Word128.rotateL w n
     rotateR w (CountOf n) = Word128.rotateR w n
+    bitFlip = Word128.complement
     popCount = CountOf . Word128.popCount
 instance BitOps Word128 where
     (.&.) = Word128.bitwiseAnd
     (.|.) = Word128.bitwiseOr
     (.^.) = Word128.bitwiseXor
-    not_ = Word128.complement
     (.<<.) w (CountOf n) = Word128.shiftL w n
     (.>>.) w (CountOf n) = Word128.shiftR w n
 
@@ -350,12 +351,12 @@ instance FiniteBitsOps Word256 where
     numberOfBits _ = 256
     rotateL w (CountOf n) = Word256.rotateL w n
     rotateR w (CountOf n) = Word256.rotateR w n
+    bitFlip = Word256.complement
     popCount = CountOf . Word256.popCount
 instance BitOps Word256 where
     (.&.) = Word256.bitwiseAnd
     (.|.) = Word256.bitwiseOr
     (.^.) = Word256.bitwiseXor
-    not_ = Word256.complement
     (.<<.) w (CountOf n) = Word256.shiftL w n
     (.>>.) w (CountOf n) = Word256.shiftR w n
 
@@ -377,6 +378,8 @@ instance FiniteBitsOps Int8 where
       where
         !x'# = narrow8Word# (int2Word# x#)
         !i'# = word2Int# (int2Word# i# `and#` 7##)
+    bitFlip (I8# x#) = I8# (x# `xorI#` mb#)
+        where !(I8# mb#) = maxBound
     popCount (I8# x#) = CountOf $ wordToInt (W# (popCnt8# (int2Word# x#)))
     countLeadingZeros (I8# w#) = CountOf $ wordToInt (W# (clz8# (int2Word# w#)))
     countTrailingZeros (I8# w#) = CountOf $ wordToInt (W# (ctz8# (int2Word# w#)))
@@ -386,8 +389,6 @@ instance BitOps Int8 where
     (I8# x#) .^. (I8# y#)   = I8# (x# `xorI#` y#)
     (I8# x#) .<<. (CountOf (I# i#)) = I8# (narrow8Int# (x# `iShiftL#`  i#))
     (I8# x#) .>>. (CountOf (I# i#)) = I8# (narrow8Int# (x# `iShiftRL#` i#))
-    not_ (I8# x#) = I8# (x# `xorI#` mb#)
-        where !(I8# mb#) = maxBound
 
 -- Int16 ----------------------------------------------------------------------
 
@@ -407,6 +408,8 @@ instance FiniteBitsOps Int16 where
       where
         !x'# = narrow16Word# (int2Word# x#)
         !i'# = word2Int# (int2Word# i# `and#` 15##)
+    bitFlip (I16# x#) = I16# (x# `xorI#` mb#)
+        where !(I16# mb#) = maxBound
     popCount (I16# x#) = CountOf $ wordToInt (W# (popCnt16# (int2Word# x#)))
     countLeadingZeros (I16# w#) = CountOf $ wordToInt (W# (clz16# (int2Word# w#)))
     countTrailingZeros (I16# w#) = CountOf $ wordToInt (W# (ctz16# (int2Word# w#)))
@@ -416,8 +419,6 @@ instance BitOps Int16 where
     (I16# x#) .^. (I16# y#)   = I16# (x# `xorI#` y#)
     (I16# x#) .<<. (CountOf (I# i#)) = I16# (narrow16Int# (x# `iShiftL#`  i#))
     (I16# x#) .>>. (CountOf (I# i#)) = I16# (narrow16Int# (x# `iShiftRL#` i#))
-    not_ (I16# x#) = I16# (x# `xorI#` mb#)
-        where !(I16# mb#) = maxBound
 
 -- Int32 ----------------------------------------------------------------------
 
@@ -437,6 +438,8 @@ instance FiniteBitsOps Int32 where
       where
         !x'# = narrow32Word# (int2Word# x#)
         !i'# = word2Int# (int2Word# i# `and#` 31##)
+    bitFlip (I32# x#) = I32# (x# `xorI#` mb#)
+        where !(I32# mb#) = maxBound
     popCount (I32# x#) = CountOf $ wordToInt (W# (popCnt32# (int2Word# x#)))
     countLeadingZeros (I32# w#) = CountOf $ wordToInt (W# (clz32# (int2Word# w#)))
     countTrailingZeros (I32# w#) = CountOf $ wordToInt (W# (ctz32# (int2Word# w#)))
@@ -446,8 +449,6 @@ instance BitOps Int32 where
     (I32# x#) .^. (I32# y#)   = I32# (x# `xorI#` y#)
     (I32# x#) .<<. (CountOf (I# i#)) = I32# (narrow32Int# (x# `iShiftL#`  i#))
     (I32# x#) .>>. (CountOf (I# i#)) = I32# (narrow32Int# (x# `iShiftRL#` i#))
-    not_ (I32# x#) = I32# (x# `xorI#` mb#)
-        where !(I32# mb#) = maxBound
 
 -- Int64 ----------------------------------------------------------------------
 
@@ -467,6 +468,8 @@ instance FiniteBitsOps Int64 where
       where
         !x'# = int2Word# x#
         !i'# = word2Int# (int2Word# i# `and#` 63##)
+    bitFlip (I64# x#) = I64# (x# `xorI#` mb#)
+        where !(I64# mb#) = maxBound
     popCount (I64# x#) = CountOf $ wordToInt (W# (popCnt64# (int2Word# x#)))
     countLeadingZeros (I64# w#) = CountOf $ wordToInt (W# (clz64# (int2Word# w#)))
     countTrailingZeros (I64# w#) = CountOf $ wordToInt (W# (ctz64# (int2Word# w#)))
@@ -476,5 +479,3 @@ instance BitOps Int64 where
     (I64# x#) .^. (I64# y#)   = I64# (x# `xorI#` y#)
     (I64# x#) .<<. (CountOf (I# w#)) = I64# (x# `iShiftL#`  w#)
     (I64# x#) .>>. (CountOf (I# w#)) = I64# (x# `iShiftRL#` w#)
-    not_ (I64# x#) = I64# (x# `xorI#` mb#)
-        where !(I64# mb#) = maxBound
