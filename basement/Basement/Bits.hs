@@ -549,9 +549,9 @@ instance BitOps Int64 where
 iShiftL64#, iShiftRA64# :: Int64# -> Int# -> Int64#
 a `iShiftL64#` b  | isTrue# (b >=# 64#) = intToInt64# 0#
                   | otherwise           = a `uncheckedIShiftL64#` b
-a `iShiftRA64#` b | isTrue# (b >=# 64#) = if isTrue# (a `ltInt64#` (intToInt64# 0#))
-                                          then intToInt64# (-1#)
-                                          else intToInt64# 0#
+a `iShiftRA64#` b | isTrue# (b >=# 64#) && isTrue# (a `ltInt64#` (intToInt64# 0#))
+                                        = intToInt64# (-1#)
+                  | isTrue# (b >=# 64#) = intToInt64# 0#
                   | otherwise = a `uncheckedIShiftRA64#` b
 
 #endif
