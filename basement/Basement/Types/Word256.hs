@@ -12,6 +12,12 @@ module Basement.Types.Word256
     , bitwiseAnd
     , bitwiseOr
     , bitwiseXor
+    , complement
+    , shiftL
+    , shiftR
+    , rotateL
+    , rotateR
+    , popCount
     , fromNatural
     ) where
 
@@ -91,7 +97,7 @@ instance Storable Word256 where
         poke (castPtr p `plusPtr` 8 ) a2
         poke (castPtr p `plusPtr` 16) a1
         poke (castPtr p `plusPtr` 24) a0
-                    
+
 instance Integral Word256 where
     fromInteger = literal
 instance HasNegation Word256 where

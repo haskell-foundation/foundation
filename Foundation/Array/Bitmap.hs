@@ -39,6 +39,7 @@ import           Basement.Exception
 import           Basement.Compat.Base
 import           Basement.Types.OffsetSize
 import           Basement.Monad
+
 import qualified Foundation.Collection as C
 import           Foundation.Numerical
 import           Data.Bits
@@ -146,6 +147,8 @@ instance C.MutableCollection MutableBitmap where
     mutUnsafeRead = unsafeRead
     mutWrite = write
     mutRead = read
+
+
 
 bitmapIndex :: Offset Bool -> (Offset Word32, Int)
 bitmapIndex (Offset !i) = (Offset (i .>>. shiftPerTy), i .&. maskPerTy)
