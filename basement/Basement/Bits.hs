@@ -489,6 +489,7 @@ instance BitOps Int32 where
 
 -- Int64 ----------------------------------------------------------------------
 
+#if WORD_SIZE_IN_BITS == 64
 instance FiniteBitsOps Int64 where
     numberOfBits _ = 64
     rotateL (I64# x#) (CountOf (I# i#))
@@ -515,3 +516,41 @@ instance BitOps Int64 where
     (I64# x#) .^. (I64# y#)   = I64# (x# `xorI#` y#)
     (I64# x#) .<<. (CountOf (I# w#)) = I64# (x# `iShiftL#`  w#)
     (I64# x#) .>>. (CountOf (I# w#)) = I64# (x# `iShiftRL#` w#)
+#else
+instance FiniteBitsOps Int64 where
+    numberOfBits _ = 64
+    rotateL (I64# x#) (CountOf (I# i#))
+        | isTrue# (i'# ==# 0#) = I64# x#
+        | otherwise  = I64# (word64ToInt64# ((x'# `uncheckedShiftL64#` i'#) `or64#`
+                                             (x'# `uncheckedShiftRL64#` (64# -# i'#))))
+      where
+        !x'# = int64ToWord64# x#
+        !i'# = word2Int# (int2Word# i# `and#` 63##)
+    rotateR (I64# x#) (CountOf (I# i#))
+        | isTrue# (i'# ==# 0#) = I64# x#
+        | otherwise  = I64# (word64ToInt64# ((x'# `uncheckedShiftRL64#` i'#) `or64#`
+                                             (x'# `uncheckedShiftL64#` (64# -# i'#))))
+      where
+        !x'# = int64ToWord64# x#
+        !i'# = word2Int# (int2Word# i# `and#` 63##)
+    bitFlip (I64# x#) = I64# (word64ToInt64# (not64# (int64ToWord64# x#)))
+    popCount (I64# x#) = CountOf $ wordToInt (W# (popCnt64# (int64ToWord64# x#)))
+    countLeadingZeros (I64# w#) = CountOf $ wordToInt (W# (clz64# (int64ToWord64# w#)))
+    countTrailingZeros (I64# w#) = CountOf $ wordToInt (W# (ctz64# (int64ToWord64# w#)))
+instance BitOps Int64 where
+    (I64# x#) .&. (I64# y#)  = I64# (word64ToInt64# (int64ToWord64# x# `and64#` int64ToWord64# y#))
+    (I64# x#) .|. (I64# y#)  = I64# (word64ToInt64# (int64ToWord64# x# `or64#`  int64ToWord64# y#))
+    (I64# x#) .^. (I64# y#)  = I64# (word64ToInt64# (int64ToWord64# x# `xor64#` int64ToWord64# y#))
+    (I64# x#) .<<. (CountOf (I# w#)) = I64# (x# `iShiftL64#`  w#)
+    (I64# x#) .>>. (CountOf (I# w#)) = I64# (x# `iShiftRA64#` w#)
+
+
+iShiftL64#, iShiftRA64# :: Int64# -> Int# -> Int64#
+a `iShiftL64#` b  | isTrue# (b >=# 64#) = intToInt64# 0#
+                  | otherwise           = a `uncheckedIShiftL64#` b
+a `iShiftRA64#` b | isTrue# (b >=# 64#) = if isTrue# (a `ltInt64#` (intToInt64# 0#))
+                                          then intToInt64# (-1#)
+                                          else intToInt64# 0#
+                  | otherwise = a `uncheckedIShiftRA64#` b
+
+#endif
