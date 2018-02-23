@@ -1,3 +1,14 @@
+## 0.0.20
+
+* Reduce algorithm duplication between native and foreign backend
+* Improve Unicode cases algorithm and increase testing
+* Add CSV Builder
+* Add a BitOps & FiniteBitOps classes to have better types than the Data.Bits.Bits class
+* Improve BlockN operations
+* Improve ListN operations
+* Allow compilation with gauge 0.1
+* Add support for [haskell-ci](https://github.com/vincenthz/haskell-ci)
+
 ## 0.0.19
 
 * Add Block, UArray, String Builder
