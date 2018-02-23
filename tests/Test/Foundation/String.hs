@@ -68,7 +68,7 @@ testStringCases =
          , CheckPlan "B should not capitalize" $ validate "B" $ upper "B" == "B"
          , CheckPlan "é should capitalize to É" $ validate "é" $ upper "é" == "É"
          , CheckPlan "ß should capitalize to SS" $ validate "ß" $ upper "ß" == "SS"
-         , CheckPlan "ﬄ should capitalize to FFL" $ validate "ﬄ" $ upper "ﬄ" == "FFL"
+         , CheckPlan "ﬄ should capitalize to FFL" $ validate "ﬄ" $ upper "ﬄﬄﬄﬄﬄﬄﬄﬄﬄﬄ" == "FFLFFLFFLFFLFFLFFLFFLFFLFFLFFL"
          , CheckPlan "0a should capitalize to 0A" $ validate "0a" $ upper "\0a" == "\0A"
          , CheckPlan "0a should capitalize to 0A" $ validate "0a" $ upper "a\0a" == "A\0A"
          , CheckPlan "0a should capitalize to 0A" $ validate "0a" $ upper "\0\0" == "\0\0"
