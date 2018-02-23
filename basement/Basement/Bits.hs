@@ -6,6 +6,7 @@
 -- Portability : portable
 --
 
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DefaultSignatures #-}
@@ -16,6 +17,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
+
+#include "MachDeps.h"
 
 module Basement.Bits
     ( BitOps(..)
@@ -48,6 +51,10 @@ import GHC.Prim
 import GHC.Types
 import GHC.Word
 import GHC.Int
+
+#if WORD_SIZE_IN_BITS < 64
+import GHC.IntWord64
+#endif
 
 -- | operation over finit bits
 class FiniteBitsOps bits where
@@ -304,6 +311,32 @@ instance BitOps Word32 where
 
 -- Word64 ---------------------------------------------------------------------
 
+#if WORD_SIZE_IN_BITS < 64
+instance FiniteBitsOps Word64 where
+    numberOfBits _ = 64
+    rotateL (W64# x#) (CountOf (I# i#))
+        | isTrue# (i'# ==# 0#) = W64# x#
+        | otherwise  = W64# (narrow16Word# ((x# `uncheckedShiftL64#` i'#) `or64#`
+                                            (x# `uncheckedShiftRL64#` (64# -# i'#))))
+      where
+        !i'# = word2Int# (int2Word# i# `and#` 63##)
+    rotateR (W64# x#) (CountOf (I# i#))
+        | isTrue# (i'# ==# 0#) = W64# x#
+        | otherwise  = W64# (narrow16Word# ((x# `uncheckedShiftRL64#` i'#) `or64#`
+                                            (x# `uncheckedShiftL64#` (64# -# i'#))))
+      where
+        !i'# = word2Int# (int2Word# i# `and#` 63##)
+    bitFlip (W64# x#) = W64# (not64# x#)
+    popCount (W64# x#) = CountOf $ wordToInt (W# (popCnt64# x#))
+    countLeadingZeros (W64# w#) = CountOf $ wordToInt (W# (clz64# w#))
+    countTrailingZeros (W64# w#) = CountOf $ wordToInt (W# (ctz64# w#))
+instance BitOps Word64 where
+    (W64# x#) .&. (W64# y#)   = W64# (x# `and64#` y#)
+    (W64# x#) .|. (W64# y#)   = W64# (x# `or64#`  y#)
+    (W64# x#) .^. (W64# y#)   = W64# (x# `xor64#` y#)
+    (W64# x#) .<<. (CountOf (I# i#)) = W64# (x# `shiftL64#` i#)
+    (W64# x#) .>>. (CountOf (I# i#)) = W64# (x# `shiftRL64#` i#)
+#else
 instance FiniteBitsOps Word64 where
     numberOfBits _ = 64
     rotateL (W64# x#) (CountOf (I# i#))
@@ -329,6 +362,7 @@ instance BitOps Word64 where
     (W64# x#) .^. (W64# y#)   = W64# (x# `xor#` y#)
     (W64# x#) .<<. (CountOf (I# i#)) = W64# (x# `shiftL#` i#)
     (W64# x#) .>>. (CountOf (I# i#)) = W64# (x# `shiftRL#` i#)
+#endif
 
 -- Word128 --------------------------------------------------------------------
 
