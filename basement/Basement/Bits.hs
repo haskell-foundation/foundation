@@ -378,8 +378,7 @@ instance FiniteBitsOps Int8 where
       where
         !x'# = narrow8Word# (int2Word# x#)
         !i'# = word2Int# (int2Word# i# `and#` 7##)
-    bitFlip (I8# x#) = I8# (x# `xorI#` mb#)
-        where !(I8# mb#) = maxBound
+    bitFlip (I8# x#) = I8# (word2Int# (not# (int2Word# x#)))
     popCount (I8# x#) = CountOf $ wordToInt (W# (popCnt8# (int2Word# x#)))
     countLeadingZeros (I8# w#) = CountOf $ wordToInt (W# (clz8# (int2Word# w#)))
     countTrailingZeros (I8# w#) = CountOf $ wordToInt (W# (ctz8# (int2Word# w#)))
@@ -408,8 +407,7 @@ instance FiniteBitsOps Int16 where
       where
         !x'# = narrow16Word# (int2Word# x#)
         !i'# = word2Int# (int2Word# i# `and#` 15##)
-    bitFlip (I16# x#) = I16# (x# `xorI#` mb#)
-        where !(I16# mb#) = maxBound
+    bitFlip (I16# x#) = I16# (word2Int# (not# (int2Word# x#)))
     popCount (I16# x#) = CountOf $ wordToInt (W# (popCnt16# (int2Word# x#)))
     countLeadingZeros (I16# w#) = CountOf $ wordToInt (W# (clz16# (int2Word# w#)))
     countTrailingZeros (I16# w#) = CountOf $ wordToInt (W# (ctz16# (int2Word# w#)))
@@ -438,8 +436,7 @@ instance FiniteBitsOps Int32 where
       where
         !x'# = narrow32Word# (int2Word# x#)
         !i'# = word2Int# (int2Word# i# `and#` 31##)
-    bitFlip (I32# x#) = I32# (x# `xorI#` mb#)
-        where !(I32# mb#) = maxBound
+    bitFlip (I32# x#) = I32# (word2Int# (not# (int2Word# x#)))
     popCount (I32# x#) = CountOf $ wordToInt (W# (popCnt32# (int2Word# x#)))
     countLeadingZeros (I32# w#) = CountOf $ wordToInt (W# (clz32# (int2Word# w#)))
     countTrailingZeros (I32# w#) = CountOf $ wordToInt (W# (ctz32# (int2Word# w#)))
@@ -468,8 +465,7 @@ instance FiniteBitsOps Int64 where
       where
         !x'# = int2Word# x#
         !i'# = word2Int# (int2Word# i# `and#` 63##)
-    bitFlip (I64# x#) = I64# (x# `xorI#` mb#)
-        where !(I64# mb#) = maxBound
+    bitFlip (I64# x#) = I64# (word2Int# (int2Word# x# `xor#` int2Word# (-1#)))
     popCount (I64# x#) = CountOf $ wordToInt (W# (popCnt64# (int2Word# x#)))
     countLeadingZeros (I64# w#) = CountOf $ wordToInt (W# (clz64# (int2Word# w#)))
     countTrailingZeros (I64# w#) = CountOf $ wordToInt (W# (ctz64# (int2Word# w#)))
