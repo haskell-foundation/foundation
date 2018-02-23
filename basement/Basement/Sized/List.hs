@@ -54,6 +54,7 @@ module Basement.Sized.List
     , maximum
     , head
     , tail
+    , init
     , take
     , drop
     , splitAt
@@ -210,6 +211,10 @@ head _ = impossible
 tail :: (1 <= n) => ListN n a -> ListN (n-1) a
 tail (ListN (_:xs)) = ListN xs
 tail _ = impossible
+
+-- | Get the list with the last element missing
+init :: (1 <= n) => ListN n a -> ListN (n-1) a
+init (ListN l) = ListN $ Data.List.init l
 
 -- | Take m elements from the beggining of the list.
 --
