@@ -100,7 +100,7 @@ import qualified Basement.UArray           as Vec
 import qualified Basement.UArray           as C
 import qualified Basement.UArray.Mutable   as MVec
 import           Basement.Block.Mutable (Block(..), MutableBlock(..))
-import qualified Basement.Block.Mutable    as MBLK 
+import qualified Basement.Block.Mutable    as MBLK
 import           Basement.Compat.Bifunctor
 import           Basement.Compat.Base
 import           Basement.Compat.Natural
@@ -1320,10 +1320,10 @@ decimalDigitsPtr startAcc ptr !endOfs !startOfs = loop startAcc startOfs
 {-# SPECIALIZE decimalDigitsPtr :: Int -> Ptr Word8 -> Offset Word8 -> Offset Word8 -> (# Int, Bool, Offset Word8 #) #-}
 {-# SPECIALIZE decimalDigitsPtr :: Word -> Ptr Word8 -> Offset Word8 -> Offset Word8 -> (# Word, Bool, Offset Word8 #) #-}
 
--- | Convert a 'String' 'Char' by 'Char' using a case mapping function. 
+-- | Convert a 'String' 'Char' by 'Char' using a case mapping function.
 caseConvert :: (Char -> CM) -> String -> String
-caseConvert op s@(String arr) = runST $ do 
-  mba <- MBLK.new iLen 
+caseConvert op s@(String arr) = runST $ do
+  mba <- MBLK.new iLen
   nL <- C.onBackendPrim
         (\blk  -> go mba blk (Offset 0) start)
         (\fptr -> withFinalPtr fptr $ \ptr -> go mba ptr (Offset 0) start)
@@ -1332,12 +1332,12 @@ caseConvert op s@(String arr) = runST $ do
   where
     !(C.ValidRange start end) = C.offsetsValidRange arr
     !iLen = 1 + C.length arr
-    go :: (Indexable container Word8, PrimMonad prim) =>
-             MutableBlock Word8 (PrimState prim) ->
-             container -> 
-             Offset Word8 -> 
-             Offset Word8 -> 
-             prim (CountOf Word8)
+    go :: (Indexable container Word8, PrimMonad prim)
+       => MutableBlock Word8 (PrimState prim)
+       -> container
+       -> Offset Word8
+       -> Offset Word8
+       -> prim (CountOf Word8)
     go !dst !src = loop dst iLen 0
       where
         eSize !e = if e == '\0' then 0 else charToBytes (fromEnum e)
@@ -1345,7 +1345,7 @@ caseConvert op s@(String arr) = runST $ do
           | srcIdx == end = return nLen
           | nLen == allocLen = realloc
           | otherwise = do
-              let !(CM c1 c2 c3) = op c 
+              let !(CM c1 c2 c3) = op c
                   !(Step c nextSrcIdx) = UTF8.next src srcIdx
               nextDstIdx <- UTF8.writeUTF8 dst dstIdx c1
               if c2 == '\0' -- We keep the most common case loop as short as possible.
@@ -1355,11 +1355,11 @@ caseConvert op s@(String arr) = runST $ do
                   nextDstIdx <- UTF8.writeUTF8 dst nextDstIdx c2
                   nextDstIdx <- if c3 == '\0' then return nextDstIdx else UTF8.writeUTF8 dst nextDstIdx c3
                   loop dst allocLen (nLen + cSize) nextDstIdx nextSrcIdx
-          where  
+          where
             {-# NOINLINE realloc #-}
             realloc = do
               let nAll = allocLen + allocLen + 1
-              nDst <- MBLK.new nAll 
+              nDst <- MBLK.new nAll
               MBLK.unsafeCopyElements nDst 0 dst 0 nLen
               loop nDst nAll nLen dstIdx srcIdx
 
