@@ -342,14 +342,14 @@ instance FiniteBitsOps Word64 where
     numberOfBits _ = 64
     rotateL (W64# x#) (CountOf (I# i#))
         | isTrue# (i'# ==# 0#) = W64# x#
-        | otherwise  = W64# (narrow64Word# ((x# `uncheckedShiftL64#` i'#) `or64#`
-                                            (x# `uncheckedShiftRL64#` (64# -# i'#))))
+        | otherwise  = W64# ((x# `uncheckedShiftL64#` i'#) `or64#`
+                             (x# `uncheckedShiftRL64#` (64# -# i'#)))
       where
         !i'# = word2Int# (int2Word# i# `and#` 63##)
     rotateR (W64# x#) (CountOf (I# i#))
         | isTrue# (i'# ==# 0#) = W64# x#
-        | otherwise  = W64# (narrow64Word# ((x# `uncheckedShiftRL64#` i'#) `or64#`
-                                            (x# `uncheckedShiftL64#` (64# -# i'#))))
+        | otherwise  = W64# ((x# `uncheckedShiftRL64#` i'#) `or64#`
+                             (x# `uncheckedShiftL64#` (64# -# i'#)))
       where
         !i'# = word2Int# (int2Word# i# `and#` 63##)
     bitFlip (W64# x#) = W64# (not64# x#)
