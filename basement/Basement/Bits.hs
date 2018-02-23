@@ -362,6 +362,12 @@ instance BitOps Word64 where
     (W64# x#) .^. (W64# y#)   = W64# (x# `xor64#` y#)
     (W64# x#) .<<. (CountOf (I# i#)) = W64# (x# `shiftL64#` i#)
     (W64# x#) .>>. (CountOf (I# i#)) = W64# (x# `shiftRL64#` i#)
+
+shiftL64#, shiftRL64# :: Word64# -> Int# -> Word64#
+a `shiftL64#` b  | isTrue# (b >=# 64#) = wordToWord64# 0##
+                 | otherwise           = a `uncheckedShiftL64#` b
+a `shiftRL64#` b | isTrue# (b >=# 64#) = wordToWord64# 0##
+                 | otherwise           = a `uncheckedShiftRL64#` b
 #endif
 
 -- Word128 --------------------------------------------------------------------
