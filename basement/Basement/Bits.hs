@@ -18,8 +18,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Basement.Bits
-    ( Bit
-    , BitOps(..)
+    ( BitOps(..)
     , PrimBitOps(..)
 
     , Bits
@@ -50,28 +49,23 @@ import GHC.Types
 import GHC.Word
 import GHC.Int
 
--- | type level tag to represet a bit.
---
--- Mainly used for offsets and sizes
-type Bit = Bool
-
 -- | operation over finit bits
 class PrimBitOps bits where
     -- | get the number of bits in the given object
     --
-    numberOfBits :: bits -> CountOf Bit
+    numberOfBits :: bits -> CountOf Bool
 
     -- | rotate the given bit set.
-    rotateL :: bits -> CountOf Bit -> bits
+    rotateL :: bits -> CountOf Bool -> bits
     -- | rotate the given bit set.
-    rotateR :: bits -> CountOf Bit -> bits
+    rotateR :: bits -> CountOf Bool -> bits
 
     -- | count of number of bit set to 1 in the given bit set.
-    popCount :: bits -> CountOf Bit
+    popCount :: bits -> CountOf Bool
 
     -- | count of the number of leading zeros
-    countLeadingZeros :: bits -> CountOf Bit
-    default countLeadingZeros :: BitOps bits => bits -> CountOf Bit
+    countLeadingZeros :: bits -> CountOf Bool
+    default countLeadingZeros :: BitOps bits => bits -> CountOf Bool
     countLeadingZeros n = loop stop azero
       where
         stop = numberOfBits n
@@ -81,8 +75,8 @@ class PrimBitOps bits where
             | otherwise = loop (fromMaybe azero (idx - 1)) (count + 1)
 
     -- | count of the number of trailing zeros
-    countTrailingZeros :: bits -> CountOf Bit
-    default countTrailingZeros :: BitOps bits => bits -> CountOf Bit
+    countTrailingZeros :: bits -> CountOf Bool
+    default countTrailingZeros :: BitOps bits => bits -> CountOf Bool
     countTrailingZeros n = loop azero
       where
         stop = numberOfBits n
@@ -96,31 +90,31 @@ class BitOps bits where
     (.&.)     :: bits -> bits -> bits
     (.|.)     :: bits -> bits -> bits
     (.^.)     :: bits -> bits -> bits
-    (.<<.)    :: bits -> CountOf Bit -> bits
-    (.>>.)    :: bits -> CountOf Bit -> bits
+    (.<<.)    :: bits -> CountOf Bool -> bits
+    (.>>.)    :: bits -> CountOf Bool -> bits
     -- | reverse all bits in the argument
     not_      :: bits -> bits
     -- | construct a bit set with the bit at the given index set.
-    bit       :: Offset Bit -> bits
-    default bit :: Integral bits => Offset Bit -> bits
+    bit       :: Offset Bool -> bits
+    default bit :: Integral bits => Offset Bool -> bits
     bit n = 1 .<<. (offsetAsSize n)
 
     -- | test the bit at the given index is set
-    isBitSet  :: bits -> Offset Bit -> Bool
-    default isBitSet :: (Integral bits, Eq bits) => bits -> Offset Bit -> Bool
+    isBitSet  :: bits -> Offset Bool -> Bool
+    default isBitSet :: (Integral bits, Eq bits) => bits -> Offset Bool -> Bool
     isBitSet x n = x .&. (bit n) /= 0
 
     -- | set the bit at the given index
-    setBit    :: bits -> Offset Bit -> bits
-    default setBit :: Integral bits => bits -> Offset Bit -> bits
+    setBit    :: bits -> Offset Bool -> bits
+    default setBit :: Integral bits => bits -> Offset Bool -> bits
     setBit x n = x .|. (bit n)
 
     -- | clear the bit at the given index
-    clearBit  :: bits -> Offset Bit -> bits
-    default clearBit :: Integral bits => bits -> Offset Bit -> bits
+    clearBit  :: bits -> Offset Bool -> bits
+    default clearBit :: Integral bits => bits -> Offset Bool -> bits
     clearBit x n = x .&. (not_ (bit n))
 
--- | Bit set of 'n' bits.
+-- | Bool set of 'n' bits.
 --
 newtype Bits (n :: Nat) = Bits { bitsToNatural :: Natural }
   deriving (Show, Eq, Ord, Typeable)
@@ -181,7 +175,7 @@ instance SizeValid n => BitOps (Bits n) where
     isBitSet (Bits a) (Offset w)  = OldBits.testBit a w
     setBit   (Bits a) (Offset w)  = Bits (OldBits.setBit a w)
     clearBit (Bits a) (Offset w)  = Bits (OldBits.clearBit a w)
-instance (SizeValid n, NatWithinBound (CountOf Bit) n) => PrimBitOps (Bits n) where
+instance (SizeValid n, NatWithinBound (CountOf Bool) n) => PrimBitOps (Bits n) where
     numberOfBits _ = natValCountOf (Proxy @n)
     rotateL a i = (a .<<. i) .|. (a .>>. d)
       where
@@ -193,9 +187,9 @@ instance (SizeValid n, NatWithinBound (CountOf Bit) n) => PrimBitOps (Bits n) wh
         d = fromMaybe (fromMaybe (error "impossible") (i - n)) (n - i)
     popCount (Bits n) = CountOf (OldBits.popCount n)
 
--- Bit ------------------------------------------------------------------------
+-- Bool ------------------------------------------------------------------------
 
-instance PrimBitOps Bit where
+instance PrimBitOps Bool where
     numberOfBits _ = 1
     rotateL x _ = x
     rotateR x _ = x
@@ -205,7 +199,7 @@ instance PrimBitOps Bit where
     countLeadingZeros False = 1
     countTrailingZeros True  = 0
     countTrailingZeros False = 1
-instance BitOps Bit where
+instance BitOps Bool where
     (.&.) = (&&)
     (.|.) = (||)
     (.^.) = (/=)
