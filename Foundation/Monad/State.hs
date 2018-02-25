@@ -50,6 +50,7 @@ instance (Functor m, Monad m) => Monad (StateT s m) where
 
 instance MonadFix m => MonadFix (StateT s m) where
     mfix f = StateT $ \s -> mfix $ \ ~(a, _) -> runStateT (f a) s
+    {-# INLINE mfix #-}
 
 instance MonadTrans (StateT s) where
     lift f = StateT $ \s -> f >>= return . (,s)
