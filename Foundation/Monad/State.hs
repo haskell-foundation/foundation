@@ -14,7 +14,6 @@ import Basement.Compat.Bifunctor (first)
 import Basement.Compat.Base (($), (.), const)
 import Foundation.Monad.Base
 import Control.Monad ((>=>))
-import Control.Monad.Fix (MonadFix(..))
 
 class Monad m => MonadState m where
     type State m
