@@ -40,7 +40,7 @@ instance AMPMonad m => Monad (ReaderT r m) where
     ma >>= mab = ReaderT $ \r -> runReaderT ma r >>= \a -> runReaderT (mab a) r
     {-# INLINE (>>=) #-}
 
-instance (Functor m, MonadFix m) => MonadFix (ReaderT s m) where
+instance (AMPMonad m, MonadFix m) => MonadFix (ReaderT s m) where
     mfix f = ReaderT $ \r -> mfix $ \a -> runReaderT (f a) r
     {-# INLINE mfix #-}
 

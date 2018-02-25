@@ -40,7 +40,7 @@ instance AMPMonad m => Monad (ExceptT e m) where
             Right x -> runExceptT (k x)
     fail = ExceptT . fail
 
-instance (MonadFix m) => MonadFix (ExceptT e m) where
+instance (AMPMonad m, MonadFix m) => MonadFix (ExceptT e m) where
     mfix f = ExceptT (mfix (runExceptT . f . fromEither))
       where
         fromEither (Right x) = x
