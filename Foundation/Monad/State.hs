@@ -48,7 +48,7 @@ instance (Functor m, Monad m) => Monad (StateT s m) where
     ma >>= mab = StateT $ runStateT ma >=> (\(a, s2) -> runStateT (mab a) s2)
     {-# INLINE (>>=) #-}
 
-instance MonadFix m => MonadFix (StateT s m) where
+instance (Functor m, MonadFix m) => MonadFix (StateT s m) where
     mfix f = StateT $ \s -> mfix $ \ ~(a, _) -> runStateT (f a) s
     {-# INLINE mfix #-}
 
