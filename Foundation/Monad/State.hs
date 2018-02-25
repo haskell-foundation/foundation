@@ -14,6 +14,7 @@ import Basement.Compat.Bifunctor (first)
 import Basement.Compat.Base (($), (.), const)
 import Foundation.Monad.Base
 import Control.Monad ((>=>))
+import Control.Monad.Fix (MonadFix(..))
 
 class Monad m => MonadState m where
     type State m
@@ -46,6 +47,9 @@ instance (Functor m, Monad m) => Monad (StateT s m) where
     {-# INLINE return #-}
     ma >>= mab = StateT $ runStateT ma >=> (\(a, s2) -> runStateT (mab a) s2)
     {-# INLINE (>>=) #-}
+
+instance MonadFix m => MonadFix (StateT s m) where
+    mfix f = StateT $ \s -> mfix $ \ ~(a, _) -> runStateT (f a) s
 
 instance MonadTrans (StateT s) where
     lift f = StateT $ \s -> f >>= return . (,s)
