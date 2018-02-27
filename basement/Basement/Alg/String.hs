@@ -39,9 +39,9 @@ copyFilter predicate !sz dst src start = loop (Offset 0) start
     loop !d !s
         | s == end  = pure (offsetAsSize d)
         | otherwise =
-            let !h = index src s
+            let !h = nextAscii src s
              in case headerIsAscii h of
-                    True | predicate (toChar1 h) -> primMbaWrite dst d h >> loop (d + Offset 1) (s + Offset 1)
+                    True | predicate (toChar1 h) -> primMbaWrite dst d (stepAsciiRawValue h) >> loop (d + Offset 1) (s + Offset 1)
                          | otherwise             -> loop d (s + Offset 1)
                     False ->
                         case next src s of
@@ -58,10 +58,10 @@ validate end ba ofsStart = loop4 ofsStart
   where
     loop4 !ofs
         | ofs4 < end =
-            let h1 = index ba ofs
-                h2 = index ba (ofs+1)
-                h3 = index ba (ofs+2)
-                h4 = index ba (ofs+3)
+            let h1 = nextAscii ba ofs
+                h2 = nextAscii ba (ofs+1)
+                h3 = nextAscii ba (ofs+2)
+                h4 = nextAscii ba (ofs+3)
              in if headerIsAscii h1 && headerIsAscii h2 && headerIsAscii h3 && headerIsAscii h4
                     then loop4 ofs4
                     else loop ofs
@@ -73,7 +73,7 @@ validate end ba ofsStart = loop4 ofsStart
         | headerIsAscii h = loop (ofs + Offset 1)
         | otherwise       = multi (CountOf $ getNbBytes h) ofs
       where
-        h = index ba ofs
+        h = nextAscii ba ofs
 
     multi (CountOf 0xff) pos = (pos, Just InvalidHeader)
     multi nbConts pos

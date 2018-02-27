@@ -62,13 +62,13 @@ next ba n =
         3 -> Step (toChar4 h (index ba (n + Offset 1))
                              (index ba (n + Offset 2))
                              (index ba (n + Offset 3))) (n + Offset 4)
-        r -> error ("next: internal error: invalid input: offset=" <> show n <> " table=" <> show r <> " h=" <> show h)
+        r -> error ("next: internal error: invalid input: offset=" <> show n <> " table=" <> show r <> " h=" <> show (stepAsciiRawValue h))
   where
-    !h = index ba n
+    !h = nextAscii ba n
 {-# INLINE next #-}
 
 nextSkip :: Indexable container Word8 => container -> Offset Word8 -> Offset Word8
-nextSkip ba n = n + 1 + Offset (getNbBytes (index ba n))
+nextSkip ba n = n + 1 + Offset (getNbBytes (nextAscii ba n))
 {-# INLINE nextSkip #-}
 
 -- Given a non null offset, give the previous character and the offset of this character
@@ -245,24 +245,24 @@ reverse dst dstOfs src start end
   where
     loop !d !s
         | s == end        = pure ()
-        | headerIsAscii h = primMbaWrite dst d h >> loop (d `offsetSub` 1) (s + 1)
+        | headerIsAscii h = primMbaWrite dst d (stepAsciiRawValue h) >> loop (d `offsetSub` 1) (s + 1)
         | otherwise       = do
             case getNbBytes h of
                 1 -> do
-                    primMbaWrite dst (d `offsetSub` 1) h
+                    primMbaWrite dst (d `offsetSub` 1) (stepAsciiRawValue h)
                     primMbaWrite dst d                 (index src (s + 1))
                     loop (d `offsetSub` 2) (s + 2)
                 2 -> do
-                    primMbaWrite dst (d `offsetSub` 2) h
+                    primMbaWrite dst (d `offsetSub` 2) (stepAsciiRawValue h)
                     primMbaWrite dst (d `offsetSub` 1) (index src (s + 1))
                     primMbaWrite dst d                 (index src (s + 2))
                     loop (d `offsetSub` 3) (s + 3)
                 3 -> do
-                    primMbaWrite dst (d `offsetSub` 3) h
+                    primMbaWrite dst (d `offsetSub` 3) (stepAsciiRawValue h)
                     primMbaWrite dst (d `offsetSub` 2) (index src (s + 1))
                     primMbaWrite dst (d `offsetSub` 1) (index src (s + 2))
                     primMbaWrite dst d                 (index src (s + 3))
                     loop (d `offsetSub` 4) (s + 4)
                 _ -> error "impossible"
-      where h = index src s
+      where h = nextAscii src s
 {-# INLINE reverse #-}

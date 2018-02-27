@@ -194,7 +194,7 @@ mutableValidate mba ofsStart sz = do
                 (pos, Just failure) -> return (pos, Just failure)
 
     one pos = do
-        h <- Vec.unsafeRead mba pos
+        h <- StepASCII <$> Vec.unsafeRead mba pos
         let nbConts = getNbBytes h
         if nbConts == 0xff
             then return (pos, Just InvalidHeader)

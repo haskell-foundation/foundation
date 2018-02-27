@@ -19,6 +19,7 @@ module Basement.UTF8.Helper
 import           Basement.Compat.Base
 import           Basement.Compat.Primitive
 import           Basement.Types.OffsetSize
+import           Basement.UTF8.Types
 import           GHC.Prim
 import           GHC.Types
 import           GHC.Word
@@ -38,7 +39,7 @@ maskHeader3# :: Word# -> Word#
 maskHeader3# h = and# h 0xf##
 {-# INLINE maskHeader3# #-}
 
--- mask a UTF8 header for 3 bytes encoding (11110xxx and 3 valid bits)
+-- mask a UTF8 header for 4 bytes encoding (11110xxx and 3 valid bits)
 maskHeader4# :: Word# -> Word#
 maskHeader4# h = and# h 0x7##
 {-# INLINE maskHeader4# #-}
@@ -55,22 +56,22 @@ toChar# :: Word# -> Char
 toChar# w = C# (chr# (word2Int# w))
 {-# INLINE toChar# #-}
 
-toChar1 :: Word8 -> Char
-toChar1 (W8# w) = toChar# w
+toChar1 :: StepASCII -> Char
+toChar1 (StepASCII (W8# w)) = toChar# w
 
-toChar2 :: Word8 -> Word8 -> Char
-toChar2 (W8# w1) (W8# w2)=
+toChar2 :: StepASCII -> Word8 -> Char
+toChar2 (StepASCII (W8# w1)) (W8# w2) =
     toChar# (or# (uncheckedShiftL# (maskHeader2# w1) 6#) (maskContinuation# w2))
 
-toChar3 :: Word8 -> Word8 -> Word8 -> Char
-toChar3 (W8# w1) (W8# w2) (W8# w3) =
+toChar3 :: StepASCII -> Word8 -> Word8 -> Char
+toChar3 (StepASCII (W8# w1)) (W8# w2) (W8# w3) =
     toChar# (or3# (uncheckedShiftL# (maskHeader3# w1) 12#)
                   (uncheckedShiftL# (maskContinuation# w2) 6#)
                   (maskContinuation# w3)
             )
 
-toChar4 :: Word8 -> Word8 -> Word8 -> Word8 -> Char
-toChar4 (W8# w1) (W8# w2) (W8# w3) (W8# w4) =
+toChar4 :: StepASCII -> Word8 -> Word8 -> Word8 -> Char
+toChar4 (StepASCII (W8# w1)) (W8# w2) (W8# w3) (W8# w4) =
     toChar# (or4# (uncheckedShiftL# (maskHeader4# w1) 18#)
                   (uncheckedShiftL# (maskContinuation# w2) 12#)
                   (uncheckedShiftL# (maskContinuation# w3) 6#)
@@ -89,14 +90,13 @@ data UTF8Char =
 -- note that we expect here a valid unicode code point in the *allowed* range.
 -- bits will be lost if going above 0x10ffff
 asUTF8Char :: Char -> UTF8Char
-asUTF8Char !c
+asUTF8Char !(C# c)
   | bool# (ltWord# x 0x80##   ) = encode1
   | bool# (ltWord# x 0x800##  ) = encode2
   | bool# (ltWord# x 0x10000##) = encode3
   | otherwise                   = encode4
     where
-      !(I# xi) = fromEnum c
-      !x       = int2Word# xi
+      !x = int2Word# (ord# c)
 
       encode1 = UTF8_1 (W8# x)
       encode2 =
@@ -135,8 +135,8 @@ skipNextHeaderValue !x
     | otherwise = CountOf 4
 {-# INLINE skipNextHeaderValue #-}
 
-headerIsAscii :: Word8 -> Bool
-headerIsAscii x = x < 0x80
+headerIsAscii :: StepASCII -> Bool
+headerIsAscii (StepASCII x) = x < 0x80
 
 charToBytes :: Int -> CountOf Word8
 charToBytes c

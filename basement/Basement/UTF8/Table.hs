@@ -21,6 +21,7 @@ import           GHC.Types
 import           GHC.Word
 import           Basement.Compat.Base
 import           Basement.Compat.Primitive
+import           Basement.UTF8.Types (StepASCII(..))
 
 -- | Check if the byte is a continuation byte
 isContinuation :: Word8 -> Bool
@@ -52,8 +53,8 @@ data NbBytesCont = NbBytesInvalid | NbBytesCont0 | NbBytesCont1 | NbBytesCont2 |
 data NbBytesCont_ = NbBytesCont0_ | NbBytesCont1_ | NbBytesCont2_ | NbBytesCont3_
 
 -- | Get the number of following bytes given the first byte of a UTF8 sequence.
-getNbBytes :: Word8 -> Int
-getNbBytes (W8# w) = I# (getNbBytes# w)
+getNbBytes :: StepASCII -> Int
+getNbBytes (StepASCII (W8# w)) = I# (getNbBytes# w)
 {-# INLINE getNbBytes #-}
 
 -- | Check if the byte is a continuation byte

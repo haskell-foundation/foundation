@@ -34,7 +34,7 @@ data StepBack = StepBack {-# UNPACK #-} !Char {-# UNPACK #-} !(Offset Word8)
 newtype StepDigit = StepDigit Word8
 
 -- | Step when processing ASCII character
-newtype StepASCII = StepASCII Word8
+newtype StepASCII = StepASCII { stepAsciiRawValue :: Word8 }
 
 -- | Specialized tuple used for case mapping.
 data CM = CM {-# UNPACK #-} !Char {-# UNPACK #-} !Char {-# UNPACK #-} !Char deriving (Eq)
