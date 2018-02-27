@@ -9,8 +9,10 @@ module Basement.Alg.UTF8
     , expectAscii
     , next
     , nextSkip
+    , nextWith
     , prev
     , prevSkip
+    , writeASCII
     , writeUTF8
     , toList
     , all
@@ -32,6 +34,7 @@ import           Basement.Monad
 import           Basement.Numerical.Additive
 import           Basement.Numerical.Subtractive
 import           Basement.Types.OffsetSize
+import           Basement.Types.Char7 (Char7(..))
 import           Basement.PrimType
 import           Basement.UTF8.Helper
 import           Basement.UTF8.Table
@@ -71,6 +74,22 @@ nextSkip :: Indexable container Word8 => container -> Offset Word8 -> Offset Wor
 nextSkip ba n = n + 1 + Offset (getNbBytes (nextAscii ba n))
 {-# INLINE nextSkip #-}
 
+-- | special case for only non ascii next'er function
+nextWith :: Indexable container Word8
+         => StepASCII
+         -> container
+         -> Offset8
+         -> Step
+nextWith h ba n =
+    case getNbBytes h of
+        1 -> Step (toChar2 h (index ba n)) (n + Offset 1)
+        2 -> Step (toChar3 h (index ba n) (index ba (n + Offset 1))) (n + Offset 2)
+        3 -> Step (toChar4 h (index ba n)
+                             (index ba (n + Offset 1))
+                             (index ba (n + Offset 2))) (n + Offset 3)
+        r -> error ("nextWith: internal error: invalid input: offset=" <> show n <> " table=" <> show r <> " h=" <> show (stepAsciiRawValue h))
+{-# INLINE nextWith #-}
+
 -- Given a non null offset, give the previous character and the offset of this character
 -- will fail bad if apply at the beginning of string or an empty string.
 prev :: Indexable container Word8 => container -> Offset Word8 -> StepBack
@@ -104,7 +123,12 @@ prevSkip ba offset = loop (offset `offsetMinusE` sz1)
         | isContinuation (index ba o) = loop (o `offsetMinusE` sz1)
         | otherwise                       = o
 
-writeUTF8 :: (PrimMonad prim, RandomAccess container prim Word8) 
+writeASCII :: (PrimMonad prim, RandomAccess container prim Word8)
+           => container -> Offset8 -> Char7 -> prim ()
+writeASCII mba !i (Char7 c) = write mba i c
+{-# INLINE writeASCII #-}
+
+writeUTF8 :: (PrimMonad prim, RandomAccess container prim Word8)
           => container -> Offset8 -> Char -> prim Offset8
 writeUTF8 mba !i !c
     | bool# (ltWord# x 0x80##   ) = encode1

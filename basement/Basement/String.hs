@@ -127,6 +127,8 @@ import           Basement.UArray.Base as C (onBackendPrim, onBackend, onBackendP
 import           Basement.Alg.Class (Indexable)
 import qualified Basement.Alg.UTF8 as UTF8
 import qualified Basement.Alg.String as Alg
+import           Basement.Types.Char7 (Char7(..), c7Upper, c7Lower)
+import qualified Basement.Types.Char7 as Char7
 import           GHC.Prim
 import           GHC.ST
 import           GHC.Types
@@ -1321,8 +1323,8 @@ decimalDigitsPtr startAcc ptr !endOfs !startOfs = loop startAcc startOfs
 {-# SPECIALIZE decimalDigitsPtr :: Word -> Ptr Word8 -> Offset Word8 -> Offset Word8 -> (# Word, Bool, Offset Word8 #) #-}
 
 -- | Convert a 'String' 'Char' by 'Char' using a case mapping function.
-caseConvert :: (Char -> CM) -> String -> String
-caseConvert op s@(String arr) = runST $ do
+caseConvert :: (Char7 -> Char7) -> (Char -> CM) -> String -> String
+caseConvert opASCII op s@(String arr) = runST $ do
   mba <- MBLK.new iLen
   nL <- C.onBackendPrim
         (\blk  -> go mba blk (Offset 0) start)
@@ -1342,11 +1344,14 @@ caseConvert op s@(String arr) = runST $ do
       where
         eSize !e = if e == '\0' then 0 else charToBytes (fromEnum e)
         loop !dst !allocLen !nLen !dstIdx !srcIdx
-          | srcIdx == end = return nLen
+          | srcIdx == end    = return nLen
           | nLen == allocLen = realloc
+          | headerIsAscii h  = do
+                UTF8.writeASCII dst dstIdx (opASCII $ Char7 $ stepAsciiRawValue h)
+                loop dst allocLen (nLen + 1) (dstIdx+Offset 1) (srcIdx+Offset 1)
           | otherwise = do
               let !(CM c1 c2 c3) = op c
-                  !(Step c nextSrcIdx) = UTF8.next src srcIdx
+                  !(Step c nextSrcIdx) = UTF8.nextWith h src (srcIdx+Offset 1)
               nextDstIdx <- UTF8.writeUTF8 dst dstIdx c1
               if c2 == '\0' -- We keep the most common case loop as short as possible.
                 then loop dst allocLen (nLen + charToBytes (fromEnum c1)) nextDstIdx nextSrcIdx
@@ -1362,20 +1367,21 @@ caseConvert op s@(String arr) = runST $ do
               nDst <- MBLK.new nAll
               MBLK.unsafeCopyElements nDst 0 dst 0 nLen
               loop nDst nAll nLen dstIdx srcIdx
+            h = UTF8.nextAscii src srcIdx
 
 -- | Convert a 'String' to the upper-case equivalent.
 upper :: String -> String
-upper = caseConvert upperMapping
+upper = caseConvert c7Upper upperMapping
 
 -- | Convert a 'String' to the upper-case equivalent.
 lower :: String -> String
-lower = caseConvert lowerMapping
+lower = caseConvert c7Lower lowerMapping
 
 -- | Convert a 'String' to the unicode case fold equivalent.
 --
 -- Case folding is mostly used for caseless comparison of strings.
 caseFold :: String -> String
-caseFold = caseConvert foldMapping
+caseFold = caseConvert c7Upper foldMapping
 
 -- | Check whether the first string is a prefix of the second string.
 isPrefixOf :: String -> String -> Bool
