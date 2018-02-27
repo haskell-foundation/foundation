@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Foundation.Monad.Except
     ( ExceptT(..)
     ) where
@@ -38,6 +39,13 @@ instance AMPMonad m => Monad (ExceptT e m) where
             Left e -> return (Left e)
             Right x -> runExceptT (k x)
     fail = ExceptT . fail
+
+instance (AMPMonad m, MonadFix m) => MonadFix (ExceptT e m) where
+    mfix f = ExceptT (mfix (runExceptT . f . fromEither))
+      where
+        fromEither (Right x) = x
+        fromEither (Left  _) = error "mfix (ExceptT): inner computation returned Left value"
+    {-# INLINE mfix #-}
 
 instance MonadReader m => MonadReader (ExceptT e m) where
     type ReaderContext (ExceptT e m) = ReaderContext m

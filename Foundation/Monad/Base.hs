@@ -7,6 +7,7 @@ module Foundation.Monad.Base
     , MonadThrow(..)
     , MonadCatch(..)
     , MonadTrans(..)
+    , MonadFix(..)
     , IdentityT
     ) where
 
@@ -16,3 +17,4 @@ import Foundation.Monad.MonadIO
 import Foundation.Monad.Exception
 import Foundation.Monad.Transformer
 import Foundation.Monad.Identity
+import Control.Monad.Fix (MonadFix(..))
