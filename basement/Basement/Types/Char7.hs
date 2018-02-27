@@ -24,6 +24,9 @@ module Basement.Types.Char7
     , c7_7
     , c7_8
     , c7_9
+    -- * Upper / Lower With ASCII
+    , c7Upper
+    , c7Lower
     ) where
 
 import GHC.Prim
@@ -98,3 +101,15 @@ c7_6 = Char7 0x36
 c7_7 = Char7 0x37
 c7_8 = Char7 0x38
 c7_9 = Char7 0x39
+
+c7Lower :: Char7 -> Char7
+c7Lower c@(Char7 w)
+    | c <  c7_A = c
+    | c <= c7_Z = Char7 (w .|. 0x20)
+    | otherwise = c
+
+c7Upper :: Char7 -> Char7
+c7Upper c@(Char7 w)
+    | c <  c7_a = c
+    | c <= c7_z = Char7 (w .&. 0xdf)
+    | otherwise = c
