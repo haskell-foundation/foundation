@@ -30,6 +30,7 @@ import Test.Foundation.String.Base64
 import Test.Checks.Property.Collection
 import Test.Foundation.Format
 import qualified Test.Foundation.Bits as Bits
+import qualified Test.Basement as Basement
 
 #if MIN_VERSION_base(4,9,0)
 import Test.Foundation.Primitive.BlockN
@@ -110,6 +111,7 @@ main = defaultMain $ Group "foundation"
             ]
         , Group "Number" testNumberRefs
         ]
+    , Basement.tests
     , Bits.tests
     , Group "String"
         [ Group "reading"

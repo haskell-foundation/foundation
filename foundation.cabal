@@ -233,6 +233,8 @@ test-suite check-foundation
                      Test.Foundation.String.Base64
                      Test.Foundation.String
                      Test.Foundation.Bits
+                     Test.Basement
+                     Test.Basement.UTF8
                      Test.Data.Network
                      Test.Data.List
                      Test.Foundation.Network.IPv4
