@@ -29,7 +29,6 @@ build-type:          Simple
 homepage:            https://github.com/haskell-foundation/foundation
 bug-reports:         https://github.com/haskell-foundation/foundation/issues
 cabal-version:       >=1.18
-tested-with:         GHC==8.2.1, GHC==8.0.2, GHC==7.10.3
 extra-source-files:  cbits/*.h
 extra-doc-files:     README.md
                      CHANGELOG.md
@@ -96,6 +95,7 @@ library
                      Foundation.Collection
                      Foundation.Primitive
                      Foundation.List.DList
+                     Foundation.List.ListN
                      Foundation.Monad
                      Foundation.Monad.Except
                      Foundation.Monad.Reader
@@ -113,6 +113,7 @@ library
                      Foundation.Time.Types
                      Foundation.Time.Bindings
                      Foundation.Time.StopWatch
+                     Foundation.Tuple.Nth
                      Foundation.UUID
                      Foundation.System.Entropy
                      Foundation.System.Bindings
@@ -187,18 +188,22 @@ library
   if os(osx)
     exposed-modules: Foundation.System.Bindings.Macos
 
-  if impl(ghc >= 7.10)
-    exposed-modules: Foundation.Tuple.Nth
-                     Foundation.List.ListN
-
   default-extensions: NoImplicitPrelude
                       RebindableSyntax
                       TypeFamilies
                       BangPatterns
                       DeriveDataTypeable
-  build-depends:     base >= 4.7 && < 5
-                   , basement == 0.0.7
+
+  if impl(ghc < 8.0)
+    buildable: False
+  else
+    build-depends:   base
                    , ghc-prim
+    if os(windows)
+      build-depends: Win32
+
+  build-depends: basement == 0.0.7
+
   -- FIXME add suport for armel mipsel
   --  CPP-options: -DARCH_IS_LITTLE_ENDIAN
   -- FIXME add support for powerpc powerpc64 armeb mipseb
@@ -207,8 +212,6 @@ library
     cpp-options: -DARCH_IS_LITTLE_ENDIAN
   else
     cpp-options: -DARCH_IS_UNKNOWN_ENDIAN
-  if os(windows)
-    build-depends:    Win32
   ghc-options:       -Wall -fwarn-tabs
   default-language:  Haskell2010
   if impl(ghc >= 8.0)
@@ -239,7 +242,7 @@ test-suite check-foundation
   default-extensions: NoImplicitPrelude
                       RebindableSyntax
                       OverloadedStrings
-  build-depends:     base >= 3 && < 5
+  build-depends:     base
                    , basement
                    , foundation
   ghc-options:       -Wall -fno-warn-orphans -fno-warn-missing-signatures
@@ -274,7 +277,7 @@ test-suite doctest
     buildable:       False
   else
     if flag(doctest)
-      build-depends:     base >= 3 && < 5
+      build-depends:     base
                        , doctest >= 0.9
       buildable:     True
     else
@@ -296,7 +299,7 @@ Benchmark bench
   if flag(minimal-deps) || impl(ghc < 7.10)
     buildable: False
   else
-    build-depends:     base >= 4, gauge, basement, foundation
+    build-depends:     base, gauge, basement, foundation
     if flag(bench-all)
       cpp-options:     -DBENCH_ALL
       build-depends:   text, attoparsec, vector, bytestring
