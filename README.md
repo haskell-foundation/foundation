@@ -30,6 +30,11 @@ Goals
 * provide better data-types: packed unicode string by default, arrays.
 * Better numerical classes that better represent mathematical things (No more all-in-one Num).
 
+Support
+=======
+
+See [Haskell packages guidelines](https://github.com/vincenthz/haskell-pkg-guidelines/blob/master/README.md#support)
+
 Usage
 =====
 
