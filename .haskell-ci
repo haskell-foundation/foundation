@@ -1,6 +1,4 @@
 # compiler supported and their equivalent LTS
-compiler: ghc-7.8 lts-2.22
-compiler: ghc-7.10 lts-6.35
 compiler: ghc-8.0 lts-9.21
 compiler: ghc-8.0-edge lts-9.21
 compiler: ghc-8.0-experimental lts-9.21
@@ -13,9 +11,7 @@ option: checkbounds flag=foundation:bounds-check flag=foundation:linktest
 option: experimental flag=foundation:experimental
 
 # builds 
-build: ghc-7.8 checkbounds gaugedep nohaddock
 build: ghc-8.2 checkbounds gaugedep
-build: ghc-7.10 checkbounds gaugedep
 build: ghc-8.0 checkbounds gaugedep
 build: ghc-8.0 checkbounds gaugedep os=osx
 build: ghc-8.0-edge checkbounds gaugedep package=edge/

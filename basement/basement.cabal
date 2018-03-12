@@ -14,7 +14,6 @@ build-type:          Simple
 homepage:            https://github.com/haskell-foundation/foundation
 bug-reports:         https://github.com/haskell-foundation/foundation/issues
 cabal-version:       >=1.10
-tested-with:         GHC==8.2.1, GHC==8.0.2, GHC==7.10.3
 extra-source-files:  cbits/*.h
 
 source-repository head
@@ -59,6 +58,13 @@ library
                      Basement.String.Builder
                      Basement.NonEmpty
 
+                     -- Extended Types with explicit type level size
+                     Basement.Sized.Block
+                     Basement.Sized.UVect
+                     Basement.Sized.Vect
+                     Basement.Sized.List
+                     Basement.BlockN
+
                      -- Utils
                      Basement.NormalForm
                      Basement.These
@@ -95,15 +101,8 @@ library
                      Basement.Compat.Natural
                      Basement.Compat.NumLiteral
                      Basement.Compat.Typeable
-  if impl(ghc >= 8.0)
-    exposed-modules: Basement.BlockN
-                   , Basement.Sized.Block
-                   , Basement.Sized.UVect
-                   , Basement.Sized.Vect
-                   , Basement.Bits
-  if impl(ghc >= 7.10)
-    exposed-modules:
-                     Basement.Sized.List
+
+                     Basement.Bits
 
   other-modules:
                      Basement.Error
@@ -137,12 +136,14 @@ library
 
                      Basement.Terminal.Size
 
-
-  build-depends:       base >= 4.7 && < 5
+  -- support and dependencies
+  if impl(ghc < 8.0)
+    buildable: False
+  else
+    build-depends:     base
                      , ghc-prim
-
-  if os(windows)
-    build-depends:     Win32
+    if os(windows)
+      build-depends:   Win32
 
   default-language:    Haskell2010
   default-extensions: NoImplicitPrelude
