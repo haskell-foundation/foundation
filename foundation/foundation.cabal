@@ -36,6 +36,7 @@ extra-doc-files:     README.md
 source-repository head
   type: git
   location: https://github.com/haskell-foundation/foundation
+  subdir: foundation
 
 flag experimental
   description:       Enable building experimental features, known as highly unstable or without good support cross-platform

@@ -18,7 +18,8 @@ extra-source-files:  cbits/*.h
 
 source-repository head
   type: git
-  location: https://github.com/haskell-foundation/foundation.git
+  location: https://github.com/haskell-foundation/foundation
+  subdir: basement
 
 library
   hs-source-dirs:    .
