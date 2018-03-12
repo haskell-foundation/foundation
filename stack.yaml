@@ -1,7 +1,7 @@
-resolver: lts-10.3
+resolver: lts-10.7
 packages:
-- '.'
+- location: foundation/
 - location: basement/
   extra-dep: true
 extra-deps:
-- gauge-0.2.0
+- gauge-0.2.1
