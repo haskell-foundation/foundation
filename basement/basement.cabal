@@ -36,6 +36,7 @@ library
                      Basement.From
 
                      Basement.Types.Char7
+                     Basement.Types.CharUTF8
                      Basement.Types.OffsetSize
                      Basement.Types.Ptr
                      Basement.Types.AsciiString
