@@ -23,6 +23,7 @@
 
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Foundation.Parser
     ( Parser
@@ -38,7 +39,8 @@ module Foundation.Parser
       ParserSource(..)
 
     , -- * combinator
-      element
+      peek
+    , element
     , anyElement
     , elements
     , string
@@ -85,13 +87,21 @@ data ParseError input
     | Satisfy (Maybe String)
         -- ^ the @satisfy@ or @satisfy_@ function failed,
   deriving (Typeable)
-instance Typeable input => Exception (ParseError input)
+instance (Typeable input, Show input) => Exception (ParseError input)
 
-instance Show (ParseError input) where
+instance Show input => Show (ParseError input) where
     show (NotEnough (CountOf sz)) = "NotEnough: missing " <> show sz <> " element(s)"
     show NotEnoughParseOnly    = "NotEnough, parse only"
     show (ExpectedElement _ _) = "Expected _ but received _"
     show (Expected _ _)        = "Expected _ but received _"
+    show (Satisfy Nothing)     = "Satisfy"
+    show (Satisfy (Just s))    = "Satisfy: " <> toList s
+
+instance {-# OVERLAPPING #-} Show (ParseError String) where
+    show (NotEnough (CountOf sz)) = "NotEnough: missing " <> show sz <> " element(s)"
+    show NotEnoughParseOnly    = "NotEnough, parse only"
+    show (ExpectedElement a b) = "Expected "<>show a<>" but received " <> show b
+    show (Expected a b)        = "Expected "<>show a<>" but received " <> show b
     show (Satisfy Nothing)     = "Satisfy"
     show (Satisfy (Just s))    = "Satisfy: " <> toList s
 
@@ -107,7 +117,7 @@ data Result input result
         -- ^ the parser needs more input, pass an empty @Chunk@ or @mempty@
         -- to tell the parser you don't have anymore inputs.
 
-instance Show k => Show (Result input k) where
+instance (Show k, Show input) => Show (Result input k) where
     show (ParseFailed err) = "Parser failed: " <> show err
     show (ParseOk _ k) = "Parser succeed: " <> show k
     show (ParseMore _) = "Parser incomplete: need more"
@@ -300,6 +310,19 @@ anyElement = Parser $ \buf off nm err ok ->
         Nothing -> err buf off        nm $ NotEnough 1
         Just x  -> ok  buf (succ off) nm x
 {-# INLINE anyElement #-}
+
+-- | peek the first element from the input source without consuming it
+--
+-- Returns 'Nothing' if there is no more input to parse.
+--
+peek :: ParserSource input => Parser input (Maybe (Element input))
+peek = Parser $ \buf off nm err ok ->
+    case buf ! off of
+        Nothing -> runParser_ peekOnly buf off nm err ok
+        Just x  -> ok buf off nm (Just x)
+  where
+    peekOnly = Parser $ \buf off nm _ ok ->
+        ok buf off nm (buf ! off)
 
 element :: ( ParserSource input
            , Eq (Element input)
