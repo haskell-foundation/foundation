@@ -19,23 +19,23 @@ module Foundation.Format.CSV.Types
     -- * Row
     , Row
     , unRow
-    , ToRow(..)
+    , Record(..)
     -- * Field
     , Field(..)
     , Escaping(..)
-    , ToField(..)
+    , IsField(..)
     -- ** helpers
     , integral
     , float
     , string
     ) where
 
-import           Basement.Imports -- hiding (throw)
-import           Basement.BoxedArray              (Array)
+import           Basement.Imports
+import           Basement.BoxedArray              (Array, length, unsafeIndex)
 import           Basement.NormalForm              (NormalForm(..))
 import           Basement.From                    (Into, into)
-import           Basement.String                  (String, any, elem)
-import qualified Basement.String        as String (singleton)
+import           Basement.String                  (String, any, elem, null, uncons)
+import qualified Basement.String       as String (singleton)
 import           Basement.Types.Word128           (Word128)
 import           Basement.Types.Word256           (Word256)
 import           Basement.Types.OffsetSize        (Offset, CountOf)
@@ -44,6 +44,7 @@ import           Foundation.Collection.Collection (Collection, nonEmpty_)
 import           Foundation.Collection.Sequential (Sequential)
 import           Foundation.Collection.Indexed    (IndexedCollection)
 import           Foundation.Check.Arbitrary       (Arbitrary(..), frequency)
+import           Foundation.String.Read (readDouble, readInteger)
 
 -- | CSV field
 data Field
@@ -66,60 +67,111 @@ data Escaping = NoEscape | Escape | DoubleEscape
 instance NormalForm Escaping where
     toNormalForm !_ = ()
 
-class ToField a where
+class IsField a where
     toField :: a -> Field
-instance ToField Field where
+    fromField :: Field -> Either String a
+instance IsField Field where
     toField = id
-instance ToField a => ToField (Maybe a) where
+    fromField = pure
+instance IsField a => IsField (Maybe a) where
     toField Nothing  = FieldString mempty NoEscape
     toField (Just a) = toField a
+    fromField stuff@(FieldString p NoEscape)
+        | null p = pure Nothing
+        | otherwise = Just <$> fromField stuff
+    fromField stuff = Just <$> fromField stuff
 
-instance ToField Int8 where
-    toField = FieldInteger . into
-instance ToField Int16 where
-    toField = FieldInteger . into
-instance ToField Int32 where
-    toField = FieldInteger . into
-instance ToField Int64 where
-    toField = FieldInteger . into
-instance ToField Int where
-    toField = FieldInteger . into
+fromIntegralField :: Integral b => Field -> Either String b
+fromIntegralField (FieldString str NoEscape) = case readInteger str of
+    Nothing -> Left "Invalid integral field"
+    Just v  -> pure $ fromInteger v
+fromIntegralField (FieldInteger v) = pure (fromInteger v)
+fromIntegralField _ = Left "Expected integral value"
 
-instance ToField Word8 where
-    toField = FieldInteger . into
-instance ToField Word16 where
-    toField = FieldInteger . into
-instance ToField Word32 where
-    toField = FieldInteger . into
-instance ToField Word64 where
-    toField = FieldInteger . into
-instance ToField Word where
-    toField = FieldInteger . into
-instance ToField Word128 where
-    toField = FieldInteger . into
-instance ToField Word256 where
-    toField = FieldInteger . into
+fromDoubleField :: Field -> Either String Double
+fromDoubleField (FieldString str NoEscape) = case readDouble str of
+    Nothing -> Left "Invalid double field"
+    Just v  -> pure v
+fromDoubleField (FieldDouble v) = pure v
+fromDoubleField _ = Left "Expected double value"
 
-instance ToField Integer where
+instance IsField Bool where
+    toField = toField . show
+    fromField (FieldString "True" NoEscape) = pure True
+    fromField (FieldString "False" NoEscape) = pure False
+    fromField _ = Left "not a boolean value"
+instance IsField Int8 where
+    toField = FieldInteger . into
+    fromField = fromIntegralField
+instance IsField Int16 where
+    toField = FieldInteger . into
+    fromField = fromIntegralField
+instance IsField Int32 where
+    toField = FieldInteger . into
+    fromField = fromIntegralField
+instance IsField Int64 where
+    toField = FieldInteger . into
+    fromField = fromIntegralField
+instance IsField Int where
+    toField = FieldInteger . into
+    fromField = fromIntegralField
+
+instance IsField Word8 where
+    toField = FieldInteger . into
+    fromField = fromIntegralField
+instance IsField Word16 where
+    toField = FieldInteger . into
+    fromField = fromIntegralField
+instance IsField Word32 where
+    toField = FieldInteger . into
+    fromField = fromIntegralField
+instance IsField Word64 where
+    toField = FieldInteger . into
+    fromField = fromIntegralField
+instance IsField Word where
+    toField = FieldInteger . into
+    fromField = fromIntegralField
+instance IsField Word128 where
+    toField = FieldInteger . into
+    fromField = fromIntegralField
+instance IsField Word256 where
+    toField = FieldInteger . into
+    fromField = fromIntegralField
+
+instance IsField Integer where
     toField = FieldInteger
-instance ToField Natural where
+    fromField = fromIntegralField
+instance IsField Natural where
     toField = FieldInteger . into
+    fromField = fromIntegralField
 
-instance ToField Double where
+instance IsField Double where
     toField = FieldDouble
+    fromField = fromDoubleField
 
-instance ToField Char where
+instance IsField Char where
     toField = string . String.singleton
+    fromField (FieldString str _) = case uncons str of
+        Just (c, str') | null str' -> pure c
+                       | otherwise -> Left "Expected a char, but received a String"
+        Nothing -> Left "Expected a char"
+    fromField _ = Left "Expected a char"
 
-instance ToField (Offset a) where
+instance IsField (Offset a) where
     toField = FieldInteger . into
-instance ToField (CountOf a) where
+    fromField = fromIntegralField
+instance IsField (CountOf a) where
     toField = FieldInteger . into
+    fromField = fromIntegralField
 
-instance ToField [Char] where
+instance IsField [Char] where
     toField = string . fromString
-instance ToField String where
+    fromField (FieldString str _) = pure $ toList str
+    fromField _ = Left "Expected a Lazy String"
+instance IsField String where
     toField = string
+    fromField (FieldString str _) = pure str
+    fromField _ = Left "Expected a UTF8 String"
 
 -- | helper function to create a `FieldInteger`
 --
@@ -141,8 +193,8 @@ string s = FieldString s encoding
         | any g s   = DoubleEscape
         | any f s   = Escape
         | otherwise = NoEscape
-    f c = c == '\"'
-    g c = c `elem` ",\r\n"
+    g c = c == '\"'
+    f c = c `elem` ",\r\n"
 
 -- | CSV Row
 --
@@ -155,20 +207,51 @@ instance IsList Row where
     toList = toList . unRow
     fromList = Row . fromList
 
-class ToRow a where
+class Record a where
     toRow :: a -> Row
-instance ToRow Row where
+    fromRow :: Row -> Either String a
+instance Record Row where
     toRow = id
-instance (ToField a, ToField b) => ToRow (a,b) where
+    fromRow = pure
+instance (IsField a, IsField b) => Record (a,b) where
     toRow (a,b) = fromList [toField a, toField b]
-instance (ToField a, ToField b, ToField c) => ToRow (a,b,c) where
+    fromRow (Row row)
+        | length row == 2 = (,) <$> fromField (row `unsafeIndex` 0) <*> fromField (row `unsafeIndex` 1)
+        | otherwise       = Left (show row)
+instance (IsField a, IsField b, IsField c) => Record (a,b,c) where
     toRow (a,b,c) = fromList [toField a, toField b, toField c]
-instance (ToField a, ToField b, ToField c, ToField d) => ToRow (a,b,c,d) where
+    fromRow (Row row)
+        | length row == 3 = (,,) <$> fromField (row `unsafeIndex` 0)
+                                 <*> fromField (row `unsafeIndex` 1)
+                                 <*> fromField (row `unsafeIndex` 2)
+        | otherwise       = Left (show row)
+instance (IsField a, IsField b, IsField c, IsField d) => Record (a,b,c,d) where
     toRow (a,b,c,d) = fromList [toField a, toField b, toField c, toField d]
-instance (ToField a, ToField b, ToField c, ToField d, ToField e) => ToRow (a,b,c,d,e) where
+    fromRow (Row row)
+        | length row == 4 = (,,,) <$> fromField (row `unsafeIndex` 0)
+                                  <*> fromField (row `unsafeIndex` 1)
+                                  <*> fromField (row `unsafeIndex` 2)
+                                  <*> fromField (row `unsafeIndex` 3)
+        | otherwise       = Left (show row)
+instance (IsField a, IsField b, IsField c, IsField d, IsField e) => Record (a,b,c,d,e) where
     toRow (a,b,c,d,e) = fromList [toField a, toField b, toField c, toField d, toField e]
-instance (ToField a, ToField b, ToField c, ToField d, ToField e, ToField f) => ToRow (a,b,c,d,e,f) where
+    fromRow (Row row)
+        | length row == 5 = (,,,,) <$> fromField (row `unsafeIndex` 0)
+                                   <*> fromField (row `unsafeIndex` 1)
+                                   <*> fromField (row `unsafeIndex` 2)
+                                   <*> fromField (row `unsafeIndex` 3)
+                                   <*> fromField (row `unsafeIndex` 4)
+        | otherwise       = Left (show row)
+instance (IsField a, IsField b, IsField c, IsField d, IsField e, IsField f) => Record (a,b,c,d,e,f) where
     toRow (a,b,c,d,e,f) = fromList [toField a, toField b, toField c, toField d, toField e, toField f]
+    fromRow (Row row)
+        | length row == 6 = (,,,,,) <$> fromField (row `unsafeIndex` 0)
+                                    <*> fromField (row `unsafeIndex` 1)
+                                    <*> fromField (row `unsafeIndex` 2)
+                                    <*> fromField (row `unsafeIndex` 3)
+                                    <*> fromField (row `unsafeIndex` 4)
+                                    <*> fromField (row `unsafeIndex` 5)
+        | otherwise       = Left (show row)
 
 -- | CSV Type
 newtype CSV = CSV { unCSV :: Array Row }

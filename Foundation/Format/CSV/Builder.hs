@@ -62,7 +62,7 @@ fieldBlockBuilder (FieldString  s e) = case e of
     Escape       -> Block.emitUTF8Char '"' <> Block.emitString s <> Block.emitUTF8Char '"'
     DoubleEscape -> Block.emitUTF8Char '"' <> Block.emitString (replace "\"" "\"\"" s) <> Block.emitUTF8Char '"'
 
-rowC :: (ToRow row, Monad m) => Conduit row (Block Word8) m ()
+rowC :: (Record row, Monad m) => Conduit row (Block Word8) m ()
 rowC = await >>= go
   where
     go Nothing  = pure ()
