@@ -30,12 +30,11 @@ homepage:            https://github.com/haskell-foundation/foundation
 bug-reports:         https://github.com/haskell-foundation/foundation/issues
 cabal-version:       >=1.18
 extra-source-files:  cbits/*.h
-extra-doc-files:     README.md
-                     CHANGELOG.md
 
 source-repository head
   type: git
   location: https://github.com/haskell-foundation/foundation
+  subdir: foundation
 
 flag experimental
   description:       Enable building experimental features, known as highly unstable or without good support cross-platform

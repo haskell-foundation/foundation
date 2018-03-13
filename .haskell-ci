@@ -19,7 +19,7 @@ build: ghc-8.0-experimental checkbounds experimental allowed-failure gaugedep
 build: ghc-8.4 checkbounds experimental allowed-failure gaugedep extradep=vector-0.12.0.1 extradep=primitive-0.6.3.0
 
 # packages
-package: '.'
+package: foundation/
 package: basement/
 
 # extra builds
