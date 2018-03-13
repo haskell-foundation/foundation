@@ -144,6 +144,7 @@ library
                      Foundation.Conduit.Internal
                      Foundation.Format.CSV.Types
                      Foundation.Format.CSV.Builder
+                     Foundation.Format.CSV.Parser
                      Foundation.Numerical.Floating
                      Foundation.IO.File
                      Foundation.Monad.MonadIO

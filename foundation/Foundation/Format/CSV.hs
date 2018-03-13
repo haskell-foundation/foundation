@@ -17,23 +17,32 @@ module Foundation.Format.CSV
       CSV
 
     -- ** Builder
-    -- ** String Bulider
+    -- *** String Bulider
     , csvStringBuilder
     , rowStringBuilder
     , fieldStringBuilder
-    -- ** Block Builder
+    -- *** Block Builder
     , csvBlockBuilder
     , rowBlockBuilder
     , fieldBlockBuilder
     -- ** Conduit
     , rowC
+
+    -- ** Parser
+    -- *** String Bulider
+    , file
+    , record
+    , record_
+    , field
+    -- ** Conduit
+    , recordC
     -- * Row
     , Row
-    , ToRow(..)
+    , Record(..)
     -- * Field
     , Field(..)
     , Escaping(..)
-    , ToField(..)
+    , IsField(..)
     -- ** helpers
     , integral
     , float
@@ -42,3 +51,4 @@ module Foundation.Format.CSV
 
 import Foundation.Format.CSV.Types
 import Foundation.Format.CSV.Builder
+import Foundation.Format.CSV.Parser
