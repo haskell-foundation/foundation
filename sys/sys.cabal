@@ -23,6 +23,7 @@ library
   build-depends:
       base >=1 && <1000
     , basement
+  -- Windows Or Posix
   if os(windows)
     exposed-modules:
       SysDep.Windows
@@ -37,6 +38,8 @@ library
       SysDep.Posix.Memory
       SysDep.Posix.Types
   default-language: Haskell2010
+
+  -- individual OS
   if os(linux)
     exposed-modules:
       SysDep.Linux
