@@ -1,5 +1,5 @@
 {-# OPTIONS_HADDOCK hide #-}
-module SysDep.MacOS.Types
+module SysDep.MacOS.Constants
     where
 
 import Basement.Compat.Base
@@ -11,8 +11,6 @@ import Basement.Types.OffsetSize
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <mach/mach.h>
-#include <mach/mach_time.h>
 
 openflag_SHLOCK
     , openflag_EXLOCK
