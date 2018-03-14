@@ -18,7 +18,6 @@ Documentation:
 
 Discuss:
 
-* [FP Chat](https://fpchat-invite.herokuapp.com) `#haskell-foundation` channel
 * [Gitter](https://gitter.im/haskell-foundation/foundation)
 
 Goals
