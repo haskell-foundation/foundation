@@ -35,3 +35,9 @@ library
       SysDep.Posix.Memory
       SysDep.Posix.Types
   default-language: Haskell2010
+  if os(osx)
+    exposed-modules:
+      SysDep.MacOS
+      SysDep.MacOS.MachTime
+    other-modules:
+      SysDep.MacOS.Constants
