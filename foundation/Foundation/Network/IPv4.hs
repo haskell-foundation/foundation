@@ -29,7 +29,7 @@ import Data.Proxy
 import Foundation.String (String)
 import Foundation.Primitive
 import Foundation.Bits
-import Foundation.Parser
+import Foundation.Parser hiding (peek)
 import Foundation.Collection (Sequential, Element, elem)
 
 -- | IPv4 data type
