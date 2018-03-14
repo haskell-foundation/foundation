@@ -19,3 +19,17 @@ openflag_TMPFILE   = (#const __O_TMPFILE)
 #else
 openflag_TMPFILE   = 0
 #endif
+
+seek_DATA :: CSeekFlags
+#ifdef SEEK_DATA
+seek_DATA = (#const SEEK_DATA)
+#else
+seek_DATA = 0
+#endif
+
+seek_HOLE :: CSeekFlags
+#ifdef SEEK_HOLE
+seek_HOLE = (#const SEEK_HOLE)
+#else
+seek_HOLE = 0
+#endif

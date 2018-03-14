@@ -283,3 +283,10 @@ memsync_INVALIDATE = (#const MS_INVALIDATE)
 
 sysconf_PAGESIZE :: CSysconfName
 sysconf_PAGESIZE = (#const _SC_PAGESIZE)
+
+seek_SET
+    , seek_CUR
+    , seek_END :: CSeekFlags
+seek_SET = (#const SEEK_SET)
+seek_CUR = (#const SEEK_CUR)
+seek_END = (#const SEEK_END)
