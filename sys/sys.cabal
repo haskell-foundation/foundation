@@ -20,8 +20,10 @@ source-repository head
 library
   hs-source-dirs:
       ./.
+  if impl(ghc < 8.0)
+    buildable: False
   build-depends:
-      base >=1 && <1000
+      base
     , basement
   -- Windows Or Posix
   if os(windows)
