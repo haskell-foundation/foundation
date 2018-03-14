@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 module SysDep.Posix.Memory
     ( mmap
     , munmap
@@ -53,4 +54,3 @@ foreign import ccall unsafe "munlock"
 munlock :: Ptr a -> CSize -> IO CInt
 munlock _ _ = return (-1)
 #endif
-

@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 module SysDep.Posix.Constants
     where
 

@@ -32,6 +32,8 @@ library
     other-modules:
       SysDep.Posix.Constants
       SysDep.Posix.Functions
+      SysDep.Posix.File
+      SysDep.Posix.Directory
       SysDep.Posix.Memory
       SysDep.Posix.Types
   default-language: Haskell2010
