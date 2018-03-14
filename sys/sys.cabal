@@ -37,6 +37,13 @@ library
       SysDep.Posix.Memory
       SysDep.Posix.Types
   default-language: Haskell2010
+  if os(linux)
+    exposed-modules:
+      SysDep.Linux
+      SysDep.Linux.Inotify
+    other-modules:
+      SysDep.Linux.Constants
+      SysDep.Linux.Types
   if os(osx)
     exposed-modules:
       SysDep.MacOS
