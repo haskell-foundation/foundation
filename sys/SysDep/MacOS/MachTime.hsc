@@ -4,7 +4,6 @@ module SysDep.MacOS.MachTime
 
 import Basement.Compat.Base
 import Basement.Compat.C.Types
-import Foundation.System.Bindings.PosixDef
 import Basement.Types.OffsetSize
 
 #include <sys/mman.h>
