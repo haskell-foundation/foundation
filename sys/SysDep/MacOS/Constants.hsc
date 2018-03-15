@@ -4,8 +4,8 @@ module SysDep.MacOS.Constants
 
 import Basement.Compat.Base
 import Basement.Compat.C.Types
-import Foundation.System.Bindings.PosixDef
 import Basement.Types.OffsetSize
+import SysDep.Posix.Types
 
 #include <sys/mman.h>
 #include <sys/stat.h>
