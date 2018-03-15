@@ -25,4 +25,5 @@ import           SysDep.Posix.Constants as X
 import           SysDep.Posix.Functions as X
 import           SysDep.Posix.File as X
 import           SysDep.Posix.Directory as X
+import           SysDep.Posix.Terminal as X
 import           SysDep.Posix.Memory as X

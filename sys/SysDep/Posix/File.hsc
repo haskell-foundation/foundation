@@ -15,6 +15,7 @@ import           Foreign.C.String
 #include <fcntl.h>
 #include <errno.h>
 
+
 --------------------------------------------------------------------------------
 -- files
 --------------------------------------------------------------------------------
@@ -32,9 +33,6 @@ foreign import ccall "fcntl"
 
 foreign import ccall unsafe "fstat"
     fstat :: CFd -> Ptr CStat -> IO CInt
-
-foreign import ccall unsafe "fstatat"
-    fstatat :: CFd -> CString -> Ptr CStat -> CInt -> IO CInt
 
 foreign import ccall unsafe "ftruncate"
     ftruncate :: CFd -> COff -> IO CInt
