@@ -144,7 +144,7 @@ applyBiWordOnNatural f = (fromNatural .) . (f `on` toNatural)
 (-) :: Word128 -> Word128 -> Word128
 (-) a b
     | a >= b    = applyBiWordOnNatural (Prelude.-) a b
-    | otherwise = complement $ applyBiWordOnNatural (Prelude.-) b a
+    | otherwise = complement (applyBiWordOnNatural (Prelude.-) b a) + 1
 
 -- | Multiplication
 (*) :: Word128 -> Word128 -> Word128
