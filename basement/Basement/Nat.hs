@@ -8,6 +8,9 @@
 {-# LANGUAGE ScopedTypeVariables       #-}
 {-# LANGUAGE UndecidableInstances      #-}
 {-# LANGUAGE ConstraintKinds           #-}
+#if __GLASGOW_HASKELL__ >= 806
+{-# LANGUAGE NoStarIsType              #-}
+#endif
 module Basement.Nat
     ( Nat
     , KnownNat
