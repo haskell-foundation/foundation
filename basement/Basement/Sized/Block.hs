@@ -5,12 +5,16 @@
 --
 -- A Nat-sized version of Block
 {-# LANGUAGE AllowAmbiguousTypes        #-}
-{-# LANGUAGE DataKinds                  #-}
-{-# LANGUAGE TypeOperators              #-}
-{-# LANGUAGE TypeApplications           #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE ConstraintKinds            #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeApplications           #-}
+{-# LANGUAGE TypeOperators              #-}
+#if __GLASGOW_HASKELL__ >= 806
+{-# LANGUAGE NoStarIsType               #-}
+#endif
 
 module Basement.Sized.Block
     ( BlockN
