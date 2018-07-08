@@ -1,3 +1,9 @@
+## 0.0.21
+
+* Remove couple of warnings
+* Add compatibility with ghc 8.6
+* Fix subtraction of Word128 and Word256 by using 2-complement representation instead of 1-complement
+
 ## 0.0.20
 
 * Reduce algorithm duplication between native and foreign backend
