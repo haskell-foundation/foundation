@@ -114,14 +114,18 @@ crlf :: String
 crlf = fromList [cr, lf]
 {-# NOINLINE crlf #-}
 
+{-
 textdataQuoted :: String
 textdataQuoted = textdata <> specials
 {-# NOINLINE textdataQuoted #-}
+-}
 
 specials :: String
 specials = ",\r\n"
 {-# INLINE specials #-}
 
+{-
 textdata :: String
 textdata = fromList $ [' '..'!'] <> ['#'..'+'] <> ['-'..'~']
 {-# NOINLINE textdata #-}
+-}
