@@ -5,6 +5,7 @@
 --
 -- An implementation of a timing framework
 --
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Foundation.Time.Types
     ( NanoSeconds(..)
@@ -21,7 +22,9 @@ import           Data.Coerce
 newtype NanoSeconds = NanoSeconds Word64
     deriving (Show,Eq,Ord,Additive,Enum,Bounded)
 
+
 instance PrimType NanoSeconds where
+    type PrimSize NanoSeconds = 8
     primSizeInBytes _        = primSizeInBytes (Proxy :: Proxy Word64)
     primShiftToBytes _       = primShiftToBytes (Proxy :: Proxy Word64)
     primBaUIndex ba ofs      = primBaUIndex ba (coerce ofs)
@@ -36,6 +39,7 @@ newtype Seconds = Seconds Word64
     deriving (Show,Eq,Ord,Additive,Enum,Bounded)
 
 instance PrimType Seconds where
+    type PrimSize Seconds    = 8
     primSizeInBytes _        = primSizeInBytes (Proxy :: Proxy Word64)
     primShiftToBytes _       = primShiftToBytes (Proxy :: Proxy Word64)
     primBaUIndex ba ofs      = primBaUIndex ba (coerce ofs)
