@@ -3,7 +3,6 @@ module Foundation.Monad.Transformer
     ( MonadTrans(..)
     ) where
 
-import Basement.Compat.Base
 import Basement.Compat.AMP
 
 -- | Basic Transformer class

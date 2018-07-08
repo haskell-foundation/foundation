@@ -31,7 +31,6 @@ import           Foundation.Numerical
 import           Foundation.Bits
 import qualified Prelude
 import           GHC.ST
-import           GHC.Prim
 
 -- | SigHash Key
 data SipKey = SipKey {-# UNPACK #-} !Word64

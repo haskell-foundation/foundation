@@ -30,7 +30,6 @@ import           Basement.IntegralConv
 import           Foundation.Numerical
 import           Foundation.Hashing.Hasher
 import           Data.Bits
-import           GHC.Prim
 import           GHC.ST
 
 -- | FNV1(a) hash (32 bit variants)
