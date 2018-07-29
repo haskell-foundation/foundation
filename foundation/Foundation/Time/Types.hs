@@ -34,7 +34,7 @@ instance PrimType NanoSeconds where
     primAddrRead addr ofs    = primAddrRead addr (coerce ofs)
     primAddrWrite addr ofs v = primAddrWrite addr (coerce ofs) (coerce v :: Word64)
 
--- | An amount of nanoseconds
+-- | An amount of seconds
 newtype Seconds = Seconds Word64
     deriving (Show,Eq,Ord,Additive,Enum,Bounded)
 
