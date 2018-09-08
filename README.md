@@ -12,7 +12,7 @@ Foundation
 
 Documentation:
 
-* [Read the doc](http://haskell-foundation.readthedocs.io/en/latest/)
+* [Read the doc](https://haskell-foundation.readthedocs.io/en/latest/)
 * [Foundation on stackage](https://www.stackage.org/package/foundation)
 * [Foundation on hackage](https://hackage.haskell.org/package/foundation)
 
@@ -84,7 +84,7 @@ How to contribute
 =================
 
 Contribution guide can be found
-[here](http://haskell-foundation.readthedocs.io/en/latest/contributing/).
+[here](https://haskell-foundation.readthedocs.io/en/latest/contributing/).
 
 
 Profiling
