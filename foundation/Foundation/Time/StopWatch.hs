@@ -107,5 +107,7 @@ stopPrecise (StopWatchPrecise blk) = do
         pure $ NanoSeconds $ (endSec * secondInNano + endNSec) - (startSec * secondInNano + startNSec)
 #endif
 
+#if !defined(darwin_HOST_OS)
 secondInNano :: Word64
 secondInNano = 1000000000
+#endif
