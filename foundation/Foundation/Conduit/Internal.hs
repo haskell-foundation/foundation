@@ -11,6 +11,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -Wno-inline-rule-shadowing #-}
+
 module Foundation.Conduit.Internal
     ( Pipe(..)
     , Conduit(..)
