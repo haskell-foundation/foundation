@@ -294,6 +294,7 @@ Benchmark bench
   other-modules:     BenchUtil.Common
                      BenchUtil.RefData
                      Sys
+                     LargeWords
                      Fake.ByteString
                      Fake.Text
                      Fake.Vector

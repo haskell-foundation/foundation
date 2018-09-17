@@ -16,6 +16,7 @@ import BenchUtil.RefData
 import qualified Basement.Block.Builder as Builder
 
 import Sys
+import LargeWords
 
 #ifdef BENCH_ALL
 import qualified Data.ByteString as ByteString
@@ -353,4 +354,5 @@ benchsTypes = bgroup "types"
 main = defaultMain
     [ benchsTypes
     , bgroup "Sys" benchSys
+    , bgroup "LargeWord" benchLargeWords
     ]
