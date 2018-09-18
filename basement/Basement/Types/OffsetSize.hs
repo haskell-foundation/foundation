@@ -197,6 +197,7 @@ instance IsNatural (CountOf ty) where
 instance Additive (CountOf ty) where
     azero = CountOf 0
     (+) (CountOf a) (CountOf b) = CountOf (a+b)
+    scale n (CountOf a) = CountOf (scale n a)
 
 instance Subtractive (CountOf ty) where
     type Difference (CountOf ty) = Maybe (CountOf ty)
