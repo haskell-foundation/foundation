@@ -24,7 +24,6 @@
 module Basement.Bits
     ( BitOps(..)
     , FiniteBitsOps(..)
-
     , Bits
     , toBits
     , allOne
@@ -162,6 +161,7 @@ instance SizeValid n => Bounded (Bits n) where
 instance SizeValid n => Additive (Bits n) where
     azero = Bits 0
     (+) (Bits a) (Bits b) = toBits (a + b)
+    scale n (Bits a) = toBits (scale n a)
 instance SizeValid n => Subtractive (Bits n) where
     type Difference (Bits n) = Bits n
     (-) (Bits a) (Bits b) = maybe azero toBits (a - b)
