@@ -26,6 +26,7 @@ import           GHC.TypeLits
 import           Data.Word
 import           Basement.Compat.Base
 import           Basement.Compat.Natural
+import           Basement.Numerical.Number
 import           Data.Proxy
 import           Basement.Nat
 import qualified Prelude
@@ -42,6 +43,15 @@ instance (KnownNat n, NatWithinBound Word64 n) => Prelude.Num (Zn64 n) where
     abs a = a
     negate _ = error "cannot negate Zn64: use Foundation Numerical hierarchy for this function to not be exposed to Zn64"
     signum (Zn64 a) = Zn64 (Prelude.signum a)
+
+type instance NatNumMaxBound (Zn64 n) = n
+
+instance (KnownNat n, NatWithinBound Word64 n) => Integral (Zn64 n) where
+    fromInteger = zn64 . Prelude.fromInteger
+instance (KnownNat n, NatWithinBound Word64 n) => IsIntegral (Zn64 n) where
+    toInteger (Zn64 n) = toInteger n
+instance (KnownNat n, NatWithinBound Word64 n) => IsNatural (Zn64 (n :: Nat)) where
+    toNatural (Zn64 n) = toNatural n
 
 -- | Create an element of ℤ/nℤ from a Word64
 --
@@ -80,6 +90,15 @@ instance KnownNat n => Prelude.Num (Zn n) where
     abs a = a
     negate _ = error "cannot negate Zn: use Foundation Numerical hierarchy for this function to not be exposed to Zn"
     signum = Zn . Prelude.signum . unZn
+
+type instance NatNumMaxBound (Zn n) = n
+
+instance KnownNat n => Integral (Zn n) where
+    fromInteger = zn . Prelude.fromInteger
+instance KnownNat n => IsIntegral (Zn n) where
+    toInteger (Zn n) = toInteger n
+instance KnownNat n => IsNatural (Zn n) where
+    toNatural i = unZn i
 
 -- | Create an element of ℤ/nℤ from a Natural.
 --
