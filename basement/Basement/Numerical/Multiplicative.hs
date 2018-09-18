@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE DefaultSignatures #-}
 module Basement.Numerical.Multiplicative
     ( Multiplicative(..)
     , IDivisible(..)
@@ -10,6 +11,7 @@ module Basement.Numerical.Multiplicative
 import           Basement.Compat.Base
 import           Basement.Compat.C.Types
 import           Basement.Compat.Natural
+import           Basement.Compat.NumLiteral
 import           Basement.Numerical.Number
 import           Basement.Numerical.Additive
 import           Basement.Types.Word128 (Word128)
@@ -35,8 +37,7 @@ class Multiplicative a where
     -- > a ^ 2 = a * a
     -- > a ^ 10 = (a ^ 5) * (a ^ 5) ..
     --(^) :: (IsNatural n) => a -> n -> a
-    (^) :: (IsNatural n, IDivisible n) => a -> n -> a
-    -- default (^) :: (IDivisible n, IsNatural n, Multiplicative a) => a -> n -> a
+    (^) :: (IsNatural n, Enum n, IDivisible n) => a -> n -> a
     (^) = power
 
 -- | Represent types that supports an euclidian division
@@ -310,7 +311,7 @@ instance Divisible CDouble where
 recip :: Divisible a => a -> a
 recip x = midentity / x
 
-power :: (IsNatural n, IDivisible n, Multiplicative a) => a -> n -> a
+power :: (Enum n, IsNatural n, IDivisible n, Multiplicative a) => a -> n -> a
 power a n
     | n == 0    = midentity
     | otherwise = squaring midentity a n

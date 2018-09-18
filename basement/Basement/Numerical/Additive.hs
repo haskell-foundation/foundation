@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP               #-}
 {-# LANGUAGE MagicHash         #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE DefaultSignatures #-}
 {-# OPTIONS_GHC -fno-prof-auto #-}
 module Basement.Numerical.Additive
     ( Additive(..)
@@ -41,10 +42,14 @@ class Additive a where
     (+)   :: a -> a -> a -- the addition
 
     scale :: IsNatural n => n -> a -> a -- scale: repeated addition
-    scale 0 _ = azero
-    scale 1 a = a
-    scale 2 a = a + a
-    scale n a = a + scale (pred n) a -- TODO optimise. define by group of 2.
+    default scale :: (Enum n, IsNatural n) => n -> a -> a
+    scale = scaleEnum
+
+scaleEnum :: (Enum n, IsNatural n, Additive a) => n -> a -> a
+scaleEnum 0 _ = azero
+scaleEnum 1 a = a
+scaleEnum 2 a = a + a
+scaleEnum n a = a + scaleEnum (pred n) a -- TODO optimise. define by group of 2.
 
 infixl 6 +
 
