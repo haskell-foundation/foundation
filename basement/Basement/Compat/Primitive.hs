@@ -12,13 +12,7 @@
 module Basement.Compat.Primitive
     ( bool#
     , PinnedStatus(..), toPinnedStatus#
-    , compatQuotRemInt#
-    , compatCopyAddrToByteArray#
-    , compatCopyByteArrayToAddr#
     , compatMkWeak#
-    , compatGetSizeofMutableByteArray#
-    , compatShrinkMutableByteArray#
-    , compatResizeMutableByteArray#
     , compatIsByteArrayPinned#
     , compatIsMutableByteArrayPinned#
     , Word(..)
@@ -56,25 +50,6 @@ bool# :: Int# -> Prelude.Bool
 bool# v = isTrue# v
 {-# INLINE bool# #-}
 
--- | A version friendly of quotRemInt#
-compatQuotRemInt# :: Int# -> Int# -> (# Int#, Int# #)
-compatQuotRemInt# = quotRemInt#
-{-# INLINE compatQuotRemInt# #-}
-
--- | A version friendly fo copyAddrToByteArray#
---
--- only available from GHC 7.8
-compatCopyAddrToByteArray# :: Addr# -> MutableByteArray# s -> Int# -> Int# -> State# s -> State# s
-compatCopyAddrToByteArray# = copyAddrToByteArray#
-{-# INLINE compatCopyAddrToByteArray# #-}
-
--- | A version friendly fo copyByteArrayToAddr#
---
--- only available from GHC 7.8
-compatCopyByteArrayToAddr# :: ByteArray# -> Int# -> Addr# -> Int# -> State# s -> State# s
-compatCopyByteArrayToAddr# = copyByteArrayToAddr#
-{-# INLINE compatCopyByteArrayToAddr# #-}
-
 -- | A mkWeak# version that keep working on 8.0
 --
 -- signature change in ghc-prim:
@@ -84,20 +59,6 @@ compatCopyByteArrayToAddr# = copyByteArrayToAddr#
 compatMkWeak# :: o -> b -> Prelude.IO () -> State# RealWorld -> (#State# RealWorld, Weak# b #)
 compatMkWeak# o b c s = mkWeak# o b (case c of { IO f -> f }) s
 {-# INLINE compatMkWeak# #-}
-
-compatGetSizeofMutableByteArray# :: MutableByteArray# s -> State# s -> (#State# s, Int# #)
-compatGetSizeofMutableByteArray# mba s = getSizeofMutableByteArray# mba s
-{-# INLINE compatGetSizeofMutableByteArray# #-}
-
-compatShrinkMutableByteArray# :: MutableByteArray# s -> Int# -> State# s -> (# State# s, MutableByteArray# s #)
-compatShrinkMutableByteArray# mba i s =
-    case shrinkMutableByteArray# mba i s of { s2 -> (# s2, mba #) }
-{-# INLINE compatShrinkMutableByteArray# #-}
-
---shrinkMutableByteArray# :: MutableByteArray# s -> Int# -> State# s -> State# s
-compatResizeMutableByteArray# :: MutableByteArray# s -> Int# -> State# s -> (# State# s, MutableByteArray# s #)
-compatResizeMutableByteArray# mba i s = resizeMutableByteArray# mba i s
-{-# INLINE compatResizeMutableByteArray# #-}
 
 #if __GLASGOW_HASKELL__ >= 802
 compatIsByteArrayPinned# :: ByteArray# -> Pinned#

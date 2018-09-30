@@ -169,7 +169,7 @@ copyToPtr marr dst@(Ptr dst#) = onMutableBackend copyNative copyPtr marr
   where
     copyNative (MutableBlock mba) = primitive $ \s1 ->
         case unsafeFreezeByteArray# mba s1 of
-            (# s2, ba #) -> (# compatCopyByteArrayToAddr# ba os# dst# szBytes# s2, () #)
+            (# s2, ba #) -> (# copyByteArrayToAddr# ba os# dst# szBytes# s2, () #)
     copyPtr fptr = unsafePrimFromIO $ withFinalPtr fptr $ \ptr ->
         copyBytes dst (ptr `plusPtr` os) szBytes
 

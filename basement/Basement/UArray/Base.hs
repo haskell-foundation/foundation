@@ -533,7 +533,7 @@ copyAt (MUArray dstStart _ (MUArrayMBA (MutableBlock dstMba))) ed (MUArray srcSt
 copyAt (MUArray dstStart _ (MUArrayMBA (MutableBlock dstMba))) ed (MUArray srcStart _ (MUArrayAddr srcFptr)) es n =
     withFinalPtr srcFptr $ \srcPtr ->
         let !(Ptr srcAddr) = srcPtr `plusPtr` os
-         in primitive $ \s -> (# compatCopyAddrToByteArray# srcAddr dstMba od nBytes s, () #)
+         in primitive $ \s -> (# copyAddrToByteArray# srcAddr dstMba od nBytes s, () #)
   where
     !sz                 = primSizeInBytes (Proxy :: Proxy ty)
     !(Offset os)        = offsetOfE sz (srcStart + es)
@@ -569,7 +569,7 @@ unsafeCopyAtRO (MUArray dstStart _ (MUArrayMBA (MutableBlock dstMba))) ed (UArra
 unsafeCopyAtRO (MUArray dstStart _ (MUArrayMBA (MutableBlock dstMba))) ed (UArray srcStart _ (UArrayAddr srcFptr)) es n =
     withFinalPtr srcFptr $ \srcPtr ->
         let !(Ptr srcAddr) = srcPtr `plusPtr` os
-         in primitive $ \s -> (# compatCopyAddrToByteArray# srcAddr dstMba od nBytes s, () #)
+         in primitive $ \s -> (# copyAddrToByteArray# srcAddr dstMba od nBytes s, () #)
   where
     sz  = primSizeInBytes (Proxy :: Proxy ty)
     !(Offset os)        = offsetOfE sz (srcStart+es)
