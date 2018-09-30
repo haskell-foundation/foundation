@@ -29,9 +29,7 @@ import qualified Prelude
 import           GHC.Exts
 import           GHC.Prim
 import           GHC.Word
-#if __GLASGOW_HASKELL__ >= 800
 import           GHC.IO
-#endif
 
 import           Basement.Compat.PrimTypes
 
@@ -50,15 +48,8 @@ toPinnedStatus# 0# = Unpinned
 toPinnedStatus# _  = Pinned
 
 -- | turn an Int# into a Bool
---
--- Since GHC 7.8, boolean primitive don't return Bool but Int#.
-#if MIN_VERSION_base(4,7,0)
 bool# :: Int# -> Prelude.Bool
 bool# v = isTrue# v
-#else
-bool# :: Prelude.Bool -> Prelude.Bool
-bool# v = v
-#endif
 {-# INLINE bool# #-}
 
 -- | A version friendly of andI#
