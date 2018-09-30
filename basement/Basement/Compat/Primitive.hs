@@ -168,9 +168,9 @@ compatIsByteArrayPinned# ba = isByteArrayPinned# ba
 compatIsMutableByteArrayPinned# :: MutableByteArray# s -> Pinned#
 compatIsMutableByteArrayPinned# ba = isMutableByteArrayPinned# ba
 #else
-foreign import ccall unsafe "foundation_is_bytearray_pinned"
+foreign import ccall unsafe "basement_is_bytearray_pinned"
     compatIsByteArrayPinned# :: ByteArray# -> Pinned#
 
-foreign import ccall unsafe "foundation_is_bytearray_pinned"
+foreign import ccall unsafe "basement_is_bytearray_pinned"
     compatIsMutableByteArrayPinned# :: MutableByteArray# s -> Pinned#
 #endif
