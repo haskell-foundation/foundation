@@ -301,7 +301,7 @@ copyToPtr arr dst@(Ptr dst#) = onBackendPrim copyBa copyPtr arr
   where
     !(Offset os@(I# os#)) = offsetInBytes $ offset arr
     !(CountOf szBytes@(I# szBytes#)) = sizeInBytes $ length arr
-    copyBa (Block ba) = primitive $ \s1 -> (# compatCopyByteArrayToAddr# ba os# dst# szBytes# s1, () #)
+    copyBa (Block ba) = primitive $ \s1 -> (# copyByteArrayToAddr# ba os# dst# szBytes# s1, () #)
     copyPtr fptr = unsafePrimFromIO $ withFinalPtr fptr $ \ptr -> copyBytes dst (ptr `plusPtr` os) szBytes
 
 -- | Get a Ptr pointing to the data in the UArray.

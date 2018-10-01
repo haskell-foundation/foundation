@@ -67,7 +67,6 @@ module Basement.Block.Mutable
 import           GHC.Prim
 import           GHC.Types
 import           Basement.Compat.Base
-import           Basement.Compat.Primitive (compatCopyByteArrayToAddr#)
 import           Data.Proxy
 import           Basement.Exception
 import           Basement.Types.OffsetSize
@@ -147,7 +146,7 @@ copyToPtr mb@(MutableBlock mba) ofs dst@(Ptr dst#) count
     | srcEnd > sizeAsOffset arrSz = primOutOfBound OOB_MemCopy srcEnd arrSz
     | otherwise                = do
         (Block ba) <- unsafeFreeze mb
-        primitive $ \s1 -> (# compatCopyByteArrayToAddr# ba os# dst# szBytes# s1, () #)
+        primitive $ \s1 -> (# copyByteArrayToAddr# ba os# dst# szBytes# s1, () #)
   where
     srcEnd = os `offsetPlusE` arrSz
     !os@(Offset (I# os#)) = offsetInBytes ofs

@@ -265,8 +265,8 @@ unsafeFreeze (MutableBlock mba) = primitive $ \s1 ->
 
 unsafeShrink :: PrimMonad prim => MutableBlock ty (PrimState prim) -> CountOf ty -> prim (MutableBlock ty (PrimState prim))
 unsafeShrink (MutableBlock mba) (CountOf (I# nsz)) = primitive $ \s ->
-    case compatShrinkMutableByteArray# mba nsz s of
-        (# s, mba' #) -> (# s, MutableBlock mba' #)
+    case shrinkMutableByteArray# mba nsz s of
+        s -> (# s, MutableBlock mba #)
 
 -- | Thaw an immutable block.
 --
