@@ -56,7 +56,7 @@ import GHC.Int
 import GHC.IntWord64
 #endif
 
--- | operation over finit bits
+-- | operation over finite bits
 class FiniteBitsOps bits where
     -- | get the number of bits in the given object
     --
@@ -309,6 +309,56 @@ instance BitOps Word32 where
     (W32# x#) .^. (W32# y#)   = W32# (x# `xor#` y#)
     (W32# x#) .<<. (CountOf (I# i#)) = W32# (narrow32Word# (x# `shiftL#` i#))
     (W32# x#) .>>. (CountOf (I# i#)) = W32# (narrow32Word# (x# `shiftRL#` i#))
+
+-- Word ---------------------------------------------------------------------
+
+#if WORD_SIZE_IN_BITS == 64
+instance FiniteBitsOps Word where
+    numberOfBits _ = 64
+    rotateL (W# x#) (CountOf (I# i#))
+        | isTrue# (i'# ==# 0#) = W# x#
+        | otherwise  = W# ((x# `uncheckedShiftL#` i'#) `or#`
+                           (x# `uncheckedShiftRL#` (64# -# i'#)))
+      where
+        !i'# = word2Int# (int2Word# i# `and#` 63##)
+    rotateR (W# x#) (CountOf (I# i#))
+        | isTrue# (i'# ==# 0#) = W# x#
+        | otherwise  = W# ((x# `uncheckedShiftRL#` i'#) `or#`
+                           (x# `uncheckedShiftL#` (64# -# i'#)))
+      where
+        !i'# = word2Int# (int2Word# i# `and#` 63##)
+    bitFlip (W# x#) = W# (x# `xor#` mb#)
+        where !(W# mb#) = maxBound
+    popCount (W# x#) = CountOf $ wordToInt (W# (popCnt64# x#))
+    countLeadingZeros (W# w#) = CountOf $ wordToInt (W# (clz64# w#))
+    countTrailingZeros (W# w#) = CountOf $ wordToInt (W# (ctz64# w#))
+#else
+    numberOfBits _ = 32
+    rotateL (W# x#) (CountOf (I# i#))
+        | isTrue# (i'# ==# 0#) = W# x#
+        | otherwise  = W# (narrow32Word# ((x# `uncheckedShiftL#` i'#) `or#`
+                                          (x# `uncheckedShiftRL#` (32# -# i'#))))
+      where
+        !i'# = word2Int# (int2Word# i# `and#` 31##)
+    rotateR (W# x#) (CountOf (I# i#))
+        | isTrue# (i'# ==# 0#) = W# x#
+        | otherwise  = W# ((x# `uncheckedShiftRL#` i'#) `or#`
+                           (x# `uncheckedShiftL#` (32# -# i'#)))
+      where
+        !i'# = word2Int# (int2Word# i# `and#` 31##)
+    bitFlip (W# x#) = W# (x# `xor#` mb#)
+        where !(W# mb#) = maxBound
+    popCount (W# x#) = CountOf $ wordToInt (W# (popCnt32# x#))
+    countLeadingZeros (W# w#) = CountOf $ wordToInt (W# (clz32# w#))
+    countTrailingZeros (W# w#) = CountOf $ wordToInt (W# (ctz32# w#))
+#endif
+
+instance BitOps Word where
+    (W# x#) .&. (W# y#)   = W# (x# `and#` y#)
+    (W# x#) .|. (W# y#)   = W# (x# `or#`  y#)
+    (W# x#) .^. (W# y#)   = W# (x# `xor#` y#)
+    (W# x#) .<<. (CountOf (I# i#)) = W# ((x# `shiftL#` i#))
+    (W# x#) .>>. (CountOf (I# i#)) = W# ((x# `shiftRL#` i#))
 
 -- Word64 ---------------------------------------------------------------------
 
