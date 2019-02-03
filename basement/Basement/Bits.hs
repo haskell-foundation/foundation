@@ -122,6 +122,11 @@ class BitOps bits where
     default clearBit :: FiniteBitsOps bits => bits -> Offset Bool -> bits
     clearBit x n = x .&. (bitFlip (bit n))
 
+infixl 8 .<<., .>>., `rotateL`, `rotateR`
+infixl 7 .&.
+infixl 6 .^.
+infixl 5 .|.
+
 -- | Bool set of 'n' bits.
 --
 newtype Bits (n :: Nat) = Bits { bitsToNatural :: Natural }
