@@ -213,6 +213,9 @@ instance From (Either a b) (These a b) where
     from (Left a) = This a
     from (Right b) = That b
 
+instance From Word128 Word256 where
+    from (Word128 a b) = Word256 0 0 a b
+
 -- basement instances
 
 -- uarrays

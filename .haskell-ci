@@ -2,8 +2,9 @@
 compiler: ghc-8.0 lts-9.21
 compiler: ghc-8.2 lts-11.22
 compiler: ghc-8.4 lts-12.9
-compiler: ghc-8.4-edge lts-12.9
-compiler: ghc-8.4-experimental lts-12.9
+compiler: ghc-8.4-edge lts-12.26
+compiler: ghc-8.4-experimental lts-12.26
+compiler: ghc-8.6 lts-13.5
 
 # options
 option: gaugedep extradep=gauge-0.2.1
@@ -15,8 +16,8 @@ build: ghc-8.2 checkbounds gaugedep
 build: ghc-8.0 checkbounds gaugedep
 build: ghc-8.4-edge checkbounds package=edge/
 build: ghc-8.4-experimental checkbounds experimental allowed-failure gaugedep
-build: ghc-8.4 os=osx,linux,windows
-build: ghc-8.4 checkbounds os=osx,linux,windows
+build: ghc-8.6 os=osx,linux,windows
+build: ghc-8.6 checkbounds os=osx,linux,windows
 
 # packages
 package: foundation/

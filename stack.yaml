@@ -1,4 +1,4 @@
-resolver: lts-10.7
+resolver: lts-13.5
 packages:
 - location: foundation/
 - location: basement/

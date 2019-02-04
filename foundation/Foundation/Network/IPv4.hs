@@ -28,7 +28,7 @@ import Basement.Compat.Base
 import Data.Proxy
 import Foundation.String (String)
 import Foundation.Primitive
-import Foundation.Bits
+import Basement.Bits
 import Foundation.Parser hiding (peek)
 import Foundation.Collection (Sequential, Element, elem)
 
