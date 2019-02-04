@@ -26,6 +26,7 @@ import           GHC.IO
 
 import           Basement.Compat.PrimTypes
 
+--  GHC 8.6  | Base 4.12
 --  GHC 8.4  | Base 4.11
 --  GHC 8.2  | Base 4.10
 --  GHC 8.0  | Base 4.9
