@@ -1,5 +1,5 @@
 name:                basement
-version:             0.0.8
+version:             0.0.9
 synopsis:            Foundation scrap box of array & string
 description:         Foundation most basic primitives without any dependencies
 license:             BSD3

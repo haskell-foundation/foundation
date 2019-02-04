@@ -1,3 +1,9 @@
+## 0.0.22
+
+* Misc update to basement
+* Add instance for Bits for Word, From Word128 Word256, Integral for Zn
+* Fix windows 32 bits build
+
 ## 0.0.21
 
 * Remove couple of warnings
