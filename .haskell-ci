@@ -17,6 +17,7 @@ build: ghc-8.0 checkbounds gaugedep
 build: ghc-8.4-edge checkbounds package=edge/
 build: ghc-8.4-experimental checkbounds experimental allowed-failure gaugedep
 build: ghc-8.6 os=osx,linux,windows
+build: ghc-8.6 os=win32
 build: ghc-8.6 checkbounds os=osx,linux,windows
 
 # packages
