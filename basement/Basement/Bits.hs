@@ -338,11 +338,12 @@ instance FiniteBitsOps Word where
     countLeadingZeros (W# w#) = CountOf $ wordToInt (W# (clz64# w#))
     countTrailingZeros (W# w#) = CountOf $ wordToInt (W# (ctz64# w#))
 #else
+instance FiniteBitsOps Word where
     numberOfBits _ = 32
     rotateL (W# x#) (CountOf (I# i#))
         | isTrue# (i'# ==# 0#) = W# x#
-        | otherwise  = W# (narrow32Word# ((x# `uncheckedShiftL#` i'#) `or#`
-                                          (x# `uncheckedShiftRL#` (32# -# i'#))))
+        | otherwise  = W# ((x# `uncheckedShiftL#` i'#) `or#`
+                           (x# `uncheckedShiftRL#` (32# -# i'#)))
       where
         !i'# = word2Int# (int2Word# i# `and#` 31##)
     rotateR (W# x#) (CountOf (I# i#))
