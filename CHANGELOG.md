@@ -1,3 +1,7 @@
+## 0.0.23
+
+* Really fix windows 32 build
+
 ## 0.0.22
 
 * Misc update to basement
