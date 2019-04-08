@@ -64,6 +64,7 @@ module Basement.Block.Mutable
     , copyToPtr
     ) where
 
+import           Control.Monad.Fail (fail)
 import           GHC.Prim
 import           GHC.Types
 import           Basement.Compat.Base

@@ -15,6 +15,7 @@
 module Basement.UTF8.Base
     where
 
+import           Control.Monad.Fail (fail)
 import           GHC.ST (ST, runST)
 import           GHC.Types
 import           GHC.Word

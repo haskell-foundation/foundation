@@ -129,6 +129,7 @@ import qualified Basement.Alg.UTF8 as UTF8
 import qualified Basement.Alg.String as Alg
 import           Basement.Types.Char7 (Char7(..), c7Upper, c7Lower)
 import qualified Basement.Types.Char7 as Char7
+import           Control.Monad.Fail (fail)
 import           GHC.Prim
 import           GHC.ST
 import           GHC.Types

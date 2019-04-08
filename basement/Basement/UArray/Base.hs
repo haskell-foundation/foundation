@@ -53,6 +53,7 @@ module Basement.UArray.Base
     , pureST
     ) where
 
+import           Control.Monad.Fail (fail)
 import           GHC.Prim
 import           GHC.Types
 import           GHC.Ptr

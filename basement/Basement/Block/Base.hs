@@ -35,6 +35,7 @@ module Basement.Block.Base
     , unsafeRecast
     ) where
 
+import           Control.Monad.Fail (fail)
 import           GHC.Prim
 import           GHC.Types
 import           GHC.ST
