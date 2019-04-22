@@ -55,6 +55,10 @@ import           Basement.PrimType
 data Block ty = Block ByteArray#
     deriving (Typeable)
 
+unsafeBlockPtr :: Block ty -> Ptr ty
+unsafeBlockPtr (Block arrBa) = Ptr (byteArrayContents# arrBa)
+{-# INLINE unsafeBlockPtr #-}
+
 instance Data ty => Data (Block ty) where
     dataTypeOf _ = blockType
     toConstr _   = error "toConstr"
@@ -395,8 +399,8 @@ withPtr :: PrimMonad prim
 withPtr x@(Block ba) f
     | isPinned x == Pinned = f (Ptr (byteArrayContents# ba)) <* touch x
     | otherwise            = do
-        arr@(Block arrBa) <- makeTrampoline
-        f (Ptr (byteArrayContents# arrBa)) <* touch arr
+        arr <- makeTrampoline
+        f (unsafeBlockPtr arr) <* touch arr
   where
     makeTrampoline = do
         trampoline <- unsafeNew Pinned (lengthBytes x)
@@ -478,5 +482,5 @@ withMutablePtrHint skipCopy skipCopyBack mb f
   where
     vecSz = mutableLengthBytes mb
     callWithPtr pinnedMb = do
-        b@(Block ba) <- unsafeFreeze pinnedMb
-        f (Ptr (byteArrayContents# ba)) <* touch b
+        b <- unsafeFreeze pinnedMb
+        f (unsafeBlockPtr b) <* touch b
