@@ -149,6 +149,11 @@ import qualified Basement.String.Encoding.UTF16      as Encoder
 import qualified Basement.String.Encoding.UTF32      as Encoder
 import qualified Basement.String.Encoding.ISO_8859_1 as Encoder
 
+#if MIN_VERSION_base(4,13,0)
+fail :: String -> a
+fail = error
+#endif
+
 -- | UTF8 Encoder
 data EncoderUTF8 = EncoderUTF8
 
@@ -801,11 +806,12 @@ filter predicate (String arr) = runST $ do
 -- | Reverse a string
 reverse :: String -> String
 reverse (String arr) = runST $ do
-    ((), dst) <- newNative (C.length arr) $ \(MutableBlock mba) ->
+    r <- newNative (C.length arr) $ \(MutableBlock mba) ->
             C.onBackendPrim
                 (\ba@(Block !_) -> UTF8.reverse mba 0 ba start end)
                 (\fptr -> withFinalPtr fptr $ \ptr@(Ptr !_) -> UTF8.reverse mba 0 ptr start end)
                 arr
+    let ((), dst) = r
     freeze dst
   where
     !(C.ValidRange start end) = C.offsetsValidRange arr
@@ -1035,7 +1041,8 @@ builderBuild sizeChunksI sb
     | sizeChunksI <= 3 = builderBuild 64 sb
     | otherwise        = do
         firstChunk         <- new sizeChunks
-        ((), (i, st, e)) <- runState (runBuilder sb) (Offset 0, BuildingState [] (CountOf 0) firstChunk sizeChunks, Nothing)
+        r <- runState (runBuilder sb) (Offset 0, BuildingState [] (CountOf 0) firstChunk sizeChunks, Nothing)
+        let ((), (i, st, e)) = r
         case e of
           Just err -> return (Left err)
           Nothing -> do

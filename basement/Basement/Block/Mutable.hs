@@ -31,6 +31,7 @@
 -- includes/rts/Constant.h
 --   * BLOCK_SHIFT  12
 --
+{-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE MagicHash           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UnboxedTuples       #-}
@@ -144,9 +145,8 @@ copyToPtr :: forall ty prim . (PrimType ty, PrimMonad prim)
           -> prim ()
 copyToPtr mb@(MutableBlock mba) ofs dst@(Ptr dst#) count
     | srcEnd > sizeAsOffset arrSz = primOutOfBound OOB_MemCopy srcEnd arrSz
-    | otherwise                = do
-        (Block ba) <- unsafeFreeze mb
-        primitive $ \s1 -> (# copyByteArrayToAddr# ba os# dst# szBytes# s1, () #)
+    | otherwise                = unsafeFreeze mb >>= \case
+        Block ba -> primitive $ \s1 -> (# copyByteArrayToAddr# ba os# dst# szBytes# s1, () #)
   where
     srcEnd = os `offsetPlusE` arrSz
     !os@(Offset (I# os#)) = offsetInBytes ofs

@@ -135,7 +135,8 @@ fromModified addr = countAndCopy 0 0
     countAndCopy count ofs =
         case primAddrIndex addr ofs of
             0x00 -> runST $ do
-                        ((), mb) <- MVec.newNative count (copy count)
+                        r <- MVec.newNative count (copy count)
+                        let ((), mb) = r
                         String <$> Vec.unsafeFreeze mb
             0xC0 -> case primAddrIndex addr (ofs+1) of
                         0x80 -> countAndCopy (count+1) (ofs+2)

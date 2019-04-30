@@ -16,6 +16,7 @@
 {-# LANGUAGE UnboxedTuples       #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE LambdaCase #-}
 module Basement.Block
     ( Block(..)
     , MutableBlock(..)
@@ -371,8 +372,8 @@ reverse blk
 sortBy :: PrimType ty => (ty -> ty -> Ordering) -> Block ty -> Block ty
 sortBy ford vec
     | len == 0  = mempty
-    | otherwise = runST $ do
-        mblock@(MutableBlock mba) <- thaw vec
+    | otherwise = runST $ thaw vec >>= \case
+      mblock@(MutableBlock mba) -> do
         MutAlg.inplaceSortBy ford 0 len mblock
         unsafeFreeze mblock
   where len = length vec

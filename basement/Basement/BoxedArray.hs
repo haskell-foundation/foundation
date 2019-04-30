@@ -752,7 +752,8 @@ builderBuild sizeChunksI ab
     | sizeChunksI <= 0 = builderBuild 64 ab
     | otherwise        = do
         first         <- new sizeChunks
-        ((), (i, st, e)) <- runState (runBuilder ab) (Offset 0, BuildingState [] (CountOf 0) first sizeChunks, Nothing)
+        r <- runState (runBuilder ab) (Offset 0, BuildingState [] (CountOf 0) first sizeChunks, Nothing)
+        let ((), (i, st, e)) = r
         case e of
           Just err -> pure (Left err)
           Nothing -> do
