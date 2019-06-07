@@ -69,7 +69,7 @@ instance UV.PrimType ty => IndexedCollection (UV.UArray ty) where
         loop i
             | i .==# len                     = Nothing
             | predicate (UV.unsafeIndex c i) = Just i
-            | otherwise                      = Nothing
+            | otherwise                      = loop (i + 1)
 
 instance IndexedCollection (BA.Array ty) where
     (!) l n
@@ -81,7 +81,7 @@ instance IndexedCollection (BA.Array ty) where
         loop i
             | i .==# len = Nothing
             | otherwise  =
-                if predicate (BA.unsafeIndex c i) then Just i else Nothing
+                if predicate (BA.unsafeIndex c i) then Just i else loop (i + 1)
 
 instance IndexedCollection S.String where
     (!) = S.index
