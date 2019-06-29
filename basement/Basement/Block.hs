@@ -31,6 +31,7 @@ module Basement.Block
     , unsafeCast
     , cast
     -- * safer api
+    , empty
     , create
     , isPinned
     , isMutablePinned
@@ -62,6 +63,7 @@ module Basement.Block
     , sortBy
     , intersperse
     -- * Foreign interfaces
+    , createFromPtr
     , unsafeCopyToPtr
     , withPtr
     ) where
@@ -121,6 +123,16 @@ create n initializer
         mb <- new n
         M.iterSet initializer mb
         unsafeFreeze mb
+
+-- | Freeze a chunk of memory pointed, of specific size into a new unboxed array
+createFromPtr :: PrimType ty
+              => Ptr ty
+              -> CountOf ty
+              -> IO (Block ty)
+createFromPtr p sz = do
+    mb <- new sz
+    M.copyFromPtr p mb 0 sz
+    unsafeFreeze mb
 
 singleton :: PrimType ty => ty -> Block ty
 singleton ty = create 1 (const ty)
