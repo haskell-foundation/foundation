@@ -116,7 +116,7 @@ instance Data ty => Data (UArray ty) where
     gunfold _ _  = error "gunfold"
 
 arrayType :: DataType
-arrayType = mkNoRepType "Foundation.UArray"
+arrayType = mkNoRepType "Basement.UArray"
 
 instance NormalForm (UArray ty) where
     toNormalForm (UArray _ _ !_) = ()
