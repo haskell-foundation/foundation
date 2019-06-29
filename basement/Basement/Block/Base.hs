@@ -25,6 +25,7 @@ module Basement.Block.Base
     , mutableLength
     , mutableLengthBytes
     -- * Other methods
+    , empty
     , mutableEmpty
     , new
     , newPinned
@@ -65,7 +66,7 @@ instance Data ty => Data (Block ty) where
     gunfold _ _  = error "gunfold"
 
 blockType :: DataType
-blockType = mkNoRepType "Foundation.Block"
+blockType = mkNoRepType "Basement.Block"
 
 instance NormalForm (Block ty) where
     toNormalForm (Block !_) = ()
@@ -151,9 +152,11 @@ internalFromList l = runST $ do
     ma <- new (CountOf len)
     iter azero l $ \i x -> unsafeWrite ma i x
     unsafeFreeze ma
-  where len = Data.List.length l
-        iter _  []     _ = return ()
-        iter !i (x:xs) z = z i x >> iter (i+1) xs z
+  where
+    !len = Data.List.length l
+
+    iter _  []     _ = return ()
+    iter !i (x:xs) z = z i x >> iter (i+1) xs z
 
 -- | transform a block to a list.
 internalToList :: forall ty . PrimType ty => Block ty -> [ty]
