@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP                #-}
 {-# LANGUAGE MagicHash          #-}
 {-# LANGUAGE UnboxedTuples      #-}
+{-# LANGUAGE BangPatterns       #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 module Basement.Types.Word128
     ( Word128(..)
@@ -138,7 +139,7 @@ applyBiWordOnNatural :: (Natural -> Natural -> Natural)
                      -> Word128
                      -> Word128
                      -> Word128
-applyBiWordOnNatural f = (fromNatural .) . (f `on` toNatural)
+applyBiWordOnNatural f a b = fromNatural $ f (toNatural a) (toNatural b)
 
 -- | Subtract 2 Word128
 (-) :: Word128 -> Word128 -> Word128
@@ -207,7 +208,7 @@ rotateL (Word128 a1 a0) n'
     | n == 0    = Word128 a1 a0
     | n == 64   = Word128 a0 a1
     | n < 64    = Word128 (comb64 a1 n a0 (inv64 n)) (comb64 a0 n a1 (inv64 n))
-    | otherwise = let n = n Prelude.- 64 in Word128 (comb64 a0 n a1 (inv64 n)) (comb64 a1 n a0 (inv64 n))
+    | otherwise = let nx = n Prelude.- 64 in Word128 (comb64 a0 nx a1 (inv64 nx)) (comb64 a1 n' a0 (inv64 nx))
   where
     n :: Int
     n | n' >= 0   = n' `Prelude.mod` 128
