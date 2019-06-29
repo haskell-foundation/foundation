@@ -1,4 +1,5 @@
 {-# LANGUAGE MagicHash                  #-}
+{-# LANGUAGE BangPatterns               #-}
 module Basement.Types.Char7
     ( Char7(..)
     , toChar

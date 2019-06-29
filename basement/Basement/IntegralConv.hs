@@ -4,6 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE UnboxedTuples         #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
 module Basement.IntegralConv
     ( IntegralDownsize(..)
     , IntegralUpsize(..)
