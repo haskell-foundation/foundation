@@ -653,7 +653,8 @@ create sz f = do
     if filled .==# sz
         then freeze ms
         else do
-            (String ba) <- freeze ms
+            s <- freeze ms
+            let (String ba) = s
             pure $ String $ C.take (offsetAsSize filled) ba
 
 -- | Monomorphically map the character in a string and return the transformed one
@@ -723,7 +724,8 @@ snoc :: String -> Char -> String
 snoc s@(String ba) c
     | len == CountOf 0 = singleton c
     | otherwise     = runST $ do
-        ms@(MutableString mba) <- new (len + nbBytes)
+        ms <- new (len + nbBytes)
+        let (MutableString mba) = ms
         Vec.unsafeCopyAtRO mba (Offset 0) ba (Offset 0) len
         _ <- write ms (azero `offsetPlusE` len) c
         freeze ms
@@ -736,7 +738,8 @@ cons :: Char -> String -> String
 cons c s@(String ba)
   | len == CountOf 0 = singleton c
   | otherwise     = runST $ do
-      ms@(MutableString mba) <- new (len + nbBytes)
+      ms <- new (len + nbBytes)
+      let (MutableString mba) = ms
       idx <- write ms (Offset 0) c
       Vec.unsafeCopyAtRO mba idx ba (Offset 0) len
       freeze ms
@@ -801,12 +804,12 @@ filter predicate (String arr) = runST $ do
 -- | Reverse a string
 reverse :: String -> String
 reverse (String arr) = runST $ do
-    ((), dst) <- newNative (C.length arr) $ \(MutableBlock mba) ->
+    s <- newNative_ (C.length arr) $ \(MutableBlock mba) ->
             C.onBackendPrim
                 (\ba@(Block !_) -> UTF8.reverse mba 0 ba start end)
                 (\fptr -> withFinalPtr fptr $ \ptr@(Ptr !_) -> UTF8.reverse mba 0 ptr start end)
                 arr
-    freeze dst
+    freeze s
   where
     !(C.ValidRange start end) = C.offsetsValidRange arr
 
@@ -1034,8 +1037,8 @@ builderBuild :: PrimMonad m => Int -> Builder String MutableString Word8 m err (
 builderBuild sizeChunksI sb
     | sizeChunksI <= 3 = builderBuild 64 sb
     | otherwise        = do
-        firstChunk         <- new sizeChunks
-        ((), (i, st, e)) <- runState (runBuilder sb) (Offset 0, BuildingState [] (CountOf 0) firstChunk sizeChunks, Nothing)
+        firstChunk <- new sizeChunks
+        (i, st, e) <- snd <$> runState (runBuilder sb) (Offset 0, BuildingState [] (CountOf 0) firstChunk sizeChunks, Nothing)
         case e of
           Just err -> return (Left err)
           Nothing -> do

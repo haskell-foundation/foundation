@@ -135,7 +135,7 @@ fromModified addr = countAndCopy 0 0
     countAndCopy count ofs =
         case primAddrIndex addr ofs of
             0x00 -> runST $ do
-                        ((), mb) <- MVec.newNative count (copy count)
+                        mb <- MVec.newNative_ count (copy count)
                         String <$> Vec.unsafeFreeze mb
             0xC0 -> case primAddrIndex addr (ofs+1) of
                         0x80 -> countAndCopy (count+1) (ofs+2)
@@ -217,6 +217,12 @@ newNative :: PrimMonad prim
           -> (MutableBlock Word8 (PrimState prim) -> prim a)
           -> prim (a, MutableString (PrimState prim))
 newNative n f = second MutableString `fmap` MVec.newNative n f
+
+newNative_ :: PrimMonad prim
+           => CountOf Word8 -- ^ in number of bytes, not of elements.
+           -> (MutableBlock Word8 (PrimState prim) -> prim ())
+           -> prim (MutableString (PrimState prim))
+newNative_ n f = MutableString `fmap` MVec.newNative_ n f
 
 freeze :: PrimMonad prim => MutableString (PrimState prim) -> prim String
 freeze (MutableString mba) = String `fmap` C.unsafeFreeze mba

@@ -662,10 +662,10 @@ reverse :: forall ty . PrimType ty => UArray ty -> UArray ty
 reverse a
     | len == 0  = mempty
     | otherwise = runST $ do
-        ((), ma) <- newNative len $ \mba -> onBackendPrim (goNative mba)
-                                                          (\fptr -> withFinalPtr fptr $ goAddr mba)
-                                                          a
-        unsafeFreeze ma
+        a <- newNative_ len $ \mba -> onBackendPrim (goNative mba)
+                                                    (\fptr -> withFinalPtr fptr $ goAddr mba)
+                                                    a
+        unsafeFreeze a
   where
     !len = length a
     !end = 0 `offsetPlusE` len
@@ -805,8 +805,8 @@ builderBuild :: (PrimType ty, PrimMonad m) => Int -> Builder (UArray ty) (MUArra
 builderBuild sizeChunksI ab
     | sizeChunksI <= 0 = builderBuild 64 ab
     | otherwise        = do
-        first         <- new sizeChunks
-        ((), (i, st, e)) <- runState (runBuilder ab) (Offset 0, BuildingState [] (CountOf 0) first sizeChunks, Nothing)
+        first      <- new sizeChunks
+        (i, st, e) <- snd <$> runState (runBuilder ab) (Offset 0, BuildingState [] (CountOf 0) first sizeChunks, Nothing)
         case e of
           Just err -> pure (Left err)
           Nothing -> do

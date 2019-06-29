@@ -24,6 +24,7 @@ module Basement.UArray.Mutable
     , new
     , newPinned
     , newNative
+    , newNative_
     , mutableForeignMem
     , copyAt
     , copyFromPtr

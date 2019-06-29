@@ -145,7 +145,8 @@ copyToPtr :: forall ty prim . (PrimType ty, PrimMonad prim)
 copyToPtr mb@(MutableBlock mba) ofs dst@(Ptr dst#) count
     | srcEnd > sizeAsOffset arrSz = primOutOfBound OOB_MemCopy srcEnd arrSz
     | otherwise                = do
-        (Block ba) <- unsafeFreeze mb
+        blk <- unsafeFreeze mb
+        let (Block ba) = blk
         primitive $ \s1 -> (# copyByteArrayToAddr# ba os# dst# szBytes# s1, () #)
   where
     srcEnd = os `offsetPlusE` arrSz

@@ -13,6 +13,7 @@ module Basement.UArray.Base
     , newUnpinned
     , newPinned
     , newNative
+    , newNative_
     , new
     -- * Pinning status
     , isPinned
@@ -190,6 +191,16 @@ newNative n f = do
     a  <- f mb
     pure (a, MUArray 0 n (MUArrayMBA mb))
 
+-- | Same as newNative but expect no extra return value from f
+newNative_ :: (PrimMonad prim, PrimType ty)
+           => CountOf ty
+           -> (MutableBlock ty (PrimState prim) -> prim ())
+           -> prim (MUArray ty (PrimState prim))
+newNative_ n f = do
+    mb <- MBLK.new n
+    f mb
+    pure (MUArray 0 n (MUArrayMBA mb))
+
 -- | Create a new mutable array of size @n.
 --
 -- When memory for a new array is allocated, we decide if that memory region
@@ -354,8 +365,8 @@ pureST = pure
 -- | make an array from a list of elements.
 vFromList :: forall ty . PrimType ty => [ty] -> UArray ty
 vFromList l = runST $ do
-    ((), ma) <- newNative len copyList
-    unsafeFreeze ma
+    a <- newNative_ len copyList
+    unsafeFreeze a
   where
     len = List.length l
     copyList :: MutableBlock ty s -> ST s ()
