@@ -7,7 +7,6 @@ module Foundation.Monad.Except
     ) where
 
 import Basement.Imports
-import Basement.Compat.AMP
 import Foundation.Monad.Base
 import Foundation.Monad.Reader
 #if MIN_VERSION_base(4,13,0)
@@ -19,7 +18,7 @@ newtype ExceptT e m a = ExceptT { runExceptT :: m (Either e a) }
 instance Functor m => Functor (ExceptT e m) where
     fmap f = ExceptT . fmap (fmap f) . runExceptT
 
-instance AMPMonad m => Applicative (ExceptT e m) where
+instance Monad m => Applicative (ExceptT e m) where
     pure a = ExceptT $ pure (Right a)
     ExceptT f <*> ExceptT v = ExceptT $ do
         mf <- f
@@ -31,11 +30,11 @@ instance AMPMonad m => Applicative (ExceptT e m) where
                     Left e -> pure (Left e)
                     Right x -> pure (Right (k x))
 
-instance AMPMonad m => MonadFailure (ExceptT e m) where
+instance Monad m => MonadFailure (ExceptT e m) where
     type Failure (ExceptT e m) = e
     mFail = ExceptT . pure . Left
 
-instance AMPMonad m => Monad (ExceptT e m) where
+instance Monad m => Monad (ExceptT e m) where
     return a = ExceptT $ return (Right a)
     m >>= k = ExceptT $ do
         a <- runExceptT m
@@ -49,7 +48,7 @@ instance MonadFail m => MonadFail (ExceptT e m) where
     fail = ExceptT . fail
 #endif
 
-instance (AMPMonad m, MonadFix m) => MonadFix (ExceptT e m) where
+instance (Monad m, MonadFix m) => MonadFix (ExceptT e m) where
     mfix f = ExceptT (mfix (runExceptT . f . fromEither))
       where
         fromEither (Right x) = x

@@ -13,11 +13,10 @@ module Foundation.Monad.Reader
     ) where
 
 import Basement.Compat.Base (($), (.), const)
-import Basement.Compat.AMP
 import Foundation.Monad.Base
 import Foundation.Monad.Exception
 
-class AMPMonad m => MonadReader m where
+class Monad m => MonadReader m where
     type ReaderContext m
     ask :: m (ReaderContext m)
 
@@ -34,13 +33,13 @@ instance Applicative m => Applicative (ReaderT r m) where
     fab <*> fa = ReaderT $ \r -> runReaderT fab r <*> runReaderT fa r
     {-# INLINE (<*>) #-}
 
-instance AMPMonad m => Monad (ReaderT r m) where
+instance Monad m => Monad (ReaderT r m) where
     return a = ReaderT $ const (return a)
     {-# INLINE return #-}
     ma >>= mab = ReaderT $ \r -> runReaderT ma r >>= \a -> runReaderT (mab a) r
     {-# INLINE (>>=) #-}
 
-instance (AMPMonad m, MonadFix m) => MonadFix (ReaderT s m) where
+instance (Monad m, MonadFix m) => MonadFix (ReaderT s m) where
     mfix f = ReaderT $ \r -> mfix $ \a -> runReaderT (f a) r
     {-# INLINE mfix #-}
 
@@ -70,6 +69,6 @@ instance MonadBracket m => MonadBracket (ReaderT r m) where
                               (\a exn -> runReaderT (cleanupExcept a exn) c)
                               (\a -> runReaderT (innerAction a) c)
 
-instance AMPMonad m => MonadReader (ReaderT r m) where
+instance Monad m => MonadReader (ReaderT r m) where
     type ReaderContext (ReaderT r m) = r
     ask = ReaderT return

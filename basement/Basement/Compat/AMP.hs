@@ -7,8 +7,5 @@ module Basement.Compat.AMP
 
 import Basement.Compat.Base
 
-#if MIN_VERSION_base(4,8,0)
+{-# DEPRECATED AMPMonad "use Monad" #-}
 type AMPMonad m = Monad m
-#else
-type AMPMonad m = (Functor m, Applicative m, Monad m)
-#endif
