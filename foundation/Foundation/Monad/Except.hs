@@ -1,6 +1,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP #-}
 module Foundation.Monad.Except
     ( ExceptT(..)
     ) where
@@ -9,6 +10,9 @@ import Basement.Imports
 import Basement.Compat.AMP
 import Foundation.Monad.Base
 import Foundation.Monad.Reader
+#if MIN_VERSION_base(4,13,0)
+import Control.Monad.Fail
+#endif
 
 newtype ExceptT e m a = ExceptT { runExceptT :: m (Either e a) }
 
@@ -38,7 +42,12 @@ instance AMPMonad m => Monad (ExceptT e m) where
         case a of
             Left e -> return (Left e)
             Right x -> runExceptT (k x)
+#if !MIN_VERSION_base(4,13,0)
     fail = ExceptT . fail
+#else
+instance MonadFail m => MonadFail (ExceptT e m) where
+    fail = ExceptT . fail
+#endif
 
 instance (AMPMonad m, MonadFix m) => MonadFix (ExceptT e m) where
     mfix f = ExceptT (mfix (runExceptT . f . fromEither))

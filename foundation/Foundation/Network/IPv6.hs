@@ -207,15 +207,18 @@ ipv6ParserIpv4Embedded = do
     let (CountOf lenBs1) = length bs1
     bs2 <- repeat (Between $ 0 `And` (fromIntegral $ 6 - lenBs1)) $ takeAWord16 <* skipColon
     _ <- optional skipColon
-    [i1,i2,i3,i4,i5,i6] <- format 6 bs1 bs2
-    m1 <- takeAWord8 <* skipDot
-    m2 <- takeAWord8 <* skipDot
-    m3 <- takeAWord8 <* skipDot
-    m4 <- takeAWord8
-    return $ fromTuple ( i1,i2,i3,i4,i5,i6
-                       , m1 `shiftL` 8 .|. m2
-                       , m3 `shiftL` 8 .|. m4
-                       )
+    is <- format 6 bs1 bs2
+    case is of
+        [i1,i2,i3,i4,i5,i6] -> do
+            m1 <- takeAWord8 <* skipDot
+            m2 <- takeAWord8 <* skipDot
+            m3 <- takeAWord8 <* skipDot
+            m4 <- takeAWord8
+            return $ fromTuple ( i1,i2,i3,i4,i5,i6
+                               , m1 `shiftL` 8 .|. m2
+                               , m3 `shiftL` 8 .|. m4
+                               )
+        _ -> error "internal error: format should return 6"
 
 -- | IPv6 parser as described in RFC4291 section 2.2.2
 --
@@ -236,12 +239,14 @@ ipv6ParserCompressed = do
     let (CountOf bs1Len) = length bs1
     bs2 <- repeat (Between $ 0 `And` fromIntegral (8 - bs1Len)) $
               skipColon *> takeAWord16
-    [i1,i2,i3,i4,i5,i6,i7,i8] <- format 8 bs1 bs2
-    return $ fromTuple (i1,i2,i3,i4,i5,i6,i7,i8)
+    is <- format 8 bs1 bs2
+    case is of
+        [i1,i2,i3,i4,i5,i6,i7,i8] -> pure $ fromTuple (i1,i2,i3,i4,i5,i6,i7,i8)
+        _ -> error "internal error: format should return 8"
 
 format :: (Integral a, Monad m) => CountOf a -> [a] -> [a] -> m [a]
 format sz bs1 bs2
-    | sz <= (length bs1 + length bs2) = fail "invalid compressed IPv6 addressed"
+    | sz <= (length bs1 + length bs2) = error "invalid compressed IPv6 addressed"
     | otherwise = do
         let len = sz `sizeSub` (length bs1 + length bs2)
         return $ bs1 <> replicate len 0 <> bs2
@@ -262,4 +267,4 @@ takeAWord16 = do
     let lhs = readHex l
      in case lhs of
           [(w, [])] -> return w
-          _ -> fail "can't fall here"
+          _ -> error "internal error: can't fall here"

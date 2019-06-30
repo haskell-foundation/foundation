@@ -179,11 +179,12 @@ test (Unit _ _) = undefined
 test (CheckPlan name plan) = do
     testCheckPlan name plan
 test (Property name prop) = do
-    r'@(PropertyResult _ nb r) <- testProperty name (property prop)
+    r <- testProperty name (property prop)
     case r of
-        PropertySuccess  -> whenVerbose $ displayPropertySucceed name nb
-        PropertyFailed w -> whenErrorOnly $ displayPropertyFailed name nb w
-    return r'
+        (PropertyResult _ nb PropertySuccess)    -> whenVerbose $ displayPropertySucceed name nb
+        (PropertyResult _ nb (PropertyFailed w)) -> whenErrorOnly $ displayPropertyFailed name nb w
+        GroupResult {} -> error "internal error: should not happen"
+    return r
 
 displayCurrent :: String -> CheckMain ()
 displayCurrent name = do
