@@ -1,6 +1,6 @@
 resolver: lts-13.5
 packages:
-- '.'
-- location: basement/
-  extra-dep: true
-- location: edge/
+- foundation
+- edge
+extra-deps:
+- basement

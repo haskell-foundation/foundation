@@ -1,7 +1,6 @@
 resolver: lts-13.5
 packages:
-- location: foundation/
-- location: basement/
-  extra-dep: false
+- foundation
+- basement
 extra-deps:
 - gauge-0.2.1
