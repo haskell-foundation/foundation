@@ -7,6 +7,8 @@ module Test.Foundation.Network.IPv4
 import Foundation
 import Foundation.Network.IPv4
 import Foundation.Check
+import Data.Either (isLeft)
+import Foundation.Parser (parseOnly)
 
 import Test.Data.Network
 import Test.Foundation.Storable
@@ -25,6 +27,17 @@ testOrdering genElement = Property "ordering" $
     forAll ((,) <$> genElement <*> genElement) $ \(x, y) ->
         (toTuple x `compare` toTuple y) === x `compare` y
 
+-- | generate IPv4 like string but with bigger numbers
+genOverflowingIPv4String :: Gen String
+genOverflowingIPv4String = do
+  w1 <- bigWordGen
+  w2 <- bigWordGen
+  w3 <- bigWordGen
+  w4 <- bigWordGen
+  return $ show w1 <> "." <> show w2 <> "." <> show w3 <> "." <> show w4 where
+    bigWordGen :: Gen Word
+    bigWordGen = between (256,maxBound)
+
 testNetworkIPv4 :: Test
 testNetworkIPv4 = Group "IPv4"
     [ Property "toTuple . fromTuple == id" $
@@ -35,4 +48,6 @@ testNetworkIPv4 = Group "IPv4"
     , testOrdering genIPv4
     , testPropertyStorable      "Storable" (Proxy :: Proxy IPv4)
     , testPropertyStorableFixed "StorableFixed" (Proxy :: Proxy IPv4)
+    , Property "Word8 overflow is detected" $
+        forAll genOverflowingIPv4String $ \x -> isLeft $ parseOnly ipv4Parser x
     ]

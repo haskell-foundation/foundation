@@ -32,6 +32,8 @@ import Basement.Bits
 import Foundation.Parser hiding (peek)
 import Foundation.Collection (Sequential, Element, elem)
 
+import qualified Prelude (String)
+
 -- | IPv4 data type
 newtype IPv4 = IPv4 Word32
     deriving (Eq, Ord, Typeable, Hashable)
@@ -104,5 +106,9 @@ ipv4Parser = do
     i4 <- takeAWord8
     return $ fromTuple (i1, i2, i3, i4)
   where
-    takeAWord8 = read . toList <$> takeWhile isAsciiDecimal
+    takeAWord8 = do
+      n <- (read :: Prelude.String -> Integer) . toList <$> takeWhile isAsciiDecimal
+      if n > 256
+        then reportError $ Satisfy $ Just "expected smaller integer than 256"
+        else return (fromIntegral n)
     isAsciiDecimal = flip elem ['0'..'9']
