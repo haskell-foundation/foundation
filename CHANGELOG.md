@@ -1,3 +1,10 @@
+## 0.0.24
+
+* Fix fail instances
+* Fix overflow in IPv4 addresses
+* Fix generic findIndex
+* Start dropping some old compat code
+
 ## 0.0.23
 
 * Really fix windows 32 build

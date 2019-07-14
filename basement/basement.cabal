@@ -1,5 +1,5 @@
 name:                basement
-version:             0.0.10
+version:             0.0.11
 synopsis:            Foundation scrap box of array & string
 description:         Foundation most basic primitives without any dependencies
 license:             BSD3
@@ -11,7 +11,7 @@ category:            Web
 build-type:          Simple
 homepage:            https://github.com/haskell-foundation/foundation#readme
 bug-reports:         https://github.com/haskell-foundation/foundation/issues
-cabal-version:       >=1.10
+cabal-version:       1.18
 extra-source-files:  cbits/*.h cbits/basement_rts.c
 
 source-repository head

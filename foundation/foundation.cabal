@@ -1,5 +1,5 @@
 name:                foundation
-version:             0.0.23
+version:             0.0.24
 synopsis:            Alternative prelude with batteries and no dependencies
 description:
     A custom prelude with no dependencies apart from base.
@@ -28,7 +28,7 @@ category:            foundation
 build-type:          Simple
 homepage:            https://github.com/haskell-foundation/foundation
 bug-reports:         https://github.com/haskell-foundation/foundation/issues
-cabal-version:       >=1.18
+cabal-version:       1.18
 extra-source-files:  cbits/*.h
 
 source-repository head
@@ -206,7 +206,7 @@ library
       if arch(i386)
         extra-libraries: gcc
 
-  build-depends: basement == 0.0.10
+  build-depends: basement == 0.0.11
 
   -- FIXME add suport for armel mipsel
   --  CPP-options: -DARCH_IS_LITTLE_ENDIAN
