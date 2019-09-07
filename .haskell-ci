@@ -20,7 +20,8 @@ build: ghc-8.4-experimental checkbounds experimental allowed-failure gaugedep
 build: ghc-8.6 os=osx,linux,windows
 build: ghc-8.6 os=win32
 build: ghc-8.6 checkbounds os=osx,linux,windows
-build: ghc-8.8 os=osx,linux,windows
+build: ghc-8.8 os=osx,linux,windows extradep=gauge-0.2.4@sha256:b8b19a8c13ab79097726d0edf91297ccd3eede053d1de47e3ac67f1252cc33c2,3777
+
 
 # packages
 package: foundation/
