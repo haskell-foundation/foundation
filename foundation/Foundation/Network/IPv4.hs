@@ -11,6 +11,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Foundation.Network.IPv4
     ( IPv4
@@ -32,8 +33,6 @@ import Basement.Bits
 import Foundation.Parser hiding (peek)
 import Foundation.Collection (Sequential, Element, elem)
 import Text.Read (readMaybe)
-
-import qualified Prelude (String)
 
 -- | IPv4 data type
 newtype IPv4 = IPv4 Word32
@@ -108,12 +107,10 @@ ipv4Parser = do
     return $ fromTuple (i1, i2, i3, i4)
   where
     takeAWord8 = do
-      maybeN <- (readMaybe :: Prelude.String -> Maybe Integer) . toList <$> takeWhile isAsciiDecimal
+      maybeN <- readMaybe @Integer . toList <$> takeWhile isAsciiDecimal
       case maybeN of
         Nothing -> reportError $ Satisfy $ Just "expected integer"
-        Just n ->
-          if n > 256
-          then reportError $ Satisfy $ Just "expected smaller integer than 256"
-          else return (fromIntegral n)
+        Just n | n > 256   -> reportError $ Satisfy $ Just "expected smaller integer than 256"
+               | otherwise -> pure (fromIntegral n)
 
     isAsciiDecimal = flip elem ['0'..'9']
