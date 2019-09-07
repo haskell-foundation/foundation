@@ -23,9 +23,7 @@ testBlockN = Group "BlockN"
      ]
 
 testWithDifferentN =
-    Group "Multiple n" $ do
-        Foo n <- ns
-        [testBlock n]
+    Group "Multiple n" $ fmap (\(Foo p) -> testBlock p) ns
 
 testBlock :: forall n . (KnownNat n, NatWithinBound (CountOf Int) n) => Proxy n -> Test
 testBlock nProxy =
@@ -48,6 +46,7 @@ createBlockSized n@(CountOf n') = B.create n (const n')
 
 data Foo = forall a . (KnownNat a, NatWithinBound (CountOf Int) a) => Foo (Proxy a)
 
+ns :: [Foo]
 ns =
     [ Foo (Proxy :: Proxy 0)
     , Foo (Proxy :: Proxy 1)
