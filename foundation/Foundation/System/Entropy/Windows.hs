@@ -92,6 +92,12 @@ cryptAcquireCtx =
 cryptGenRandom :: CryptCtx -> Ptr Word8 -> Int -> IO Bool
 cryptGenRandom h buf n = toBool `fmap` c_cryptGenRandom h (Prelude.fromIntegral n) buf
 
+
+newtype WindowsRandomBackendError = WindowsRandomBackendError [Char]
+    deriving (Show,Eq)
+
+instance Exception WindowsRandomBackendError
+
 cryptReleaseCtx :: CryptCtx -> IO ()
 cryptReleaseCtx h = do
     success <- toBool `fmap` c_cryptReleaseCtx h 0
@@ -99,4 +105,4 @@ cryptReleaseCtx h = do
         then return ()
         else do
             lastError <- getLastError
-            fail $ "cryptReleaseCtx: error " <> show lastError
+            throwIO (WindowsRandomBackendError $ show lastError)
