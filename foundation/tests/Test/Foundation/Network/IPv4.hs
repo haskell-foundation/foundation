@@ -50,4 +50,6 @@ testNetworkIPv4 = Group "IPv4"
     , testPropertyStorableFixed "StorableFixed" (Proxy :: Proxy IPv4)
     , Property "Word8 overflow is detected" $
         forAll genOverflowingIPv4String $ \x -> isLeft $ parseOnly ipv4Parser x
+    , Property "www.example.com" $
+        isLeft $ parseOnly ipv4Parser ("www.example.com" :: String)
     ]
