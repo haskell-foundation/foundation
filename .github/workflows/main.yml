@@ -22,6 +22,18 @@ jobs:
       - name: Install Stack
         if: matrix.config.os != 'ubuntu-latest'
         run: curl -sSL https://get.haskellstack.org/ | sh
+
+      - name: cache programs
+        id: cache-programs
+        uses: actions/cache@v1
+        with:
+          path: ~/.stack/programs
+          key: programs-${{ matrix.config.os }}-${{ matrix.config.resolver }}
+
+      - name: Setup
+        if: steps.cache-programs.outputs.cache-hit != 'true'
+        run: stack setup --resolve ${{ matrix.config.resolver }}
+
       - name: Build
         run: stack build --resolver ${{ matrix.config.resolver }}
       - name: run tests
