@@ -35,6 +35,6 @@ jobs:
         run: stack setup --resolver ${{ matrix.config.resolver }}
 
       - name: Build
-        run: stack build --resolver ${{ matrix.config.resolver }}
+        run: stack build --resolver ${{ matrix.config.resolver }} --test --no-run-tests
       - name: run tests
         run: stack test --resolver ${{ matrix.config.resolver }}
