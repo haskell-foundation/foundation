@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: Install Stack
-        if: matrix.config.os != 'ubuntu-latest'
+        if: matrix.os != 'ubuntu-latest'
         run: curl -sSL https://get.haskellstack.org/ | sh
       - name: Build
         run: stack build
