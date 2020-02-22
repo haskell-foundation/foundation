@@ -8,15 +8,15 @@ jobs:
     strategy:
       matrix:
         config:
-        # main lts
-        - { os: ubuntu-latest, resolver: lts-15.0 }
-        - { os: windows-latest, resolver: lts-15.0 }
-        - { os: macos-latest, resolver: lts-15.0 }
-        # other resolvers
-        - { os: ubuntu-latest, resolver: nightly }
-        - { os: ubuntu-latest, resolver: lts-14.27 }
-        - { os: ubuntu-latest, resolver: lts-12.26 }
-    runs-on: ${{ matrix.os }}
+          # main lts
+          - { os: ubuntu-latest, resolver: lts-15.0 }
+          - { os: windows-latest, resolver: lts-15.0 }
+          - { os: macos-latest, resolver: lts-15.0 }
+          # other resolvers
+          - { os: ubuntu-latest, resolver: nightly }
+          - { os: ubuntu-latest, resolver: lts-14.27 }
+          - { os: ubuntu-latest, resolver: lts-12.26 }
+    runs-on: ${{ matrix.config.os }}
     steps:
       - uses: actions/checkout@v1
       - name: Install Stack
