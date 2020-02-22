@@ -1,0 +1,19 @@
+on: [push, pull_request]
+
+name: Continuous integration
+
+jobs:
+  test:
+    name: Test Suite
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install Stack
+        run: curl -sSL https://get.haskellstack.org/ | sh
+      - name: Build
+        run: stack build
+      - name: run tests
+        run: stack test
