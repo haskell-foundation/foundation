@@ -7,14 +7,22 @@ jobs:
     name: Test Suite
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        config:
+        # main lts
+        - { os: ubuntu-latest, resolver: lts-15.0 }
+        - { os: windows-latest, resolver: lts-15.0 }
+        - { os: macos-latest, resolver: lts-15.0 }
+        # other resolvers
+        - { os: ubuntu-latest, resolver: nightly }
+        - { os: ubuntu-latest, resolver: lts-14.27 }
+        - { os: ubuntu-latest, resolver: lts-12.26 }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v1
       - name: Install Stack
-        if: matrix.os != 'ubuntu-latest'
+        if: matrix.config.os != 'ubuntu-latest'
         run: curl -sSL https://get.haskellstack.org/ | sh
       - name: Build
-        run: stack build
+        run: stack build --resolver ${{ matrix.config.resolver }}
       - name: run tests
-        run: stack test
+        run: stack test --resolver ${{ matrix.config.resolver }}
