@@ -32,7 +32,7 @@ jobs:
 
       - name: Setup
         if: steps.cache-programs.outputs.cache-hit != 'true'
-        run: stack setup --resolve ${{ matrix.config.resolver }}
+        run: stack setup --resolver ${{ matrix.config.resolver }}
 
       - name: Build
         run: stack build --resolver ${{ matrix.config.resolver }}
