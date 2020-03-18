@@ -68,7 +68,7 @@ module Basement.Block
     , withPtr
     ) where
 
-import           GHC.Prim
+import           GHC.Exts
 import           GHC.Types
 import           GHC.ST
 import qualified Data.List

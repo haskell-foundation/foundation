@@ -20,7 +20,7 @@ module Basement.IntegralConv
     ) where
 
 import GHC.Types
-import GHC.Prim
+import GHC.Exts
 import GHC.Int
 import GHC.Word
 import Prelude (Integer, fromIntegral)

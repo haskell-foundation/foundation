@@ -14,7 +14,7 @@ module Basement.Compat.PrimTypes
     , Pinned#
     ) where
 
-import GHC.Prim
+import GHC.Exts
 
 -- | File size in bytes
 type FileSize# = Word64#

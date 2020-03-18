@@ -20,7 +20,7 @@ module Basement.Compat.Primitive
 
 import qualified Prelude
 import           GHC.Exts
-import           GHC.Prim
+import           GHC.Exts
 import           GHC.Word
 import           GHC.IO
 

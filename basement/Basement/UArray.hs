@@ -106,7 +106,7 @@ module Basement.UArray
     , toBase64Internal
     ) where
 
-import           GHC.Prim
+import           GHC.Exts
 import           GHC.Types
 import           GHC.Word
 import           GHC.ST

@@ -12,7 +12,7 @@ module Basement.Alg.String
     , revFindIndexPredicate
     ) where
 
-import           GHC.Prim
+import           GHC.Exts
 import           GHC.ST
 import           Basement.Alg.Class
 import           Basement.Alg.UTF8

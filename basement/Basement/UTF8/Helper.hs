@@ -20,7 +20,7 @@ import           Basement.Compat.Base
 import           Basement.Compat.Primitive
 import           Basement.Types.OffsetSize
 import           Basement.UTF8.Types
-import           GHC.Prim
+import           GHC.Exts
 import           GHC.Types
 import           GHC.Word
 

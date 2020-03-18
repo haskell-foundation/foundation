@@ -28,7 +28,7 @@ import           Basement.Compat.Bifunctor
 import           Basement.Compat.ExtList (reverse)
 import qualified Basement.UArray as A
 import qualified Prelude
-import           GHC.Prim
+import           GHC.Exts
 import           GHC.Float
 
 

@@ -18,7 +18,7 @@ import Basement.Types.OffsetSize
 import Basement.Numerical.Additive
 import Basement.Monad
 
-import GHC.Prim
+import GHC.Exts
 import GHC.Word
 import GHC.Types
 import Basement.UArray

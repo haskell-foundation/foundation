@@ -51,7 +51,7 @@ module Basement.Types.OffsetSize
 import GHC.Types
 import GHC.Word
 import GHC.Int
-import GHC.Prim
+import GHC.Exts
 import System.Posix.Types (CSsize (..))
 import Data.Bits
 import Basement.Compat.Base

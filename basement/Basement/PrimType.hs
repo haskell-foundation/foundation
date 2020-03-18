@@ -35,7 +35,7 @@ module Basement.PrimType
 
 #include "MachDeps.h"
 
-import           GHC.Prim
+import           GHC.Exts
 import           GHC.Int
 import           GHC.Types
 import           GHC.Word

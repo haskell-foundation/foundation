@@ -15,7 +15,7 @@ module Basement.Alg.PrimArray
     ) where
 
 import           GHC.Types
-import           GHC.Prim
+import           GHC.Exts
 import           Basement.Alg.Class
 import           Basement.Compat.Base
 import           Basement.Numerical.Additive

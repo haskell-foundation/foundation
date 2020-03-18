@@ -15,7 +15,7 @@ module Basement.Floating
     ) where
 
 import           GHC.Types
-import           GHC.Prim
+import           GHC.Exts
 import           GHC.Float
 import           GHC.Word
 import           GHC.ST

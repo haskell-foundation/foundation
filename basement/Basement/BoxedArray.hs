@@ -74,7 +74,7 @@ module Basement.BoxedArray
     , builderBuild_
     ) where
 
-import           GHC.Prim
+import           GHC.Exts
 import           GHC.Types
 import           GHC.ST
 import           Data.Proxy

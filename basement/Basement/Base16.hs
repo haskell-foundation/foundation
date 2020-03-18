@@ -9,7 +9,7 @@ module Basement.Base16
     , Base16Escape(..)
     ) where
 
-import GHC.Prim
+import GHC.Exts
 import GHC.Types
 import GHC.Word
 import Basement.Types.Char7

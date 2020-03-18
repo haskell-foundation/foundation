@@ -47,7 +47,7 @@ import qualified Data.Bits as OldBits
 import Data.Maybe (fromMaybe)
 import Data.Proxy
 import GHC.Base hiding ((.))
-import GHC.Prim
+import GHC.Exts
 import GHC.Types
 import GHC.Word
 import GHC.Int

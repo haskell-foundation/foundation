@@ -10,7 +10,7 @@ module Basement.Error
     ( error
     ) where
 
-import           GHC.Prim
+import           GHC.Exts
 import           Basement.UTF8.Base
 import           Basement.Compat.CallStack
 

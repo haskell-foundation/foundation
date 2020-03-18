@@ -19,7 +19,7 @@ module Basement.Numerical.Conversion
 #include "MachDeps.h"
 
 import GHC.Types
-import GHC.Prim
+import GHC.Exts
 import GHC.Int
 import GHC.Word
 

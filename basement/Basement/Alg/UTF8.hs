@@ -24,7 +24,7 @@ module Basement.Alg.UTF8
 
 import           GHC.Types
 import           GHC.Word
-import           GHC.Prim
+import           GHC.Exts hiding (toList)
 import           Data.Bits
 import           Data.Proxy
 import           Basement.Alg.Class

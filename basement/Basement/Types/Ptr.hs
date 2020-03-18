@@ -15,7 +15,7 @@ import           Basement.Compat.Base
 import           Basement.Compat.C.Types
 import           Basement.Types.OffsetSize
 import           GHC.Ptr
-import           GHC.Prim
+import           GHC.Exts
 import           GHC.Types
 
 data Addr = Addr Addr#

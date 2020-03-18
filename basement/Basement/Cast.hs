@@ -25,7 +25,7 @@ import           Basement.PrimType
 import           Data.Proxy (Proxy(..))
 
 import           GHC.Int
-import           GHC.Prim
+import           GHC.Exts
 import           GHC.Types
 import           GHC.ST
 import           GHC.Word

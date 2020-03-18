@@ -18,7 +18,7 @@ module Basement.UTF8.Base
 import           GHC.ST (ST, runST)
 import           GHC.Types
 import           GHC.Word
-import           GHC.Prim
+import           GHC.Exts
 import           GHC.Exts (build)
 import           Basement.Compat.Base
 import           Basement.Numerical.Additive

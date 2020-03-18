@@ -64,7 +64,7 @@ module Basement.Block.Mutable
     , copyToPtr
     ) where
 
-import           GHC.Prim
+import           GHC.Exts
 import           GHC.Types
 import           Basement.Compat.Base
 import           Data.Proxy

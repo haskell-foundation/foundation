@@ -5,7 +5,7 @@ module Basement.Bindings.Memory
     where
 
 import GHC.IO
-import GHC.Prim
+import GHC.Exts
 import GHC.Word
 import Basement.Compat.C.Types
 import Foreign.Ptr

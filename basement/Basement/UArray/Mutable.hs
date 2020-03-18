@@ -40,7 +40,7 @@ module Basement.UArray.Mutable
     , withMutablePtrHint
     ) where
 
-import           GHC.Prim
+import           GHC.Exts
 import           GHC.Types
 import           GHC.Ptr
 import           Basement.Compat.Base

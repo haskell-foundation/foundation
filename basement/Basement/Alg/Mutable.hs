@@ -4,7 +4,7 @@ module Basement.Alg.Mutable
     ) where
 
 import           GHC.Types
-import           GHC.Prim
+import           GHC.Exts
 import           Basement.Compat.Base
 import           Basement.Numerical.Additive
 import           Basement.Numerical.Multiplicative

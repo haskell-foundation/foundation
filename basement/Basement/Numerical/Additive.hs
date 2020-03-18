@@ -15,7 +15,7 @@ import           Basement.Compat.Natural
 import           Basement.Numerical.Number
 import qualified Prelude
 import           GHC.Types
-import           GHC.Prim
+import           GHC.Exts
 import           GHC.Int
 import           GHC.Word
 import           Basement.Bounded

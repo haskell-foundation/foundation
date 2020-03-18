@@ -35,7 +35,7 @@ import           Basement.Compat.Base
 
 -- basic instances
 import           GHC.Types
-import           GHC.Prim
+import           GHC.Exts
 import           GHC.Int
 import           GHC.Word
 import           Basement.Numerical.Number

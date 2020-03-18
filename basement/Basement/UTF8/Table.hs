@@ -16,7 +16,7 @@ module Basement.UTF8.Table
     , getNbBytes#
     ) where
 
-import           GHC.Prim
+import           GHC.Exts
 import           GHC.Types
 import           GHC.Word
 import           Basement.Compat.Base

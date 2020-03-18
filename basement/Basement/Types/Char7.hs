@@ -30,7 +30,7 @@ module Basement.Types.Char7
     , c7Lower
     ) where
 
-import GHC.Prim
+import GHC.Exts
 import GHC.Word
 import GHC.Types
 import Data.Bits

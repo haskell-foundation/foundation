@@ -11,7 +11,7 @@ module Basement.String.Encoding.UTF32
     , UTF32_Invalid
     ) where
 
-import GHC.Prim
+import GHC.Exts
 import GHC.Word
 import GHC.Types
 import Basement.Compat.Base

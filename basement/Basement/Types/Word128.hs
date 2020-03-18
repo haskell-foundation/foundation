@@ -22,7 +22,7 @@ module Basement.Types.Word128
     , fromNatural
     ) where
 
-import           GHC.Prim
+import           GHC.Exts
 import           GHC.Word
 import           GHC.Types
 import qualified Prelude (fromInteger, show, Num(..), quot, rem, mod)
