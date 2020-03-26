@@ -74,7 +74,7 @@ module Basement.BoxedArray
     , builderBuild_
     ) where
 
-import           GHC.Prim
+import           GHC.Exts
 import           GHC.Types
 import           GHC.ST
 import           Data.Proxy
@@ -631,7 +631,7 @@ find predicate vec = loop 0
             let e = unsafeIndex vec i
              in if predicate e then Just e else loop (i+1)
 
-instance (PrimMonad prim, st ~ PrimState prim) 
+instance (PrimMonad prim, st ~ PrimState prim)
          => Alg.RandomAccess (MArray ty st) prim ty where
     read (MArray _ _ mba) = primMutableArrayRead mba
     write (MArray _ _ mba) = primMutableArrayWrite mba
