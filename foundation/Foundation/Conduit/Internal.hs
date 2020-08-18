@@ -126,7 +126,7 @@ instance MonadThrow m => MonadThrow (Conduit i o m) where
 instance MonadCatch m => MonadCatch (Conduit i o m) where
     catch (Conduit c0) onExc = Conduit $ \rest -> let
         go (PipeM m) =
-            PipeM $ catch (liftM go m) (return . flip unConduit rest . onExc)
+            PipeM $ catch (liftM go m) (\x -> return $ unConduit (onExc x) rest)
         go (Done r) = rest r
         go (Await p c) = Await (go . p) (go . c)
         go (Yield p m o) = Yield (go p) m o
