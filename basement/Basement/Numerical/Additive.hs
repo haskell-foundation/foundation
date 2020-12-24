@@ -1,5 +1,7 @@
 {-# LANGUAGE CPP               #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MagicHash         #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE DefaultSignatures #-}
 {-# OPTIONS_GHC -fno-prof-auto #-}
@@ -117,6 +119,7 @@ instance Additive Word256 where
     azero = 0
     (+) = (Word256.+)
     scale = scaleNum
+
 instance Additive Prelude.Float where
     azero = 0.0
     (F# a) + (F# b) = F# (a `plusFloat#` b)
@@ -124,6 +127,10 @@ instance Additive Prelude.Float where
 instance Additive Prelude.Double where
     azero = 0.0
     (D# a) + (D# b) = D# (a +## b)
+    scale = scaleNum
+instance Additive Prelude.Rational where
+    azero = 0.0
+    (+) = (Prelude.+)
     scale = scaleNum
 
 instance (KnownNat n, NatWithinBound Word64 n) => Additive (Zn64 n) where
