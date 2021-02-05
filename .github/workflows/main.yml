@@ -19,9 +19,6 @@ jobs:
     runs-on: ${{ matrix.config.os }}
     steps:
       - uses: actions/checkout@v1
-      - name: Install Stack
-        if: matrix.config.os != 'ubuntu-latest'
-        run: curl -sSL https://get.haskellstack.org/ | sh
 
       - name: cache programs
         id: cache-programs

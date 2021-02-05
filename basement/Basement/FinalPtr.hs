@@ -25,7 +25,7 @@ module Basement.FinalPtr
     ) where
 
 import GHC.Ptr
-import GHC.ForeignPtr
+import GHC.ForeignPtr hiding (FinalPtr)
 import GHC.IO
 import Basement.Monad
 import Basement.Compat.Primitive

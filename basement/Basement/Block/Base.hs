@@ -36,7 +36,8 @@ module Basement.Block.Base
     , unsafeRecast
     ) where
 
-import           GHC.Prim
+import           GHC.Exts        (unsafeCoerce#)
+import           GHC.Prim hiding (unsafeCoerce#)
 import           GHC.Types
 import           GHC.ST
 import           GHC.IO
