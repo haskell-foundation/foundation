@@ -1,11 +1,7 @@
 # compiler supported and their equivalent LTS
-compiler: ghc-8.0 lts-9.21
-compiler: ghc-8.2 lts-11.22
-compiler: ghc-8.4 lts-12.9
-compiler: ghc-8.4-edge lts-12.26
-compiler: ghc-8.4-experimental lts-12.26
 compiler: ghc-8.6 lts-14.4
-compiler: ghc-8.8 ghc-8.8.1
+compiler: ghc-8.8 lts-16.8
+compiler: ghc-8.10 nightly-2020-08-08
 
 # options
 option: gaugedep extradep=gauge-0.2.1
@@ -13,14 +9,11 @@ option: checkbounds flag=foundation:bounds-check flag=foundation:linktest
 option: experimental flag=foundation:experimental
 
 # builds 
-build: ghc-8.2 checkbounds gaugedep
-build: ghc-8.0 checkbounds gaugedep
-build: ghc-8.4-edge checkbounds package=edge/
-build: ghc-8.4-experimental checkbounds experimental allowed-failure gaugedep
 build: ghc-8.6 os=osx,linux,windows
 build: ghc-8.6 os=win32
-build: ghc-8.6 checkbounds os=osx,linux,windows
-build: ghc-8.8 os=osx,linux,windows extradep=gauge-0.2.4@sha256:b8b19a8c13ab79097726d0edf91297ccd3eede053d1de47e3ac67f1252cc33c2,3777 extradep=vector-0.12.0.3@sha256:1422b0bcf4e7675116ca8d9f473bf239850c58c4518a56010e3bfebeac345ace,7171 extradep=primitive-0.7.0.0@sha256:ee352d97cc390d8513530029a2213a95c179a66c406906b18d03702c1d9ab8e5,3416
+build: ghc-8.8 checkbounds os=osx,linux,windows
+build: ghc-8.8 os=osx,linux,windows
+build: ghc-8.10 os=osx,linux,windows
 
 # packages
 package: foundation/

@@ -35,6 +35,7 @@ import           GHC.IORef
 import           GHC.IO
 import           GHC.Prim
 import           Basement.Compat.Base (Exception, (.), ($), Applicative, Monad)
+import           Basement.Compat.Primitive
 
 -- | Primitive monad that can handle mutation.
 --

@@ -86,6 +86,7 @@ import qualified Basement.Alg.Class as Alg
 import qualified Basement.Alg.Mutable as Alg
 import           Basement.Compat.MonadTrans
 import           Basement.Compat.Semigroup
+import           Basement.Compat.Primitive
 import           Basement.Types.OffsetSize
 import           Basement.PrimType
 import           Basement.NormalForm
