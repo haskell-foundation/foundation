@@ -813,7 +813,7 @@ reverse (String arr) = runST $ do
   where
     !(C.ValidRange start end) = C.offsetsValidRange arr
 
--- Finds where are the insertion points when we search for a `needle`
+-- | Finds where are the insertion points when we search for a `needle`
 -- within an `haystack`.
 indices :: String -> String -> [Offset8]
 indices (String ned) (String hy) = Vec.indices ned hy
