@@ -129,6 +129,7 @@ import qualified Basement.Alg.UTF8 as UTF8
 import qualified Basement.Alg.String as Alg
 import           Basement.Types.Char7 (Char7(..), c7Upper, c7Lower)
 import qualified Basement.Types.Char7 as Char7
+import           Basement.HeadHackageUtils
 import           GHC.Prim
 import           GHC.ST
 import           GHC.Types
@@ -229,13 +230,13 @@ nextWithIndexer :: (Offset Word8 -> Word8)
                 -> Offset Word8
                 -> (Char, Offset Word8)
 nextWithIndexer getter off =
-    case getNbBytes# h of
-        0# -> (toChar h, off + 1)
+    case getNbBytes# (word8ToWordCompat# h) of
+        0# -> (toChar (word8ToWordCompat# h), off + 1)
         1# -> (toChar (decode2 (getter $ off + 1)), off + 2)
         2# -> (toChar (decode3 (getter $ off + 1) (getter $ off + 2)), off + 3)
         3# -> (toChar (decode4 (getter $ off + 1) (getter $ off + 2) (getter $ off + 3))
               , off + 4)
-        r -> error ("next: internal error: invalid input: " <> show (I# r) <> " " <> show (W# h))
+        r -> error ("next: internal error: invalid input: " <> show (I# r) <> " " <> show (W# (word8ToWordCompat# h)))
   where
     !(W8# h) = getter off
 
@@ -244,21 +245,21 @@ nextWithIndexer getter off =
 
     decode2 :: Word8 -> Word#
     decode2 (W8# c1) =
-        or# (uncheckedShiftL# (and# h 0x1f##) 6#)
-            (and# c1 0x3f##)
+        or# (uncheckedShiftL# (and# (word8ToWordCompat# h) 0x1f##) 6#)
+            (and# (word8ToWordCompat# c1) 0x3f##)
 
     decode3 :: Word8 -> Word8 -> Word#
     decode3 (W8# c1) (W8# c2) =
-        or# (uncheckedShiftL# (and# h 0xf##) 12#)
-            (or# (uncheckedShiftL# (and# c1 0x3f##) 6#)
-                 (and# c2 0x3f##))
+        or# (uncheckedShiftL# (and# (word8ToWordCompat# h) 0xf##) 12#)
+            (or# (uncheckedShiftL# (and# (word8ToWordCompat# c1) 0x3f##) 6#)
+                 (and# (word8ToWordCompat# c2) 0x3f##))
 
     decode4 :: Word8 -> Word8 -> Word8 -> Word#
     decode4 (W8# c1) (W8# c2) (W8# c3) =
-        or# (uncheckedShiftL# (and# h 0x7##) 18#)
-            (or# (uncheckedShiftL# (and# c1 0x3f##) 12#)
-                (or# (uncheckedShiftL# (and# c2 0x3f##) 6#)
-                    (and# c3 0x3f##))
+        or# (uncheckedShiftL# (and# (word8ToWordCompat# h) 0x7##) 18#)
+            (or# (uncheckedShiftL# (and# (word8ToWordCompat# c1) 0x3f##) 12#)
+                (or# (uncheckedShiftL# (and# (word8ToWordCompat# c2) 0x3f##) 6#)
+                    (and# (word8ToWordCompat# c3) 0x3f##))
             )
 
 writeWithBuilder :: (PrimMonad st, Monad st)
@@ -273,25 +274,25 @@ writeWithBuilder c
     !(I# xi) = fromEnum c
     !x       = int2Word# xi
 
-    encode1 = Vec.builderAppend (W8# x)
+    encode1 = Vec.builderAppend (W8# (wordToWord8Compat# x))
 
     encode2 = do
         let x1  = or# (uncheckedShiftRL# x 6#) 0xc0##
             x2  = toContinuation x
-        Vec.builderAppend (W8# x1) >> Vec.builderAppend (W8# x2)
+        Vec.builderAppend (W8# (wordToWord8Compat# x1)) >> Vec.builderAppend (W8# (wordToWord8Compat# x2))
 
     encode3 = do
         let x1  = or# (uncheckedShiftRL# x 12#) 0xe0##
             x2  = toContinuation (uncheckedShiftRL# x 6#)
             x3  = toContinuation x
-        Vec.builderAppend (W8# x1) >> Vec.builderAppend (W8# x2) >> Vec.builderAppend (W8# x3)
+        Vec.builderAppend (W8# (wordToWord8Compat# x1)) >> Vec.builderAppend (W8# (wordToWord8Compat# x2)) >> Vec.builderAppend (W8# (wordToWord8Compat# x3))
 
     encode4 = do
         let x1  = or# (uncheckedShiftRL# x 18#) 0xf0##
             x2  = toContinuation (uncheckedShiftRL# x 12#)
             x3  = toContinuation (uncheckedShiftRL# x 6#)
             x4  = toContinuation x
-        Vec.builderAppend (W8# x1) >> Vec.builderAppend (W8# x2) >> Vec.builderAppend (W8# x3) >> Vec.builderAppend (W8# x4)
+        Vec.builderAppend (W8# (wordToWord8Compat# x1)) >> Vec.builderAppend (W8# (wordToWord8Compat# x2)) >> Vec.builderAppend (W8# (wordToWord8Compat# x3)) >> Vec.builderAppend (W8# (wordToWord8Compat# x4))
 
     toContinuation :: Word# -> Word#
     toContinuation w = or# (and# w 0x3f##) 0x80##

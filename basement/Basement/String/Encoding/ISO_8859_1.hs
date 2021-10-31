@@ -17,6 +17,7 @@ import Basement.Compat.Base
 import Basement.Types.OffsetSize
 import Basement.Numerical.Additive
 import Basement.Monad
+import Basement.HeadHackageUtils
 
 import GHC.Prim
 import GHC.Word
@@ -47,7 +48,7 @@ instance Encoding ISO_8859_1 where
 next :: (Offset Word8 -> Word8)
      -> Offset Word8
      -> Either ISO_8859_1_Invalid (Char, Offset Word8)
-next getter off = Right (toChar w, off + aone)
+next getter off = Right (toChar (word8ToWordCompat# w), off + aone)
   where
     !(W8# w) = getter off
     toChar :: Word# -> Char
@@ -57,7 +58,7 @@ write :: (PrimMonad st, Monad st)
       => Char
       -> Builder (UArray Word8) (MUArray Word8) Word8 st err ()
 write c@(C# ch)
-    | c <= toEnum 0xFF = builderAppend (W8# x)
+    | c <= toEnum 0xFF = builderAppend (W8# (wordToWord8Compat# x))
     | otherwise        = throw $ NotISO_8859_1 c
   where
     x :: Word#

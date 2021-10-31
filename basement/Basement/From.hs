@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
@@ -36,6 +37,9 @@ import           Basement.Compat.Base
 -- basic instances
 import           GHC.Types
 import           GHC.Prim
+#if __GLASGOW_HASKELL__ >= 903
+  hiding (word64ToWord#)
+#endif
 import           GHC.Int
 import           GHC.Word
 import           Basement.Numerical.Number
@@ -54,6 +58,7 @@ import           Basement.These
 import           Basement.PrimType (PrimType, PrimSize)
 import           Basement.Types.OffsetSize
 import           Basement.Compat.Natural
+import           Basement.HeadHackageUtils
 import qualified Prelude (fromIntegral)
 
 -- nat instances
@@ -102,79 +107,79 @@ instance IsIntegral n => From n Integer where
     from = toInteger
 
 instance From Int8 Int16 where
-    from (I8# i) = I16# i
+    from (I8# i) = I16# (intToInt16Compat# (int8ToIntCompat# i))
 instance From Int8 Int32 where
-    from (I8# i) = I32# i
+    from (I8# i) = I32# (intToInt32Compat# (int8ToIntCompat# i))
 instance From Int8 Int64 where
-    from (I8# i) = intToInt64 (I# i)
+    from (I8# i) = intToInt64 (I# (int8ToIntCompat# i))
 instance From Int8 Int where
-    from (I8# i) = I# i
+    from (I8# i) = I# (int8ToIntCompat# i)
 
 instance From Int16 Int32 where
-    from (I16# i) = I32# i
+    from (I16# i) = I32# (intToInt32Compat# (int16ToIntCompat# i))
 instance From Int16 Int64 where
-    from (I16# i) = intToInt64 (I# i)
+    from (I16# i) = intToInt64 (I# (int16ToIntCompat# i))
 instance From Int16 Int where
-    from (I16# i) = I# i
+    from (I16# i) = I# (int16ToIntCompat# i)
 
 instance From Int32 Int64 where
-    from (I32# i) = intToInt64 (I# i)
+    from (I32# i) = intToInt64 (I# (int32ToIntCompat# i))
 instance From Int32 Int where
-    from (I32# i) = I# i
+    from (I32# i) = I# (int32ToIntCompat# i)
 
 instance From Int Int64 where
     from = intToInt64
 
 instance From Word8 Word16 where
-    from (W8# i) = W16# i
+    from (W8# i) = W16# (wordToWord16Compat# (word8ToWordCompat# i))
 instance From Word8 Word32 where
-    from (W8# i) = W32# i
+    from (W8# i) = W32# (wordToWord32Compat# (word8ToWordCompat# i))
 instance From Word8 Word64 where
-    from (W8# i) = wordToWord64 (W# i)
+    from (W8# i) = wordToWord64 (W# (word8ToWordCompat# i))
 instance From Word8 Word128 where
-    from (W8# i) = Word128 0 (wordToWord64 $ W# i)
+    from (W8# i) = Word128 0 (wordToWord64 $ W# (word8ToWordCompat# i))
 instance From Word8 Word256 where
-    from (W8# i) = Word256 0 0 0 (wordToWord64 $ W# i)
+    from (W8# i) = Word256 0 0 0 (wordToWord64 $ W# (word8ToWordCompat# i))
 instance From Word8 Word where
-    from (W8# i) = W# i
+    from (W8# i) = W# (word8ToWordCompat# i)
 instance From Word8 Int16 where
-    from (W8# w) = I16# (word2Int# w)
+    from (W8# w) = I16# (intToInt16Compat# (word2Int# (word8ToWordCompat# w)))
 instance From Word8 Int32 where
-    from (W8# w) = I32# (word2Int# w)
+    from (W8# w) = I32# (intToInt32Compat# (word2Int# (word8ToWordCompat# w)))
 instance From Word8 Int64 where
-    from (W8# w) = intToInt64 (I# (word2Int# w))
+    from (W8# w) = intToInt64 (I# (word2Int# (word8ToWordCompat# w)))
 instance From Word8 Int where
-    from (W8# w) = I# (word2Int# w)
+    from (W8# w) = I# (word2Int# (word8ToWordCompat# w))
 
 instance From Word16 Word32 where
-    from (W16# i) = W32# i
+    from (W16# i) = W32# (wordToWord32Compat# (word16ToWordCompat# i))
 instance From Word16 Word64 where
-    from (W16# i) = wordToWord64 (W# i)
+    from (W16# i) = wordToWord64 (W# (word16ToWordCompat# i))
 instance From Word16 Word128 where
-    from (W16# i) = Word128 0 (wordToWord64 $ W# i)
+    from (W16# i) = Word128 0 (wordToWord64 $ W# (word16ToWordCompat# i))
 instance From Word16 Word256 where
-    from (W16# i) = Word256 0 0 0 (wordToWord64 $ W# i)
+    from (W16# i) = Word256 0 0 0 (wordToWord64 $ W# (word16ToWordCompat# i))
 instance From Word16 Word where
-    from (W16# i) = W# i
+    from (W16# i) = W# (word16ToWordCompat# i)
 instance From Word16 Int32 where
-    from (W16# w) = I32# (word2Int# w)
+    from (W16# w) = I32# (intToInt32Compat# (word2Int# (word16ToWordCompat# w)))
 instance From Word16 Int64 where
-    from (W16# w) = intToInt64 (I# (word2Int# w))
+    from (W16# w) = intToInt64 (I# (word2Int# (word16ToWordCompat# w)))
 instance From Word16 Int where
-    from (W16# w) = I# (word2Int# w)
+    from (W16# w) = I# (word2Int# (word16ToWordCompat# w))
 
 instance From Word32 Word64 where
-    from (W32# i) = wordToWord64 (W# i)
+    from (W32# i) = wordToWord64 (W# (word32ToWordCompat# i))
 instance From Word32 Word128 where
-    from (W32# i) = Word128 0 (wordToWord64 $ W# i)
+    from (W32# i) = Word128 0 (wordToWord64 $ W# (word32ToWordCompat# i))
 instance From Word32 Word256 where
-    from (W32# i) = Word256 0 0 0 (wordToWord64 $ W# i)
+    from (W32# i) = Word256 0 0 0 (wordToWord64 $ W# (word32ToWordCompat# i))
 instance From Word32 Word where
-    from (W32# i) = W# i
+    from (W32# i) = W# (word32ToWordCompat# i)
 instance From Word32 Int64 where
-    from (W32# w) = intToInt64 (I# (word2Int# w))
+    from (W32# w) = intToInt64 (I# (word2Int# (word32ToWordCompat# w)))
 instance From Word32 Int where
-    from (W32# w) = I# (word2Int# w)
+    from (W32# w) = I# (word2Int# (word32ToWordCompat# w))
 
 instance From Word64 Word128 where
     from w = Word128 0 w
@@ -270,11 +275,11 @@ instance (NatWithinBound (CountOf ty) n, KnownNat n, PrimType ty)
     tryFrom = BlockN.toBlockN . UArray.toBlock . BoxArray.mapToUnboxed id
 
 instance (KnownNat n, NatWithinBound Word8 n) => From (Zn64 n) Word8 where
-    from = narrow . unZn64 where narrow (W64# w) = W8# (narrow8Word# (word64ToWord# w))
+    from = narrow . unZn64 where narrow (W64# w) = W8# (narrow8WordCompat# (word64ToWord# w))
 instance (KnownNat n, NatWithinBound Word16 n) => From (Zn64 n) Word16 where
-    from = narrow . unZn64 where narrow (W64# w) = W16# (narrow16Word# (word64ToWord# w))
+    from = narrow . unZn64 where narrow (W64# w) = W16# (narrow16WordCompat# (word64ToWord# w))
 instance (KnownNat n, NatWithinBound Word32 n) => From (Zn64 n) Word32 where
-    from = narrow . unZn64 where narrow (W64# w) = W32# (narrow32Word# (word64ToWord# w))
+    from = narrow . unZn64 where narrow (W64# w) = W32# (narrow32WordCompat# (word64ToWord# w))
 instance From (Zn64 n) Word64 where
     from = unZn64
 instance From (Zn64 n) Word128 where
@@ -283,11 +288,11 @@ instance From (Zn64 n) Word256 where
     from = from . unZn64
 
 instance (KnownNat n, NatWithinBound Word8 n) => From (Zn n) Word8 where
-    from = narrow . naturalToWord64 . unZn where narrow (W64# w) = W8# (narrow8Word# (word64ToWord# w))
+    from = narrow . naturalToWord64 . unZn where narrow (W64# w) = W8# (narrow8WordCompat# (word64ToWord# w))
 instance (KnownNat n, NatWithinBound Word16 n) => From (Zn n) Word16 where
-    from = narrow . naturalToWord64 . unZn where narrow (W64# w) = W16# (narrow16Word# (word64ToWord# w))
+    from = narrow . naturalToWord64 . unZn where narrow (W64# w) = W16# (narrow16WordCompat# (word64ToWord# w))
 instance (KnownNat n, NatWithinBound Word32 n) => From (Zn n) Word32 where
-    from = narrow . naturalToWord64 . unZn where narrow (W64# w) = W32# (narrow32Word# (word64ToWord# w))
+    from = narrow . naturalToWord64 . unZn where narrow (W64# w) = W32# (narrow32WordCompat# (word64ToWord# w))
 instance (KnownNat n, NatWithinBound Word64 n) => From (Zn n) Word64 where
     from = naturalToWord64 . unZn
 instance (KnownNat n, NatWithinBound Word128 n) => From (Zn n) Word128 where

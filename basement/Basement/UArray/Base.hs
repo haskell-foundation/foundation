@@ -54,7 +54,7 @@ module Basement.UArray.Base
     , pureST
     ) where
 
-import           GHC.Prim
+import           GHC.Exts
 import           GHC.Types
 import           GHC.Ptr
 import           GHC.ST

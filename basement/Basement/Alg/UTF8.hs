@@ -39,6 +39,7 @@ import           Basement.PrimType
 import           Basement.UTF8.Helper
 import           Basement.UTF8.Table
 import           Basement.UTF8.Types
+import           Basement.HeadHackageUtils
 
 nextAscii :: Indexable container Word8 => container -> Offset Word8 -> StepASCII
 nextAscii ba n = StepASCII w
@@ -95,8 +96,8 @@ nextWith h ba n =
 prev :: Indexable container Word8 => container -> Offset Word8 -> StepBack
 prev ba offset =
     case index ba prevOfs1 of
-        (W8# v1) | isContinuation# v1 -> atLeast2 (maskContinuation# v1)
-                 | otherwise          -> StepBack (toChar# v1) prevOfs1
+        (W8# v1) | isContinuation# (word8ToWordCompat# v1) -> atLeast2 (maskContinuation# (word8ToWordCompat# v1))
+                 | otherwise                               -> StepBack (toChar# (word8ToWordCompat# v1)) prevOfs1
   where
     sz1 = CountOf 1
     !prevOfs1 = offset `offsetMinusE` sz1
@@ -105,15 +106,15 @@ prev ba offset =
     prevOfs4 = prevOfs3 `offsetMinusE` sz1
     atLeast2 !v  =
         case index ba prevOfs2 of
-            (W8# v2) | isContinuation# v2 -> atLeast3 (or# (uncheckedShiftL# (maskContinuation# v2) 6#) v)
-                     | otherwise          -> StepBack (toChar# (or# (uncheckedShiftL# (maskHeader2# v2) 6#) v)) prevOfs2
+            (W8# v2) | isContinuation# (word8ToWordCompat# v2) -> atLeast3 (or# (uncheckedShiftL# (maskContinuation# (word8ToWordCompat# v2)) 6#) v)
+                     | otherwise                               -> StepBack (toChar# (or# (uncheckedShiftL# (maskHeader2# (word8ToWordCompat# v2)) 6#) v)) prevOfs2
     atLeast3 !v =
         case index ba prevOfs3 of
-            (W8# v3) | isContinuation# v3 -> atLeast4 (or# (uncheckedShiftL# (maskContinuation# v3) 12#) v)
-                     | otherwise          -> StepBack (toChar# (or# (uncheckedShiftL# (maskHeader3# v3) 12#) v)) prevOfs3
+            (W8# v3) | isContinuation# (word8ToWordCompat# v3) -> atLeast4 (or# (uncheckedShiftL# (maskContinuation# (word8ToWordCompat# v3)) 12#) v)
+                     | otherwise                               -> StepBack (toChar# (or# (uncheckedShiftL# (maskHeader3# (word8ToWordCompat# v3)) 12#) v)) prevOfs3
     atLeast4 !v =
         case index ba prevOfs4 of
-            (W8# v4) -> StepBack (toChar# (or# (uncheckedShiftL# (maskHeader4# v4) 18#) v)) prevOfs4
+            (W8# v4) -> StepBack (toChar# (or# (uncheckedShiftL# (maskHeader4# (word8ToWordCompat# v4)) 18#) v)) prevOfs4
 
 prevSkip :: Indexable container Word8 => container -> Offset Word8 -> Offset Word8
 prevSkip ba offset = loop (offset `offsetMinusE` sz1)
@@ -139,21 +140,21 @@ writeUTF8 mba !i !c
     !(I# xi) = fromEnum c
     !x       = int2Word# xi
 
-    encode1 = write mba i (W8# x) >> pure (i + Offset 1)
+    encode1 = write mba i (W8# (wordToWord8Compat# x)) >> pure (i + Offset 1)
     encode2 = do
         let x1  = or# (uncheckedShiftRL# x 6#) 0xc0##
             x2  = toContinuation x
-        write mba i     (W8# x1)
-        write mba (i+1) (W8# x2)
+        write mba i     (W8# (wordToWord8Compat# x1))
+        write mba (i+1) (W8# (wordToWord8Compat# x2))
         pure (i + Offset 2)
 
     encode3 = do
         let x1  = or# (uncheckedShiftRL# x 12#) 0xe0##
             x2  = toContinuation (uncheckedShiftRL# x 6#)
             x3  = toContinuation x
-        write mba i            (W8# x1)
-        write mba (i+Offset 1) (W8# x2)
-        write mba (i+Offset 2) (W8# x3)
+        write mba i            (W8# (wordToWord8Compat# x1))
+        write mba (i+Offset 1) (W8# (wordToWord8Compat# x2))
+        write mba (i+Offset 2) (W8# (wordToWord8Compat# x3))
         pure (i + Offset 3)
 
     encode4 = do
@@ -161,10 +162,10 @@ writeUTF8 mba !i !c
             x2  = toContinuation (uncheckedShiftRL# x 12#)
             x3  = toContinuation (uncheckedShiftRL# x 6#)
             x4  = toContinuation x
-        write mba i            (W8# x1)
-        write mba (i+Offset 1) (W8# x2)
-        write mba (i+Offset 2) (W8# x3)
-        write mba (i+Offset 3) (W8# x4)
+        write mba i            (W8# (wordToWord8Compat# x1))
+        write mba (i+Offset 1) (W8# (wordToWord8Compat# x2))
+        write mba (i+Offset 2) (W8# (wordToWord8Compat# x3))
+        write mba (i+Offset 3) (W8# (wordToWord8Compat# x4))
         pure (i + Offset 4)
 
     toContinuation :: Word# -> Word#

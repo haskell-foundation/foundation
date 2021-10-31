@@ -18,6 +18,7 @@ module Basement.Cast
 import qualified Basement.Block.Base as Block
 import           Basement.Compat.Base
 import           Basement.Compat.Natural
+import           Basement.HeadHackageUtils
 import           Basement.Numerical.Number
 import           Basement.Numerical.Conversion
 import           Basement.PrimType
@@ -58,22 +59,22 @@ class Cast source destination where
         Block.unsafeRead (Block.unsafeRecast mba) 0
 
 instance Cast Int8  Word8 where
-    cast (I8# i) = W8# (narrow8Word# (int2Word# i))
+    cast (I8# i) = W8# (narrow8WordCompat# (int2Word# (int8ToIntCompat# i)))
 instance Cast Int16 Word16 where
-    cast (I16# i) = W16# (narrow16Word# (int2Word# i))
+    cast (I16# i) = W16# (narrow16WordCompat# (int2Word# (int16ToIntCompat# i)))
 instance Cast Int32 Word32 where
-    cast (I32# i) = W32# (narrow32Word# (int2Word# i))
+    cast (I32# i) = W32# (narrow32WordCompat# (int2Word# (int32ToIntCompat# i)))
 instance Cast Int64 Word64 where
     cast = int64ToWord64
 instance Cast Int   Word where
     cast (I# i) = W# (int2Word# i)
 
 instance Cast Word8  Int8 where
-    cast (W8# i) = I8# (narrow8Int# (word2Int# i))
+    cast (W8# i) = I8# (narrow8IntCompat# (word2Int# (word8ToWordCompat# i)))
 instance Cast Word16 Int16 where
-    cast (W16# i) = I16# (narrow16Int# (word2Int# i))
+    cast (W16# i) = I16# (narrow16IntCompat# (word2Int# (word16ToWordCompat# i)))
 instance Cast Word32 Int32 where
-    cast (W32# i) = I32# (narrow32Int# (word2Int# i))
+    cast (W32# i) = I32# (narrow32IntCompat# (word2Int# (word32ToWordCompat# i)))
 instance Cast Word64 Int64 where
     cast = word64ToInt64
 instance Cast Word   Int where

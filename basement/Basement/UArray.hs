@@ -138,6 +138,7 @@ import qualified Basement.Base16 as Base16
 import qualified Basement.Alg.Mutable as Alg
 import qualified Basement.Alg.Class as Alg
 import qualified Basement.Alg.PrimArray as Alg
+import           Basement.HeadHackageUtils
 
 -- | Return the element at a specific index from an array.
 --
@@ -847,9 +848,9 @@ toHexadecimal ba
             | sIdx == endOfs = pure ()
             | otherwise      = do
                 let !(W8# !w)       = getAt sIdx
-                    !(# wHi, wLo #) = Base16.unsafeConvertByte w
-                unsafeWrite ma dIdx     (W8# wHi)
-                unsafeWrite ma (dIdx+1) (W8# wLo)
+                    !(# wHi, wLo #) = Base16.unsafeConvertByte (word8ToWordCompat# w)
+                unsafeWrite ma dIdx     (W8# (wordToWord8Compat# wHi))
+                unsafeWrite ma (dIdx+1) (W8# (wordToWord8Compat# wLo))
                 loop (dIdx + 2) (sIdx+1)
 
 toBase64Internal :: PrimType ty => Addr# -> UArray ty -> Bool -> UArray Word8
@@ -913,10 +914,10 @@ outputLengthBase64 padding (CountOf inputLenInt) = outputLength
 
 convert3 :: Addr# -> Word8 -> Word8 -> Word8 -> (Word8, Word8, Word8, Word8)
 convert3 table (W8# a) (W8# b) (W8# c) =
-    let !w = narrow8Word# (uncheckedShiftRL# a 2#)
-        !x = or# (and# (uncheckedShiftL# a 4#) 0x30##) (uncheckedShiftRL# b 4#)
-        !y = or# (and# (uncheckedShiftL# b 2#) 0x3c##) (uncheckedShiftRL# c 6#)
-        !z = and# c 0x3f##
+    let !w = narrow8Word# (uncheckedShiftRL# (word8ToWordCompat# a) 2#)
+        !x = or# (and# (uncheckedShiftL# (word8ToWordCompat# a) 4#) 0x30##) (uncheckedShiftRL# (word8ToWordCompat# b) 4#)
+        !y = or# (and# (uncheckedShiftL# (word8ToWordCompat# b) 2#) 0x3c##) (uncheckedShiftRL# (word8ToWordCompat# c) 6#)
+        !z = and# (word8ToWordCompat# c) 0x3f##
      in (idx w, idx x, idx y, idx z)
   where
     idx :: Word# -> Word8

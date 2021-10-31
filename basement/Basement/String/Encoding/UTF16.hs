@@ -23,6 +23,7 @@ import Basement.Numerical.Additive
 import Basement.UArray
 import Basement.UArray.Mutable (MUArray)
 import Basement.MutableBuilder
+import Basement.HeadHackageUtils
 
 import Basement.String.Encoding.Encoding
 
@@ -54,8 +55,8 @@ next :: (Offset Word16 -> Word16)
      -> Offset Word16
      -> Either UTF16_Invalid (Char, Offset Word16)
 next getter off
-    | h <  0xd800 = Right (toChar hh, off + Offset 1)
-    | h >= 0xe000 = Right (toChar hh, off + Offset 1)
+    | h <  0xd800 = Right (toChar (word16ToWordCompat# hh), off + Offset 1)
+    | h >= 0xe000 = Right (toChar (word16ToWordCompat# hh), off + Offset 1)
     | otherwise   = nextContinuation
   where
     h :: Word16
@@ -63,13 +64,13 @@ next getter off
     toChar :: Word# -> Char
     toChar w = C# (chr# (word2Int# w))
     to32 :: Word16 -> Word32
-    to32 (W16# w) = W32# w
+    to32 (W16# w) = W32# (wordToWord32Compat# (word16ToWordCompat# w))
 
     nextContinuation
         | cont >= 0xdc00 && cont < 0xe00 =
             let !(W32# w) = ((to32 h .&. 0x3ff) `shiftL` 10)
                          .|. (to32 cont .&. 0x3ff)
-             in Right (toChar w, off + Offset 2)
+             in Right (toChar (word32ToWordCompat# w), off + Offset 2)
         | otherwise = Left InvalidContinuation
       where
         cont :: Word16
@@ -86,12 +87,12 @@ write c
     | otherwise = throw $ InvalidUnicode c
   where
     w16 :: Char -> Word16
-    w16 (C# ch) = W16# (int2Word# (ord# ch))
+    w16 (C# ch) = W16# (wordToWord16Compat# (int2Word# (ord# ch)))
 
     to16 :: Word32 -> Word16
     to16 = Prelude.fromIntegral
 
     wHigh :: Char -> (Word16, Word16)
     wHigh (C# ch) =
-        let v = W32# (minusWord# (int2Word# (ord# ch)) 0x10000##)
+        let v = W32# (wordToWord32Compat# (minusWord# (int2Word# (ord# ch)) 0x10000##))
          in (0xdc00 .|. to16 (v `shiftR` 10), 0xd800 .|. to16 (v .&. 0x3ff))

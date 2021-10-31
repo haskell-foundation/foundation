@@ -12,6 +12,7 @@ module Basement.Base16
 import GHC.Prim
 import GHC.Types
 import GHC.Word
+import Basement.HeadHackageUtils
 import Basement.Types.Char7
 
 data Base16Escape = Base16Escape {-# UNPACK #-} !Char7 {-# UNPACK #-} !Char7
@@ -27,11 +28,11 @@ unsafeConvertByte :: Word# -> (# Word#, Word# #)
 unsafeConvertByte b = (# r tableHi b, r tableLo b #)
   where
     r :: Table -> Word# -> Word#
-    r (Table !table) index = indexWord8OffAddr# table (word2Int# index)
+    r (Table !table) index = word8ToWordCompat# (indexWord8OffAddr# table (word2Int# index))
 {-# INLINE unsafeConvertByte #-}
 
 escapeByte :: Word8 -> Base16Escape
-escapeByte !(W8# b) = Base16Escape (r tableHi b) (r tableLo b)
+escapeByte !(W8# b) = Base16Escape (r tableHi (word8ToWordCompat# b)) (r tableLo (word8ToWordCompat# b))
   where
     r :: Table -> Word# -> Char7
     r (Table !table) index = Char7 (W8# (indexWord8OffAddr# table (word2Int# index)))
@@ -43,8 +44,8 @@ hexWord16 (W16# w) = (toChar w1,toChar w2,toChar w3,toChar w4)
   where
     toChar :: Word# -> Char
     toChar c = C# (chr# (word2Int# c))
-    !(# w1, w2 #) = unsafeConvertByte (uncheckedShiftRL# w 8#)
-    !(# w3, w4 #) = unsafeConvertByte (and# w 0xff##)
+    !(# w1, w2 #) = unsafeConvertByte (uncheckedShiftRL# (word16ToWordCompat# w) 8#)
+    !(# w3, w4 #) = unsafeConvertByte (and# (word16ToWordCompat# w) 0xff##)
 
 -- | hex word32
 hexWord32 :: Word32 -> (Char, Char, Char, Char, Char, Char, Char, Char)
@@ -53,10 +54,10 @@ hexWord32 (W32# w) = (toChar w1,toChar w2,toChar w3,toChar w4
   where
     toChar :: Word# -> Char
     toChar c = C# (chr# (word2Int# c))
-    !(# w1, w2 #) = unsafeConvertByte (uncheckedShiftRL# w 24#)
-    !(# w3, w4 #) = unsafeConvertByte (and# (uncheckedShiftRL# w 16#) 0xff##)
-    !(# w5, w6 #) = unsafeConvertByte (and# (uncheckedShiftRL# w 8#) 0xff##)
-    !(# w7, w8 #) = unsafeConvertByte (and# w 0xff##)
+    !(# w1, w2 #) = unsafeConvertByte (uncheckedShiftRL# (word32ToWordCompat# w) 24#)
+    !(# w3, w4 #) = unsafeConvertByte (and# (uncheckedShiftRL# (word32ToWordCompat# w) 16#) 0xff##)
+    !(# w5, w6 #) = unsafeConvertByte (and# (uncheckedShiftRL# (word32ToWordCompat# w) 8#) 0xff##)
+    !(# w7, w8 #) = unsafeConvertByte (and# (word32ToWordCompat# w) 0xff##)
 
 data Table = Table Addr#
 

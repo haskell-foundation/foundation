@@ -18,8 +18,12 @@ module Basement.Numerical.Conversion
 
 #include "MachDeps.h"
 
+import Basement.HeadHackageUtils
 import GHC.Types
 import GHC.Prim
+#if __GLASGOW_HASKELL__ >= 903
+  hiding (word64ToWord#)
+#endif
 import GHC.Int
 import GHC.Word
 
@@ -81,7 +85,7 @@ data Word32x2 = Word32x2 {-# UNPACK #-} !Word32
 
 #if WORD_SIZE_IN_BITS == 64
 word64ToWord32s :: Word64 -> Word32x2
-word64ToWord32s (W64# w64) = Word32x2 (W32# (uncheckedShiftRL# w64 32#)) (W32# (narrow32Word# w64))
+word64ToWord32s (W64# w64) = Word32x2 (W32# (wordToWord32Compat# (uncheckedShiftRL# w64 32#))) (W32# (narrow32WordCompat# w64))
 #else
 word64ToWord32s :: Word64 -> Word32x2
 word64ToWord32s (W64# w64) = Word32x2 (W32# (word64ToWord# (uncheckedShiftRL64# w64 32#))) (W32# (word64ToWord# w64))

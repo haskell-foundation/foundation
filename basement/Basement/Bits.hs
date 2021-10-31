@@ -41,6 +41,7 @@ import Basement.Types.Word256 (Word256)
 import qualified Basement.Types.Word256 as Word256
 import Basement.IntegralConv (wordToInt)
 import Basement.Nat
+import Basement.HeadHackageUtils
 
 import qualified Prelude
 import qualified Data.Bits as OldBits
@@ -237,27 +238,27 @@ instance FiniteBitsOps Word8 where
     numberOfBits _ = 8
     rotateL (W8# x#) (CountOf (I# i#))
         | isTrue# (i'# ==# 0#) = W8# x#
-        | otherwise  = W8# (narrow8Word# ((x# `uncheckedShiftL#` i'#) `or#`
-                                          (x# `uncheckedShiftRL#` (8# -# i'#))))
+        | otherwise  = W8# (narrow8WordCompat# ((word8ToWordCompat# x# `uncheckedShiftL#` i'#) `or#`
+                                          (word8ToWordCompat# x# `uncheckedShiftRL#` (8# -# i'#))))
       where
         !i'# = word2Int# (int2Word# i# `and#` 7##)
     rotateR (W8# x#) (CountOf (I# i#))
         | isTrue# (i'# ==# 0#) = W8# x#
-        | otherwise  = W8# (narrow8Word# ((x# `uncheckedShiftRL#` i'#) `or#`
-                                          (x# `uncheckedShiftL#` (8# -# i'#))))
+        | otherwise  = W8# (narrow8WordCompat# ((word8ToWordCompat# x# `uncheckedShiftRL#` i'#) `or#`
+                                          (word8ToWordCompat# x# `uncheckedShiftL#` (8# -# i'#))))
       where
         !i'# = word2Int# (int2Word# i# `and#` 7##)
-    bitFlip (W8# x#) = W8# (x# `xor#` mb#)
+    bitFlip (W8# x#) = W8# (wordToWord8Compat# (word8ToWordCompat# x# `xor#` word8ToWordCompat# mb#))
         where !(W8# mb#) = maxBound
-    popCount (W8# x#) = CountOf $ wordToInt (W# (popCnt8# x#))
-    countLeadingZeros (W8# w#) = CountOf $ wordToInt (W# (clz8# w#))
-    countTrailingZeros (W8# w#) = CountOf $ wordToInt (W# (ctz8# w#))
+    popCount (W8# x#) = CountOf $ wordToInt (W# (popCnt8# (word8ToWordCompat# x#)))
+    countLeadingZeros (W8# w#) = CountOf $ wordToInt (W# (clz8# (word8ToWordCompat# w#)))
+    countTrailingZeros (W8# w#) = CountOf $ wordToInt (W# (ctz8# (word8ToWordCompat# w#)))
 instance BitOps Word8 where
-    (W8# x#) .&. (W8# y#)   = W8# (x# `and#` y#)
-    (W8# x#) .|. (W8# y#)   = W8# (x# `or#`  y#)
-    (W8# x#) .^. (W8# y#)   = W8# (x# `xor#` y#)
-    (W8# x#) .<<. (CountOf (I# i#)) = W8# (narrow8Word# (x# `shiftL#` i#))
-    (W8# x#) .>>. (CountOf (I# i#)) = W8# (narrow8Word# (x# `shiftRL#` i#))
+    (W8# x#) .&. (W8# y#)   = W8# (wordToWord8Compat# (word8ToWordCompat# x# `and#` word8ToWordCompat# y#))
+    (W8# x#) .|. (W8# y#)   = W8# (wordToWord8Compat# (word8ToWordCompat# x# `or#`  word8ToWordCompat# y#))
+    (W8# x#) .^. (W8# y#)   = W8# (wordToWord8Compat# (word8ToWordCompat# x# `xor#` word8ToWordCompat# y#))
+    (W8# x#) .<<. (CountOf (I# i#)) = W8# (narrow8WordCompat# (word8ToWordCompat# x# `shiftL#` i#))
+    (W8# x#) .>>. (CountOf (I# i#)) = W8# (narrow8WordCompat# (word8ToWordCompat# x# `shiftRL#` i#))
 
 -- Word16 ---------------------------------------------------------------------
 
@@ -265,27 +266,27 @@ instance FiniteBitsOps Word16 where
     numberOfBits _ = 16
     rotateL (W16# x#) (CountOf (I# i#))
         | isTrue# (i'# ==# 0#) = W16# x#
-        | otherwise  = W16# (narrow16Word# ((x# `uncheckedShiftL#` i'#) `or#`
-                                            (x# `uncheckedShiftRL#` (16# -# i'#))))
+        | otherwise  = W16# (narrow16WordCompat# ((word16ToWordCompat# x# `uncheckedShiftL#` i'#) `or#`
+                                            (word16ToWordCompat# x# `uncheckedShiftRL#` (16# -# i'#))))
       where
         !i'# = word2Int# (int2Word# i# `and#` 15##)
     rotateR (W16# x#) (CountOf (I# i#))
         | isTrue# (i'# ==# 0#) = W16# x#
-        | otherwise  = W16# (narrow16Word# ((x# `uncheckedShiftRL#` i'#) `or#`
-                                            (x# `uncheckedShiftL#` (16# -# i'#))))
+        | otherwise  = W16# (narrow16WordCompat# ((word16ToWordCompat# x# `uncheckedShiftRL#` i'#) `or#`
+                                            (word16ToWordCompat# x# `uncheckedShiftL#` (16# -# i'#))))
       where
         !i'# = word2Int# (int2Word# i# `and#` 15##)
-    bitFlip (W16# x#) = W16# (x# `xor#` mb#)
+    bitFlip (W16# x#) = W16# (wordToWord16Compat# (word16ToWordCompat# x# `xor#` word16ToWordCompat# mb#))
         where !(W16# mb#) = maxBound
-    popCount (W16# x#) = CountOf $ wordToInt (W# (popCnt16# x#))
-    countLeadingZeros (W16# w#) = CountOf $ wordToInt (W# (clz16# w#))
-    countTrailingZeros (W16# w#) = CountOf $ wordToInt (W# (ctz16# w#))
+    popCount (W16# x#) = CountOf $ wordToInt (W# (popCnt16# (word16ToWordCompat# x#)))
+    countLeadingZeros (W16# w#) = CountOf $ wordToInt (W# (clz16# (word16ToWordCompat# w#)))
+    countTrailingZeros (W16# w#) = CountOf $ wordToInt (W# (ctz16# (word16ToWordCompat# w#)))
 instance BitOps Word16 where
-    (W16# x#) .&. (W16# y#)   = W16# (x# `and#` y#)
-    (W16# x#) .|. (W16# y#)   = W16# (x# `or#`  y#)
-    (W16# x#) .^. (W16# y#)   = W16# (x# `xor#` y#)
-    (W16# x#) .<<. (CountOf (I# i#)) = W16# (narrow16Word# (x# `shiftL#` i#))
-    (W16# x#) .>>. (CountOf (I# i#)) = W16# (narrow16Word# (x# `shiftRL#` i#))
+    (W16# x#) .&. (W16# y#)   = W16# (wordToWord16Compat# (word16ToWordCompat# x# `and#` word16ToWordCompat# y#))
+    (W16# x#) .|. (W16# y#)   = W16# (wordToWord16Compat# (word16ToWordCompat# x# `or#`  word16ToWordCompat# y#))
+    (W16# x#) .^. (W16# y#)   = W16# (wordToWord16Compat# (word16ToWordCompat# x# `xor#` word16ToWordCompat# y#))
+    (W16# x#) .<<. (CountOf (I# i#)) = W16# (narrow16WordCompat# (word16ToWordCompat# x# `shiftL#` i#))
+    (W16# x#) .>>. (CountOf (I# i#)) = W16# (narrow16WordCompat# (word16ToWordCompat# x# `shiftRL#` i#))
 
 -- Word32 ---------------------------------------------------------------------
 
@@ -293,27 +294,27 @@ instance FiniteBitsOps Word32 where
     numberOfBits _ = 32
     rotateL (W32# x#) (CountOf (I# i#))
         | isTrue# (i'# ==# 0#) = W32# x#
-        | otherwise  = W32# (narrow32Word# ((x# `uncheckedShiftL#` i'#) `or#`
-                                            (x# `uncheckedShiftRL#` (32# -# i'#))))
+        | otherwise  = W32# (narrow32WordCompat# ((word32ToWordCompat# x# `uncheckedShiftL#` i'#) `or#`
+                                            (word32ToWordCompat# x# `uncheckedShiftRL#` (32# -# i'#))))
       where
         !i'# = word2Int# (int2Word# i# `and#` 31##)
     rotateR (W32# x#) (CountOf (I# i#))
         | isTrue# (i'# ==# 0#) = W32# x#
-        | otherwise  = W32# (narrow32Word# ((x# `uncheckedShiftRL#` i'#) `or#`
-                                            (x# `uncheckedShiftL#` (32# -# i'#))))
+        | otherwise  = W32# (narrow32WordCompat# ((word32ToWordCompat# x# `uncheckedShiftRL#` i'#) `or#`
+                                            (word32ToWordCompat# x# `uncheckedShiftL#` (32# -# i'#))))
       where
         !i'# = word2Int# (int2Word# i# `and#` 31##)
-    bitFlip (W32# x#) = W32# (x# `xor#` mb#)
+    bitFlip (W32# x#) = W32# (wordToWord32Compat# (word32ToWordCompat# x# `xor#` word32ToWordCompat# mb#))
         where !(W32# mb#) = maxBound
-    popCount (W32# x#) = CountOf $ wordToInt (W# (popCnt32# x#))
-    countLeadingZeros (W32# w#) = CountOf $ wordToInt (W# (clz32# w#))
-    countTrailingZeros (W32# w#) = CountOf $ wordToInt (W# (ctz32# w#))
+    popCount (W32# x#) = CountOf $ wordToInt (W# (popCnt32# (word32ToWordCompat# x#)))
+    countLeadingZeros (W32# w#) = CountOf $ wordToInt (W# (clz32# (word32ToWordCompat# w#)))
+    countTrailingZeros (W32# w#) = CountOf $ wordToInt (W# (ctz32# (word32ToWordCompat# w#)))
 instance BitOps Word32 where
-    (W32# x#) .&. (W32# y#)   = W32# (x# `and#` y#)
-    (W32# x#) .|. (W32# y#)   = W32# (x# `or#`  y#)
-    (W32# x#) .^. (W32# y#)   = W32# (x# `xor#` y#)
-    (W32# x#) .<<. (CountOf (I# i#)) = W32# (narrow32Word# (x# `shiftL#` i#))
-    (W32# x#) .>>. (CountOf (I# i#)) = W32# (narrow32Word# (x# `shiftRL#` i#))
+    (W32# x#) .&. (W32# y#)   = W32# (wordToWord32Compat# (word32ToWordCompat# x# `and#` word32ToWordCompat# y#))
+    (W32# x#) .|. (W32# y#)   = W32# (wordToWord32Compat# (word32ToWordCompat# x# `or#`  word32ToWordCompat# y#))
+    (W32# x#) .^. (W32# y#)   = W32# (wordToWord32Compat# (word32ToWordCompat# x# `xor#` word32ToWordCompat# y#))
+    (W32# x#) .<<. (CountOf (I# i#)) = W32# (narrow32WordCompat# (word32ToWordCompat# x# `shiftL#` i#))
+    (W32# x#) .>>. (CountOf (I# i#)) = W32# (narrow32WordCompat# (word32ToWordCompat# x# `shiftRL#` i#))
 
 -- Word ---------------------------------------------------------------------
 
@@ -463,28 +464,28 @@ instance FiniteBitsOps Int8 where
     numberOfBits _ = 8
     rotateL (I8# x#) (CountOf (I# i#))
         | isTrue# (i'# ==# 0#) = I8# x#
-        | otherwise  = I8# (narrow8Int# (word2Int# ((x'# `uncheckedShiftL#` i'#) `or#`
+        | otherwise  = I8# (narrow8IntCompat# (word2Int# ((x'# `uncheckedShiftL#` i'#) `or#`
                                                     (x'# `uncheckedShiftRL#` (8# -# i'#)))))
       where
-        !x'# = narrow8Word# (int2Word# x#)
+        !x'# = narrow8Word# (int2Word# (int8ToIntCompat# x#))
         !i'# = word2Int# (int2Word# i# `and#` 7##)
     rotateR (I8# x#) (CountOf (I# i#))
         | isTrue# (i'# ==# 0#) = I8# x#
-        | otherwise  = I8# (narrow8Int# (word2Int# ((x'# `uncheckedShiftRL#` i'#) `or#`
+        | otherwise  = I8# (narrow8IntCompat# (word2Int# ((x'# `uncheckedShiftRL#` i'#) `or#`
                                                     (x'# `uncheckedShiftL#` (8# -# i'#)))))
       where
-        !x'# = narrow8Word# (int2Word# x#)
+        !x'# = narrow8Word# (int2Word# (int8ToIntCompat# x#))
         !i'# = word2Int# (int2Word# i# `and#` 7##)
-    bitFlip (I8# x#) = I8# (word2Int# (not# (int2Word# x#)))
-    popCount (I8# x#) = CountOf $ wordToInt (W# (popCnt8# (int2Word# x#)))
-    countLeadingZeros (I8# w#) = CountOf $ wordToInt (W# (clz8# (int2Word# w#)))
-    countTrailingZeros (I8# w#) = CountOf $ wordToInt (W# (ctz8# (int2Word# w#)))
+    bitFlip (I8# x#) = I8# (intToInt8Compat# (word2Int# (not# (int2Word# (int8ToIntCompat# x#)))))
+    popCount (I8# x#) = CountOf $ wordToInt (W# (popCnt8# (int2Word# (int8ToIntCompat# x#))))
+    countLeadingZeros (I8# w#) = CountOf $ wordToInt (W# (clz8# (int2Word# (int8ToIntCompat# w#))))
+    countTrailingZeros (I8# w#) = CountOf $ wordToInt (W# (ctz8# (int2Word# (int8ToIntCompat# w#))))
 instance BitOps Int8 where
-    (I8# x#) .&. (I8# y#)   = I8# (x# `andI#` y#)
-    (I8# x#) .|. (I8# y#)   = I8# (x# `orI#`  y#)
-    (I8# x#) .^. (I8# y#)   = I8# (x# `xorI#` y#)
-    (I8# x#) .<<. (CountOf (I# i#)) = I8# (narrow8Int# (x# `iShiftL#`  i#))
-    (I8# x#) .>>. (CountOf (I# i#)) = I8# (narrow8Int# (x# `iShiftRL#` i#))
+    (I8# x#) .&. (I8# y#)   = I8# (intToInt8Compat# (int8ToIntCompat# x# `andI#` int8ToIntCompat# y#))
+    (I8# x#) .|. (I8# y#)   = I8# (intToInt8Compat# (int8ToIntCompat# x# `orI#`  int8ToIntCompat# y#))
+    (I8# x#) .^. (I8# y#)   = I8# (intToInt8Compat# (int8ToIntCompat# x# `xorI#` int8ToIntCompat# y#))
+    (I8# x#) .<<. (CountOf (I# i#)) = I8# (narrow8IntCompat# (int8ToIntCompat# x# `iShiftL#`  i#))
+    (I8# x#) .>>. (CountOf (I# i#)) = I8# (narrow8IntCompat# (int8ToIntCompat# x# `iShiftRL#` i#))
 
 -- Int16 ----------------------------------------------------------------------
 
@@ -492,28 +493,28 @@ instance FiniteBitsOps Int16 where
     numberOfBits _ = 16
     rotateL (I16# x#) (CountOf (I# i#))
         | isTrue# (i'# ==# 0#) = I16# x#
-        | otherwise  = I16# (narrow16Int# (word2Int# ((x'# `uncheckedShiftL#` i'#) `or#`
+        | otherwise  = I16# (narrow16IntCompat# (word2Int# ((x'# `uncheckedShiftL#` i'#) `or#`
                                                       (x'# `uncheckedShiftRL#` (16# -# i'#)))))
       where
-        !x'# = narrow16Word# (int2Word# x#)
+        !x'# = narrow16Word# (int2Word# (int16ToIntCompat# x#))
         !i'# = word2Int# (int2Word# i# `and#` 15##)
     rotateR (I16# x#) (CountOf (I# i#))
         | isTrue# (i'# ==# 0#) = I16# x#
-        | otherwise  = I16# (narrow16Int# (word2Int# ((x'# `uncheckedShiftRL#` i'#) `or#`
+        | otherwise  = I16# (narrow16IntCompat# (word2Int# ((x'# `uncheckedShiftRL#` i'#) `or#`
                                                       (x'# `uncheckedShiftL#` (16# -# i'#)))))
       where
-        !x'# = narrow16Word# (int2Word# x#)
+        !x'# = narrow16Word# (int2Word# (int16ToIntCompat# x#))
         !i'# = word2Int# (int2Word# i# `and#` 15##)
-    bitFlip (I16# x#) = I16# (word2Int# (not# (int2Word# x#)))
-    popCount (I16# x#) = CountOf $ wordToInt (W# (popCnt16# (int2Word# x#)))
-    countLeadingZeros (I16# w#) = CountOf $ wordToInt (W# (clz16# (int2Word# w#)))
-    countTrailingZeros (I16# w#) = CountOf $ wordToInt (W# (ctz16# (int2Word# w#)))
+    bitFlip (I16# x#) = I16# (intToInt16Compat# (word2Int# (not# (int2Word# (int16ToIntCompat# x#)))))
+    popCount (I16# x#) = CountOf $ wordToInt (W# (popCnt16# (int2Word# (int16ToIntCompat# x#))))
+    countLeadingZeros (I16# w#) = CountOf $ wordToInt (W# (clz16# (int2Word# (int16ToIntCompat# w#))))
+    countTrailingZeros (I16# w#) = CountOf $ wordToInt (W# (ctz16# (int2Word# (int16ToIntCompat# w#))))
 instance BitOps Int16 where
-    (I16# x#) .&. (I16# y#)   = I16# (x# `andI#` y#)
-    (I16# x#) .|. (I16# y#)   = I16# (x# `orI#`  y#)
-    (I16# x#) .^. (I16# y#)   = I16# (x# `xorI#` y#)
-    (I16# x#) .<<. (CountOf (I# i#)) = I16# (narrow16Int# (x# `iShiftL#`  i#))
-    (I16# x#) .>>. (CountOf (I# i#)) = I16# (narrow16Int# (x# `iShiftRL#` i#))
+    (I16# x#) .&. (I16# y#)   = I16# (intToInt16Compat# (int16ToIntCompat# x# `andI#` int16ToIntCompat# y#))
+    (I16# x#) .|. (I16# y#)   = I16# (intToInt16Compat# (int16ToIntCompat# x# `orI#`  int16ToIntCompat# y#))
+    (I16# x#) .^. (I16# y#)   = I16# (intToInt16Compat# (int16ToIntCompat# x# `xorI#` int16ToIntCompat# y#))
+    (I16# x#) .<<. (CountOf (I# i#)) = I16# (narrow16IntCompat# (int16ToIntCompat# x# `iShiftL#`  i#))
+    (I16# x#) .>>. (CountOf (I# i#)) = I16# (narrow16IntCompat# (int16ToIntCompat# x# `iShiftRL#` i#))
 
 -- Int32 ----------------------------------------------------------------------
 
@@ -521,28 +522,28 @@ instance FiniteBitsOps Int32 where
     numberOfBits _ = 32
     rotateL (I32# x#) (CountOf (I# i#))
         | isTrue# (i'# ==# 0#) = I32# x#
-        | otherwise  = I32# (narrow32Int# (word2Int# ((x'# `uncheckedShiftL#` i'#) `or#`
+        | otherwise  = I32# (narrow32IntCompat# (word2Int# ((x'# `uncheckedShiftL#` i'#) `or#`
                                                       (x'# `uncheckedShiftRL#` (32# -# i'#)))))
       where
-        !x'# = narrow32Word# (int2Word# x#)
+        !x'# = narrow32Word# (int2Word# (int32ToIntCompat# x#))
         !i'# = word2Int# (int2Word# i# `and#` 31##)
     rotateR (I32# x#) (CountOf (I# i#))
         | isTrue# (i'# ==# 0#) = I32# x#
-        | otherwise  = I32# (narrow32Int# (word2Int# ((x'# `uncheckedShiftRL#` i'#) `or#`
+        | otherwise  = I32# (narrow32IntCompat# (word2Int# ((x'# `uncheckedShiftRL#` i'#) `or#`
                                                       (x'# `uncheckedShiftL#` (32# -# i'#)))))
       where
-        !x'# = narrow32Word# (int2Word# x#)
+        !x'# = narrow32Word# (int2Word# (int32ToIntCompat# x#))
         !i'# = word2Int# (int2Word# i# `and#` 31##)
-    bitFlip (I32# x#) = I32# (word2Int# (not# (int2Word# x#)))
-    popCount (I32# x#) = CountOf $ wordToInt (W# (popCnt32# (int2Word# x#)))
-    countLeadingZeros (I32# w#) = CountOf $ wordToInt (W# (clz32# (int2Word# w#)))
-    countTrailingZeros (I32# w#) = CountOf $ wordToInt (W# (ctz32# (int2Word# w#)))
+    bitFlip (I32# x#) = I32# (intToInt32Compat# (word2Int# (not# (int2Word# (int32ToIntCompat# x#)))))
+    popCount (I32# x#) = CountOf $ wordToInt (W# (popCnt32# (int2Word# (int32ToIntCompat# x#))))
+    countLeadingZeros (I32# w#) = CountOf $ wordToInt (W# (clz32# (int2Word# (int32ToIntCompat# w#))))
+    countTrailingZeros (I32# w#) = CountOf $ wordToInt (W# (ctz32# (int2Word# (int32ToIntCompat# w#))))
 instance BitOps Int32 where
-    (I32# x#) .&. (I32# y#)   = I32# (x# `andI#` y#)
-    (I32# x#) .|. (I32# y#)   = I32# (x# `orI#`  y#)
-    (I32# x#) .^. (I32# y#)   = I32# (x# `xorI#` y#)
-    (I32# x#) .<<. (CountOf (I# i#)) = I32# (narrow32Int# (x# `iShiftL#`  i#))
-    (I32# x#) .>>. (CountOf (I# i#)) = I32# (narrow32Int# (x# `iShiftRL#` i#))
+    (I32# x#) .&. (I32# y#)   = I32# (intToInt32Compat# (int32ToIntCompat# x# `andI#` int32ToIntCompat# y#))
+    (I32# x#) .|. (I32# y#)   = I32# (intToInt32Compat# (int32ToIntCompat# x# `orI#`  int32ToIntCompat# y#))
+    (I32# x#) .^. (I32# y#)   = I32# (intToInt32Compat# (int32ToIntCompat# x# `xorI#` int32ToIntCompat# y#))
+    (I32# x#) .<<. (CountOf (I# i#)) = I32# (narrow32IntCompat# (int32ToIntCompat# x# `iShiftL#`  i#))
+    (I32# x#) .>>. (CountOf (I# i#)) = I32# (narrow32IntCompat# (int32ToIntCompat# x# `iShiftRL#` i#))
 
 -- Int64 ----------------------------------------------------------------------
 

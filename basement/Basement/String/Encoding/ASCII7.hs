@@ -26,13 +26,14 @@ import Basement.UArray.Mutable (MUArray)
 import Basement.MutableBuilder
 
 import Basement.String.Encoding.Encoding
+import Basement.HeadHackageUtils
 
 -- | validate a given byte is within ASCII characters encoring size
 --
 -- This function check the 8th bit is set to 0
 --
 isAscii :: Word8 -> Bool
-isAscii (W8# w) = W8# (and# w 0x80## ) == 0
+isAscii (W8# w) = W8# (wordToWord8Compat# (and# (word8ToWordCompat# w) 0x80## )) == 0
 {-# INLINE isAscii #-}
 
 data ASCII7_Invalid
@@ -60,7 +61,7 @@ next :: (Offset Word8 -> Word8)
           -- ^ either successfully validated the ASCII char and returned the
           -- next index or fail with an error
 next getter off
-    | isAscii w8 = Right (toChar w, off + 1)
+    | isAscii w8 = Right (toChar (word8ToWordCompat# w), off + 1)
     | otherwise  = Left $ ByteOutOfBound w8
   where
     !w8@(W8# w) = getter off
@@ -81,4 +82,4 @@ write c
     | otherwise       = throw $ CharNotAscii c
   where
     w8 :: Char -> Word8
-    w8 (C# ch) = W8# (int2Word# (ord# ch))
+    w8 (C# ch) = W8# (wordToWord8Compat# (int2Word# (ord# ch)))

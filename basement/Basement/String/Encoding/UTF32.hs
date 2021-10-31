@@ -21,6 +21,7 @@ import Basement.Numerical.Additive
 import Basement.UArray
 import Basement.UArray.Mutable (MUArray)
 import Basement.MutableBuilder
+import Basement.HeadHackageUtils
 
 import Basement.String.Encoding.Encoding
 
@@ -43,7 +44,7 @@ next getter off = Right (char, off + Offset 1)
   where
     !(W32# hh) = getter off
     char :: Char
-    char = C# (chr# (word2Int# hh))
+    char = C# (chr# (word2Int# (word32ToWordCompat# hh)))
 
 write :: (PrimMonad st, Monad st)
       => Char
@@ -52,4 +53,4 @@ write c = builderAppend w32
   where
     !(C# ch) = c
     w32 :: Word32
-    w32 = W32# (int2Word# (ord# ch))
+    w32 = W32# (wordToWord32Compat# (int2Word# (ord# ch)))

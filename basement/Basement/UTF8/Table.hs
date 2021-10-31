@@ -21,23 +21,24 @@ import           GHC.Types
 import           GHC.Word
 import           Basement.Compat.Base
 import           Basement.Compat.Primitive
+import           Basement.HeadHackageUtils
 import           Basement.UTF8.Types (StepASCII(..))
 
 -- | Check if the byte is a continuation byte
 isContinuation :: Word8 -> Bool
-isContinuation (W8# w) = isContinuation# w
+isContinuation (W8# w) = isContinuation# (word8ToWordCompat# w)
 {-# INLINE isContinuation #-}
 
 isContinuation2 :: Word8 -> Word8 -> Bool
 isContinuation2 (W8# w1) (W8# w2) =
-    bool# (mask w1 `andI#` mask w2)
+    bool# (mask (word8ToWordCompat# w1) `andI#` mask (word8ToWordCompat# w2))
   where
     mask v = (and# 0xC0## v) `eqWord#` 0x80##
 {-# INLINE isContinuation2 #-}
 
 isContinuation3 :: Word8 -> Word8 -> Word8 -> Bool
 isContinuation3 (W8# w1) (W8# w2) (W8# w3) =
-    bool# (mask w1) && bool# (mask w2) && bool# (mask w3)
+    bool# (mask (word8ToWordCompat# w1)) && bool# (mask (word8ToWordCompat# w2)) && bool# (mask (word8ToWordCompat# w3))
   where
     mask v = (and# 0xC0## v) `eqWord#` 0x80##
 {-# INLINE isContinuation3 #-}
@@ -54,17 +55,17 @@ data NbBytesCont_ = NbBytesCont0_ | NbBytesCont1_ | NbBytesCont2_ | NbBytesCont3
 
 -- | Get the number of following bytes given the first byte of a UTF8 sequence.
 getNbBytes :: StepASCII -> Int
-getNbBytes (StepASCII (W8# w)) = I# (getNbBytes# w)
+getNbBytes (StepASCII (W8# w)) = I# (getNbBytes# (word8ToWordCompat# w))
 {-# INLINE getNbBytes #-}
 
 -- | Check if the byte is a continuation byte
 isContinuation# :: Word# -> Bool
-isContinuation# w = W# (indexWord8OffAddr# (unTable contTable) (word2Int# w)) == W# 0##
+isContinuation# w = W# (word8ToWordCompat# (indexWord8OffAddr# (unTable contTable) (word2Int# w))) == W# 0##
 {-# INLINE isContinuation# #-}
 
 -- | Get the number of following bytes given the first byte of a UTF8 sequence.
 getNbBytes# :: Word# -> Int#
-getNbBytes# w = word2Int# (indexWord8OffAddr# (unTable headTable) (word2Int# w))
+getNbBytes# w = word2Int# (word8ToWordCompat# (indexWord8OffAddr# (unTable headTable) (word2Int# w)))
 {-# INLINE getNbBytes# #-}
 
 data Table = Table { unTable :: !Addr# }

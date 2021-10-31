@@ -136,6 +136,8 @@ library
 
                      Basement.Terminal.Size
 
+                     Basement.HeadHackageUtils
+
   -- support and dependencies
   if impl(ghc < 8.0)
     buildable: False

@@ -21,6 +21,7 @@ import           GHC.Prim
 import           GHC.Int
 import           GHC.Word
 import           Basement.Bounded
+import           Basement.HeadHackageUtils
 import           Basement.Nat
 import           Basement.Types.Word128 (Word128)
 import           Basement.Types.Word256 (Word256)
@@ -65,15 +66,15 @@ instance Additive Int where
     scale = scaleNum
 instance Additive Int8 where
     azero = 0
-    (I8# a) + (I8# b) = I8# (narrow8Int# (a +# b))
+    (I8# a) + (I8# b) = I8# (narrow8IntCompat# (int8ToIntCompat# a +# int8ToIntCompat# b))
     scale = scaleNum
 instance Additive Int16 where
     azero = 0
-    (I16# a) + (I16# b) = I16# (narrow16Int# (a +# b))
+    (I16# a) + (I16# b) = I16# (narrow16IntCompat# (int16ToIntCompat# a +# int16ToIntCompat# b))
     scale = scaleNum
 instance Additive Int32 where
     azero = 0
-    (I32# a) + (I32# b) = I32# (narrow32Int# (a +# b))
+    (I32# a) + (I32# b) = I32# (narrow32IntCompat# (int32ToIntCompat# a +# int32ToIntCompat# b))
     scale = scaleNum
 instance Additive Int64 where
     azero = 0
@@ -93,15 +94,15 @@ instance Additive Natural where
     scale = scaleNum
 instance Additive Word8 where
     azero = 0
-    (W8# a) + (W8# b) = W8# (narrow8Word# (a `plusWord#` b))
+    (W8# a) + (W8# b) = W8# (narrow8WordCompat# (word8ToWordCompat# a `plusWord#` word8ToWordCompat# b))
     scale = scaleNum
 instance Additive Word16 where
     azero = 0
-    (W16# a) + (W16# b) = W16# (narrow16Word# (a `plusWord#` b))
+    (W16# a) + (W16# b) = W16# (narrow16WordCompat# (word16ToWordCompat# a `plusWord#` word16ToWordCompat# b))
     scale = scaleNum
 instance Additive Word32 where
     azero = 0
-    (W32# a) + (W32# b) = W32# (narrow32Word# (a `plusWord#` b))
+    (W32# a) + (W32# b) = W32# (narrow32WordCompat# (word32ToWordCompat# a `plusWord#` word32ToWordCompat# b))
     scale = scaleNum
 instance Additive Word64 where
     azero = 0
