@@ -25,7 +25,7 @@ module Basement.FinalPtr
     ) where
 
 import GHC.Ptr
-import GHC.ForeignPtr
+import qualified GHC.ForeignPtr as GHCF
 import GHC.IO
 import Basement.Monad
 import Basement.Compat.Primitive
@@ -35,7 +35,7 @@ import Control.Monad.ST (runST)
 
 -- | Create a pointer with an associated finalizer
 data FinalPtr a = FinalPtr (Ptr a)
-                | FinalForeign (ForeignPtr a)
+                | FinalForeign (GHCF.ForeignPtr a)
 instance Show (FinalPtr a) where
     show f = runST $ withFinalPtr f (pure . show)
 instance Eq (FinalPtr a) where
@@ -50,7 +50,7 @@ instance Ord (FinalPtr a) where
 -- same address, they should be the same final ptr
 finalPtrSameMemory :: FinalPtr a -> FinalPtr b -> Bool
 finalPtrSameMemory (FinalPtr p1)     (FinalPtr p2)     = p1 == castPtr p2
-finalPtrSameMemory (FinalForeign p1) (FinalForeign p2) = p1 == castForeignPtr p2
+finalPtrSameMemory (FinalForeign p1) (FinalForeign p2) = p1 == GHCF.castForeignPtr p2
 finalPtrSameMemory (FinalForeign _)  (FinalPtr _)      = False
 finalPtrSameMemory (FinalPtr _)      (FinalForeign _)  = False
 
@@ -62,17 +62,17 @@ toFinalPtr ptr finalizer = unsafePrimFromIO (primitive makeWithFinalizer)
         case compatMkWeak# ptr () (finalizer ptr) s of { (# s2, _ #) -> (# s2, FinalPtr ptr #) }
 
 -- | Create a new FinalPtr from a ForeignPtr
-toFinalPtrForeign :: ForeignPtr a -> FinalPtr a
+toFinalPtrForeign :: GHCF.ForeignPtr a -> FinalPtr a
 toFinalPtrForeign fptr = FinalForeign fptr
 
 -- | Cast a finalized pointer from type a to type b
 castFinalPtr :: FinalPtr a -> FinalPtr b
 castFinalPtr (FinalPtr a)     = FinalPtr (castPtr a)
-castFinalPtr (FinalForeign a) = FinalForeign (castForeignPtr a)
+castFinalPtr (FinalForeign a) = FinalForeign (GHCF.castForeignPtr a)
 
 withFinalPtrNoTouch :: FinalPtr p -> (Ptr p -> a) -> a
 withFinalPtrNoTouch (FinalPtr ptr) f = f ptr
-withFinalPtrNoTouch (FinalForeign fptr) f = f (unsafeForeignPtrToPtr fptr)
+withFinalPtrNoTouch (FinalForeign fptr) f = f (GHCF.unsafeForeignPtrToPtr fptr)
 {-# INLINE withFinalPtrNoTouch #-}
 
 -- | Looks at the raw pointer inside a FinalPtr, making sure the
@@ -83,14 +83,14 @@ withFinalPtr (FinalPtr ptr) f = do
     primTouch ptr
     pure r
 withFinalPtr (FinalForeign fptr) f = do
-    r <- f (unsafeForeignPtrToPtr fptr)
-    unsafePrimFromIO (touchForeignPtr fptr)
+    r <- f (GHCF.unsafeForeignPtrToPtr fptr)
+    unsafePrimFromIO (GHCF.touchForeignPtr fptr)
     pure r
 {-# INLINE withFinalPtr #-}
 
 touchFinalPtr :: PrimMonad prim => FinalPtr p -> prim ()
 touchFinalPtr (FinalPtr ptr) = primTouch ptr
-touchFinalPtr (FinalForeign fptr) = unsafePrimFromIO (touchForeignPtr fptr)
+touchFinalPtr (FinalForeign fptr) = unsafePrimFromIO (GHCF.touchForeignPtr fptr)
 
 -- | Unsafe version of 'withFinalPtr'
 withUnsafeFinalPtr :: PrimMonad prim => FinalPtr p -> (Ptr p -> prim a) -> a

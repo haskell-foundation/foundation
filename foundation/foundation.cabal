@@ -1,5 +1,5 @@
 name:                foundation
-version:             0.0.25
+version:             0.0.26.1
 synopsis:            Alternative prelude with batteries and no dependencies
 description:
     A custom prelude with no dependencies apart from base.
@@ -206,7 +206,7 @@ library
       if arch(i386)
         extra-libraries: gcc
 
-  build-depends: basement == 0.0.11
+  build-depends: basement == 0.0.12
 
   -- FIXME add suport for armel mipsel
   --  CPP-options: -DARCH_IS_LITTLE_ENDIAN

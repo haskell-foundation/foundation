@@ -1,0 +1,40 @@
+on: [push, pull_request]
+
+name: Continuous integration
+
+jobs:
+  test:
+    name: Test Suite
+    strategy:
+      matrix:
+        config:
+          # main lts
+          - { os: ubuntu-latest, resolver: lts-15.0 }
+          - { os: windows-latest, resolver: lts-15.0 }
+          - { os: macos-latest, resolver: lts-15.0 }
+          # other resolvers
+          - { os: ubuntu-latest, resolver: nightly }
+          - { os: ubuntu-latest, resolver: lts-14.27 }
+          - { os: ubuntu-latest, resolver: lts-12.26 }
+    runs-on: ${{ matrix.config.os }}
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install Stack
+        if: matrix.config.os != 'ubuntu-latest'
+        run: curl -sSL https://get.haskellstack.org/ | sh
+
+      - name: cache programs
+        id: cache-programs
+        uses: actions/cache@v1
+        with:
+          path: ~/.stack/programs
+          key: programs-${{ matrix.config.os }}-${{ matrix.config.resolver }}
+
+      - name: Setup
+        if: steps.cache-programs.outputs.cache-hit != 'true'
+        run: stack setup --resolver ${{ matrix.config.resolver }}
+
+      - name: Build
+        run: stack build --resolver ${{ matrix.config.resolver }} --test --no-run-tests
+      - name: run tests
+        run: stack test --resolver ${{ matrix.config.resolver }}

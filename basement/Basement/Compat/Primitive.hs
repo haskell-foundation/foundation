@@ -15,6 +15,7 @@ module Basement.Compat.Primitive
     , compatMkWeak#
     , compatIsByteArrayPinned#
     , compatIsMutableByteArrayPinned#
+    , unsafeCoerce#
     , Word(..)
     ) where
 
@@ -26,7 +27,8 @@ import           GHC.IO
 
 import           Basement.Compat.PrimTypes
 
---  GHC 8.8  | Base 4.13
+--  GHC 9.0  | Base 4.15
+--  GHC 8.8  | Base 4.13 4.14
 --  GHC 8.6  | Base 4.12
 --  GHC 8.4  | Base 4.11
 --  GHC 8.2  | Base 4.10

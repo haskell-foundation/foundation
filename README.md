@@ -1,8 +1,7 @@
 Foundation
 ==========
 
-[![Linux Build Status](https://img.shields.io/travis/haskell-foundation/foundation/master.svg?label=Linux%20build)](https://travis-ci.org/haskell-foundation/foundation)
-[![Windows Build Status](https://img.shields.io/appveyor/ci/vincenthz/foundation/master.svg?label=Windows%20build)](https://ci.appveyor.com/project/vincenthz/foundation/branch/master)
+![Continuous integration](https://github.com/haskell-foundation/foundation/workflows/Continuous%20integration/badge.svg)
 [![Doc](https://readthedocs.org/projects/haskell-foundation/badge/?version=latest)](http://haskell-foundation.readthedocs.io/en/latest/)
 [![Stackage version](https://www.stackage.org/package/foundation/badge/lts?label=Stackage)](https://www.stackage.org/package/foundation)
 [![Hackage version](https://img.shields.io/hackage/v/foundation.svg?label=Hackage)](https://hackage.haskell.org/package/foundation)
