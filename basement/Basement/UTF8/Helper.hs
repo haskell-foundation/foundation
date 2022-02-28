@@ -20,6 +20,7 @@ import           Basement.Compat.Base
 import           Basement.Compat.Primitive
 import           Basement.Types.OffsetSize
 import           Basement.UTF8.Types
+import           Basement.Bits
 import           GHC.Prim
 import           GHC.Types
 import           GHC.Word
@@ -57,26 +58,38 @@ toChar# w = C# (chr# (word2Int# w))
 {-# INLINE toChar# #-}
 
 toChar1 :: StepASCII -> Char
-toChar1 (StepASCII (W8# w)) = toChar# w
+toChar1 (StepASCII (W8# w)) = C# (word8ToChar# w)
 
 toChar2 :: StepASCII -> Word8 -> Char
-toChar2 (StepASCII (W8# w1)) (W8# w2) =
+toChar2 (StepASCII (W8# b1)) (W8# b2) =
     toChar# (or# (uncheckedShiftL# (maskHeader2# w1) 6#) (maskContinuation# w2))
+  where
+    w1 = word8ToWord# b1
+    w2 = word8ToWord# b2
 
 toChar3 :: StepASCII -> Word8 -> Word8 -> Char
-toChar3 (StepASCII (W8# w1)) (W8# w2) (W8# w3) =
+toChar3 (StepASCII (W8# b1)) (W8# b2) (W8# b3) =
     toChar# (or3# (uncheckedShiftL# (maskHeader3# w1) 12#)
                   (uncheckedShiftL# (maskContinuation# w2) 6#)
                   (maskContinuation# w3)
             )
+  where
+    w1 = word8ToWord# b1
+    w2 = word8ToWord# b2
+    w3 = word8ToWord# b3
 
 toChar4 :: StepASCII -> Word8 -> Word8 -> Word8 -> Char
-toChar4 (StepASCII (W8# w1)) (W8# w2) (W8# w3) (W8# w4) =
+toChar4 (StepASCII (W8# b1)) (W8# b2) (W8# b3) (W8# b4) =
     toChar# (or4# (uncheckedShiftL# (maskHeader4# w1) 18#)
                   (uncheckedShiftL# (maskContinuation# w2) 12#)
                   (uncheckedShiftL# (maskContinuation# w3) 6#)
                   (maskContinuation# w4)
             )
+  where
+    w1 = word8ToWord# b1
+    w2 = word8ToWord# b2
+    w3 = word8ToWord# b3
+    w4 = word8ToWord# b4
 
 -- | Different way to encode a Character in UTF8 represented as an ADT
 data UTF8Char =
@@ -98,25 +111,25 @@ asUTF8Char !(C# c)
     where
       !x = int2Word# (ord# c)
 
-      encode1 = UTF8_1 (W8# x)
+      encode1 = UTF8_1 (W8# (wordToWord8# x))
       encode2 =
-          let !x1 = W8# (or# (uncheckedShiftRL# x 6#) 0xc0##)
+          let !x1 = W8# (wordToWord8# (or# (uncheckedShiftRL# x 6#) 0xc0##))
               !x2 = toContinuation x
            in UTF8_2 x1 x2
       encode3 =
-          let !x1 = W8# (or# (uncheckedShiftRL# x 12#) 0xe0##)
+          let !x1 = W8# (wordToWord8# (or# (uncheckedShiftRL# x 12#) 0xe0##))
               !x2 = toContinuation (uncheckedShiftRL# x 6#)
               !x3 = toContinuation x
            in UTF8_3 x1 x2 x3
       encode4 =
-          let !x1 = W8# (or# (uncheckedShiftRL# x 18#) 0xf0##)
+          let !x1 = W8# (wordToWord8# (or# (uncheckedShiftRL# x 18#) 0xf0##))
               !x2 = toContinuation (uncheckedShiftRL# x 12#)
               !x3 = toContinuation (uncheckedShiftRL# x 6#)
               !x4 = toContinuation x
            in UTF8_4 x1 x2 x3 x4
 
       toContinuation :: Word# -> Word8
-      toContinuation w = W8# (or# (and# w 0x3f##) 0x80##)
+      toContinuation w = W8# (wordToWord8# (or# (and# w 0x3f##) 0x80##))
       {-# INLINE toContinuation #-}
 
 -- given the encoding of UTF8 Char, get the number of bytes of this sequence
@@ -149,10 +162,10 @@ charToBytes c
 -- | Encode a Char into a CharUTF8
 encodeCharUTF8 :: Char -> CharUTF8
 encodeCharUTF8 !(C# c)
-    | bool# (ltWord# x 0x80##   ) = CharUTF8 (W32# x)
-    | bool# (ltWord# x 0x800##  ) = CharUTF8 encode2
-    | bool# (ltWord# x 0x10000##) = CharUTF8 encode3
-    | otherwise                   = CharUTF8 encode4
+    | bool# (ltWord# x 0x80##   ) = CharUTF8 (W32# (wordToWord32# x))
+    | bool# (ltWord# x 0x800##  ) = CharUTF8 (W32# (wordToWord32# encode2))
+    | bool# (ltWord# x 0x10000##) = CharUTF8 (W32# (wordToWord32# encode3))
+    | otherwise                   = CharUTF8 (W32# (wordToWord32# encode4))
   where
     !x = int2Word# (ord# c)
 
@@ -166,34 +179,35 @@ encodeCharUTF8 !(C# c)
     set3  = 0x008080e0## -- 10xxxxxx * 2 1110xxxx
     set4  = 0x808080f0## -- 10xxxxxx * 3 11111xxx
 
-    encode2 = W32# (and# mask2 (or3# set2
-                                     (uncheckedShiftRL# x 6#) -- 5 bits to 1st byte
-                                     (uncheckedShiftL# x 8# ) -- move lowest bits to the 2nd byte
-                               ))
-    encode3 = W32# (and# mask3 (or4# set3
-                                     (uncheckedShiftRL# x 12#) -- 4 bits to 1st byte
-                                     (and# 0x3f00## (uncheckedShiftL# x 2#)) -- 6 bits to the 2nd byte
-                                     (uncheckedShiftL# x 16# ) -- move lowest bits to the 3rd byte
-                               ))
-    encode4 = W32# (and# mask4 (or4# set4
-                                     (uncheckedShiftRL# x 18#) -- 3 bits to 1st byte
-                                     (or# (and# 0x3f00## (uncheckedShiftRL# x 4#))   -- 6 bits to the 2nd byte
-                                          (and# 0x3f0000## (uncheckedShiftL# x 10#)) -- 6 bits to the 3nd byte
-                                     )
-                                     (uncheckedShiftL# x 24# ) -- move lowest bits to the 4rd byte
-                               ))
+    encode2 = and# mask2 (or3# set2
+                               (uncheckedShiftRL# x 6#) -- 5 bits to 1st byte
+                               (uncheckedShiftL# x 8# ) -- move lowest bits to the 2nd byte
+                         )
+    encode3 = and# mask3 (or4# set3
+                               (uncheckedShiftRL# x 12#) -- 4 bits to 1st byte
+                               (and# 0x3f00## (uncheckedShiftL# x 2#)) -- 6 bits to the 2nd byte
+                               (uncheckedShiftL# x 16# ) -- move lowest bits to the 3rd byte
+                         )
+    encode4 = and# mask4 (or4# set4
+                               (uncheckedShiftRL# x 18#) -- 3 bits to 1st byte
+                               (or# (and# 0x3f00## (uncheckedShiftRL# x 4#))   -- 6 bits to the 2nd byte
+                                    (and# 0x3f0000## (uncheckedShiftL# x 10#)) -- 6 bits to the 3nd byte
+                               )
+                               (uncheckedShiftL# x 24# ) -- move lowest bits to the 4rd byte
+                         )
 
 -- | decode a CharUTF8 into a Char
 --
 -- If the value inside a CharUTF8 is not properly encoded, this will result in violation
 -- of the Char invariants
 decodeCharUTF8 :: CharUTF8 -> Char
-decodeCharUTF8 c@(CharUTF8 !(W32# w))
+decodeCharUTF8 c@(CharUTF8 !(W32# w_))
     | isCharUTF8Case1 c = toChar# w
     | isCharUTF8Case2 c = encode2
     | isCharUTF8Case3 c = encode3
     | otherwise         = encode4
   where
+    w = word32ToWord# w_
     encode2 =
         toChar# (or# (uncheckedShiftL# (maskHeader2# w) 6#)
                      (maskContinuation# (uncheckedShiftRL# w 8#))
@@ -216,17 +230,17 @@ decodeCharUTF8 c@(CharUTF8 !(W32# w))
     --maskContent4 = 0x3f3f3f07## -- 3 continuations, 3 bits header
 
 isCharUTF8Case1 :: CharUTF8 -> Bool
-isCharUTF8Case1 (CharUTF8 !(W32# w)) = bool# (eqWord# (and# w 0x80##) 0##)
+isCharUTF8Case1 (CharUTF8 !w) = (w .&. 0x80) == 0
 {-# INLINE isCharUTF8Case1 #-}
 
 isCharUTF8Case2 :: CharUTF8 -> Bool
-isCharUTF8Case2 (CharUTF8 !(W32# w)) = bool# (eqWord# (and# w 0x20##) 0##)
+isCharUTF8Case2 (CharUTF8 !w) = (w .&. 0x20) == 0
 {-# INLINE isCharUTF8Case2 #-}
 
 isCharUTF8Case3 :: CharUTF8 -> Bool
-isCharUTF8Case3 (CharUTF8 !(W32# w)) = bool# (eqWord# (and# w 0x10##) 0##)
+isCharUTF8Case3 (CharUTF8 !w) = (w .&. 0x10) == 0
 {-# INLINE isCharUTF8Case3 #-}
 
 isCharUTF8Case4 :: CharUTF8 -> Bool
-isCharUTF8Case4 (CharUTF8 !(W32# w)) = bool# (eqWord# (and# w 0x08##) 0##)
+isCharUTF8Case4 (CharUTF8 !w) = (w .&. 0x08) == 0
 {-# INLINE isCharUTF8Case4 #-}

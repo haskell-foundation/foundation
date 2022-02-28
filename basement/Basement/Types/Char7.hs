@@ -36,7 +36,7 @@ import GHC.Types
 import Data.Bits
 import Data.Maybe
 import Basement.Compat.Base
-import Basement.Compat.Primitive (bool#)
+import Basement.Compat.Primitive
 
 -- | ASCII value between 0x0 and 0x7f
 newtype Char7 = Char7 { toByte :: Word8 }
@@ -44,14 +44,14 @@ newtype Char7 = Char7 { toByte :: Word8 }
 
 -- | Convert a 'Char7' to a unicode code point 'Char'
 toChar :: Char7 -> Char
-toChar !(Char7 (W8# w)) = C# (chr# (word2Int# w))
+toChar !(Char7 (W8# w)) = C# (chr# (word2Int# (word8ToWord# w)))
 
 -- | Try to convert a 'Char' to a 'Char7'
 -- 
 -- If the code point is non ascii, then Nothing is returned.
 fromChar :: Char -> Maybe Char7
 fromChar !(C# c#)
-    | bool# (ltChar# c# (chr# 0x80#)) = Just $ Char7 $ W8# (int2Word# (ord# c#))
+    | bool# (ltChar# c# (chr# 0x80#)) = Just $ Char7 $ W8# (wordToWord8# (int2Word# (ord# c#)))
     | otherwise                       = Nothing
 
 -- | Try to convert 'Word8' to a 'Char7'
@@ -64,11 +64,11 @@ fromByte !w
 
 -- | Convert a 'Char' to a 'Char7' ignoring all higher bits
 fromCharMask :: Char -> Char7
-fromCharMask !(C# c#) = Char7 $ W8# (and# (int2Word# (ord# c#)) 0x7f##)
+fromCharMask !(C# c#) = Char7 $ W8# (wordToWord8# (and# (int2Word# (ord# c#)) 0x7f##))
 
 -- | Convert a 'Byte' to a 'Char7' ignoring the higher bit
 fromByteMask :: Word8 -> Char7
-fromByteMask !(W8# w#) = Char7 $ W8# (and# w# 0x7f##)
+fromByteMask !w = Char7 (w .&. 0x7f)
 
 c7_LF :: Char7
 c7_LF = Char7 0xa

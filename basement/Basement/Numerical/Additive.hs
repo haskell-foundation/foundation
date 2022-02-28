@@ -14,10 +14,11 @@ module Basement.Numerical.Additive
 import           Basement.Compat.Base
 import           Basement.Compat.C.Types
 import           Basement.Compat.Natural
+import           Basement.Compat.Primitive
 import           Basement.Numerical.Number
 import qualified Prelude
-import           GHC.Types
-import           GHC.Prim
+import           GHC.Types (Float(..), Double(..))
+import           GHC.Prim (plusWord#, plusFloat#, (+#), (+##))
 import           GHC.Int
 import           GHC.Word
 import           Basement.Bounded
@@ -65,15 +66,15 @@ instance Additive Int where
     scale = scaleNum
 instance Additive Int8 where
     azero = 0
-    (I8# a) + (I8# b) = I8# (narrow8Int# (a +# b))
+    (I8# a) + (I8# b) = I8# (a `plusInt8#` b)
     scale = scaleNum
 instance Additive Int16 where
     azero = 0
-    (I16# a) + (I16# b) = I16# (narrow16Int# (a +# b))
+    (I16# a) + (I16# b) = I16# (a `plusInt16#` b)
     scale = scaleNum
 instance Additive Int32 where
     azero = 0
-    (I32# a) + (I32# b) = I32# (narrow32Int# (a +# b))
+    (I32# a) + (I32# b) = I32# (a `plusInt32#` b)
     scale = scaleNum
 instance Additive Int64 where
     azero = 0
@@ -93,15 +94,15 @@ instance Additive Natural where
     scale = scaleNum
 instance Additive Word8 where
     azero = 0
-    (W8# a) + (W8# b) = W8# (narrow8Word# (a `plusWord#` b))
+    (W8# a) + (W8# b) = W8# (a `plusWord8#` b)
     scale = scaleNum
 instance Additive Word16 where
     azero = 0
-    (W16# a) + (W16# b) = W16# (narrow16Word# (a `plusWord#` b))
+    (W16# a) + (W16# b) = W16# (a `plusWord16#` b)
     scale = scaleNum
 instance Additive Word32 where
     azero = 0
-    (W32# a) + (W32# b) = W32# (narrow32Word# (a `plusWord#` b))
+    (W32# a) + (W32# b) = W32# (a `plusWord32#` b)
     scale = scaleNum
 instance Additive Word64 where
     azero = 0

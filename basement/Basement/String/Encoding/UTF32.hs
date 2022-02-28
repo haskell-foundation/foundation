@@ -15,6 +15,7 @@ import GHC.Prim
 import GHC.Word
 import GHC.Types
 import Basement.Compat.Base
+import Basement.Compat.Primitive
 import Basement.Types.OffsetSize
 import Basement.Monad
 import Basement.Numerical.Additive
@@ -43,7 +44,7 @@ next getter off = Right (char, off + Offset 1)
   where
     !(W32# hh) = getter off
     char :: Char
-    char = C# (chr# (word2Int# hh))
+    char = C# (word32ToChar# hh)
 
 write :: (PrimMonad st, Monad st)
       => Char
@@ -52,4 +53,4 @@ write c = builderAppend w32
   where
     !(C# ch) = c
     w32 :: Word32
-    w32 = W32# (int2Word# (ord# ch))
+    w32 = W32# (charToWord32# ch)

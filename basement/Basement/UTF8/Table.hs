@@ -13,14 +13,16 @@ module Basement.UTF8.Table
     , isContinuation3
     , getNbBytes
     , isContinuation#
+    , isContinuationW#
     , getNbBytes#
     ) where
 
-import           GHC.Prim
+import           GHC.Prim (Word#, Int#, Addr#, indexWord8OffAddr#, word2Int#)
 import           GHC.Types
 import           GHC.Word
 import           Basement.Compat.Base
 import           Basement.Compat.Primitive
+import           Basement.Bits
 import           Basement.UTF8.Types (StepASCII(..))
 
 -- | Check if the byte is a continuation byte
@@ -29,17 +31,16 @@ isContinuation (W8# w) = isContinuation# w
 {-# INLINE isContinuation #-}
 
 isContinuation2 :: Word8 -> Word8 -> Bool
-isContinuation2 (W8# w1) (W8# w2) =
-    bool# (mask w1 `andI#` mask w2)
+isContinuation2 !w1 !w2 = mask w1 && mask w2
   where
-    mask v = (and# 0xC0## v) `eqWord#` 0x80##
+    mask v = (v .&. 0xC0) == 0x80
 {-# INLINE isContinuation2 #-}
 
 isContinuation3 :: Word8 -> Word8 -> Word8 -> Bool
-isContinuation3 (W8# w1) (W8# w2) (W8# w3) =
-    bool# (mask w1) && bool# (mask w2) && bool# (mask w3)
+isContinuation3 !w1 !w2 !w3 =
+    mask w1 && mask w2 && mask w3
   where
-    mask v = (and# 0xC0## v) `eqWord#` 0x80##
+    mask v = (v .&. 0xC0) == 0x80
 {-# INLINE isContinuation3 #-}
 
 -- | Number of bytes associated with a specific header byte
@@ -58,13 +59,18 @@ getNbBytes (StepASCII (W8# w)) = I# (getNbBytes# w)
 {-# INLINE getNbBytes #-}
 
 -- | Check if the byte is a continuation byte
-isContinuation# :: Word# -> Bool
-isContinuation# w = W# (indexWord8OffAddr# (unTable contTable) (word2Int# w)) == W# 0##
+isContinuation# :: Word8# -> Bool
+isContinuation# w = W8# (indexWord8OffAddr# (unTable contTable) (word2Int# (word8ToWord# w))) == 0
 {-# INLINE isContinuation# #-}
 
+-- | Check if the byte is a continuation byte
+isContinuationW# :: Word# -> Bool
+isContinuationW# w = W8# (indexWord8OffAddr# (unTable contTable) (word2Int# w)) == 0
+{-# INLINE isContinuationW# #-}
+
 -- | Get the number of following bytes given the first byte of a UTF8 sequence.
-getNbBytes# :: Word# -> Int#
-getNbBytes# w = word2Int# (indexWord8OffAddr# (unTable headTable) (word2Int# w))
+getNbBytes# :: Word8# -> Int#
+getNbBytes# w = word8ToInt# (indexWord8OffAddr# (unTable headTable) (word2Int# (word8ToWord# w)))
 {-# INLINE getNbBytes# #-}
 
 data Table = Table { unTable :: !Addr# }

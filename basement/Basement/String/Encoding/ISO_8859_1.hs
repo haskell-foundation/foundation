@@ -14,11 +14,12 @@ module Basement.String.Encoding.ISO_8859_1
     ) where
 
 import Basement.Compat.Base
+import Basement.Compat.Primitive
 import Basement.Types.OffsetSize
 import Basement.Numerical.Additive
 import Basement.Monad
 
-import GHC.Prim
+import GHC.Prim (int2Word#, ord#)
 import GHC.Word
 import GHC.Types
 import Basement.UArray
@@ -50,8 +51,8 @@ next :: (Offset Word8 -> Word8)
 next getter off = Right (toChar w, off + aone)
   where
     !(W8# w) = getter off
-    toChar :: Word# -> Char
-    toChar a = C# (chr# (word2Int# a))
+    toChar :: Word8# -> Char
+    toChar a = C# (word8ToChar# w)
 
 write :: (PrimMonad st, Monad st)
       => Char
@@ -60,5 +61,5 @@ write c@(C# ch)
     | c <= toEnum 0xFF = builderAppend (W8# x)
     | otherwise        = throw $ NotISO_8859_1 c
   where
-    x :: Word#
-    !x = int2Word# (ord# ch)
+    x :: Word8#
+    !x = wordToWord8# (int2Word# (ord# ch))
