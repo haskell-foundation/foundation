@@ -18,6 +18,7 @@ module Basement.Cast
 import qualified Basement.Block.Base as Block
 import           Basement.Compat.Base
 import           Basement.Compat.Natural
+import           Basement.Compat.Primitive
 import           Basement.Numerical.Number
 import           Basement.Numerical.Conversion
 import           Basement.PrimType
@@ -58,22 +59,22 @@ class Cast source destination where
         Block.unsafeRead (Block.unsafeRecast mba) 0
 
 instance Cast Int8  Word8 where
-    cast (I8# i) = W8# (narrow8Word# (int2Word# i))
+    cast (I8# i) = W8# (wordToWord8# (int2Word# (int8ToInt# i)))
 instance Cast Int16 Word16 where
-    cast (I16# i) = W16# (narrow16Word# (int2Word# i))
+    cast (I16# i) = W16# (wordToWord16# (int2Word# (int16ToInt# i)))
 instance Cast Int32 Word32 where
-    cast (I32# i) = W32# (narrow32Word# (int2Word# i))
+    cast (I32# i) = W32# (wordToWord32# (int2Word# (int32ToInt# i)))
 instance Cast Int64 Word64 where
     cast = int64ToWord64
 instance Cast Int   Word where
     cast (I# i) = W# (int2Word# i)
 
 instance Cast Word8  Int8 where
-    cast (W8# i) = I8# (narrow8Int# (word2Int# i))
+    cast (W8# i) = I8# (intToInt8# (word2Int# (word8ToWord# i)))
 instance Cast Word16 Int16 where
-    cast (W16# i) = I16# (narrow16Int# (word2Int# i))
+    cast (W16# i) = I16# (intToInt16# (word2Int# (word16ToWord# i)))
 instance Cast Word32 Int32 where
-    cast (W32# i) = I32# (narrow32Int# (word2Int# i))
+    cast (W32# i) = I32# (intToInt32# (word2Int# (word32ToWord# i)))
 instance Cast Word64 Int64 where
     cast = word64ToInt64
 instance Cast Word   Int where
@@ -101,24 +102,24 @@ instance Cast Word64 Int where
     cast (W64# w) = I# (word2Int# w)
 #else
 instance Cast Word   Word32 where
-    cast (W# w) = W32# w
+    cast (W# w) = W32# (wordToWord32# w)
 instance Cast Word32 Word where
-    cast (W32# w) = W# w
+    cast (W32# w) = W# (word32ToWord# w)
 
 instance Cast Word   Int32 where
-    cast (W# w) = I32# (word2Int# w)
+    cast (W# w) = I32# (intToInt32# (word2Int# w))
 instance Cast Int32  Word where
-    cast (I32# i) = W# (int2Word# i)
+    cast (I32# i) = W# (int2Word# (int32ToInt# i))
 
 instance Cast Int    Int32 where
-    cast (I# i) = I32# i
+    cast (I# i) = I32# (intToInt32# i)
 instance Cast Int32  Int where
-    cast (I32# i) = I# i
+    cast (I32# i) = I# (int32ToInt# i)
 
 instance Cast Int    Word32 where
-    cast (I# i) = W32# (int2Word# i)
+    cast (I# i) = W32# (wordToWord32# (int2Word# i))
 instance Cast Word32 Int where
-    cast (W32# w) = I# (word2Int# w)
+    cast (W32# w) = I# (word2Int# (word32ToWord# w))
 #endif
 
 instance Cast (Block.Block a) (Block.Block Word8) where

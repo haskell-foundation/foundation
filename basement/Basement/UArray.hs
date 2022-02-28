@@ -124,6 +124,7 @@ import           Basement.PrimType
 import           Basement.FinalPtr
 import           Basement.Exception
 import           Basement.UArray.Base
+import           Basement.Bits
 import           Basement.Block (Block(..), MutableBlock(..))
 import qualified Basement.Block as BLK
 import qualified Basement.Block.Base as BLK (withPtr, unsafeWrite)
@@ -912,15 +913,15 @@ outputLengthBase64 padding (CountOf inputLenInt) = outputLength
     (d,m) = inputLenInt `divMod` 3
 
 convert3 :: Addr# -> Word8 -> Word8 -> Word8 -> (Word8, Word8, Word8, Word8)
-convert3 table (W8# a) (W8# b) (W8# c) =
-    let !w = narrow8Word# (uncheckedShiftRL# a 2#)
-        !x = or# (and# (uncheckedShiftL# a 4#) 0x30##) (uncheckedShiftRL# b 4#)
-        !y = or# (and# (uncheckedShiftL# b 2#) 0x3c##) (uncheckedShiftRL# c 6#)
-        !z = and# c 0x3f##
+convert3 table a b c =
+    let !w = a .>>. 2
+        !x = ((a .<<. 4) .&. 0x30) .|. (b .>>. 4)
+        !y = ((b .<<. 2) .&. 0x3c) .|. (c .>>. 6)
+        !z = c .&. 0x3f
      in (idx w, idx x, idx y, idx z)
   where
-    idx :: Word# -> Word8
-    idx i = W8# (indexWord8OffAddr# table (word2Int# i))
+    idx :: Word8 -> Word8
+    idx (W8# i) = W8# (indexWord8OffAddr# table (word2Int# (word8ToWord# i)))
 
 isPrefixOf :: PrimType ty => UArray ty -> UArray ty -> Bool
 isPrefixOf pre arr

@@ -229,7 +229,7 @@ nextWithIndexer :: (Offset Word8 -> Word8)
                 -> Offset Word8
                 -> (Char, Offset Word8)
 nextWithIndexer getter off =
-    case getNbBytes# h of
+    case getNbBytes# b# of
         0# -> (toChar h, off + 1)
         1# -> (toChar (decode2 (getter $ off + 1)), off + 2)
         2# -> (toChar (decode3 (getter $ off + 1) (getter $ off + 2)), off + 3)
@@ -237,29 +237,39 @@ nextWithIndexer getter off =
               , off + 4)
         r -> error ("next: internal error: invalid input: " <> show (I# r) <> " " <> show (W# h))
   where
-    !(W8# h) = getter off
+    b@(W8# b#) = getter off
+    !(W# h) = integralUpsize b
 
     toChar :: Word# -> Char
     toChar w = C# (chr# (word2Int# w))
 
     decode2 :: Word8 -> Word#
-    decode2 (W8# c1) =
+    decode2 (W8# b1) =
         or# (uncheckedShiftL# (and# h 0x1f##) 6#)
             (and# c1 0x3f##)
+      where
+        c1 = word8ToWord# b1
 
     decode3 :: Word8 -> Word8 -> Word#
-    decode3 (W8# c1) (W8# c2) =
+    decode3 (W8# b1) (W8# b2) =
         or# (uncheckedShiftL# (and# h 0xf##) 12#)
             (or# (uncheckedShiftL# (and# c1 0x3f##) 6#)
                  (and# c2 0x3f##))
+      where
+        c1 = word8ToWord# b1
+        c2 = word8ToWord# b2
 
     decode4 :: Word8 -> Word8 -> Word8 -> Word#
-    decode4 (W8# c1) (W8# c2) (W8# c3) =
+    decode4 (W8# b1) (W8# b2) (W8# b3) =
         or# (uncheckedShiftL# (and# h 0x7##) 18#)
             (or# (uncheckedShiftL# (and# c1 0x3f##) 12#)
                 (or# (uncheckedShiftL# (and# c2 0x3f##) 6#)
                     (and# c3 0x3f##))
             )
+      where
+        c1 = word8ToWord# b1
+        c2 = word8ToWord# b2
+        c3 = word8ToWord# b3
 
 writeWithBuilder :: (PrimMonad st, Monad st)
                  => Char
@@ -273,25 +283,25 @@ writeWithBuilder c
     !(I# xi) = fromEnum c
     !x       = int2Word# xi
 
-    encode1 = Vec.builderAppend (W8# x)
+    encode1 = Vec.builderAppend (W8# (wordToWord8# x))
 
     encode2 = do
         let x1  = or# (uncheckedShiftRL# x 6#) 0xc0##
             x2  = toContinuation x
-        Vec.builderAppend (W8# x1) >> Vec.builderAppend (W8# x2)
+        Vec.builderAppend (W8# (wordToWord8# x1)) >> Vec.builderAppend (W8# (wordToWord8# x2))
 
     encode3 = do
         let x1  = or# (uncheckedShiftRL# x 12#) 0xe0##
             x2  = toContinuation (uncheckedShiftRL# x 6#)
             x3  = toContinuation x
-        Vec.builderAppend (W8# x1) >> Vec.builderAppend (W8# x2) >> Vec.builderAppend (W8# x3)
+        Vec.builderAppend (W8# (wordToWord8# x1)) >> Vec.builderAppend (W8# (wordToWord8# x2)) >> Vec.builderAppend (W8# (wordToWord8# x3))
 
     encode4 = do
         let x1  = or# (uncheckedShiftRL# x 18#) 0xf0##
             x2  = toContinuation (uncheckedShiftRL# x 12#)
             x3  = toContinuation (uncheckedShiftRL# x 6#)
             x4  = toContinuation x
-        Vec.builderAppend (W8# x1) >> Vec.builderAppend (W8# x2) >> Vec.builderAppend (W8# x3) >> Vec.builderAppend (W8# x4)
+        Vec.builderAppend (W8# (wordToWord8# x1)) >> Vec.builderAppend (W8# (wordToWord8# x2)) >> Vec.builderAppend (W8# (wordToWord8# x3)) >> Vec.builderAppend (W8# (wordToWord8# x4))
 
     toContinuation :: Word# -> Word#
     toContinuation w = or# (and# w 0x3f##) 0x80##

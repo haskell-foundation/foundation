@@ -14,11 +14,13 @@ module Basement.String.Encoding.ASCII7
     ) where
 
 import Basement.Compat.Base
+import Basement.Compat.Primitive
 import Basement.Types.OffsetSize
 import Basement.Numerical.Additive
 import Basement.Monad
+import Basement.Bits
 
-import GHC.Prim
+import GHC.Prim (int2Word#, ord#)
 import GHC.Word
 import GHC.Types
 import Basement.UArray
@@ -32,7 +34,7 @@ import Basement.String.Encoding.Encoding
 -- This function check the 8th bit is set to 0
 --
 isAscii :: Word8 -> Bool
-isAscii (W8# w) = W8# (and# w 0x80## ) == 0
+isAscii w = (w .&. 0x80) == 0
 {-# INLINE isAscii #-}
 
 data ASCII7_Invalid
@@ -64,8 +66,8 @@ next getter off
     | otherwise  = Left $ ByteOutOfBound w8
   where
     !w8@(W8# w) = getter off
-    toChar :: Word# -> Char
-    toChar a = C# (chr# (word2Int# a))
+    toChar :: Word8# -> Char
+    toChar a = C# (word8ToChar# w)
 
 -- Write ascii char
 --
@@ -81,4 +83,4 @@ write c
     | otherwise       = throw $ CharNotAscii c
   where
     w8 :: Char -> Word8
-    w8 (C# ch) = W8# (int2Word# (ord# ch))
+    w8 (C# ch) = W8# (wordToWord8# (int2Word# (ord# ch)))
