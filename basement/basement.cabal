@@ -137,7 +137,7 @@ library
                      Basement.Terminal.Size
 
   -- support and dependencies
-  if impl(ghc < 8.0)
+  if impl(ghc < 8.8)
     buildable: False
   else
     build-depends:     base
@@ -157,5 +157,3 @@ library
     cpp-options: -DARCH_IS_UNKNOWN_ENDIAN
   include-dirs:      cbits
   c-sources:         cbits/foundation_mem.c
-  if impl(ghc < 8.2)
-    c-sources:       cbits/basement_rts.c
