@@ -220,7 +220,7 @@ word16ToWord# :: Word16# -> Word#
 word16ToWord# a = a
 
 word32ToWord8# :: Word32# -> Word8#
-word32ToWord8# w = narrow32Word# w
+word32ToWord8# w = narrow8Word# w
 
 word32ToWord16# :: Word32# -> Word16#
 word32ToWord16# w = narrow16Word# w
