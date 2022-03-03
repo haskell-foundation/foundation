@@ -69,8 +69,11 @@ startPrecise :: IO StopWatchPrecise
 startPrecise = do
 #if defined(mingw32_HOST_OS)
     blk <- newPinned 16
-    _ <- withMutablePtr blk $ \p ->
-        c_QueryPerformanceCounter (castPtr p `ptrPlus` 8)
+    _ <- withMutablePtr blk $ \p -> do
+          ticks <- integralDownsize <$> queryPerformanceCounter :: IO Word64
+          let p64 = castPtr p :: Ptr Word64
+          poke (p64 `ptrPlus` 8) ticks
+          pure p
     pure (StopWatchPrecise blk)
 #elif defined(darwin_HOST_OS)
     StopWatchPrecise <$> sysMacos_absolute_time
@@ -86,9 +89,8 @@ stopPrecise :: StopWatchPrecise -> IO NanoSeconds
 stopPrecise (StopWatchPrecise blk) = do
 #if defined(mingw32_HOST_OS)
     withMutablePtr blk $ \p -> do
-        _ <- c_QueryPerformanceCounter (castPtr p)
+        end <- integralDownsize <$> queryPerformanceCounter
         let p64 = castPtr p :: Ptr Word64
-        end   <- peek p64
         start <- peek (p64 `ptrPlus` 8)
         pure $ NanoSeconds ((end - start) * secondInNano `div` initPrecise)
 #elif defined(darwin_HOST_OS)
