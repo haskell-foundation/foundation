@@ -17,7 +17,7 @@ module Foundation.Hashing.SipHash
     , Sip2_4
     ) where
 
-import           Data.Bits
+import           Data.Bits hiding ((.<<.), (.>>.))
 import           Basement.Compat.Base
 import           Basement.Types.OffsetSize
 import           Basement.PrimType

@@ -42,7 +42,7 @@ import           Basement.Monad
 
 import qualified Foundation.Collection as C
 import           Foundation.Numerical
-import           Data.Bits
+import           Data.Bits hiding ((.<<.), (.>>.))
 import           Foundation.Bits
 import           GHC.ST
 import qualified Data.List

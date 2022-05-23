@@ -15,6 +15,10 @@
 {-# LANGUAGE TypeOperators #-}
 #endif
 
+#if __GLASGOW_HASKELL__ >= 904
+{-# LANGUAGE UndecidableInstances #-}
+#endif
+
 module Foundation.Collection.Foldable
     ( Foldable(..)
     , Fold1able(..)
