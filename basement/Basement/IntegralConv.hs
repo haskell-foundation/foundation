@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE MagicHash             #-}
 {-# LANGUAGE DefaultSignatures     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -20,7 +21,8 @@ module Basement.IntegralConv
     ) where
 
 import GHC.Types
-import GHC.Prim
+import GHC.Prim hiding (word64ToWord#)
+import qualified GHC.Prim
 import GHC.Int
 import GHC.Word
 import Prelude (Integer, fromIntegral)
@@ -138,13 +140,25 @@ instance IntegralDownsize Int64 Int where
     integralDownsizeCheck = integralDownsizeBounded integralDownsize
 
 instance IntegralDownsize Word64 Word8 where
+#if __GLASGOW_HASKELL__ >= 904
+    integralDownsize      (W64# i) = W8# (wordToWord8# (GHC.Prim.word64ToWord# i))
+#else
     integralDownsize      (W64# i) = W8# (wordToWord8# (word64ToWord# i))
+#endif
     integralDownsizeCheck = integralDownsizeBounded integralDownsize
 instance IntegralDownsize Word64 Word16 where
+#if __GLASGOW_HASKELL__ >= 904
+    integralDownsize      (W64# i) = W16# (wordToWord16# (GHC.Prim.word64ToWord# i))
+#else
     integralDownsize      (W64# i) = W16# (wordToWord16# (word64ToWord# i))
+#endif
     integralDownsizeCheck = integralDownsizeBounded integralDownsize
 instance IntegralDownsize Word64 Word32 where
+#if __GLASGOW_HASKELL__ >= 904
+    integralDownsize      (W64# i) = W32# (wordToWord32# (GHC.Prim.word64ToWord# i))
+#else
     integralDownsize      (W64# i) = W32# (wordToWord32# (word64ToWord# i))
+#endif
     integralDownsizeCheck = integralDownsizeBounded integralDownsize
 
 instance IntegralDownsize Word Word8 where

@@ -291,9 +291,15 @@ instance FiniteBitsOps Word where
     rotateL w (CountOf i) = w `OldBits.rotateL` i
     rotateR w (CountOf i) = w `OldBits.rotateR` i
     bitFlip = OldBits.complement
+#if __GLASGOW_HASKELL__ >= 904
+    popCount (W# x#) = CountOf $ wordToInt (W# (popCnt64# (wordToWord64# x#)))
+    countLeadingZeros (W# w#) = CountOf $ wordToInt (W# (clz64# (wordToWord64# w#)))
+    countTrailingZeros (W# w#) = CountOf $ wordToInt (W# (ctz64# (wordToWord64# w#)))
+#else
     popCount (W# x#) = CountOf $ wordToInt (W# (popCnt64# x#))
     countLeadingZeros (W# w#) = CountOf $ wordToInt (W# (clz64# w#))
     countTrailingZeros (W# w#) = CountOf $ wordToInt (W# (ctz64# w#))
+#endif
 #else
 instance FiniteBitsOps Word where
     numberOfBits _ = 32
@@ -433,9 +439,15 @@ instance FiniteBitsOps Int64 where
     rotateL w (CountOf i) = w `OldBits.rotateL` i
     rotateR w (CountOf i) = w `OldBits.rotateR` i
     bitFlip = OldBits.complement
+#if __GLASGOW_HASKELL__ >= 904
+    popCount (I64# x#) = CountOf $ wordToInt (W# (popCnt64# (wordToWord64# (int2Word# (int64ToInt# x#)))))
+    countLeadingZeros (I64# w#) = CountOf $ wordToInt (W# (clz64# (wordToWord64# (int2Word# (int64ToInt# w#)))))
+    countTrailingZeros (I64# w#) = CountOf $ wordToInt (W# (ctz64# (wordToWord64# (int2Word# (int64ToInt# w#)))))
+#else
     popCount (I64# x#) = CountOf $ wordToInt (W# (popCnt64# (int2Word# x#)))
     countLeadingZeros (I64# w#) = CountOf $ wordToInt (W# (clz64# (int2Word# w#)))
     countTrailingZeros (I64# w#) = CountOf $ wordToInt (W# (ctz64# (int2Word# w#)))
+#endif
 instance BitOps Int64 where
     (.&.)    a b    = (a OldBits..&. b)
     (.|.)    a b    = (a OldBits..|. b)
