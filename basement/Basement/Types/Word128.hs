@@ -128,10 +128,17 @@ instance Bits.Bits Word128 where
 #if WORD_SIZE_IN_BITS < 64
 (+) = applyBiWordOnNatural (Prelude.+)
 #else
+#if __GLASGOW_HASKELL__ >= 904
+(+) (Word128 (W64# a1) (W64# a0)) (Word128 (W64# b1) (W64# b0)) = Word128 (W64# s1) (W64# (wordToWord64# s0))
+  where
+    !(# carry, s0 #) = plusWord2# (GHC.Prim.word64ToWord# a0) (GHC.Prim.word64ToWord# b0)
+    s1               = wordToWord64# (plusWord# (plusWord# (GHC.Prim.word64ToWord# a1) (GHC.Prim.word64ToWord# b1)) carry)
+#else
 (+) (Word128 (W64# a1) (W64# a0)) (Word128 (W64# b1) (W64# b0)) = Word128 (W64# s1) (W64# s0)
   where
     !(# carry, s0 #) = plusWord2# a0 b0
     s1               = plusWord# (plusWord# a1 b1) carry
+#endif
 #endif
 
 -- temporary available until native operation available

@@ -41,6 +41,7 @@ module Basement.UArray.Mutable
     ) where
 
 import           GHC.Prim
+import           GHC.Exts
 import           GHC.Types
 import           GHC.Ptr
 import           Basement.Compat.Base
@@ -104,7 +105,7 @@ sub :: (PrimMonad prim, PrimType ty)
     -> prim (MUArray ty (PrimState prim))
 sub (MUArray start sz back) dropElems' takeElems
     | takeElems <= 0 = empty
-    | Just keepElems <- sz - dropElems, keepElems > 0 
+    | Just keepElems <- sz - dropElems, keepElems > 0
                      = pure $ MUArray (start `offsetPlusE` dropElems) (min (CountOf takeElems) keepElems) back
     | otherwise      = empty
   where

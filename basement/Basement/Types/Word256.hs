@@ -21,7 +21,8 @@ module Basement.Types.Word256
     , fromNatural
     ) where
 
-import           GHC.Prim
+import           GHC.Prim hiding (word64ToWord#)
+import qualified GHC.Prim
 import           GHC.Word
 import           GHC.Types
 import qualified Prelude (fromInteger, show, Num(..), quot, rem, mod)
@@ -149,6 +150,25 @@ instance Bits.Bits Word256 where
 #else
 (+) (Word256 (W64# a3) (W64# a2) (W64# a1) (W64# a0))
     (Word256 (W64# b3) (W64# b2) (W64# b1) (W64# b0)) =
+#if __GLASGOW_HASKELL__ >= 904
+    Word256 (W64# (wordToWord64# s3)) (W64# (wordToWord64# s2)) (W64# (wordToWord64# s1)) (W64# (wordToWord64# s0))
+  where
+    !(# c0, s0 #) = plusWord2# (GHC.Prim.word64ToWord# a0) (GHC.Prim.word64ToWord#  b0)
+    !(# c1, s1 #) = plusWord3# (GHC.Prim.word64ToWord# a1) (GHC.Prim.word64ToWord# b1) (c0)
+    !(# c2, s2 #) = plusWord3# (GHC.Prim.word64ToWord# a2) (GHC.Prim.word64ToWord# b2) c1
+    !s3           = plusWord3NoCarry# (GHC.Prim.word64ToWord# a3) (GHC.Prim.word64ToWord# b3) c2
+
+    plusWord3NoCarry# a b c = plusWord# (plusWord# a b) c
+    plusWord3# a b c
+        | bool# (eqWord# carry 0##) = plusWord2# x c
+        | otherwise                 =
+            case plusWord2# x c of
+                (# carry2, x' #)
+                    | bool# (eqWord# carry2 0##) -> (# carry, x' #)
+                    | otherwise                  -> (# plusWord# carry carry2, x' #)
+      where
+        (# carry, x #) = plusWord2# a b
+#else
     Word256 (W64# s3) (W64# s2) (W64# s1) (W64# s0)
   where
     !(# c0, s0 #) = plusWord2# a0 b0
@@ -166,6 +186,7 @@ instance Bits.Bits Word256 where
                     | otherwise                  -> (# plusWord# carry carry2, x' #)
       where
         (# carry, x #) = plusWord2# a b
+#endif
 #endif
 
 -- temporary available until native operation available

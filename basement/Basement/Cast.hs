@@ -81,6 +81,27 @@ instance Cast Word   Int where
     cast (W# w) = I# (word2Int# w)
 
 #if WORD_SIZE_IN_BITS == 64
+#if __GLASGOW_HASKELL__ >= 904
+instance Cast Word   Word64 where
+    cast (W# w) = W64# (wordToWord64# w)
+instance Cast Word64 Word where
+    cast (W64# w) = W# (GHC.Prim.word64ToWord# w)
+
+instance Cast Word   Int64 where
+    cast (W# w) = I64# (intToInt64# (word2Int# w))
+instance Cast Int64  Word where
+    cast (I64# i) = W# (int2Word# (int64ToInt# i))
+
+instance Cast Int    Int64 where
+    cast (I# i) = I64# (intToInt64# i)
+instance Cast Int64  Int where
+    cast (I64# i) = I# (int64ToInt# i)
+
+instance Cast Int    Word64 where
+    cast (I# i) = W64# (wordToWord64# (int2Word# i))
+instance Cast Word64 Int where
+    cast (W64# w) = I# (word2Int# (GHC.Prim.word64ToWord# w))
+#else
 instance Cast Word   Word64 where
     cast (W# w) = W64# w
 instance Cast Word64 Word where
@@ -100,6 +121,7 @@ instance Cast Int    Word64 where
     cast (I# i) = W64# (int2Word# i)
 instance Cast Word64 Int where
     cast (W64# w) = I# (word2Int# w)
+#endif
 #else
 instance Cast Word   Word32 where
     cast (W# w) = W32# (wordToWord32# w)

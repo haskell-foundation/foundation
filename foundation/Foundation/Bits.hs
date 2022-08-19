@@ -9,7 +9,7 @@ module Foundation.Bits
 
 import Basement.Compat.Base
 import Foundation.Numerical
-import Data.Bits
+import Data.Bits hiding ((.<<.), (.>>.))
 
 -- | Unsafe Shift Left Operator
 (.<<.) :: Bits a => a -> Int -> a
