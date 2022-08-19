@@ -6,6 +6,7 @@
 -- Block builder
 
 {-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE TypeOperators #-}
 
 module Basement.Block.Builder
     ( Builder
@@ -57,9 +58,7 @@ instance Semigroup Builder where
     {-# INLINABLE (<>) #-}
 instance Monoid Builder where
     mempty = empty
-    {-# INLINE mempty #-}
-    mappend = append
-    {-# INLINABLE mappend #-}
+    {-# INLINABLE mempty #-}
     mconcat = concat
     {-# INLINABLE mconcat #-}
 

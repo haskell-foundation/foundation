@@ -18,7 +18,6 @@ module Foundation.Check.Property
     ) where
 
 import Basement.Imports hiding (Typeable)
-import Data.Proxy (Proxy(..))
 import Basement.Compat.Typeable
 import Foundation.Check.Gen
 import Foundation.Check.Arbitrary

@@ -210,7 +210,6 @@ instance Semigroup (CountOf ty) where
 
 instance Monoid (CountOf ty) where
     mempty = azero
-    mappend = (+)
     mconcat = foldl' (+) 0
 
 sizeOfE :: CountOf Word8 -> CountOf ty -> CountOf Word8

@@ -6,6 +6,7 @@
 {-# LANGUAGE UnboxedTuples         #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE TypeOperators         #-}
 module Basement.IntegralConv
     ( IntegralDownsize(..)
     , IntegralUpsize(..)

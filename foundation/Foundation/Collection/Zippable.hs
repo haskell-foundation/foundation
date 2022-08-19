@@ -12,6 +12,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TypeOperators #-}
 module Foundation.Collection.Zippable
     ( BoxedZippable(..)
     , Zippable(..)

@@ -37,7 +37,6 @@ instance Semigroup (DList a) where
     (<>) dl1 dl2 = DList $ unDList dl1 . unDList dl2
 instance Monoid (DList a) where
     mempty = DList id
-    mappend dl1 dl2 = DList $ unDList dl1 . unDList dl2
 
 instance Functor DList where
     fmap f = foldr (cons . f) mempty
@@ -48,7 +47,7 @@ instance Applicative DList where
 
 instance Monad DList where
     (>>=) m k = foldr (mappend . k) mempty m
-    return = singleton
+    return = pure
 
 type instance Element (DList a) = a
 

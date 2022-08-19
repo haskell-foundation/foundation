@@ -82,7 +82,6 @@ instance PrimType ty => Semigroup (Block ty) where
     (<>) = append
 instance PrimType ty => Monoid (Block ty) where
     mempty  = empty
-    mappend = append
     mconcat = concat
 
 instance PrimType ty => IsList (Block ty) where

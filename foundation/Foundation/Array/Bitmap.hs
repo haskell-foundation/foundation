@@ -71,7 +71,6 @@ instance Semigroup Bitmap where
     (<>) = append
 instance Monoid Bitmap where
     mempty  = empty
-    mappend = append
     mconcat = concat
 
 type instance C.Element Bitmap = Bool

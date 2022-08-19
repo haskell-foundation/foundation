@@ -1,4 +1,5 @@
 {-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE TypeOperators #-}
 module Foundation.Collection.InnerFunctor
     ( InnerFunctor(..)
     ) where

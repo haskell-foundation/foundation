@@ -47,7 +47,6 @@ instance Semigroup (ChunkedUArray a) where
     (<>) = append
 instance Monoid (ChunkedUArray a) where
     mempty  = empty
-    mappend = append
     mconcat = concat
 
 type instance C.Element (ChunkedUArray ty) = ty

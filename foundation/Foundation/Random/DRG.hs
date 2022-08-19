@@ -44,7 +44,7 @@ instance Applicative (MonadRandomState gen) where
          in (f a, g3)
 
 instance Monad (MonadRandomState gen) where
-    return a    = MonadRandomState $ \g -> (a, g)
+    return = pure
     (>>=) m1 m2 = MonadRandomState $ \g1 ->
         let (a, g2) = runRandomState m1 g1
          in runRandomState (m2 a) g2

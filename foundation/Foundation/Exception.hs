@@ -5,7 +5,7 @@ module Foundation.Exception
     ) where
 
 import Basement.Imports
-import Control.Exception (Exception, SomeException)
+import Control.Exception (SomeException)
 import Foundation.Monad.Exception
 
 finally :: MonadBracket m => m a -> m b -> m a

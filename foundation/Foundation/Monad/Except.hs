@@ -35,7 +35,7 @@ instance Monad m => MonadFailure (ExceptT e m) where
     mFail = ExceptT . pure . Left
 
 instance Monad m => Monad (ExceptT e m) where
-    return a = ExceptT $ return (Right a)
+    return = pure
     m >>= k = ExceptT $ do
         a <- runExceptT m
         case a of

@@ -30,8 +30,6 @@ module Foundation.Class.Storable
 
 #include "MachDeps.h"
 
-import GHC.Types (Double, Float)
-
 import Foreign.Ptr (castPtr)
 import qualified Foreign.Ptr
 import qualified Foreign.Storable (peek, poke)
@@ -42,7 +40,7 @@ import Basement.Types.OffsetSize
 import Basement.Types.Word128 (Word128(..))
 import Basement.Types.Word256 (Word256(..))
 import Foundation.Collection
-import Foundation.Collection.Buildable (builderLift, build_)
+import Foundation.Collection.Buildable (builderLift)
 import Basement.PrimType
 import Basement.Endianness
 import Foundation.Numerical

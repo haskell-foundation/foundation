@@ -31,14 +31,13 @@ module Foundation.Format.CSV.Types
     ) where
 
 import           Basement.Imports
-import           Basement.BoxedArray              (Array, length, unsafeIndex)
+import           Basement.BoxedArray              (length, unsafeIndex)
 import           Basement.NormalForm              (NormalForm(..))
 import           Basement.From                    (Into, into)
-import           Basement.String                  (String, any, elem, null, uncons)
+import           Basement.String                  (any, elem, null, uncons)
 import qualified Basement.String       as String (singleton)
 import           Basement.Types.Word128           (Word128)
 import           Basement.Types.Word256           (Word256)
-import           Basement.Types.OffsetSize        (Offset, CountOf)
 import           Foundation.Collection.Element    (Element)
 import           Foundation.Collection.Collection (Collection, nonEmpty_)
 import           Foundation.Collection.Sequential (Sequential)

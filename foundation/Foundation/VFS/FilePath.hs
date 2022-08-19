@@ -189,7 +189,6 @@ instance Semigroup FileName where
     (<>) (FileName a) (FileName b) = FileName $ a `mappend` b
 instance Monoid FileName where
     mempty = FileName mempty
-    mappend (FileName a) (FileName b) = FileName $ a `mappend` b
 
 instance Path FilePath where
     type PathEnt FilePath = FileName

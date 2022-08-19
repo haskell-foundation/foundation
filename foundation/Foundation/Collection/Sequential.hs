@@ -14,6 +14,7 @@
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeOperators #-}
 module Foundation.Collection.Sequential
     ( Sequential(..)
     ) where

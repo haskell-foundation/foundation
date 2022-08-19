@@ -60,7 +60,7 @@ instance Applicative Gen where
          in ab a
 
 instance Monad Gen where
-    return a  = Gen (\_ _ -> a)
+    return  = pure
     ma >>= mb = Gen $ \rng params ->
             let (r1,r2) = genGenerator rng
                 a       = runGen ma r1 params

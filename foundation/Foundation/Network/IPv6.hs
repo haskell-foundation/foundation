@@ -8,6 +8,7 @@
 -- IPv6 data type
 --
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeOperators #-}
 
 module Foundation.Network.IPv6
     ( IPv6
@@ -28,7 +29,6 @@ import Numeric (readHex)
 
 import Foundation.Class.Storable
 import Foundation.Hashing.Hashable
-import Basement.Numerical.Additive (scale)
 import Basement.Compat.Base
 import Data.Proxy
 import Foundation.Primitive

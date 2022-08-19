@@ -24,6 +24,7 @@ import           Basement.Compat.Base
 import           Basement.Monad
 import           Basement.MutableBuilder
 import           Basement.Compat.MonadTrans
+import           Data.Kind (Type)
 
 -- $setup
 -- >>> import Control.Monad.ST
@@ -42,7 +43,7 @@ class Buildable col where
     {-# MINIMAL append, build #-}
 
     -- | Mutable collection type used for incrementally writing chunks.
-    type Mutable col :: * -> *
+    type Mutable col :: Type -> Type
 
     -- | Unit of the smallest step possible in an `append` operation.
     --

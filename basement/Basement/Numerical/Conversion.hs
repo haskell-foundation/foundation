@@ -29,12 +29,6 @@ import Basement.Compat.Primitive
 import GHC.IntWord64
 #endif
 
-#if __GLASGOW_HASKELL__ >= 904
-
-#else
-
-#endif
-
 intToInt64 :: Int -> Int64
 #if WORD_SIZE_IN_BITS == 64
 #if __GLASGOW_HASKELL__ >= 904

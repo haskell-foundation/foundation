@@ -133,7 +133,6 @@ instance PrimType ty => Semigroup (UArray ty) where
     (<>) = append
 instance PrimType ty => Monoid (UArray ty) where
     mempty  = empty
-    mappend = append
     mconcat = concat
 
 instance PrimType ty => IsList (UArray ty) where

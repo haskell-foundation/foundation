@@ -27,7 +27,7 @@ instance Monad m => Applicative (State s m) where
         (a,s3)  <- runState fa s2
         return (ab a, s3)
 instance Monad m => Monad (State r m) where
-    return a = State $ \st -> return (a,st)
+    return = pure
     ma >>= mb = State $ \s1 -> do
         (a,s2) <- runState ma s1
         runState (mb a) s2
@@ -44,7 +44,7 @@ instance Monad m => Applicative (Reader r m) where
         ab <- runReader fab r
         return $ ab a
 instance Monad m => Monad (Reader r m) where
-    return a = Reader $ \_ -> return a
+    return = pure
     ma >>= mb = Reader $ \r -> do
         a <- runReader ma r
         runReader (mb a) r

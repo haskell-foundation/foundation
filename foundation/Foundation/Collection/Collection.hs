@@ -20,6 +20,7 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TypeOperators #-}
 module Foundation.Collection.Collection
     ( Collection(..)
     -- * NonEmpty Property

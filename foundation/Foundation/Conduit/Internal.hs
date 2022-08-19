@@ -79,7 +79,7 @@ instance Applicative m => Applicative (Pipe l i o u m) where
     {-# INLINE (<*>) #-}
 
 instance (Functor m, Monad m) => Monad (Pipe l i o u m) where
-    return = Done
+    return = pure
     {-# INLINE return #-}
 
     Yield p c o  >>= fp = Yield    (p >>= fp)            c          o

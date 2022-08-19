@@ -7,8 +7,6 @@ module Foundation.Conduit.Textual
     ) where
 
 import           Basement.Imports hiding (throw)
-import           Basement.UArray (UArray)
-import           Foundation.String (String)
 import           Foundation.Collection
 import qualified Basement.String as S
 import           Foundation.Conduit.Internal

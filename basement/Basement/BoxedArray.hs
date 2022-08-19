@@ -13,6 +13,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeOperators #-}
 module Basement.BoxedArray
     ( Array
     , MArray
@@ -132,7 +133,6 @@ instance Semigroup (Array a) where
     (<>) = append
 instance Monoid (Array a) where
     mempty  = empty
-    mappend = append
     mconcat = concat
 
 instance Show a => Show (Array a) where

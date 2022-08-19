@@ -4,6 +4,7 @@
 {-# LANGUAGE DefaultSignatures     #-}
 {-# LANGUAGE MagicHash             #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeOperators         #-}
 -- |
 -- Module      : Basement.Cast
 -- License     : BSD-style

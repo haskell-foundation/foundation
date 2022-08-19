@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeOperators #-}
 module Foundation.Conduit
     ( Conduit
     , ResourceT

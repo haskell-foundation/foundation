@@ -16,6 +16,7 @@
 {-# LANGUAGE UnboxedTuples       #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeOperators #-}
 module Basement.Block
     ( Block(..)
     , MutableBlock(..)
