@@ -1,3 +1,31 @@
+## 0.0.29
+
+* Add support for ghc 9.4
+* Drop support for ghc < 8.10
+* Remove all warnings (TypeOperators, Non canonical instances, Star type, spurious imports)
+
+## 0.0.28
+
+* Add support for ghc 9.2
+* Drop support for ghc < 8.8
+* Fix segfault bug introduce in 0.0.27 for ghc < 9.2 when converting word32 to word8 in some not too used code
+
+## 0.0.27
+
+* Add some primitive support for ghc 9.2
+* Simplify code to use base code instead of raw primops which are completely unstable
+
+## 0.0.26
+
+* add support for ghc 9.0
+* Add instance of Additive for Rational
+
+## 0.0.25
+
+* Add support for ghc 8.8
+* Improve IPv4 type parser
+* Disable ghcjs as its not supported
+
 ## 0.0.24
 
 * Fix fail instances
