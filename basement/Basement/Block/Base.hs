@@ -284,7 +284,7 @@ unsafeThaw (Block ba) = primitive $ \st -> (# st, MutableBlock (unsafeCoerce# ba
 -- | Create a new mutable block of a specific size in bytes.
 --
 -- Note that no checks are made to see if the size in bytes is compatible with the size
--- of the underlaying element 'ty' in the block.
+-- of the underlying element 'ty' in the block.
 --
 -- use 'new' if unsure
 unsafeNew :: PrimMonad prim
