@@ -299,7 +299,7 @@ rotateL (Word256 a3 a2 a1 a0) (safe -> n)
                           (comb64 a2 n' a1 (inv64 n')) (comb64 a1 n' a0 (inv64 n'))
   where
     safe :: Int -> Int
-    safe = fromIntegral @Int . fromIntegral @Word8
+    safe x = fromIntegral @Word8 @Int (fromIntegral (x `rem` 256))
 
 
 -- | Bitwise rotate Left
