@@ -2,6 +2,7 @@
 {-# LANGUAGE MagicHash          #-}
 {-# LANGUAGE UnboxedTuples      #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE ViewPatterns       #-}
 module Basement.Types.Word256
     ( Word256(..)
     , (+)
@@ -280,26 +281,26 @@ shiftR w@(Word256 a3 a2 a1 a0) n
 
 -- | Bitwise rotate Left
 rotateL :: Word256 -> Int -> Word256
-rotateL (Word256 a3 a2 a1 a0) n'
+rotateL (Word256 a3 a2 a1 a0) (safe -> n)
     | n == 0    = Word256 a3 a2 a1 a0
     | n == 192  = Word256 a0 a3 a2 a1
     | n == 128  = Word256 a1 a0 a3 a2
     | n == 64   = Word256 a2 a1 a0 a3
     | n < 64    = Word256 (comb64 a3 n a2 (inv64 n)) (comb64 a2 n a1 (inv64 n))
                           (comb64 a1 n a0 (inv64 n)) (comb64 a0 n a3 (inv64 n))
-    | n < 128   = let n = n Prelude.- 64 in Word256
-                          (comb64 a2 n a1 (inv64 n)) (comb64 a1 n a0 (inv64 n))
-                          (comb64 a0 n a3 (inv64 n)) (comb64 a3 n a2 (inv64 n))
-    | n < 192   = let n = n Prelude.- 128 in Word256
-                          (comb64 a1 n a0 (inv64 n)) (comb64 a0 n a3 (inv64 n))
-                          (comb64 a3 n a2 (inv64 n)) (comb64 a2 n a1 (inv64 n))
-    | otherwise = let n = n Prelude.- 192 in Word256
-                          (comb64 a0 n a3 (inv64 n)) (comb64 a3 n a2 (inv64 n))
-                          (comb64 a2 n a1 (inv64 n)) (comb64 a1 n a0 (inv64 n))
+    | n < 128   = let n' = n Prelude.- 64 in Word256
+                          (comb64 a2 n' a1 (inv64 n')) (comb64 a1 n' a0 (inv64 n'))
+                          (comb64 a0 n' a3 (inv64 n')) (comb64 a3 n' a2 (inv64 n'))
+    | n < 192   = let n' = n Prelude.- 128 in Word256
+                          (comb64 a1 n' a0 (inv64 n')) (comb64 a0 n' a3 (inv64 n'))
+                          (comb64 a3 n' a2 (inv64 n')) (comb64 a2 n' a1 (inv64 n'))
+    | otherwise = let n' = n Prelude.- 192 in Word256
+                          (comb64 a0 n' a3 (inv64 n')) (comb64 a3 n' a2 (inv64 n'))
+                          (comb64 a2 n' a1 (inv64 n')) (comb64 a1 n' a0 (inv64 n'))
   where
-    n :: Int
-    n | n' >= 0   = n' `Prelude.mod` 256
-      | otherwise = 256 Prelude.- (n' `Prelude.mod` 256)
+    safe :: Int -> Int
+    safe = fromIntegral @Int . fromIntegral @Word8
+
 
 -- | Bitwise rotate Left
 rotateR :: Word256 -> Int -> Word256
