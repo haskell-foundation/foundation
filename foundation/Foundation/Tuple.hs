@@ -26,6 +26,8 @@ data Tuple2 a b = Tuple2 !a !b
 
 instance (NormalForm a, NormalForm b) => NormalForm (Tuple2 a b) where
     toNormalForm (Tuple2 a b) = toNormalForm a `seq` toNormalForm b
+instance Functor (Tuple2 a) where
+  fmap f (Tuple2 a b) = Tuple2 a (f b)
 instance Bifunctor Tuple2 where
   bimap f g (Tuple2 a b) = Tuple2 (f a) (g b)
 
