@@ -15,13 +15,16 @@ cabal-version:       1.18
 extra-source-files:  cbits/*.h
 
 tested-with:
-  GHC == 8.0.2
-  GHC == 8.2.2
-  GHC == 8.4.4
-  GHC == 8.6.5
-  GHC == 8.8.4
+  GHC == 9.6.1
+  GHC == 9.4.4
+  GHC == 9.2.7
+  GHC == 9.0.2
   GHC == 8.10.7
-  GHC == 9.0.1
+  GHC == 8.8.4
+  GHC == 8.6.5
+  GHC == 8.4.4
+  GHC == 8.2.2
+  GHC == 8.0.2
 
 source-repository head
   type: git

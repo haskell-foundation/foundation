@@ -8,9 +8,9 @@
 #
 # For more information, see https://github.com/haskell-CI/haskell-ci
 #
-# version: 0.13.20211116
+# version: 0.15.20230321
 #
-# REGENDATA ("0.13.20211116",["github","cabal.project"])
+# REGENDATA ("0.15.20230321",["github","cabal.project"])
 #
 name: Haskell-CI
 on:
@@ -19,7 +19,7 @@ on:
 jobs:
   linux:
     name: Haskell-CI - Linux - ${{ matrix.compiler }}
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     timeout-minutes:
       60
     container:
@@ -28,10 +28,25 @@ jobs:
     strategy:
       matrix:
         include:
-          - compiler: ghc-9.0.1
+          - compiler: ghc-9.6.1
             compilerKind: ghc
-            compilerVersion: 9.0.1
-            setup-method: hvr-ppa
+            compilerVersion: 9.6.1
+            setup-method: ghcup
+            allow-failure: false
+          - compiler: ghc-9.4.4
+            compilerKind: ghc
+            compilerVersion: 9.4.4
+            setup-method: ghcup
+            allow-failure: false
+          - compiler: ghc-9.2.7
+            compilerKind: ghc
+            compilerVersion: 9.2.7
+            setup-method: ghcup
+            allow-failure: false
+          - compiler: ghc-9.0.2
+            compilerKind: ghc
+            compilerVersion: 9.0.2
+            setup-method: ghcup
             allow-failure: false
           - compiler: ghc-8.10.7
             compilerKind: ghc
@@ -71,18 +86,18 @@ jobs:
           apt-get install -y --no-install-recommends gnupg ca-certificates dirmngr curl git software-properties-common libtinfo5
           if [ "${{ matrix.setup-method }}" = ghcup ]; then
             mkdir -p "$HOME/.ghcup/bin"
-            curl -sL https://downloads.haskell.org/ghcup/0.1.17.3/x86_64-linux-ghcup-0.1.17.3 > "$HOME/.ghcup/bin/ghcup"
+            curl -sL https://downloads.haskell.org/ghcup/0.1.19.2/x86_64-linux-ghcup-0.1.19.2 > "$HOME/.ghcup/bin/ghcup"
             chmod a+x "$HOME/.ghcup/bin/ghcup"
-            "$HOME/.ghcup/bin/ghcup" install ghc "$HCVER"
-            "$HOME/.ghcup/bin/ghcup" install cabal 3.6.2.0
+            "$HOME/.ghcup/bin/ghcup" install ghc "$HCVER" || (cat "$HOME"/.ghcup/logs/*.* && false)
+            "$HOME/.ghcup/bin/ghcup" install cabal 3.10.1.0 || (cat "$HOME"/.ghcup/logs/*.* && false)
           else
             apt-add-repository -y 'ppa:hvr/ghc'
             apt-get update
             apt-get install -y "$HCNAME"
             mkdir -p "$HOME/.ghcup/bin"
-            curl -sL https://downloads.haskell.org/ghcup/0.1.17.3/x86_64-linux-ghcup-0.1.17.3 > "$HOME/.ghcup/bin/ghcup"
+            curl -sL https://downloads.haskell.org/ghcup/0.1.19.2/x86_64-linux-ghcup-0.1.19.2 > "$HOME/.ghcup/bin/ghcup"
             chmod a+x "$HOME/.ghcup/bin/ghcup"
-            "$HOME/.ghcup/bin/ghcup" install cabal 3.6.2.0
+            "$HOME/.ghcup/bin/ghcup" install cabal 3.10.1.0 || (cat "$HOME"/.ghcup/logs/*.* && false)
           fi
         env:
           HCKIND: ${{ matrix.compilerKind }}
@@ -100,13 +115,13 @@ jobs:
             echo "HC=$HC" >> "$GITHUB_ENV"
             echo "HCPKG=$HOME/.ghcup/bin/$HCKIND-pkg-$HCVER" >> "$GITHUB_ENV"
             echo "HADDOCK=$HOME/.ghcup/bin/haddock-$HCVER" >> "$GITHUB_ENV"
-            echo "CABAL=$HOME/.ghcup/bin/cabal-3.6.2.0 -vnormal+nowrap" >> "$GITHUB_ENV"
+            echo "CABAL=$HOME/.ghcup/bin/cabal-3.10.1.0 -vnormal+nowrap" >> "$GITHUB_ENV"
           else
             HC=$HCDIR/bin/$HCKIND
             echo "HC=$HC" >> "$GITHUB_ENV"
             echo "HCPKG=$HCDIR/bin/$HCKIND-pkg" >> "$GITHUB_ENV"
             echo "HADDOCK=$HCDIR/bin/haddock" >> "$GITHUB_ENV"
-            echo "CABAL=$HOME/.ghcup/bin/cabal-3.6.2.0 -vnormal+nowrap" >> "$GITHUB_ENV"
+            echo "CABAL=$HOME/.ghcup/bin/cabal-3.10.1.0 -vnormal+nowrap" >> "$GITHUB_ENV"
           fi
 
           HCNUMVER=$(${HC} --numeric-version|perl -ne '/^(\d+)\.(\d+)\.(\d+)(\.(\d+))?$/; print(10000 * $1 + 100 * $2 + ($3 == 0 ? $5 != 1 : $3))')
@@ -165,13 +180,14 @@ jobs:
           chmod a+x $HOME/.cabal/bin/cabal-plan
           cabal-plan --version
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: source
       - name: initial cabal.project for sdist
         run: |
           touch cabal.project
           echo "packages: $GITHUB_WORKSPACE/source/basement" >> cabal.project
+          if [ $((HCNUMVER < 90600)) -ne 0 ] ; then echo "packages: $GITHUB_WORKSPACE/source/foundation" >> cabal.project ; fi
           cat cabal.project
       - name: sdist
         run: |
@@ -185,23 +201,28 @@ jobs:
         run: |
           PKGDIR_basement="$(find "$GITHUB_WORKSPACE/unpacked" -maxdepth 1 -type d -regex '.*/basement-[0-9.]*')"
           echo "PKGDIR_basement=${PKGDIR_basement}" >> "$GITHUB_ENV"
+          PKGDIR_foundation="$(find "$GITHUB_WORKSPACE/unpacked" -maxdepth 1 -type d -regex '.*/foundation-[0-9.]*')"
+          echo "PKGDIR_foundation=${PKGDIR_foundation}" >> "$GITHUB_ENV"
           rm -f cabal.project cabal.project.local
           touch cabal.project
           touch cabal.project.local
           echo "packages: ${PKGDIR_basement}" >> cabal.project
+          if [ $((HCNUMVER < 90600)) -ne 0 ] ; then echo "packages: ${PKGDIR_foundation}" >> cabal.project ; fi
           if [ $((HCNUMVER >= 80200)) -ne 0 ] ; then echo "package basement" >> cabal.project ; fi
           if [ $((HCNUMVER >= 80200)) -ne 0 ] ; then echo "    ghc-options: -Werror=missing-methods" >> cabal.project ; fi
+          if [ $((HCNUMVER >= 80200 && HCNUMVER < 90600)) -ne 0 ] ; then echo "package foundation" >> cabal.project ; fi
+          if [ $((HCNUMVER >= 80200 && HCNUMVER < 90600)) -ne 0 ] ; then echo "    ghc-options: -Werror=missing-methods" >> cabal.project ; fi
           cat >> cabal.project <<EOF
           EOF
-          $HCPKG list --simple-output --names-only | perl -ne 'for (split /\s+/) { print "constraints: $_ installed\n" unless /^(basement)$/; }' >> cabal.project.local
+          $HCPKG list --simple-output --names-only | perl -ne 'for (split /\s+/) { print "constraints: $_ installed\n" unless /^(basement|foundation)$/; }' >> cabal.project.local
           cat cabal.project
           cat cabal.project.local
       - name: dump install plan
         run: |
           $CABAL v2-build $ARG_COMPILER $ARG_TESTS $ARG_BENCH --dry-run all
           cabal-plan
-      - name: cache
-        uses: actions/cache@v2
+      - name: restore cache
+        uses: actions/cache/restore@v3
         with:
           key: ${{ runner.os }}-${{ matrix.compiler }}-${{ github.sha }}
           path: ~/.cabal/store
@@ -216,14 +237,25 @@ jobs:
       - name: build
         run: |
           $CABAL v2-build $ARG_COMPILER $ARG_TESTS $ARG_BENCH all --write-ghc-environment-files=always
+      - name: tests
+        run: |
+          if [ $((HCNUMVER < 90600)) -ne 0 ] ; then $CABAL v2-test $ARG_COMPILER $ARG_TESTS $ARG_BENCH all --test-show-details=direct ; fi
       - name: cabal check
         run: |
           cd ${PKGDIR_basement} || false
           ${CABAL} -vnormal check
+          if [ $((HCNUMVER < 90600)) -ne 0 ] ; then cd ${PKGDIR_foundation} || false ; fi
+          if [ $((HCNUMVER < 90600)) -ne 0 ] ; then ${CABAL} -vnormal check ; fi
       - name: haddock
         run: |
-          $CABAL v2-haddock $ARG_COMPILER --with-haddock $HADDOCK $ARG_TESTS $ARG_BENCH all
+          $CABAL v2-haddock --disable-documentation --haddock-all $ARG_COMPILER --with-haddock $HADDOCK $ARG_TESTS $ARG_BENCH all
       - name: unconstrained build
         run: |
           rm -f cabal.project.local
           $CABAL v2-build $ARG_COMPILER --disable-tests --disable-benchmarks all
+      - name: save cache
+        uses: actions/cache/save@v3
+        if: always()
+        with:
+          key: ${{ runner.os }}-${{ matrix.compiler }}-${{ github.sha }}
+          path: ~/.cabal/store
