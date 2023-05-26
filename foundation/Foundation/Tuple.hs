@@ -17,7 +17,6 @@ module Foundation.Tuple
     ) where
 
 import Basement.Compat.Base
-import Basement.Compat.Bifunctor
 import Foundation.Primitive
 
 -- | Strict tuple (a,b)
@@ -26,8 +25,6 @@ data Tuple2 a b = Tuple2 !a !b
 
 instance (NormalForm a, NormalForm b) => NormalForm (Tuple2 a b) where
     toNormalForm (Tuple2 a b) = toNormalForm a `seq` toNormalForm b
-instance Bifunctor Tuple2 where
-  bimap f g (Tuple2 a b) = Tuple2 (f a) (g b)
 
 -- | Strict tuple (a,b,c)
 data Tuple3 a b c = Tuple3 !a !b !c
