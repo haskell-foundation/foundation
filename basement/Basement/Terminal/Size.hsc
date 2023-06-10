@@ -19,6 +19,9 @@ import           Graphics.Win32.Misc (getStdHandle, sTD_OUTPUT_HANDLE, StdHandle
 
 #include <windows.h>
 #elif defined FOUNDATION_SYSTEM_UNIX
+#ifdef FOUNDATION_SYSTEM_HAIKU
+#include <unistd.h>
+#endif
 #include <sys/ioctl.h>
 #ifdef __sun
 #include <sys/termios.h>
@@ -130,7 +133,11 @@ stdOutputHandle = #{const STD_OUTPUT_HANDLE}
 
 #ifdef FOUNDATION_SYSTEM_UNIX
 
+#ifdef FOUNDATION_SYSTEM_HAIKU
+foreign import capi "unistd.h ioctl" c_ioctl :: CInt -> CULong -> Ptr a -> IO CInt
+#else
 foreign import capi "sys/ioctl.h ioctl" c_ioctl :: CInt -> CULong -> Ptr a -> IO CInt
+#endif
 
 -- | Get the terminal windows size
 tiocgwinsz :: CULong

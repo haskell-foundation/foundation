@@ -47,6 +47,10 @@
     #define FOUNDATION_SYSTEM_BSD
     #define FOUNDATION_SYSTEM_OPENBSD
     // OpenBSD
+#elif defined(__HAIKU__)
+    #define FOUNDATION_SYSTEM_UNIX
+    #define FOUNDATION_SYSTEM_HAIKU
+    // Haiku
 #elif __unix__ // all unices not caught above
     #define FOUNDATION_SYSTEM_UNIX
     // Unix
